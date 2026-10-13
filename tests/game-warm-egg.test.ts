@@ -49,8 +49,8 @@ describe('M1-10 warm egg', () => {
     expect(Math.abs(t - warm.hatchSec)).toBeLessThan(3 * STEP_SEC);
   });
 
-  it('odd, glowing and daily eggs stay closed in M1', () => {
-    const { game } = setup(500);
-    expect(game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm']);
+  it('odd and glowing eggs wait for their districts (M2-05), the daily egg for M3', () => {
+    expect(setup(19).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm']);
+    expect(setup(500).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm', 'egg_odd', 'egg_glow']);
   });
 });

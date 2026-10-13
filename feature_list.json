@@ -42,7 +42,7 @@
     { "id": "M2-02", "milestone": "M2", "priority": "P1", "title": "Витрина 3 → 8 мест: рост цены со временем, привлечение покупателей", "criteria": "цена на витрине растёт; покупатели выбирают по типу", "passes": true },
     { "id": "M2-03", "milestone": "M2", "priority": "P1", "title": "Помощники: автокорм, автопродажа, курьер", "criteria": "работают без тапов; офлайн-доход считается при возврате", "passes": true },
     { "id": "M2-04", "milestone": "M2", "priority": "P1", "title": "Офлайн-доход до 8 часов, экран «пока тебя не было»", "criteria": "50% онлайн-темпа; экран показывает сумму", "passes": true },
-    { "id": "M2-05", "milestone": "M2", "priority": "P1", "title": "Районы и типы покупателей: двор, улица, площадь; коллекционер и богач", "criteria": "открытие по сделкам; доли предложений по customers.json", "passes": false },
+    { "id": "M2-05", "milestone": "M2", "priority": "P1", "title": "Районы и типы покупателей: двор, улица, площадь; коллекционер и богач", "criteria": "открытие по сделкам; доли предложений по customers.json", "passes": true },
     { "id": "M2-06", "milestone": "M2", "priority": "P1", "title": "12 видов существ, странное и светящееся яйца", "criteria": "species.json и eggs.json расширены, валидны", "passes": false },
     { "id": "M2-07", "milestone": "M2", "priority": "P1", "title": "Вывеска и касса", "criteria": "эффекты по upgrades.json", "passes": false },
     { "id": "M2-08", "milestone": "M2", "priority": "P2", "title": "Кристаллы: источник и трата (редкие яйца, ускорения)", "criteria": "вторая валюта в HUD и магазине", "passes": false },

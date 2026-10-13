@@ -181,6 +181,11 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t('toast.rescueEgg'), 'good', 2400);
       sfx.play('buy');
     }
+    else if (e.type === 'districtOpened') {
+      const d = customers.districts.find((x) => x.id === e.district);
+      if (d) toasts.show(i18n.t('toast.district', { name: d.name[i18n.lang()], who: d.customer.name[i18n.lang()] }), 'rare', 3000);
+      sfx.play('rare');
+    }
     else if (e.type === 'eggUnlocked') {
       const name = eggs.eggs.find((x) => x.id === e.egg)?.name[i18n.lang()] ?? e.egg;
       toasts.show(i18n.t('toast.eggUnlocked', { name }), 'rare', 2600);

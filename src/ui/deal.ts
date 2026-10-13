@@ -42,7 +42,7 @@ export function createDealCard(parent: HTMLElement, game: Game, look: DealLookup
   root.innerHTML =
     '<div class="deal-head"><span class="deal-avatar" aria-hidden="true"></span><span class="deal-who" data-deal-who></span><span class="deal-share" data-deal-share></span><span class="deal-queue" data-deal-queue></span></div><div class="deal-text" data-deal-text></div>' +
     '<div class="deal-actions">' +
-    '<button type="button" class="btn btn-primary btn-sell" data-action="sell"><span data-i18n="deal.sell"></span><span class="price"><span class="coin coin-sm" aria-hidden="true"></span><span data-sell-price></span></span></button>' +
+    '<button type="button" class="btn btn-primary btn-sell" data-action="sell"><span class="btn-two"><span class="sell-label" data-i18n="deal.sell"></span><span class="price"><span class="coin coin-sm" aria-hidden="true"></span><span data-sell-price></span></span></span></button>' +
     '<button type="button" class="btn btn-haggle" data-action="haggle"><span class="btn-two"><span data-i18n="deal.haggle"></span><small data-haggle-hint></small></span></button>' +
     '<button type="button" class="btn btn-wait" data-action="wait"><span data-i18n="deal.wait"></span></button>' +
     '</div>';

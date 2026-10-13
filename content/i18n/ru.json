@@ -89,5 +89,8 @@
   "away.hatched": "Вылупилось: {n}",
   "away.levelUps": "Новых уровней: {n}",
   "away.hint": "Помощник-продавец заработает и без тебя",
-  "away.ok": "Отлично"
+  "away.ok": "Отлично",
+  "toast.district": "Новый район: {name} · {who}",
+  "egg.short.egg_odd": "Странное",
+  "egg.short.egg_glow": "Светящееся"
 }

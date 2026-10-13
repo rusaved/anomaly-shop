@@ -62,7 +62,9 @@ export function createActions(parent: HTMLElement, game: Game, lang: string, loo
       list.forEach((e, i) => {
         const b = buttons.get(e.id);
         if (!b) return;
-        (b.querySelector('[data-label]') as HTMLElement).textContent = look.t(i === 0 ? 'action.buyEgg' : `egg.short.${e.id}`);
+        const label = look.t(i === 0 ? 'action.buyEgg' : `egg.short.${e.id}`);
+        (b.querySelector('[data-label]') as HTMLElement).textContent = label;
+        b.title = label;
         (b.querySelector('[data-price]') as HTMLElement).textContent = format.format(e.check.price);
         b.setAttribute('aria-disabled', String(!e.check.ok));
         b.dataset.reason = e.check.ok ? '' : e.check.reason;

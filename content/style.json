@@ -105,6 +105,14 @@
     "egg_warm": {
       "shell": "#ffc9a3",
       "spots": "#e8603c"
+    },
+    "egg_odd": {
+      "shell": "#cdb8ff",
+      "spots": "#7a5cd6"
+    },
+    "egg_glow": {
+      "shell": "#c4f6ff",
+      "spots": "#3aa8ff"
     }
   }
 }

@@ -119,10 +119,7 @@ export function upgradePrice(u: UpgradeData, owned: number): number {
   return nicePrice(u.price1 * Math.pow(u.priceMax / u.price1, k / (u.levels - 1)));
 }
 
-/** Is the egg on sale for this player (docs/01a, section 2): start, after N deals; districts and milestones open later (M2, M3). */
-export function eggUnlocked(egg: EggData, deals: number): boolean {
-  if (egg.special) return false;
-  if (egg.unlock.type === 'start') return true;
-  if (egg.unlock.type === 'deals') return deals >= egg.unlock.count;
-  return false;
+/** Is the egg on sale for this player (docs/01a, section 2): start, after N deals, with a district; special eggs come with M3. */
+export function eggUnlocked(egg: EggData, facts: UnlockFacts): boolean {
+  return !egg.special && unlockMet(egg.unlock, facts);
 }

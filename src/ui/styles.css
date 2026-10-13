@@ -727,3 +727,36 @@
   color: var(--c-uiMuted);
   font-size: 14px;
 }
+
+/* M2-05: three or four eggs in the row — the colored icon and the price tell them apart (the name is in the title) */
+.actions[data-eggs='3'] .btn-egg [data-label],
+.actions[data-eggs='4'] .btn-egg [data-label] {
+  display: none;
+}
+.actions[data-eggs='3'] .btn-egg,
+.actions[data-eggs='4'] .btn-egg {
+  padding: 0 6px;
+  gap: 4px;
+}
+.actions[data-eggs='3'] .btn-egg [data-why],
+.actions[data-eggs='4'] .btn-egg [data-why] {
+  display: none;
+}
+
+/* M2-05: Sell keeps any price (1 500, 12 000) — label over the price */
+.btn-sell .btn-two {
+  gap: 1px;
+}
+.btn-sell .sell-label {
+  font-size: 13px;
+}
+.btn-sell .price {
+  font-size: 17px;
+}
+.actions[data-eggs='3'] .btn-egg .coin,
+.actions[data-eggs='4'] .btn-egg .coin {
+  display: none;
+}
+.actions[data-eggs='4'] .btn-egg {
+  font-size: 15px;
+}

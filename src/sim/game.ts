@@ -49,6 +49,7 @@ export type GameEvent =
   | { type: 'upgradeBought'; id: string; level: number; price: number }
   | { type: 'ftueDone' }
   | { type: 'eggUnlocked'; egg: string }
+  | { type: 'districtOpened'; district: string; customer: string }
   | { type: 'rescueEgg'; incubator: number }
   | { type: 'sold'; uid: string; species: string; price: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper' }
   | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
@@ -207,10 +208,14 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const spec = speciesData(cr.species);
     return spec ? coins(creatureValue(spec, cr.level) * valueMult(cr)) : 0;
   };
-  const facts = (): UnlockFacts => {
+  const baseFacts = (): UnlockFacts => {
     const st = s().stats;
-    return { deals: st.deals, hatched: st.hatched, levelUps: st.levelUps ?? 0, haggles: st.haggles ?? 0, upgrades: s().upgrades, districts: openDistricts().map((d) => d.id) };
+    return { deals: st.deals, hatched: st.hatched, levelUps: st.levelUps ?? 0, haggles: st.haggles ?? 0, upgrades: s().upgrades, districts: [] };
   };
+  /** Districts open by deals (docs/01a, section 4); a district never waits for another district (validate:content). */
+  const openDistricts = (): DistrictData[] => content.customers.districts.filter((d) => unlockMet(d.unlock, baseFacts()));
+  const facts = (): UnlockFacts => ({ ...baseFacts(), districts: openDistricts().map((d) => d.id) });
+  const eggOpen = (e: EggsData['eggs'][number]): boolean => eggUnlocked(e, facts());
   /** Does this customer type like the creature (docs/01, section 3.5: the showcase attracts its customers). */
   const likes = (c: DistrictData['customer'], cr: Creature): boolean => {
     const spec = speciesData(cr.species);
@@ -228,8 +233,6 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return list.reduce((best, x) => (rank(x) > rank(best) ? x : best)).cr.uid;
   };
   const spawnEvery = (): number => content.customers.spawnEverySec * Math.max(0.1, 1 + effectSum('spawnRate'));
-  /** Districts open in M1: the start ones (street and square arrive with M2-05). */
-  const openDistricts = (): DistrictData[] => content.customers.districts.filter((d) => d.unlock.type === 'start');
   /** Customers start coming once the shop has had its first creature (an empty first visit stays calm). */
   const shopOpen = (): boolean => s().stats.hatched > 0 || s().creatures.length > 0;
 
@@ -392,6 +395,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       if (by === 'player') emit({ type: 'denied', action: 'sell', reason: deal ? 'noCreature' : 'noDeal' });
       return false;
     }
+    const districtsBefore = new Set(openDistricts().map((d) => d.id));
+    const eggsBefore = new Set(eggs.eggs.filter(eggOpen).map((e) => e.id));
     const share = by === 'helper' ? helperSellShare() : 1;
     const price = Math.max(1, Math.round(deal.offer * share));
     const haggled = deal.bargains > 0;
@@ -399,7 +404,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     st.stats.deals += 1;
     st.stats.coinsEarned += price;
     st.creatures = st.creatures.filter((x) => x.uid !== cr.uid);
-    const opened = eggs.eggs.filter((e) => e.unlock.type === 'deals' && e.unlock.count === st.stats.deals && eggUnlocked(e, st.stats.deals));
+    const districts = openDistricts().filter((d) => !districtsBefore.has(d.id));
+    const opened = eggs.eggs.filter((e) => eggOpen(e) && !eggsBefore.has(e.id));
     for (const e of opened) st.flags[`egg_new_${e.id}`] = true;
     const entry = (st.collection[cr.species] ??= { seen: 1, hatched: 0, sold: 0 });
     entry.sold += 1;
@@ -407,6 +413,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     commit({ flush: true });
     emit({ type: 'sold', uid: cr.uid, species: cr.species, price, customer: deal.customer, customerId: deal.id, haggled, by });
     frontLeaves('sold', 0);
+    for (const d of districts) emit({ type: 'districtOpened', district: d.id, customer: d.customer.id });
     for (const e of opened) emit({ type: 'eggUnlocked', egg: e.id });
     emit({ type: 'change' });
     return true;
@@ -415,7 +422,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   function canBuyEgg(eggId = basicEgg): BuyCheck {
     const egg = eggData(eggId);
     const price = egg?.price.coins ?? 0;
-    if (!egg || !eggUnlocked(egg, s().stats.deals)) return { ok: false, reason: 'locked', price };
+    if (!egg || !eggOpen(egg)) return { ok: false, reason: 'locked', price };
     const incubator = s().incubators.findIndex((i) => !i.egg);
     if (incubator < 0) return { ok: false, reason: 'busy', price };
     if (freeSlots() <= 0) return { ok: false, reason: 'full', price };
@@ -510,7 +517,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     canBuyEgg,
     eggList() {
       return eggs.eggs
-        .filter((e) => eggUnlocked(e, s().stats.deals))
+        .filter(eggOpen)
         .sort((a, b) => a.price.coins - b.price.coins)
         .map((e) => ({ id: e.id, check: canBuyEgg(e.id), fresh: Boolean(s().flags[`egg_new_${e.id}`]) }));
     },
@@ -599,7 +606,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       }
       // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free.
       if (st.creatures.length === 0 && st.incubators[0] && !st.incubators.some((i) => i.egg) && st.stats.hatched > 0) {
-        const cheapest = Math.min(...eggs.eggs.filter((e) => eggUnlocked(e, st.stats.deals)).map((e) => e.price.coins));
+        const cheapest = Math.min(...eggs.eggs.filter(eggOpen).map((e) => e.price.coins));
         if (st.coins + 1e-9 < cheapest) {
           placeEgg(0, eggs.rescueEgg, false);
           commit({ flush: true });

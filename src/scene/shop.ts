@@ -109,6 +109,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let slotUids: Array<string | null> = [];
   let selectedKey = '';
   const creatures = new Map<string, CreatureNode>();
+  /** Sold creatures flying to their buyer: start, target, progress. */
+  const departing: Array<{ node: CreatureNode; from: { x: number; y: number }; to: { x: number; y: number }; t: number }> = [];
+  const soldTo = new Map<string, { x: number; y: number }>();
   const spawnFrom = new Map<string, { x: number; y: number }>();
 
   const label = (key: string): Text =>
@@ -206,6 +209,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     const size = Math.max(11, Math.min(16, l.unit * 0.42));
     for (const tx of Object.values(texts)) tx.style.fontSize = size;
     texts.showcase.position.set(l.showcase.x + l.showcase.w / 2, l.showcase.y + l.showcase.h + l.outline);
+    // The label gives way to the incubators when the wall is short (landscape phones).
+    const domeTop = Math.min(...l.incubators.map((i) => i.y - i.r - l.outline));
+    texts.showcase.visible = texts.showcase.y + size * 1.2 < domeTop;
     texts.queue.position.set(l.door.x + l.door.w / 2, l.door.y - size - l.outline * 2);
   }
 
@@ -420,9 +426,26 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     const alive = new Set(list.map((x) => x.uid));
     for (const [uid, node] of creatures) {
       if (alive.has(uid)) continue;
-      node.box.destroy({ children: true });
       creatures.delete(uid);
       moving = true;
+      const to = soldTo.get(uid);
+      soldTo.delete(uid);
+      if (to) departing.push({ node, from: { x: node.box.x, y: node.box.y }, to, t: 0 });
+      else node.box.destroy({ children: true });
+    }
+    for (let i = departing.length - 1; i >= 0; i--) {
+      const d = departing[i]!;
+      d.t = Math.min(1, d.t + dt / Math.max(0.05, feel.hatchFlySec));
+      const e = d.t * d.t * (3 - 2 * d.t);
+      d.node.box.position.set(d.from.x + (d.to.x - d.from.x) * e, d.from.y + (d.to.y - d.from.y) * e - Math.sin(d.t * Math.PI) * l.unit * 1.2);
+      d.node.box.scale.set(1 - 0.55 * e);
+      d.node.box.alpha = d.t > 0.8 ? (1 - d.t) / 0.2 : 1;
+      moving = true;
+      if (d.t >= 1) {
+        fx.burst(d.to.x, d.to.y, 10, [c.blush, c.uiAccent, c.eyeWhite], l.unit * 2.5, l.outline * 1.2);
+        d.node.box.destroy({ children: true });
+        departing.splice(i, 1);
+      }
     }
     list.forEach((cv, n) => {
       const slot = l.slots[n];
@@ -494,6 +517,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     buildSlots(current);
     selectedKey = '';
     for (const node of creatures.values()) node.key = '';
+    for (const d of departing) d.node.box.destroy({ children: true });
+    departing.length = 0;
     placeLabels(current);
     fx.clear();
     bubble.visible = false;
@@ -595,12 +620,22 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           fx.float(at.x + at.r * 0.5, at.y - at.r * 0.9, '+1', c.uiGood, size, current.unit * 0.8);
           fx.burst(at.x, at.y + at.r * 0.4, 3, [c.blush, c.uiGood], at.r * 2.5, current.outline);
         }
+      } else if (e.type === 'sold') {
+        const buyer = visitors.get(e.customerId);
+        const index = slotUids.indexOf(e.uid);
+        const slot = current.slots[index];
+        if (buyer) soldTo.set(e.uid, { x: buyer.box.x, y: buyer.box.y - current.unit * 1.2 });
+        if (slot) say(e.species, slotCenter(slot), current);
+      } else if (e.type === 'haggled' && e.result === 'up') {
+        const buyer = visitors.get(e.customerId);
+        offerPulse = 0.3;
+        if (buyer) fx.float(buyer.box.x, buyer.box.y - current.unit * 3.2, `+${Math.round(e.bonus * 100)}%`, c.uiGood, Math.max(15, current.unit * 0.55), current.unit * 0.9);
       } else if (e.type === 'customerLeft') {
         const node = visitors.get(e.id);
         if (node) node.mood = e.reason;
         if (node && e.reason === 'haggle') {
           fx.burst(node.box.x, node.box.y - current.unit, 8, [c.uiMuted, c.outline], current.unit * 2.5, current.outline);
-          fx.float(node.box.x, node.box.y - current.unit * 2.2, t('fx.huff'), c.uiMuted, Math.max(14, current.unit * 0.5), current.unit * 0.8);
+          fx.float(node.box.x, node.box.y - current.unit * 2.6, t('fx.huff'), c.eyeWhite, Math.max(15, current.unit * 0.55), current.unit * 0.8);
         }
       } else if (e.type === 'eggBought') {
         const spot = current.incubators[e.incubator];

@@ -38,5 +38,12 @@
   "deal.next": "Подходит следующий",
   "deal.noCreature": "Ждёт существо",
   "deal.offer": "Даёт {price} за {name}",
-  "deal.queue": "В очереди: {n}"
+  "deal.queue": "В очереди: {n}",
+  "deal.sell": "Продать",
+  "deal.haggle": "Торг",
+  "deal.risk": "риск {n}%",
+  "deal.wait": "Ждать",
+  "deal.lastPrice": "последняя цена",
+  "deny.noDeal": "Покупателя пока нет",
+  "deny.lastPrice": "Это последняя цена"
 }

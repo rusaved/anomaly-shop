@@ -131,6 +131,8 @@ async function boot(): Promise<void> {
       sfx.play('fail');
     } else if (e.type === 'eggTap') sfx.play('eggTap');
     else if (e.type === 'fed') sfx.play(e.levelUp ? 'levelUp' : 'tap');
+    else if (e.type === 'sold') sfx.play('coin');
+    else if (e.type === 'haggled') sfx.play(e.result === 'up' ? 'buy' : 'fail');
     else if (e.type === 'eggBought') sfx.play('buy');
     else if (e.type === 'hatched') {
       sfx.play(e.rarity === 'common' ? 'hatch' : 'rare');

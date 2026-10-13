@@ -38,5 +38,12 @@
   "deal.next": "Next one is coming",
   "deal.noCreature": "Waiting for a creature",
   "deal.offer": "Offers {price} for {name}",
-  "deal.queue": "In line: {n}"
+  "deal.queue": "In line: {n}",
+  "deal.sell": "Sell",
+  "deal.haggle": "Haggle",
+  "deal.risk": "risk {n}%",
+  "deal.wait": "Wait",
+  "deal.lastPrice": "final price",
+  "deny.noDeal": "No customer yet",
+  "deny.lastPrice": "That's the final price"
 }

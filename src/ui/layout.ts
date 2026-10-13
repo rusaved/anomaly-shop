@@ -28,9 +28,9 @@ export interface Layout {
 }
 
 export const PANEL = {
-  portraitShare: 0.36,
-  portraitMin: 190,
-  portraitMax: 320,
+  portraitShare: 0.42,
+  portraitMin: 220,
+  portraitMax: 360,
   landscapeShare: 0.34,
   landscapeMin: 260,
   landscapeMax: 400,

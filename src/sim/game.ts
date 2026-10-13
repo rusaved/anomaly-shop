@@ -17,7 +17,7 @@ export interface GameContent {
   ftue: FtueData;
 }
 
-export type DenyReason = 'coins' | 'busy' | 'full' | 'locked';
+export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noDeal' | 'lastPrice';
 
 export type GameEvent =
   | { type: 'eggBought'; incubator: number; egg: string; price: number }
@@ -26,7 +26,9 @@ export type GameEvent =
   | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number }
   | { type: 'customerArrived'; id: number; customer: string }
   | { type: 'customerLeft'; id: number; reason: 'sold' | 'haggle' | 'wait' }
-  | { type: 'denied'; action: 'buyEgg'; reason: DenyReason }
+  | { type: 'denied'; action: 'buyEgg' | 'sell' | 'haggle' | 'wait'; reason: DenyReason }
+  | { type: 'sold'; uid: string; species: string; price: number; customer: string; customerId: number; haggled: boolean }
+  | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
   | { type: 'change' };
 
 export interface IncubatorView {
@@ -64,6 +66,10 @@ export interface DealView {
   level: number;
   offer: number;
   bargains: number;
+  /** True while one more haggle is allowed. */
+  canHaggle: boolean;
+  /** Chance that a haggle sends this customer away, 0..1. */
+  leaveChance: number;
 }
 
 export interface GameView {
@@ -93,6 +99,12 @@ export interface Game {
   tick(dt: number): void;
   view(): GameView;
   deal(): DealView | null;
+  /** Sells the selected creature to the front customer at the offered price. */
+  accept(): boolean;
+  /** Asks for more: +bargainBonus on success, the customer leaves on failure (docs/01a, section 4). */
+  haggle(): boolean;
+  /** Lets the front customer go; the next one steps up after waitNextSec. */
+  wait(): boolean;
   /** Free showcase places (creatures and eggs both take one). */
   freeSlots(): number;
   showcaseSlots(): number;
@@ -160,7 +172,26 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const c = v.district.customer;
     const offer =
       cr && spec ? offerFor(spec, cr.level, { share: v.share, mult: v.mult, rarityBonus: c.rarityBonus, levelBonusPerLevel: c.levelBonusPerLevel, cashBonus: effectSum('bargain') }) : 0;
-    return { id: v.id, customer: c.id, uid: cr?.uid ?? null, species: cr?.species ?? null, level: cr?.level ?? 0, offer, bargains: v.bargains };
+    return {
+      id: v.id,
+      customer: c.id,
+      uid: cr?.uid ?? null,
+      species: cr?.species ?? null,
+      level: cr?.level ?? 0,
+      offer,
+      bargains: v.bargains,
+      canHaggle: v.bargains < content.customers.bargainMax,
+      leaveChance: c.leaveOnBargain,
+    };
+  }
+
+  /** The front customer leaves; the next one steps up after `delay` seconds. */
+  function frontLeaves(reason: 'sold' | 'haggle' | 'wait', delay: number): void {
+    const v = queue.shift();
+    if (!v) return;
+    frontIn = queue.length ? delay : 0;
+    if (!queue.length && delay > 0) spawnIn = Math.min(spawnIn, delay);
+    events.emit({ type: 'customerLeft', id: v.id, reason });
   }
 
   let selectedUid: string | null = null;
@@ -286,6 +317,61 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       if (changed || levelUp) events.emit({ type: 'change' });
     },
     selected,
+    accept() {
+      const deal = currentDeal();
+      const st = s();
+      const cr = deal?.uid ? st.creatures.find((x) => x.uid === deal.uid) : undefined;
+      if (!deal || !cr) {
+        events.emit({ type: 'denied', action: 'sell', reason: 'noDeal' });
+        return false;
+      }
+      const haggled = deal.bargains > 0;
+      st.coins += deal.offer;
+      st.stats.deals += 1;
+      st.stats.coinsEarned += deal.offer;
+      st.creatures = st.creatures.filter((x) => x.uid !== cr.uid);
+      const entry = (st.collection[cr.species] ??= { seen: 1, hatched: 0, sold: 0 });
+      entry.sold += 1;
+      if (selectedUid === cr.uid) selectedUid = null;
+      store.commit({ flush: true });
+      events.emit({ type: 'sold', uid: cr.uid, species: cr.species, price: deal.offer, customer: deal.customer, customerId: deal.id, haggled });
+      frontLeaves('sold', 0);
+      events.emit({ type: 'change' });
+      return true;
+    },
+    haggle() {
+      const deal = currentDeal();
+      const v = queue[0];
+      if (!deal || !deal.uid || !v) {
+        events.emit({ type: 'denied', action: 'haggle', reason: 'noDeal' });
+        return false;
+      }
+      if (!deal.canHaggle) {
+        events.emit({ type: 'denied', action: 'haggle', reason: 'lastPrice' });
+        return false;
+      }
+      if (rng.next() < deal.leaveChance) {
+        events.emit({ type: 'haggled', customerId: v.id, result: 'left', bonus: 0, offer: 0 });
+        frontLeaves('haggle', 0);
+      } else {
+        const b = content.customers.bargainBonus;
+        const bonus = rng.range(b.min, b.max);
+        v.mult *= 1 + bonus;
+        v.bargains += 1;
+        events.emit({ type: 'haggled', customerId: v.id, result: 'up', bonus, offer: currentDeal()?.offer ?? 0 });
+      }
+      events.emit({ type: 'change' });
+      return true;
+    },
+    wait() {
+      if (!currentDeal()) {
+        events.emit({ type: 'denied', action: 'wait', reason: 'noDeal' });
+        return false;
+      }
+      frontLeaves('wait', content.customers.waitNextSec);
+      events.emit({ type: 'change' });
+      return true;
+    },
     tick(dt) {
       const st = s();
       if (frontIn > 0) {

@@ -63,6 +63,7 @@ export const CustomersFile = v.object({
   spawnEverySec: v.pipe(v.number(), v.minValue(0.1)),
   waitNextSec: Money,
   bargainBonus: Range,
+  bargainMax: Count,
   districts: v.pipe(v.array(District), v.minLength(1)),
 });
 

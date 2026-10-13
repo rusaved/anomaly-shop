@@ -99,6 +99,10 @@ function checkUpgrades(upgrades: UpgradesData, eggs: EggsData | null, errors: st
     if (u.levels === 1 && u.priceMax !== u.price1) errors.push(`upgrades.json: upgrades.${i}.priceMax — one level, so priceMax must equal price1`);
     if (u.effect.type === 'autoBuyEgg' && eggs && !eggIds.has(u.effect.egg)) errors.push(`upgrades.json: upgrades.${i}.effect.egg — unknown egg "${u.effect.egg}"`);
   });
+  upgrades.shop.forEach((id, i) => {
+    if (!upgrades.upgrades.some((u) => u.id === id)) errors.push(`upgrades.json: shop.${i} — unknown upgrade "${id}"`);
+  });
+  duplicates('upgrades.json', 'shop', upgrades.shop, errors);
 }
 
 function checkCalendar(calendar: CalendarData, eggs: EggsData | null, errors: string[]): void {

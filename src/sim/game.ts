@@ -7,7 +7,7 @@ import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { coins, creatureValue, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, tapsForLevel } from './rules.ts';
+import { coins, creatureValue, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, tapsForLevel, upgradePrice } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -17,7 +17,7 @@ export interface GameContent {
   ftue: FtueData;
 }
 
-export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noDeal' | 'lastPrice';
+export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noDeal' | 'lastPrice' | 'max';
 
 export type GameEvent =
   | { type: 'eggBought'; incubator: number; egg: string; price: number }
@@ -26,7 +26,8 @@ export type GameEvent =
   | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number }
   | { type: 'customerArrived'; id: number; customer: string }
   | { type: 'customerLeft'; id: number; reason: 'sold' | 'haggle' | 'wait' }
-  | { type: 'denied'; action: 'buyEgg' | 'sell' | 'haggle' | 'wait'; reason: DenyReason }
+  | { type: 'denied'; action: 'buyEgg' | 'sell' | 'haggle' | 'wait' | 'upgrade'; reason: DenyReason }
+  | { type: 'upgradeBought'; id: string; level: number; price: number }
   | { type: 'sold'; uid: string; species: string; price: number; customer: string; customerId: number; haggled: boolean }
   | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
   | { type: 'change' };
@@ -82,6 +83,17 @@ export interface GameView {
   selected: string | null;
 }
 
+export interface UpgradeView {
+  id: string;
+  /** Levels bought so far and the most there are. */
+  level: number;
+  levels: number;
+  /** Price of the next level; 0 when maxed. */
+  price: number;
+  affordable: boolean;
+  maxed: boolean;
+}
+
 export type BuyCheck = { ok: true; incubator: number; price: number } | { ok: false; reason: DenyReason; price: number };
 
 export interface Game {
@@ -105,6 +117,9 @@ export interface Game {
   haggle(): boolean;
   /** Lets the front customer go; the next one steps up after waitNextSec. */
   wait(): boolean;
+  /** The shop positions of upgrades.json (shop list) with their next price. */
+  upgradeList(): UpgradeView[];
+  buyUpgrade(id: string): boolean;
   /** Free showcase places (creatures and eggs both take one). */
   freeSlots(): number;
   showcaseSlots(): number;
@@ -245,6 +260,25 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     store.commit({ flush: true });
     events.emit({ type: 'hatched', incubator: index, uid, species: kind.id, rarity: kind.rarity });
     events.emit({ type: 'change' });
+  }
+
+  /** Incubators follow the incubator upgrade (1 + bought × perLevel), also for saves made before a purchase. */
+  function syncIncubators(): void {
+    const u = content.upgrades.upgrades.find((x) => x.effect.type === 'slots');
+    const want = 1 + (u && u.effect.type === 'slots' ? upgradeLevel(u.id) * u.effect.perLevel : 0);
+    const list = s().incubators;
+    while (list.length < want) list.push(emptyIncubator());
+  }
+  syncIncubators();
+
+  function upgradeView(id: string): UpgradeView | null {
+    const u = content.upgrades.upgrades.find((x) => x.id === id);
+    if (!u) return null;
+    const level = upgradeLevel(id);
+    const maxed = level >= u.levels;
+    const price = maxed ? 0 : upgradePrice(u, level);
+    const wallet = u.currency === 'crystals' ? s().crystals : s().coins;
+    return { id, level, levels: u.levels, price, affordable: !maxed && wallet + 1e-9 >= price, maxed };
   }
 
   // The starter egg (docs/01, section 4): already in the incubator on the very first visit, waiting for a tap.
@@ -423,6 +457,30 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       };
     },
     deal: currentDeal,
+    upgradeList() {
+      return content.upgrades.shop.map(upgradeView).filter((x): x is UpgradeView => x !== null);
+    },
+    buyUpgrade(id) {
+      const view = content.upgrades.shop.includes(id) ? upgradeView(id) : null;
+      const u = content.upgrades.upgrades.find((x) => x.id === id);
+      if (!view || !u) {
+        events.emit({ type: 'denied', action: 'upgrade', reason: 'locked' });
+        return false;
+      }
+      if (view.maxed || !view.affordable) {
+        events.emit({ type: 'denied', action: 'upgrade', reason: view.maxed ? 'max' : 'coins' });
+        return false;
+      }
+      const st = s();
+      if (u.currency === 'crystals') st.crystals -= view.price;
+      else st.coins -= view.price;
+      st.upgrades[id] = view.level + 1;
+      syncIncubators();
+      store.commit({ flush: true });
+      events.emit({ type: 'upgradeBought', id, level: view.level + 1, price: view.price });
+      events.emit({ type: 'change' });
+      return true;
+    },
     freeSlots,
     showcaseSlots,
   };

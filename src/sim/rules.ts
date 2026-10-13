@@ -2,7 +2,7 @@
 // Called by: src/sim/game.ts, scripts/balance-model.ts, tests/*.test.ts.
 // Keep: no state and no randomness of its own (a roll in [0, 1) comes in as an argument); every number comes from content.
 
-import type { EggData, EggsData, RarityName, SpeciesData, SpeciesEntry } from '../content/schemas.ts';
+import type { EggData, EggsData, RarityName, SpeciesData, SpeciesEntry, UpgradeData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 
 const EPS = 1e-6;
@@ -75,4 +75,18 @@ export function offerFor(spec: SpeciesEntry, level: number, p: OfferParams): num
   if (p.rarityBonus && spec.rarity !== 'common') k *= 1 + p.rarityBonus;
   if (p.levelBonusPerLevel) k *= 1 + p.levelBonusPerLevel * Math.max(0, level - 1);
   return coins(creatureValue(spec, level) * k);
+}
+
+/** Two significant digits (117.7 → 120, 1019 → 1000): prices that read at a glance. */
+export function nicePrice(x: number): number {
+  if (x < 10) return Math.max(1, Math.round(x));
+  const p = Math.pow(10, Math.floor(Math.log10(x)) - 1);
+  return Math.round(x / p) * p;
+}
+
+/** Price of the next purchase when `owned` levels are bought: a geometric row from price1 to priceMax (docs/01a, section 5). */
+export function upgradePrice(u: UpgradeData, owned: number): number {
+  if (u.levels <= 1) return u.price1;
+  const k = Math.max(0, Math.min(owned, u.levels - 1));
+  return nicePrice(u.price1 * Math.pow(u.priceMax / u.price1, k / (u.levels - 1)));
 }

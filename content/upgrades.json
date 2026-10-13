@@ -1,11 +1,12 @@
 {
   "$schema": "upgrades.schema.json",
-  "note": "Улучшения из docs/01a-content.md §5. Цены уровней — геометрический ряд от price1 до price5 (сборщик считает промежуточные). Офлайн: до offlineMaxHours, offlineRate от активного темпа.",
+  "note": "Улучшения из docs/01a-content.md §5. levels — число покупок; цены — геометрический ряд от price1 до priceMax, округлённый до двух значащих цифр. Инкубатор: один есть с начала + 3 покупки = 4 (M2-01 «до 4»). shop — позиции магазина по порядку (M1: 2 позиции, M2 добавит остальные). Офлайн: до offlineMaxHours, offlineRate от активного темпа.",
   "offlineMaxHours": 8,
   "offlineRate": 0.5,
   "prestige": { "thresholdCoinsEarned": 50000, "incomeBonusPerPrestige": 0.25 },
+  "shop": ["incubator", "incubator_speed"],
   "upgrades": [
-    { "id": "incubator", "name": { "ru": "Инкубаторы", "en": "Incubators" }, "levels": 4, "price1": 50, "priceMax": 5000, "effect": { "type": "slots", "perLevel": 1 } },
+    { "id": "incubator", "name": { "ru": "Инкубаторы", "en": "Incubators" }, "levels": 3, "price1": 50, "priceMax": 5000, "effect": { "type": "slots", "perLevel": 1 } },
     { "id": "incubator_speed", "name": { "ru": "Скорость вылупления", "en": "Hatch Speed" }, "levels": 5, "price1": 40, "priceMax": 3000, "effect": { "type": "hatchTime", "perLevel": -0.10 } },
     { "id": "showcase", "name": { "ru": "Витрина", "en": "Showcase" }, "levels": 5, "price1": 80, "priceMax": 8000, "effect": { "type": "showcaseSlots", "base": 3, "perLevel": 1 } },
     { "id": "sign", "name": { "ru": "Вывеска", "en": "Sign" }, "levels": 5, "price1": 60, "priceMax": 4000, "effect": { "type": "spawnRate", "perLevel": -0.12 } },

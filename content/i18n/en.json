@@ -45,5 +45,13 @@
   "deal.wait": "Wait",
   "deal.lastPrice": "final price",
   "deny.noDeal": "No customer yet",
-  "deny.lastPrice": "That's the final price"
+  "deny.lastPrice": "That's the final price",
+  "upgrades.open": "Upgrades",
+  "upgrades.title": "Upgrades",
+  "upgrades.level": "Level {n} of {max}",
+  "upgrades.max": "Max",
+  "upgrade.effect.slots": "+{n} egg at a time",
+  "upgrade.effect.hatchTime": "Eggs hatch {n}% faster",
+  "deny.max": "Already at max",
+  "toast.upgrade": "{name}: level {n}"
 }

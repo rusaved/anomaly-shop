@@ -45,5 +45,13 @@
   "deal.wait": "Ждать",
   "deal.lastPrice": "последняя цена",
   "deny.noDeal": "Покупателя пока нет",
-  "deny.lastPrice": "Это последняя цена"
+  "deny.lastPrice": "Это последняя цена",
+  "upgrades.open": "Улучшения",
+  "upgrades.title": "Улучшения",
+  "upgrades.level": "Уровень {n} из {max}",
+  "upgrades.max": "Максимум",
+  "upgrade.effect.slots": "+{n} яйцо одновременно",
+  "upgrade.effect.hatchTime": "Яйца быстрее на {n}%",
+  "deny.max": "Уже максимум",
+  "toast.upgrade": "{name}: уровень {n}"
 }

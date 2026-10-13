@@ -20,6 +20,7 @@ import { renderBuildLabel } from './ui/label.ts';
 import { createActions } from './ui/actions.ts';
 import { createDealCard } from './ui/deal.ts';
 import { createCoinFlight } from './ui/coin-flight.ts';
+import { createUpgradesWindow } from './ui/upgrades.ts';
 import { createToasts } from './ui/toast.ts';
 import { audio, customers, dictionaries, eggs, feel, ftue, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
@@ -115,11 +116,13 @@ async function boot(): Promise<void> {
     customerColor: (id) => styleData.customers[id]?.body ?? styleData.colors.queueSpot,
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
   });
-  const actions = createActions(panel.body, play, lang);
+  const upgradesWindow = createUpgradesWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, upgrade: (id) => upgrades.upgrades.find((u) => u.id === id) });
+  const actions = createActions(panel.body, play, lang, () => upgradesWindow.open());
   const toasts = createToasts(uiRoot);
   const renderUi = (): void => {
     dealCard.render();
     actions.render();
+    upgradesWindow.render();
   };
   renderUi();
   store.onCommit(renderUi);
@@ -144,6 +147,11 @@ async function boot(): Promise<void> {
       }
     }
     else if (e.type === 'haggled') sfx.play(e.result === 'up' ? 'buy' : 'fail');
+    else if (e.type === 'upgradeBought') {
+      sfx.play('levelUp');
+      const name = upgrades.upgrades.find((u) => u.id === e.id)?.name[i18n.lang()] ?? e.id;
+      toasts.show(i18n.t('toast.upgrade', { name, n: e.level }), 'good');
+    }
     else if (e.type === 'eggBought') sfx.play('buy');
     else if (e.type === 'hatched') {
       sfx.play(e.rarity === 'common' ? 'hatch' : 'rare');
@@ -156,7 +164,8 @@ async function boot(): Promise<void> {
   hud.pauseButton.addEventListener('click', () => pauseWindow.open());
   document.addEventListener('keydown', (e) => {
     if (e.code !== 'Escape' || !controllable) return;
-    if (settingsWindow.overlay.isOpen()) settingsWindow.close();
+    if (upgradesWindow.overlay.isOpen()) upgradesWindow.close();
+    else if (settingsWindow.overlay.isOpen()) settingsWindow.close();
     else pauseWindow.toggle();
   });
   renderBuildLabel(uiRoot, __BUILD_LABEL__);

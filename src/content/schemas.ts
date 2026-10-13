@@ -90,6 +90,7 @@ export const UpgradesFile = v.object({
   offlineMaxHours: v.pipe(v.number(), v.minValue(0)),
   offlineRate: Share,
   prestige: v.object({ thresholdCoinsEarned: v.pipe(v.number(), v.minValue(1)), incomeBonusPerPrestige: v.pipe(v.number(), v.minValue(0)) }),
+  shop: v.pipe(v.array(Id), v.minLength(1)),
   upgrades: v.pipe(v.array(Upgrade), v.minLength(1)),
 });
 

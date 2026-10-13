@@ -98,6 +98,15 @@ export const FeelFile = v.object({
   eggWobbleDeg: Positive,
   bounceSec: Positive,
   waitPulse: Positive,
+  hatchFlySec: Positive,
+  hatchBurst: Positive,
+});
+
+export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail'] as const;
+const ZzfxParams = v.pipe(v.array(v.nullable(v.number())), v.minLength(1), v.maxLength(21));
+export const AudioFile = v.object({
+  volume: Share,
+  sfx: v.object(Object.fromEntries(SFX_NAMES.map((k) => [k, ZzfxParams])) as Record<(typeof SFX_NAMES)[number], typeof ZzfxParams>),
 });
 
 export const FtueFile = v.object({
@@ -120,6 +129,7 @@ export const STYLE_COLORS = [
   'sky', 'skyLow', 'wall', 'wallShade', 'floor', 'floorLine', 'counter', 'counterTop', 'incubator', 'incubatorGlass', 'egg', 'eggSpots',
   'showcase', 'showcaseSlot', 'queueSpot', 'door', 'doorFrame', 'outline',
   'uiPanel', 'uiPanelAlt', 'uiText', 'uiMuted', 'uiAccent', 'uiAccentText', 'uiGood', 'uiOverlay',
+  'rarityCommon', 'rarityRare', 'rarityEpic', 'rarityLegendary',
 ] as const;
 export const StyleFile = v.object({
   art: Id,
@@ -167,6 +177,8 @@ export type UpgradeData = v.InferOutput<typeof Upgrade>;
 export type CalendarData = v.InferOutput<typeof CalendarFile>;
 export type FtueData = v.InferOutput<typeof FtueFile>;
 export type FeelData = v.InferOutput<typeof FeelFile>;
+export type AudioData = v.InferOutput<typeof AudioFile>;
+export type SfxName = (typeof SFX_NAMES)[number];
 export type StyleData = v.InferOutput<typeof StyleFile>;
 export type I18nData = v.InferOutput<typeof I18nFile>;
 export type GameData = v.InferOutput<typeof GameFile>;

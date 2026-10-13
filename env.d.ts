@@ -19,9 +19,15 @@ declare const __GAME__: {
   metrikaCounterId: number;
   profile: { name: 'yandex' | 'null' | 'youtube'; community: boolean; ads: boolean; payments: boolean; analytics: boolean; externalRequests: boolean };
 };
-/** ZzFX 1.4.0 ships no types; the sound module uses only ZZFX.buildSamples on its own context. */
+/** ZzFX 1.4.0 ships no types; src/audio/sfx.ts imports it after a user gesture and plays cached samples on ZZFX.audioContext. */
 declare module 'zzfx' {
-  export const ZZFX: { sampleRate: number; audioContext: AudioContext; buildSamples(...params: number[]): number[] };
+  export const ZZFX: {
+    sampleRate: number;
+    volume: number;
+    audioContext: AudioContext;
+    buildSamples(...params: Array<number | undefined>): number[];
+    playSamples(channels: number[][]): unknown;
+  };
 }
 /** Set by the first inline script of index.html: boot time and the analytics buffer (docs/06-analytics.md). */
 interface Window {

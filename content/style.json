@@ -28,7 +28,11 @@
     "uiAccent": "#ffb347",
     "uiAccentText": "#2b1b3d",
     "uiGood": "#7ddc8a",
-    "uiOverlay": "rgba(20, 14, 36, 0.82)"
+    "uiOverlay": "rgba(20, 14, 36, 0.82)",
+    "rarityCommon": "#9fd8a0",
+    "rarityRare": "#5fb4ff",
+    "rarityEpic": "#c58cff",
+    "rarityLegendary": "#ffc533"
   },
   "scene": {
     "outlineWidth": 4,

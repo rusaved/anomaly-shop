@@ -36,6 +36,7 @@ export interface IncubatorView {
 export interface CreatureView {
   uid: string;
   species: string;
+  rarity: RarityName;
   level: number;
 }
 
@@ -70,6 +71,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const s = (): SaveData => store.state;
 
   const eggData = (id: string) => eggs.eggs.find((e) => e.id === id);
+  const speciesData = (id: string) => species.species.find((x) => x.id === id);
   const upgradeLevel = (id: string): number => s().upgrades[id] ?? 0;
   const speedEffect = (): number => {
     const u = content.upgrades.upgrades.find((x) => x.effect.type === 'hatchTime');
@@ -188,7 +190,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     view() {
       return {
         incubators: s().incubators.map((inc) => ({ egg: inc.egg, waiting: inc.waiting, share: inc.egg ? hatchShare(inc.progress, needFor(inc.egg)) : 0 })),
-        creatures: s().creatures.map((x) => ({ uid: x.uid, species: x.species, level: x.level })),
+        creatures: s().creatures.map((x) => ({ uid: x.uid, species: x.species, rarity: speciesData(x.species)?.rarity ?? 'common', level: x.level })),
       };
     },
     freeSlots,

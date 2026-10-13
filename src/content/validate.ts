@@ -6,6 +6,7 @@ import * as v from 'valibot';
 import {
   CalendarFile,
   CustomersFile,
+  AudioFile,
   EggsFile,
   FeelFile,
   FtueFile,
@@ -28,7 +29,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json'] as const;
 
 const CYRILLIC = /[\u0400-\u04ff]/;
 const PLACEHOLDER = /\{[a-zA-Z0-9_]+\}/g;
@@ -156,6 +157,7 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   parseFile('style.json', StyleFile, data(files['style.json']), errors);
   const ftue = parseFile('ftue.json', FtueFile, data(files['ftue.json']), errors);
   parseFile('feel.json', FeelFile, data(files['feel.json']), errors);
+  parseFile('audio.json', AudioFile, data(files['audio.json']), errors);
 
   if (eggs) checkEggs(eggs, customers, errors);
   if (species) checkSpecies(species, eggs, errors);

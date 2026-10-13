@@ -4,5 +4,7 @@
   "eggTapSquash": 0.2,
   "eggWobbleDeg": 7,
   "bounceSec": 0.22,
-  "waitPulse": 0.06
+  "waitPulse": 0.06,
+  "hatchFlySec": 0.5,
+  "hatchBurst": 16
 }

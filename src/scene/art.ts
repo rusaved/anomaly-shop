@@ -3,9 +3,21 @@
 // Keep: shapes only, no state; every color from content/style.json; sizes scale from the radius r.
 
 import type { Graphics } from 'pixi.js';
-import type { StyleData } from '../content/schemas.ts';
+import type { RarityName, StyleData } from '../content/schemas.ts';
 
 type Colors = StyleData['colors'];
+
+export function rarityColor(c: Colors, rarity: RarityName): string {
+  return rarity === 'legendary' ? c.rarityLegendary : rarity === 'epic' ? c.rarityEpic : rarity === 'rare' ? c.rarityRare : c.rarityCommon;
+}
+
+/** A creature centred at 0,0 inside radius r (placeholder blob until the portraits of M1-03). */
+export function drawCreature(g: Graphics, _species: string, rarity: RarityName, r: number, c: Colors, outline: number): void {
+  g.clear();
+  g.circle(0, 0, r).fill(rarityColor(c, rarity)).stroke({ width: outline, color: c.outline });
+  g.circle(-r * 0.35, -r * 0.2, r * 0.14).fill(c.outline);
+  g.circle(r * 0.35, -r * 0.2, r * 0.14).fill(c.outline);
+}
 
 /** An egg centred at 0,0 (height 1.44 r); cracks grow with the hatch share. */
 export function drawEgg(g: Graphics, r: number, c: Colors, outline: number, share: number): void {

@@ -5,7 +5,7 @@
 import { Circle, Container, Graphics, Text, type Application } from 'pixi.js';
 import type { FeelData, StyleData } from '../content/schemas.ts';
 import type { GameEvent, GameView } from '../sim/game.ts';
-import { drawEgg, drawRing } from './art.ts';
+import { drawCreature, drawEgg, drawRing, rarityColor } from './art.ts';
 import { createFx } from './fx.ts';
 import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop-layout.ts';
 
@@ -33,6 +33,16 @@ export interface ShopView {
 
 type Translate = (key: string) => string;
 
+interface CreatureNode {
+  box: Container;
+  art: Graphics;
+  key: string;
+  /** Arrival from the incubator, 0..1 (1 = sitting in its slot). */
+  arrive: number;
+  from: { x: number; y: number } | null;
+  landed: boolean;
+}
+
 interface IncubatorNode {
   hit: Container;
   box: Container;
@@ -47,12 +57,12 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
   const back = new Graphics();
   const furniture = new Graphics();
   const rings = new Graphics();
-  const creaturesG = new Graphics();
+  const creaturesLayer = new Container();
   const eggsLayer = new Container();
   const hits = new Container();
   const labels = new Container();
   const fx = createFx(c.outline);
-  root.addChild(back, furniture, rings, eggsLayer, creaturesG, labels, fx.layer, hits);
+  root.addChild(back, furniture, rings, eggsLayer, creaturesLayer, labels, fx.layer, hits);
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
@@ -61,7 +71,8 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
   let incubatorCount = 1;
   let time = 0;
   let incs: IncubatorNode[] = [];
-  let creaturesKey = '';
+  const creatures = new Map<string, CreatureNode>();
+  const spawnFrom = new Map<string, { x: number; y: number }>();
 
   const label = (key: string): Text =>
     new Text({ text: t(key), style: { fontFamily: 'Rubik, sans-serif', fontSize: 14, fontWeight: '700', fill: c.outline, align: 'center' } });
@@ -133,29 +144,67 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
     texts.queue.position.set(l.door.x + l.door.w / 2, l.door.y - size - l.outline * 2);
   }
 
-  function drawCreatures(view: GameView, l: ShopLayout): void {
-    const g = creaturesG;
-    g.clear();
-    const stroke = { width: l.outline * 0.8, color: c.outline };
-    view.creatures.slice(0, l.slots.length).forEach((_, n) => {
+  const slotCenter = (slot: Rect) => ({ x: slot.x + slot.w / 2, y: slot.y + slot.h * 0.56, r: slot.w * 0.36 });
+  const easeOutBack = (k: number): number => 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);
+
+  function animateCreatures(dt: number, view: GameView, l: ShopLayout): boolean {
+    let moving = false;
+    const list = view.creatures.slice(0, l.slots.length);
+    const alive = new Set(list.map((x) => x.uid));
+    for (const [uid, node] of creatures) {
+      if (alive.has(uid)) continue;
+      node.box.destroy({ children: true });
+      creatures.delete(uid);
+    }
+    list.forEach((cv, n) => {
       const slot = l.slots[n];
       if (!slot) return;
-      const cx = slot.x + slot.w / 2;
-      const cy = slot.y + slot.h * 0.58;
-      const r = slot.w * 0.32;
-      g.circle(cx, cy, r).fill(c.incubator).stroke(stroke);
-      g.circle(cx - r * 0.35, cy - r * 0.2, r * 0.14).fill(c.outline);
-      g.circle(cx + r * 0.35, cy - r * 0.2, r * 0.14).fill(c.outline);
+      const at = slotCenter(slot);
+      let node = creatures.get(cv.uid);
+      if (!node) {
+        const box = new Container();
+        const art = new Graphics();
+        box.addChild(art);
+        creaturesLayer.addChild(box);
+        const from = spawnFrom.get(cv.uid) ?? null;
+        spawnFrom.delete(cv.uid);
+        node = { box, art, key: '', arrive: from ? 0 : 1, from, landed: !from };
+        creatures.set(cv.uid, node);
+      }
+      const key = `${cv.species}:${at.r.toFixed(1)}`;
+      if (node.key !== key) {
+        node.key = key;
+        drawCreature(node.art, cv.species, cv.rarity, at.r, c, l.outline * 0.8);
+      }
+      if (node.arrive < 1 && node.from) {
+        moving = true;
+        node.arrive = Math.min(1, node.arrive + (feel.hatchFlySec > 0 ? dt / feel.hatchFlySec : 1));
+        const k = node.arrive;
+        const e = 1 - Math.pow(1 - k, 3);
+        const lift = Math.sin(k * Math.PI) * l.unit * 1.6;
+        node.box.position.set(node.from.x + (at.x - node.from.x) * e, node.from.y + (at.y - node.from.y) * e - lift);
+        node.box.scale.set(0.3 + 0.7 * easeOutBack(k));
+      } else {
+        node.box.position.set(at.x, at.y);
+        node.box.scale.set(1);
+        if (!node.landed) {
+          node.landed = true;
+          fx.burst(at.x, at.y, Math.round(feel.hatchBurst), [rarityColor(c, cv.rarity), c.uiAccent, c.showcaseSlot], at.r * 5, l.outline * 1.3);
+          fx.float(at.x, at.y - at.r * 1.4, t(`rarity.${cv.rarity}`), rarityColor(c, cv.rarity), Math.max(14, at.r * 0.7), l.unit * 0.9);
+          moving = true;
+        }
+      }
     });
+    return moving;
   }
 
   function relayout(): void {
-    creaturesKey = '';
     if (!stageRect) return;
     current = computeShopLayout(stageRect, hud, style.scene.floorShare, style.scene.outlineWidth, style.scene.cornerRadius, incubatorCount);
     drawBack(current);
     drawFurniture(current);
     buildIncubators(current);
+    for (const node of creatures.values()) node.key = '';
     placeLabels(current);
     fx.clear();
     invalidate();
@@ -212,14 +261,9 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
       }
       if (!current) return;
       const moving = animateIncubators(dt, view, current);
-      const key = view.creatures.map((x) => x.uid).join(',');
-      if (key !== creaturesKey) {
-        creaturesKey = key;
-        drawCreatures(view, current);
-        invalidate();
-      }
+      const flying = animateCreatures(dt, view, current);
       const alive = fx.update(dt);
-      if (moving || alive) invalidate();
+      if (moving || flying || alive) invalidate();
     },
     onEvent(e) {
       if (!current) return;
@@ -229,6 +273,12 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
         if (!node || !spot) return;
         node.squash = feel.bounceSec;
         fx.burst(spot.x, spot.y - spot.r * 0.2, 5, [c.eggSpots, c.uiAccent, c.incubatorGlass], spot.r * 3, current.outline * 1.2);
+      } else if (e.type === 'hatched') {
+        const spot = current.incubators[e.incubator];
+        if (spot) {
+          spawnFrom.set(e.uid, { x: spot.x, y: spot.y });
+          fx.burst(spot.x, spot.y, Math.round(feel.hatchBurst * 0.75), [c.egg, c.eggSpots, rarityColor(c, e.rarity)], spot.r * 4, current.outline * 1.4);
+        }
       } else if (e.type === 'eggBought') {
         const spot = current.incubators[e.incubator];
         if (spot) fx.burst(spot.x, spot.y, 8, [c.incubator, c.incubatorGlass, c.uiAccent], spot.r * 3.5, current.outline * 1.2);

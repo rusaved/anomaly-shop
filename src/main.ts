@@ -19,7 +19,8 @@ import { communityLinks, renderCommunity } from './ui/community.ts';
 import { renderBuildLabel } from './ui/label.ts';
 import { createActions } from './ui/actions.ts';
 import { createToasts } from './ui/toast.ts';
-import { customers, dictionaries, eggs, feel, ftue, species, style as styleData, upgrades } from './content/index.ts';
+import { audio, customers, dictionaries, eggs, feel, ftue, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
 import { loadPlatform } from './platform/index.ts';
@@ -101,10 +102,22 @@ async function boot(): Promise<void> {
   const renderUi = (): void => actions.render();
   renderUi();
   store.onCommit(renderUi);
+  const sfx = createSfx(audio, () => store.state.settings.sound && platform.audioAllowed());
+  document.addEventListener('pointerdown', () => sfx.unlock(), { capture: true });
+  runtime.pause.onChange((paused) => sfx.setSuspended(paused));
   play.events.on((e) => {
     shop.onEvent(e);
     if (e.type === 'change') renderUi();
-    else if (e.type === 'denied') toasts.show(i18n.t(`deny.${e.reason}`), 'warn');
+    else if (e.type === 'denied') {
+      toasts.show(i18n.t(`deny.${e.reason}`), 'warn');
+      sfx.play('fail');
+    } else if (e.type === 'eggTap') sfx.play('eggTap');
+    else if (e.type === 'eggBought') sfx.play('buy');
+    else if (e.type === 'hatched') {
+      sfx.play(e.rarity === 'common' ? 'hatch' : 'rare');
+      const name = speciesById(e.species)?.name[i18n.lang()] ?? e.species;
+      if (e.rarity !== 'common') toasts.show(`${i18n.t(`rarity.${e.rarity}`)}: ${name}`, 'rare', 2200);
+    }
   });
   const pauseWindow = createPauseWindow(uiRoot, runtime.pause, links, () => settingsWindow.open());
   const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.show());

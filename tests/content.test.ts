@@ -85,7 +85,7 @@ describe('typed content at load', () => {
   it('exposes parsed data without builder notes', () => {
     expect(eggs.eggs[0]?.id).toBe('egg_basic');
     expect((eggs as Record<string, unknown>).note).toBeUndefined();
-    expect(species.species).toHaveLength(8);
+    expect(species.species).toHaveLength(12);
     expect(style.colors.sky).toMatch(/^#/);
     expect(Object.keys(dictionaries.ru)).toEqual(Object.keys(dictionaries.en));
     expect(dictionaries.en['pause.resume']).toBe('Resume');

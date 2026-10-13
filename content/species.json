@@ -1,16 +1,20 @@
 {
   "$schema": "species.schema.json",
-  "note": "Стартовые 8 видов из docs/01a-content.md §3. Цена за уровень: price × growth^(level-1). Сытость: tapsPerLevel + floor(level/2). shelf — рост цены на витрине (docs/01 §3.5): +growthPerMin цены за минуту, не больше maxBonus; радио ускоряет.",
+  "note": "Виды (8 из M1 + 4 из M2) из docs/01a-content.md §3. Цена за уровень: price × growth^(level-1). Сытость: tapsPerLevel + floor(level/2). shelf — рост цены на витрине (docs/01 §3.5): +growthPerMin цены за минуту, не больше maxBonus; радио ускоряет.",
   "tapsPerLevelBase": 5,
   "shelf": {"growthPerMin": 0.05, "maxBonus": 0.5},
   "species": [
     {"id": "kettle", "name": {"ru": "Живой чайник", "en": "Living Kettle"}, "rarity": "common", "basePrice": 12, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Пш-ш, налей воды!", "en": "Psss, pour me some water!"}},
     {"id": "sockfish", "name": {"ru": "Носок-хищник", "en": "Sock Shark"}, "rarity": "common", "basePrice": 14, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Ням, пятка", "en": "Yum, a heel"}},
+    {"id": "pillow", "name": {"ru": "Подушка-сплюшка", "en": "Sleepy Pillow"}, "rarity": "common", "basePrice": 16, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Ещё пять минуточек", "en": "Five more minutes"}},
     {"id": "cloudcat", "name": {"ru": "Кот-облако", "en": "Cloud Cat"}, "rarity": "rare", "basePrice": 60, "growth": 1.3, "maxLevel": 12, "line": {"ru": "Мяу-дождик", "en": "Meow-drizzle"}},
     {"id": "lampbug", "name": {"ru": "Лампа-светляк", "en": "Lamp Bug"}, "rarity": "rare", "basePrice": 70, "growth": 1.3, "maxLevel": 12, "line": {"ru": "Щёлк", "en": "Click"}},
+    {"id": "cactus", "name": {"ru": "Кактус-обнимашка", "en": "Hug Cactus"}, "rarity": "rare", "basePrice": 80, "growth": 1.3, "maxLevel": 12, "line": {"ru": "Обниму, но аккуратно", "en": "Hugs, but gently"}},
     {"id": "jellytoast", "name": {"ru": "Желе-тост", "en": "Jelly Toast"}, "rarity": "epic", "basePrice": 300, "growth": 1.35, "maxLevel": 15, "line": {"ru": "Хрум по-мягкому", "en": "Soft crunch"}},
     {"id": "mirrorfrog", "name": {"ru": "Зеркальная лягушка", "en": "Mirror Frog"}, "rarity": "epic", "basePrice": 350, "growth": 1.35, "maxLevel": 15, "line": {"ru": "Ква. И ква в ответ", "en": "Ribbit. And ribbit back"}},
+    {"id": "shroom", "name": {"ru": "Грибочек-зонтик", "en": "Umbrella Shroom"}, "rarity": "epic", "basePrice": 400, "growth": 1.35, "maxLevel": 15, "line": {"ru": "Дождик? Я готов", "en": "Rain? I am ready"}},
     {"id": "teacup_dragon", "name": {"ru": "Чашка-дракон", "en": "Teacup Dragon"}, "rarity": "legendary", "basePrice": 1500, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Чай горячий. Очень", "en": "The tea is hot. Very"}},
-    {"id": "sockfish_gold", "name": {"ru": "Золотой носок", "en": "Golden Sock"}, "rarity": "legendary", "basePrice": 1800, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Блеск", "en": "Shine"}}
+    {"id": "sockfish_gold", "name": {"ru": "Золотой носок", "en": "Golden Sock"}, "rarity": "legendary", "basePrice": 1800, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Блеск", "en": "Shine"}},
+    {"id": "moon_donut", "name": {"ru": "Луна-пончик", "en": "Moon Donut"}, "rarity": "legendary", "basePrice": 2000, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Сладко свечусь", "en": "Sweetly glowing"}}
   ]
 }

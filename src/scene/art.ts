@@ -195,6 +195,85 @@ export function drawCreature(g: Graphics, look: CreatureLookData, rarity: Rarity
       g.circle(r * 0.05, -r * 0.27, r * 0.025).fill(c.outline);
       break;
     }
+    case 'pillow': {
+      // A puffy pillow with corner tassels and sleepy eyes.
+      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+        g.circle(sx * r * 0.74, sy * r * 0.5, r * 0.11).fill(look.accent).stroke({ width: w * 0.6, color: c.outline });
+      }
+      union(g, [(q) => q.roundRect(-r * 0.78, -r * 0.55, r * 1.56, r * 1.1, r * 0.42), (q) => q.ellipse(0, 0, r * 0.84, r * 0.48)], look.body, c.outline, w);
+      g.moveTo(-r * 0.5, -r * 0.3).quadraticCurveTo(0, -r * 0.42, r * 0.5, -r * 0.3).stroke({ width: w * 0.5, color: c.outline, alpha: 0.35, cap: 'round' });
+      for (const sx of [-1, 1]) g.moveTo(sx * r * 0.3, -r * 0.02).quadraticCurveTo(sx * r * 0.2, r * 0.07, sx * r * 0.1, -r * 0.02).stroke({ width: w * 0.8, color: c.outline, cap: 'round' });
+      blush(g, 0, r * 0.12, r * 0.34, r * 0.07, c);
+      g.ellipse(0, r * 0.2, r * 0.06, r * 0.05).fill(c.outline);
+      g.moveTo(r * 0.5, -r * 0.82).lineTo(r * 0.68, -r * 0.82).lineTo(r * 0.5, -r * 0.64).lineTo(r * 0.68, -r * 0.64).stroke({ width: w * 0.7, color: c.outline, cap: 'round', join: 'round' });
+      break;
+    }
+    case 'cactus': {
+      // A hugging cactus in a little pot, a flower on top.
+      g.roundRect(-r * 0.42, r * 0.42, r * 0.84, r * 0.46, r * 0.1).fill(c.counter).stroke({ width: w, color: c.outline });
+      g.rect(-r * 0.48, r * 0.38, r * 0.96, r * 0.14).fill(c.counterTop).stroke({ width: w * 0.8, color: c.outline });
+      union(
+        g,
+        [
+          (q) => q.roundRect(-r * 0.36, -r * 0.7, r * 0.72, r * 1.12, r * 0.36),
+          (q) => q.roundRect(-r * 0.78, -r * 0.25, r * 0.3, r * 0.5, r * 0.15),
+          (q) => q.roundRect(-r * 0.7, r * 0.05, r * 0.42, r * 0.2, r * 0.1),
+          (q) => q.roundRect(r * 0.48, -r * 0.45, r * 0.3, r * 0.5, r * 0.15),
+          (q) => q.roundRect(r * 0.28, -r * 0.15, r * 0.42, r * 0.2, r * 0.1),
+        ],
+        look.body,
+        c.outline,
+        w,
+      );
+      for (const [dx, dy] of [[-0.18, -0.48], [0.2, -0.36], [-0.22, 0.25], [0.22, 0.2], [-0.62, -0.1], [0.62, -0.3]] as const) {
+        g.moveTo(r * dx - r * 0.04, r * dy).lineTo(r * dx + r * 0.04, r * dy).stroke({ width: w * 0.5, color: c.outline, cap: 'round' });
+      }
+      for (let i = 0; i < 5; i++) {
+        const a = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+        g.circle(Math.cos(a) * r * 0.13, -r * 0.78 + Math.sin(a) * r * 0.13, r * 0.1).fill(look.accent).stroke({ width: w * 0.5, color: c.outline });
+      }
+      g.circle(0, -r * 0.78, r * 0.07).fill(c.counterTop);
+      face(g, -r * 0.12, r, c, w);
+      break;
+    }
+    case 'shroom': {
+      // An umbrella mushroom: spotted cap, a stem with a face, a little handle curl.
+      g.moveTo(r * 0.12, r * 0.72).quadraticCurveTo(r * 0.12, r * 0.95, r * 0.32, r * 0.9).stroke({ width: w * 2.2, color: c.outline, cap: 'round' });
+      g.moveTo(r * 0.12, r * 0.72).quadraticCurveTo(r * 0.12, r * 0.95, r * 0.32, r * 0.9).stroke({ width: w * 0.9, color: look.accent, cap: 'round' });
+      g.roundRect(-r * 0.32, -r * 0.12, r * 0.64, r * 0.86, r * 0.28).fill(look.accent).stroke({ width: w, color: c.outline });
+      g.moveTo(-r * 0.92, -r * 0.05).quadraticCurveTo(-r * 0.86, -r * 0.92, 0, -r * 0.92).quadraticCurveTo(r * 0.86, -r * 0.92, r * 0.92, -r * 0.05);
+      // Scalloped rim, right to left.
+      for (const [cx, x] of [[0.69, 0.46], [0.23, 0], [-0.23, -0.46], [-0.69, -0.92]] as const) g.quadraticCurveTo(r * cx, r * 0.1, r * x, -r * 0.05);
+      g.closePath().fill(look.body).stroke({ width: w, color: c.outline, join: 'round' });
+      for (const [dx, dy, s] of [[-0.48, -0.42, 0.13], [0.05, -0.62, 0.15], [0.5, -0.35, 0.11], [-0.12, -0.28, 0.08]] as const) g.circle(r * dx, r * dy, r * s).fill(c.eyeWhite);
+      face(g, r * 0.3, r * 0.85, c, w);
+      break;
+    }
+    case 'donut': {
+      // A moon donut: a ring with icing and sprinkles, a crescent glow behind.
+      g.circle(r * 0.18, -r * 0.08, r * 0.95).fill({ color: look.accent, alpha: 0.18 });
+      g.circle(0, 0, r * 0.82).fill(c.counterTop).stroke({ width: w, color: c.outline });
+      g.moveTo(-r * 0.8, r * 0.02)
+        .bezierCurveTo(-r * 0.86, -r * 0.62, -r * 0.4, -r * 0.84, 0, -r * 0.84)
+        .bezierCurveTo(r * 0.4, -r * 0.84, r * 0.86, -r * 0.62, r * 0.8, r * 0.02)
+        .quadraticCurveTo(r * 0.62, r * 0.24, r * 0.45, r * 0.05)
+        .quadraticCurveTo(r * 0.28, r * 0.3, 0, r * 0.12)
+        .quadraticCurveTo(-r * 0.28, r * 0.3, -r * 0.45, r * 0.05)
+        .quadraticCurveTo(-r * 0.62, r * 0.24, -r * 0.8, r * 0.02)
+        .closePath()
+        .fill(look.body)
+        .stroke({ width: w, color: c.outline, join: 'round' });
+      g.circle(0, -r * 0.18, r * 0.22).fill(c.wall).stroke({ width: w, color: c.outline });
+      const sprinkles = [[-0.5, -0.45, 0.6], [-0.25, -0.62, -0.4], [0.3, -0.6, 0.3], [0.55, -0.35, -0.7], [-0.6, -0.12, 1.2], [0.5, -0.05, 0.9]] as const;
+      for (const [dx, dy, a] of sprinkles) {
+        g.moveTo(r * dx - Math.cos(a) * r * 0.06, r * dy - Math.sin(a) * r * 0.06)
+          .lineTo(r * dx + Math.cos(a) * r * 0.06, r * dy + Math.sin(a) * r * 0.06)
+          .stroke({ width: w * 0.8, color: dx > 0 ? look.accent : c.rarityRare, cap: 'round' });
+      }
+      face(g, r * 0.45, r * 0.9, c, w);
+      sparkle(g, r * 0.82, -r * 0.72, r * 0.14, look.accent);
+      break;
+    }
   }
 }
 

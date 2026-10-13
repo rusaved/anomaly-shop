@@ -81,6 +81,26 @@
       "shape": "goldsock",
       "body": "#ffcc3d",
       "accent": "#fff6c2"
+    },
+    "pillow": {
+      "shape": "pillow",
+      "body": "#c9b8f0",
+      "accent": "#ffffff"
+    },
+    "cactus": {
+      "shape": "cactus",
+      "body": "#6cc58a",
+      "accent": "#ff8fb8"
+    },
+    "shroom": {
+      "shape": "shroom",
+      "body": "#ff6b6b",
+      "accent": "#fff1d6"
+    },
+    "moon_donut": {
+      "shape": "donut",
+      "body": "#b9a7ff",
+      "accent": "#ffe36e"
     }
   },
   "customers": {

@@ -760,3 +760,40 @@
 .actions[data-eggs='4'] .btn-egg {
   font-size: 15px;
 }
+
+/* M2-08: crystals — second currency chip next to the coins; gem icon also on crystal prices */
+.hud-left {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.hud-crystals {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px 0 8px;
+  border-radius: 18px;
+  background: var(--c-uiPanel);
+  font-weight: 700;
+  font-size: 16px;
+  box-shadow: 0 2px 0 var(--c-outline);
+  font-variant-numeric: tabular-nums;
+}
+.hud-crystals[hidden] {
+  display: none;
+}
+.hud-crystals.pulse {
+  animation: hud-pulse 0.22s ease-out;
+}
+.gem {
+  width: 16px;
+  height: 18px;
+  background: var(--c-rarityRare);
+  clip-path: polygon(50% 0, 100% 35%, 50% 100%, 0 35%);
+  flex: 0 0 auto;
+}
+.btn .gem {
+  width: 14px;
+  height: 16px;
+}

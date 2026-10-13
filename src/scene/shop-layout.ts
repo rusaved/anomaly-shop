@@ -139,7 +139,7 @@ export function computeShopLayout(
     bowl: { x: counter.x + u * 1.05, y: Math.min(stage.y + stage.h - u * 0.3, counter.y + counter.h + u * 0.45), r: u * 0.32 },
     stool: { x: counter.x + counter.w * 0.6, y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.55), r: u * 0.36 },
     radio: { x: showcase.x + showcase.w - u * 1.2, y: showcase.y - u * 0.5, w: u * 0.9, h: u * 0.55 },
-    clock: { x: stage.x + stage.w * 0.56, y: stage.y + Math.max(u * 0.75, top * 0.55), r: u * 0.42 },
+    clock: { x: stage.x + stage.w * 0.63, y: stage.y + Math.max(u * 0.75, top * 0.55), r: u * 0.42 },
     lamp: { x: stage.x + stage.w * 0.4, y: stage.y + Math.max(u * 0.6, top * 0.45), r: u * 0.28 },
     board: { x: showcase.x + u * 0.1, y: Math.min(floorY - u * 1.0, showcase.y + showcase.h + u * 0.6), w: u * 1.3, h: u * 0.9 },
     feeder: { x: Math.max(stage.x + u * 0.35, counter.x - u * 0.05), y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.25), r: u * 0.3 },

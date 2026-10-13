@@ -92,5 +92,7 @@
   "away.ok": "Отлично",
   "toast.district": "Новый район: {name} · {who}",
   "egg.short.egg_odd": "Странное",
-  "egg.short.egg_glow": "Светящееся"
+  "egg.short.egg_glow": "Светящееся",
+  "hud.crystals": "Кристаллы",
+  "toast.crystal": "Кристалл! Их дают за редких"
 }

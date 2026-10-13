@@ -662,6 +662,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         if (buyer) {
           soldTo.set(e.uid, { x: buyer.box.x, y: buyer.box.y - current.unit * 1.2 });
           fx.float(buyer.box.x, buyer.box.y - current.unit * 3, `+${fmt(e.price)}`, c.uiAccent, Math.max(18, current.unit * 0.7), current.unit * 1.1);
+          if (e.crystals > 0) fx.float(buyer.box.x + current.unit * 0.9, buyer.box.y - current.unit * 2.2, `+${e.crystals}◆`, c.rarityRare, Math.max(16, current.unit * 0.55), current.unit * 1.0);
         }
         if (slot) say(e.species, slotCenter(slot), current);
       } else if (e.type === 'haggled' && e.result === 'up') {

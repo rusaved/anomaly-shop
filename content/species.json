@@ -1,8 +1,9 @@
 {
   "$schema": "species.schema.json",
-  "note": "Виды (8 из M1 + 4 из M2) из docs/01a-content.md §3. Цена за уровень: price × growth^(level-1). Сытость: tapsPerLevel + floor(level/2). shelf — рост цены на витрине (docs/01 §3.5): +growthPerMin цены за минуту, не больше maxBonus; радио ускоряет.",
+  "note": "Виды (8 из M1 + 4 из M2) из docs/01a-content.md §3. Цена за уровень: price × growth^(level-1). Сытость: tapsPerLevel + floor(level/2). shelf — рост цены на витрине (docs/01 §3.5): +growthPerMin цены за минуту, не больше maxBonus; радио ускоряет. crystalsPerSale — кристаллы за продажу существа по редкости (M2-08).",
   "tapsPerLevelBase": 5,
   "shelf": {"growthPerMin": 0.05, "maxBonus": 0.5},
+  "crystalsPerSale": {"common": 0, "rare": 1, "epic": 2, "legendary": 5},
   "species": [
     {"id": "kettle", "name": {"ru": "Живой чайник", "en": "Living Kettle"}, "rarity": "common", "basePrice": 12, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Пш-ш, налей воды!", "en": "Psss, pour me some water!"}},
     {"id": "sockfish", "name": {"ru": "Носок-хищник", "en": "Sock Shark"}, "rarity": "common", "basePrice": 14, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Ням, пятка", "en": "Yum, a heel"}},

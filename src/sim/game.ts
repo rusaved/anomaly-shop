@@ -50,8 +50,9 @@ export type GameEvent =
   | { type: 'ftueDone' }
   | { type: 'eggUnlocked'; egg: string }
   | { type: 'districtOpened'; district: string; customer: string }
+  | { type: 'firstCrystal' }
   | { type: 'rescueEgg'; incubator: number }
-  | { type: 'sold'; uid: string; species: string; price: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper' }
+  | { type: 'sold'; uid: string; species: string; price: number; crystals: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper' }
   | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
   | { type: 'change' };
 
@@ -161,7 +162,7 @@ export interface Game {
 }
 
 /** Tutorial marks in save.flags (docs/01, section 4). */
-export const FLAGS = { starter: 'ftue_starter', fed: 'ftue_fed', bought: 'ftue_bought', done: 'ftue_done' } as const;
+export const FLAGS = { starter: 'ftue_starter', fed: 'ftue_fed', bought: 'ftue_bought', done: 'ftue_done', crystal: 'crystal_seen' } as const;
 
 export function createGame(store: GameStore, content: GameContent, rng: Rng): Game {
   const events = createEmitter<GameEvent>();
@@ -418,6 +419,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const share = by === 'helper' ? helperSellShare() : 1;
     const price = Math.max(1, Math.round(deal.offer * share));
     const haggled = deal.bargains > 0;
+    const crystals = species.crystalsPerSale[speciesData(cr.species)?.rarity ?? 'common'];
+    st.crystals += crystals;
+    const firstCrystal = crystals > 0 && !st.flags[FLAGS.crystal];
+    if (firstCrystal) st.flags[FLAGS.crystal] = true;
     st.coins += price;
     st.stats.deals += 1;
     st.stats.coinsEarned += price;
@@ -429,8 +434,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     entry.sold += 1;
     if (selectedUid === cr.uid) selectedUid = null;
     commit({ flush: true });
-    emit({ type: 'sold', uid: cr.uid, species: cr.species, price, customer: deal.customer, customerId: deal.id, haggled, by });
+    emit({ type: 'sold', uid: cr.uid, species: cr.species, price, crystals, customer: deal.customer, customerId: deal.id, haggled, by });
     frontLeaves('sold', 0);
+    if (firstCrystal) emit({ type: 'firstCrystal' });
     for (const d of districts) emit({ type: 'districtOpened', district: d.id, customer: d.customer.id });
     for (const e of opened) emit({ type: 'eggUnlocked', egg: e.id });
     emit({ type: 'change' });

@@ -120,6 +120,8 @@ async function boot(): Promise<void> {
   hud.update(store.state.coins, { snap: true });
   // Sale coins roll the counter only as they land (M1-07, the sold handler below); everything else rolls at once.
   store.onCommit((s) => hud.update(s.coins));
+  store.onCommit((s) => hud.crystals(s.crystals, s.crystals > 0 || Boolean(s.flags.crystal_seen)));
+  hud.crystals(store.state.crystals, store.state.crystals > 0 || Boolean(store.state.flags.crystal_seen));
   const flight = createCoinFlight(uiRoot);
   const panel = createPanel(uiRoot, __GAME__.title[lang]);
   const links = platform.caps.community ? communityLinks() : null;
@@ -181,6 +183,7 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t('toast.rescueEgg'), 'good', 2400);
       sfx.play('buy');
     }
+    else if (e.type === 'firstCrystal') toasts.show(i18n.t('toast.crystal'), 'rare', 2800);
     else if (e.type === 'districtOpened') {
       const d = customers.districts.find((x) => x.id === e.district);
       if (d) toasts.show(i18n.t('toast.district', { name: d.name[i18n.lang()], who: d.customer.name[i18n.lang()] }), 'rare', 3000);

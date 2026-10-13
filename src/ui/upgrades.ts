@@ -52,7 +52,7 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
       row.innerHTML =
         `<span class="shop-icon shop-icon-${u.effect.type}" aria-hidden="true"></span>` +
         '<span class="shop-text"><b data-name></b><small data-effect></small><small data-level></small></span>' +
-        `<button type="button" class="btn btn-primary btn-buy" data-action="buy-upgrade" data-id="${item.id}"><span class="coin coin-sm" aria-hidden="true"></span><span data-price></span></button>`;
+        `<button type="button" class="btn btn-primary btn-buy" data-action="buy-upgrade" data-id="${item.id}"><span class="${u.currency === 'crystals' ? 'gem' : 'coin coin-sm'}" aria-hidden="true"></span><span data-price></span></button>`;
       (row.querySelector('[data-name]') as HTMLElement).textContent = u.name[look.lang() === 'en' ? 'en' : 'ru'];
       (row.querySelector('[data-effect]') as HTMLElement).textContent = effectText(u, look);
       row.querySelector('button')?.addEventListener('click', () => game.buyUpgrade(item.id));

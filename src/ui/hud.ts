@@ -13,6 +13,8 @@ export interface Hud {
   update(coins: number, opts?: { delaySec?: number; snap?: boolean }): void;
   /** A short pulse of the coin chip (a coin landed). */
   pulse(): void;
+  /** The crystal chip (M2-08): shown once the player has seen a crystal. */
+  crystals(n: number, shown: boolean): void;
   setLanguage(lang: string): void;
 }
 
@@ -20,13 +22,17 @@ export function createHud(parent: HTMLElement, lang: string, rollSec: () => numb
   const root = document.createElement('div');
   root.className = 'hud';
   root.innerHTML =
-    '<div class="hud-coins" data-hud="coins" role="status" data-i18n="hud.coins" data-i18n-attr="aria-label"><span class="coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></div>' +
+    '<div class="hud-left"><div class="hud-coins" data-hud="coins" role="status" data-i18n="hud.coins" data-i18n-attr="aria-label"><span class="coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></div>' +
+    '<div class="hud-crystals" data-hud="crystals" role="status" data-i18n="hud.crystals" data-i18n-attr="aria-label" hidden><span class="gem" aria-hidden="true"></span><span class="hud-crystals-value">0</span></div></div>' +
     '<button type="button" class="hud-pause" data-action="pause" data-i18n="hud.pause" data-i18n-attr="aria-label"><span class="hud-pause-icon" aria-hidden="true"></span></button>';
   parent.appendChild(root);
   const chip = root.querySelector('.hud-coins') as HTMLElement;
   const value = root.querySelector('.hud-coins-value') as HTMLElement;
   const coinIcon = root.querySelector('.coin') as HTMLElement;
   const pauseButton = root.querySelector('[data-action="pause"]') as HTMLButtonElement;
+  const gemChip = root.querySelector('.hud-crystals') as HTMLElement;
+  const gemValue = root.querySelector('.hud-crystals-value') as HTMLElement;
+  let gemText = '';
   let format = new Intl.NumberFormat(lang);
   const counter = createCounter(0);
   let written = '';
@@ -74,9 +80,22 @@ export function createHud(parent: HTMLElement, lang: string, rollSec: () => numb
       void chip.offsetWidth;
       chip.classList.add('pulse');
     },
+    crystals(n, shown) {
+      gemChip.hidden = !shown;
+      const text = format.format(Math.floor(n));
+      if (text === gemText) return;
+      if (gemText) {
+        gemChip.classList.remove('pulse');
+        void gemChip.offsetWidth;
+        gemChip.classList.add('pulse');
+      }
+      gemText = text;
+      gemValue.textContent = text;
+    },
     setLanguage(next) {
       format = new Intl.NumberFormat(next);
       written = '';
+      gemText = '';
       paint();
     },
   };

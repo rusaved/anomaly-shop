@@ -11,6 +11,8 @@ import species from '@content/species.json';
 export interface DebugHooks {
   store: GameStore;
   runtime: Runtime;
+  /** content/feel.json, tuned live by the sliders (CLAUDE.md, «Как работать» p. 5). */
+  feel: Record<string, number>;
   fps(): number;
   fresh(): SaveData;
 }
@@ -45,6 +47,23 @@ export function installDebugPanel(h: DebugHooks): GUI {
   gui.add(actions, 'creature').name('+ creature');
   gui.add(h.runtime, 'timeScale', 0.25, 8, 0.25).name('time scale');
   gui.add(actions, 'reset').name('reset save');
+  // Feel sliders: the producer tunes them, presses «copy feel JSON» and sends the text; it goes to content/feel.json.
+  const feelFolder = gui.addFolder('feel');
+  for (const key of Object.keys(h.feel)) {
+    const v = h.feel[key] ?? 0;
+    const max = v >= 4 ? v * 3 : v >= 1 ? 4 : 1;
+    feelFolder.add(h.feel, key, 0, max, max > 4 ? 1 : 0.01).name(key);
+  }
+  const copy = { run: () => undefined as void };
+  const copyCtl = feelFolder.add(copy, 'run').name('copy feel JSON');
+  copy.run = () => {
+    const text = JSON.stringify(h.feel, null, 2);
+    void navigator.clipboard?.writeText(text).then(
+      () => copyCtl.name('copied'),
+      () => copyCtl.name('copy failed'),
+    );
+  };
+  feelFolder.close();
   const meter = { fps: 0 };
   gui.add(meter, 'fps').name('fps').listen().disable();
   setInterval(() => {

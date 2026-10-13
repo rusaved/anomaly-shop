@@ -19,6 +19,7 @@ import { communityLinks, renderCommunity } from './ui/community.ts';
 import { renderBuildLabel } from './ui/label.ts';
 import { createActions } from './ui/actions.ts';
 import { createDealCard } from './ui/deal.ts';
+import { createCoinFlight } from './ui/coin-flight.ts';
 import { createToasts } from './ui/toast.ts';
 import { audio, customers, dictionaries, eggs, feel, ftue, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
@@ -99,9 +100,11 @@ async function boot(): Promise<void> {
     invalidate: scene.invalidate,
     handlers: { tapIncubator: (i) => play.tapIncubator(i), tapCreature: (uid) => play.tapCreature(uid) },
   });
-  const hud = createHud(uiRoot, lang);
-  hud.update(store.state.coins);
+  const hud = createHud(uiRoot, lang, () => feel.hudRollSec);
+  hud.update(store.state.coins, { snap: true });
+  // Sale coins roll the counter only as they land (M1-07, the sold handler below); everything else rolls at once.
   store.onCommit((s) => hud.update(s.coins));
+  const flight = createCoinFlight(uiRoot);
   const panel = createPanel(uiRoot, __GAME__.title[lang]);
   const links = platform.caps.community ? communityLinks() : null;
   renderCommunity(panel.side, links, 'side', true);
@@ -131,7 +134,15 @@ async function boot(): Promise<void> {
       sfx.play('fail');
     } else if (e.type === 'eggTap') sfx.play('eggTap');
     else if (e.type === 'fed') sfx.play(e.levelUp ? 'levelUp' : 'tap');
-    else if (e.type === 'sold') sfx.play('coin');
+    else if (e.type === 'sold') {
+      sfx.play('coin');
+      const p = shop.customerPoint(e.customerId) ?? shop.anchors()?.queue[0];
+      const rect = canvas.getBoundingClientRect();
+      if (p) {
+        const delay = flight.fly({ x: rect.left + p.x, y: rect.top + p.y }, hud.coinIcon, feel.coinsPerSale, feel.coinFlySec, () => hud.pulse());
+        hud.update(store.state.coins, { delaySec: Math.max(0, delay - feel.hudRollSec * 0.5) });
+      }
+    }
     else if (e.type === 'haggled') sfx.play(e.result === 'up' ? 'buy' : 'fail');
     else if (e.type === 'eggBought') sfx.play('buy');
     else if (e.type === 'hatched') {
@@ -153,9 +164,9 @@ async function boot(): Promise<void> {
   i18n.onChange((next) => {
     document.documentElement.lang = next;
     hud.setLanguage(next);
+    hud.update(store.state.coins, { snap: true });
     actions.setLanguage(next);
     dealCard.render();
-    hud.update(store.state.coins);
     panel.setTitle(__GAME__.title[next]);
     i18n.apply(uiRoot);
     shop.relabel();
@@ -172,7 +183,7 @@ async function boot(): Promise<void> {
 
   if (__DEBUG_TOOLS__ && new URLSearchParams(location.search).has('debug')) {
     const { installDebugPanel } = await import('./debug/panel.ts');
-    installDebugPanel({ store, runtime, fps: () => scene.app.ticker.FPS, fresh: () => newSave(platform.now()) });
+    installDebugPanel({ store, runtime, feel, fps: () => scene.app.ticker.FPS, fresh: () => newSave(platform.now()) });
   }
   if (__TEST_API__) {
     const { installTestApi } = await import('./test-api/index.ts');

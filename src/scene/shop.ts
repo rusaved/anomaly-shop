@@ -30,6 +30,8 @@ export interface ShopView {
   relabel(): void;
   /** Stage coordinates of the tappable pieces (hints, test API); null before the first layout. */
   anchors(): ShopAnchors | null;
+  /** Stage point above a customer (coin flights start there). */
+  customerPoint(id: number): { x: number; y: number } | null;
 }
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
@@ -624,7 +626,10 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         const buyer = visitors.get(e.customerId);
         const index = slotUids.indexOf(e.uid);
         const slot = current.slots[index];
-        if (buyer) soldTo.set(e.uid, { x: buyer.box.x, y: buyer.box.y - current.unit * 1.2 });
+        if (buyer) {
+          soldTo.set(e.uid, { x: buyer.box.x, y: buyer.box.y - current.unit * 1.2 });
+          fx.float(buyer.box.x, buyer.box.y - current.unit * 3, `+${fmt(e.price)}`, c.uiAccent, Math.max(18, current.unit * 0.7), current.unit * 1.1);
+        }
         if (slot) say(e.species, slotCenter(slot), current);
       } else if (e.type === 'haggled' && e.result === 'up') {
         const buyer = visitors.get(e.customerId);
@@ -647,6 +652,10 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       texts.showcase.text = t('shop.showcase');
       texts.queue.text = t('shop.queue');
       invalidate();
+    },
+    customerPoint(id) {
+      const node = visitors.get(id);
+      return node && current ? { x: node.box.x, y: node.box.y - current.unit * 1.4 } : null;
     },
     anchors() {
       if (!current) return null;

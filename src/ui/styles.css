@@ -453,3 +453,30 @@
     background: var(--c-uiGood);
   }
 }
+
+/* M1-07: coins flying to the HUD, HUD pulse */
+.coin-flight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
+  overflow: hidden;
+}
+.coin-fly {
+  position: absolute;
+  left: -11px;
+  top: -11px;
+  will-change: transform;
+}
+.hud-coins {
+  min-width: 96px;
+  transition: transform 0.1s;
+}
+.hud-coins.pulse {
+  animation: hud-pulse 0.22s ease-out;
+}
+@keyframes hud-pulse {
+  40% {
+    transform: scale(1.12);
+  }
+}

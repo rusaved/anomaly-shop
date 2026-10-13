@@ -10,5 +10,8 @@
   "lineSec": 2.6,
   "feedJump": 0.32,
   "feedSquash": 0.14,
-  "levelUpBurst": 18
+  "levelUpBurst": 18,
+  "coinsPerSale": 6,
+  "coinFlySec": 0.6,
+  "hudRollSec": 0.5
 }

@@ -2,7 +2,7 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CustomersData, DistrictData, EggsData, FtueData, RarityName, SpeciesData, UpgradesData } from '../content/schemas.ts';
+import type { CustomersData, DistrictData, EggsData, FtueData, RarityName, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type Creature, type SaveData } from './state.ts';
@@ -17,15 +17,32 @@ export interface GameContent {
   ftue: FtueData;
 }
 
+/** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
+const OFFLINE_STEP_SEC = 0.5;
+
 const RARITY_RANK: Record<RarityName, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
+
+/** Who fed a creature: the player's tap, the feeder helper, the cuckoo clock. */
+export type FeedBy = 'tap' | 'helper' | 'cuckoo';
+
+/** What the helpers did while the player was away (docs/01a, section 5: up to 8 hours at offlineRate of the live pace). */
+export interface OfflineReport {
+  /** Real seconds away (clamped) and the game seconds the shop worked for them. */
+  awaySec: number;
+  workedSec: number;
+  coins: number;
+  sold: number;
+  hatched: number;
+  levelUps: number;
+}
 
 export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noDeal' | 'noCreature' | 'lastPrice' | 'max';
 
 export type GameEvent =
-  | { type: 'eggBought'; incubator: number; egg: string; price: number }
+  | { type: 'eggBought'; incubator: number; egg: string; price: number; by: 'player' | 'helper' }
   | { type: 'eggTap'; incubator: number; started: boolean }
   | { type: 'hatched'; incubator: number; uid: string; species: string; rarity: RarityName }
-  | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number }
+  | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number; by: FeedBy }
   | { type: 'customerArrived'; id: number; customer: string }
   | { type: 'customerLeft'; id: number; reason: 'sold' | 'haggle' | 'wait' }
   | { type: 'denied'; action: 'buyEgg' | 'sell' | 'haggle' | 'wait' | 'upgrade'; reason: DenyReason }
@@ -33,7 +50,7 @@ export type GameEvent =
   | { type: 'ftueDone' }
   | { type: 'eggUnlocked'; egg: string }
   | { type: 'rescueEgg'; incubator: number }
-  | { type: 'sold'; uid: string; species: string; price: number; customer: string; customerId: number; haggled: boolean }
+  | { type: 'sold'; uid: string; species: string; price: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper' }
   | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
   | { type: 'change' };
 
@@ -134,6 +151,8 @@ export interface Game {
   /** Free showcase places (creatures and eggs both take one). */
   freeSlots(): number;
   showcaseSlots(): number;
+  /** The shop works on while the player is away (helpers, incubators): awaySec real seconds, clamped to offlineMaxHours, at offlineRate. */
+  offline(awaySec: number): OfflineReport;
 }
 
 /** Tutorial marks in save.flags (docs/01, section 4). */
@@ -141,6 +160,14 @@ export const FLAGS = { starter: 'ftue_starter', fed: 'ftue_fed', bought: 'ftue_b
 
 export function createGame(store: GameStore, content: GameContent, rng: Rng): Game {
   const events = createEmitter<GameEvent>();
+  /** Offline catch-up runs quiet: no events, no saves until it is done (one commit at the end). */
+  let quiet = false;
+  const emit = (e: GameEvent): void => {
+    if (!quiet) events.emit(e);
+  };
+  const commit = (opts?: { flush?: boolean }): void => {
+    if (!quiet) store.commit(opts);
+  };
   const { eggs, species } = content;
   const basicEgg = content.ftue.starterEgg;
   const s = (): SaveData => store.state;
@@ -223,8 +250,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const share = s().stats.deals === 0 ? Math.max(roll, content.ftue.firstOfferShare) : roll;
     const v: Visitor = { id: nextVisitor++, district, share, mult: 1, bargains: 0 };
     queue.push(v);
-    events.emit({ type: 'customerArrived', id: v.id, customer: district.customer.id });
-    events.emit({ type: 'change' });
+    emit({ type: 'customerArrived', id: v.id, customer: district.customer.id });
+    emit({ type: 'change' });
   }
 
   function currentDeal(): DealView | null {
@@ -258,7 +285,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (!v) return;
     frontIn = queue.length ? delay : 0;
     if (!queue.length && delay > 0) spawnIn = Math.min(spawnIn, delay);
-    events.emit({ type: 'customerLeft', id: v.id, reason });
+    emit({ type: 'customerLeft', id: v.id, reason });
   }
 
   /** The first customer of a new player comes sooner (ftue.json, firstCustomerSec). */
@@ -284,6 +311,107 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return Math.max(0, showcaseSlots() - busy);
   }
 
+  type Effect = UpgradeData['effect'];
+  /** The effect of a bought upgrade of this type (helpers are one-level upgrades), or null. */
+  function owned<T extends Effect['type']>(type: T): Extract<Effect, { type: T }> | null {
+    const u = content.upgrades.upgrades.find((x) => x.effect.type === type && upgradeLevel(x.id) > 0);
+    return u ? (u.effect as Extract<Effect, { type: T }>) : null;
+  }
+  const helperSellShare = (): number => owned('autoSell')?.priceShare ?? 1;
+  let feedAcc = 0;
+  let courierIn = 0;
+  /** Seconds the front customer has stood at the counter with a creature to offer (the seller waits for the player first). */
+  let counterSec = 0;
+
+  /** Helpers (docs/01, section 3.6): the feeder feeds the hungriest, the seller sells to a customer kept waiting, the courier brings eggs. */
+  function runHelpers(dt: number): void {
+    const st = s();
+    const feeder = owned('autoFeed');
+    if (feeder) {
+      feedAcc += dt * feeder.tapsPerSec;
+      while (feedAcc >= 1) {
+        feedAcc -= 1;
+        const hungry = st.creatures
+          .filter((cr) => cr.level < (speciesData(cr.species)?.maxLevel ?? 0))
+          .sort((a, b) => a.level - b.level || a.hatchedAt - b.hatchedAt)[0];
+        if (!hungry) {
+          feedAcc = 0;
+          break;
+        }
+        feed(hungry, 1 + effectSum('feedPerTap'), 'helper');
+      }
+    }
+    const seller = owned('autoSell');
+    if (currentDeal()?.uid) {
+      counterSec += dt;
+      if (seller && counterSec >= seller.delaySec) {
+        counterSec = 0;
+        sell('helper');
+      }
+    } else counterSec = 0;
+    const courier = owned('autoBuyEgg');
+    if (courier) {
+      courierIn -= dt;
+      if (courierIn <= 0) {
+        courierIn = courier.everySec;
+        if (canBuyEgg(courier.egg).ok) buyEggBy(courier.egg, 'helper');
+      }
+    }
+  }
+
+  /** Adds food to a creature (a tap, the feeder, the cuckoo); true on a level up. */
+  function feed(cr: Creature, food: number, by: FeedBy): boolean {
+    const spec = speciesData(cr.species);
+    if (!spec) return false;
+    const st = s();
+    const maxed = cr.level >= spec.maxLevel;
+    let levelUp = false;
+    const before = appraisal(cr);
+    if (!maxed) {
+      cr.fed += food;
+      if (cr.fed >= tapsForLevel(cr.level, species.tapsPerLevelBase)) {
+        cr.fed = 0;
+        cr.level += 1;
+        levelUp = true;
+        st.stats.levelUps = (st.stats.levelUps ?? 0) + 1;
+        if (by === 'tap') st.flags[FLAGS.fed] = true;
+      }
+    }
+    const price = appraisal(cr);
+    commit();
+    emit({ type: 'fed', uid: cr.uid, level: cr.level, levelUp, maxed: cr.level >= spec.maxLevel, price, gain: price - before, by });
+    return levelUp;
+  }
+
+  /** Sells the deal's creature at the offer (the player's Sell, or the seller helper without haggling). */
+  function sell(by: 'player' | 'helper'): boolean {
+    const deal = currentDeal();
+    const st = s();
+    const cr = deal?.uid ? st.creatures.find((x) => x.uid === deal.uid) : undefined;
+    if (!deal || !cr) {
+      if (by === 'player') emit({ type: 'denied', action: 'sell', reason: deal ? 'noCreature' : 'noDeal' });
+      return false;
+    }
+    const share = by === 'helper' ? helperSellShare() : 1;
+    const price = Math.max(1, Math.round(deal.offer * share));
+    const haggled = deal.bargains > 0;
+    st.coins += price;
+    st.stats.deals += 1;
+    st.stats.coinsEarned += price;
+    st.creatures = st.creatures.filter((x) => x.uid !== cr.uid);
+    const opened = eggs.eggs.filter((e) => e.unlock.type === 'deals' && e.unlock.count === st.stats.deals && eggUnlocked(e, st.stats.deals));
+    for (const e of opened) st.flags[`egg_new_${e.id}`] = true;
+    const entry = (st.collection[cr.species] ??= { seen: 1, hatched: 0, sold: 0 });
+    entry.sold += 1;
+    if (selectedUid === cr.uid) selectedUid = null;
+    commit({ flush: true });
+    emit({ type: 'sold', uid: cr.uid, species: cr.species, price, customer: deal.customer, customerId: deal.id, haggled, by });
+    frontLeaves('sold', 0);
+    for (const e of opened) emit({ type: 'eggUnlocked', egg: e.id });
+    emit({ type: 'change' });
+    return true;
+  }
+
   function canBuyEgg(eggId = basicEgg): BuyCheck {
     const egg = eggData(eggId);
     const price = egg?.price.coins ?? 0;
@@ -293,6 +421,24 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (freeSlots() <= 0) return { ok: false, reason: 'full', price };
     if (s().coins + 1e-9 < price) return { ok: false, reason: 'coins', price };
     return { ok: true, incubator, price };
+  }
+
+  function buyEggBy(eggId: string, by: 'player' | 'helper'): boolean {
+    const check = canBuyEgg(eggId);
+    if (!check.ok) {
+      if (by === 'player') emit({ type: 'denied', action: 'buyEgg', reason: check.reason });
+      return false;
+    }
+    s().coins -= check.price;
+    if (by === 'player') {
+      s().flags[FLAGS.bought] = true;
+      delete s().flags[`egg_new_${eggId}`];
+    }
+    placeEgg(check.incubator, eggId, false);
+    commit({ flush: true });
+    emit({ type: 'eggBought', incubator: check.incubator, egg: eggId, price: check.price, by });
+    emit({ type: 'change' });
+    return true;
   }
 
   function placeEgg(index: number, eggId: string, waiting: boolean): void {
@@ -319,10 +465,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     Object.assign(inc, emptyIncubator());
     const done = st.stats.hatched >= 2 && !st.flags[FLAGS.done];
     if (done) st.flags[FLAGS.done] = true;
-    store.commit({ flush: true });
-    events.emit({ type: 'hatched', incubator: index, uid, species: kind.id, rarity: kind.rarity });
-    if (done) events.emit({ type: 'ftueDone' });
-    events.emit({ type: 'change' });
+    commit({ flush: true });
+    emit({ type: 'hatched', incubator: index, uid, species: kind.id, rarity: kind.rarity });
+    if (done) emit({ type: 'ftueDone' });
+    emit({ type: 'change' });
   }
 
   /** Incubators follow the incubator upgrade (1 + bought × perLevel), also for saves made before a purchase. */
@@ -350,7 +496,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (!st.flags[FLAGS.starter] && st.stats.hatched === 0 && st.creatures.length === 0 && st.incubators[0] && !st.incubators[0].egg) {
       placeEgg(0, basicEgg, content.ftue.starterWaitsForTap);
       st.flags[FLAGS.starter] = true;
-      store.commit({ flush: true });
+      commit({ flush: true });
     }
   }
 
@@ -369,19 +515,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         .map((e) => ({ id: e.id, check: canBuyEgg(e.id), fresh: Boolean(s().flags[`egg_new_${e.id}`]) }));
     },
     buyEgg(eggId = basicEgg) {
-      const check = canBuyEgg(eggId);
-      if (!check.ok) {
-        events.emit({ type: 'denied', action: 'buyEgg', reason: check.reason });
-        return false;
-      }
-      s().coins -= check.price;
-      s().flags[FLAGS.bought] = true;
-      delete s().flags[`egg_new_${eggId}`];
-      placeEgg(check.incubator, eggId, false);
-      store.commit({ flush: true });
-      events.emit({ type: 'eggBought', incubator: check.incubator, egg: eggId, price: check.price });
-      events.emit({ type: 'change' });
-      return true;
+      return buyEggBy(eggId, 'player');
     },
     tapIncubator(index) {
       const inc = s().incubators[index];
@@ -394,93 +528,55 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       inc.waiting = false;
       inc.progress += eggs.tapSpeedupSec;
       s().stats.taps += 1;
-      store.commit();
-      events.emit({ type: 'eggTap', incubator: index, started });
+      commit();
+      emit({ type: 'eggTap', incubator: index, started });
     },
     tapCreature(uid) {
       const st = s();
       const cr = st.creatures.find((x) => x.uid === uid);
-      const spec = cr ? speciesData(cr.species) : undefined;
-      if (!cr || !spec) return;
+      if (!cr) return;
       const changed = selectedUid !== uid;
       selectedUid = uid;
       st.stats.taps += 1;
-      const maxed = cr.level >= spec.maxLevel;
-      let levelUp = false;
-      const before = appraisal(cr);
-      if (!maxed) {
-        cr.fed += 1 + effectSum('feedPerTap');
-        if (cr.fed >= tapsForLevel(cr.level, species.tapsPerLevelBase)) {
-          cr.fed = 0;
-          cr.level += 1;
-          levelUp = true;
-          st.stats.levelUps = (st.stats.levelUps ?? 0) + 1;
-          st.flags[FLAGS.fed] = true;
-        }
-      }
-      const price = appraisal(cr);
-      store.commit();
-      events.emit({ type: 'fed', uid, level: cr.level, levelUp, maxed: cr.level >= spec.maxLevel, price, gain: price - before });
-      if (changed || levelUp) events.emit({ type: 'change' });
+      if (feed(cr, 1 + effectSum('feedPerTap'), 'tap') || changed) emit({ type: 'change' });
     },
     selected,
     accept() {
-      const deal = currentDeal();
-      const st = s();
-      const cr = deal?.uid ? st.creatures.find((x) => x.uid === deal.uid) : undefined;
-      if (!deal || !cr) {
-        events.emit({ type: 'denied', action: 'sell', reason: deal ? 'noCreature' : 'noDeal' });
-        return false;
-      }
-      const haggled = deal.bargains > 0;
-      st.coins += deal.offer;
-      st.stats.deals += 1;
-      st.stats.coinsEarned += deal.offer;
-      st.creatures = st.creatures.filter((x) => x.uid !== cr.uid);
-      const opened = eggs.eggs.filter((e) => e.unlock.type === 'deals' && e.unlock.count === st.stats.deals && eggUnlocked(e, st.stats.deals));
-      for (const e of opened) st.flags[`egg_new_${e.id}`] = true;
-      const entry = (st.collection[cr.species] ??= { seen: 1, hatched: 0, sold: 0 });
-      entry.sold += 1;
-      if (selectedUid === cr.uid) selectedUid = null;
-      store.commit({ flush: true });
-      events.emit({ type: 'sold', uid: cr.uid, species: cr.species, price: deal.offer, customer: deal.customer, customerId: deal.id, haggled });
-      frontLeaves('sold', 0);
-      for (const e of opened) events.emit({ type: 'eggUnlocked', egg: e.id });
-      events.emit({ type: 'change' });
-      return true;
+      return sell('player');
     },
     haggle() {
       const deal = currentDeal();
       const v = queue[0];
       if (!deal || !deal.uid || !v) {
-        events.emit({ type: 'denied', action: 'haggle', reason: deal ? 'noCreature' : 'noDeal' });
+        emit({ type: 'denied', action: 'haggle', reason: deal ? 'noCreature' : 'noDeal' });
         return false;
       }
       if (!deal.canHaggle) {
-        events.emit({ type: 'denied', action: 'haggle', reason: 'lastPrice' });
+        emit({ type: 'denied', action: 'haggle', reason: 'lastPrice' });
         return false;
       }
       s().stats.haggles = (s().stats.haggles ?? 0) + 1;
+      counterSec = 0;
       if (rng.next() < deal.leaveChance) {
-        events.emit({ type: 'haggled', customerId: v.id, result: 'left', bonus: 0, offer: 0 });
+        emit({ type: 'haggled', customerId: v.id, result: 'left', bonus: 0, offer: 0 });
         frontLeaves('haggle', 0);
       } else {
         const b = content.customers.bargainBonus;
         const bonus = rng.range(b.min, b.max);
         v.mult *= 1 + bonus;
         v.bargains += 1;
-        events.emit({ type: 'haggled', customerId: v.id, result: 'up', bonus, offer: currentDeal()?.offer ?? 0 });
+        emit({ type: 'haggled', customerId: v.id, result: 'up', bonus, offer: currentDeal()?.offer ?? 0 });
       }
-      events.emit({ type: 'change' });
+      emit({ type: 'change' });
       return true;
     },
     wait() {
       if (!currentDeal()) {
-        events.emit({ type: 'denied', action: 'wait', reason: 'noDeal' });
+        emit({ type: 'denied', action: 'wait', reason: 'noDeal' });
         return false;
       }
       frontLeaves('wait', content.customers.waitNextSec);
-      events.emit({ type: 'change' });
+      emit({ type: 'change' });
       return true;
     },
     tick(dt) {
@@ -488,16 +584,17 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       for (const cr of st.creatures) cr.age = (cr.age ?? 0) + dt;
       if (frontIn > 0) {
         frontIn = Math.max(0, frontIn - dt);
-        if (frontIn === 0) events.emit({ type: 'change' });
+        if (frontIn === 0) emit({ type: 'change' });
       }
       // A customer stepping up to the counter picks a creature by type (docs/01, section 3.5); a tap picks another.
       const front = frontIn > 0 ? undefined : queue[0];
       if (front && front.id !== frontSeen) {
         frontSeen = front.id;
+        counterSec = 0;
         const pick = favorite(front.district.customer);
         if (pick && pick !== selectedUid) {
           selectedUid = pick;
-          events.emit({ type: 'change' });
+          emit({ type: 'change' });
         }
       }
       // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free.
@@ -505,9 +602,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         const cheapest = Math.min(...eggs.eggs.filter((e) => eggUnlocked(e, st.stats.deals)).map((e) => e.price.coins));
         if (st.coins + 1e-9 < cheapest) {
           placeEgg(0, eggs.rescueEgg, false);
-          store.commit({ flush: true });
-          events.emit({ type: 'rescueEgg', incubator: 0 });
-          events.emit({ type: 'change' });
+          commit({ flush: true });
+          emit({ type: 'rescueEgg', incubator: 0 });
+          emit({ type: 'change' });
         }
       }
       if (shopOpen()) {
@@ -536,6 +633,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         }
         if (isHatched(inc.progress, inc.elapsed, needFor(inc.egg), eggs)) hatch(i);
       }
+      runHelpers(dt);
     },
     view() {
       return {
@@ -572,11 +670,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const view = listed ? upgradeView(id) : null;
       const u = content.upgrades.upgrades.find((x) => x.id === id);
       if (!view || !u) {
-        events.emit({ type: 'denied', action: 'upgrade', reason: 'locked' });
+        emit({ type: 'denied', action: 'upgrade', reason: 'locked' });
         return false;
       }
       if (view.maxed || !view.affordable) {
-        events.emit({ type: 'denied', action: 'upgrade', reason: view.maxed ? 'max' : 'coins' });
+        emit({ type: 'denied', action: 'upgrade', reason: view.maxed ? 'max' : 'coins' });
         return false;
       }
       const st = s();
@@ -584,13 +682,38 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       else st.coins -= view.price;
       st.upgrades[id] = view.level + 1;
       syncIncubators();
-      store.commit({ flush: true });
-      events.emit({ type: 'upgradeBought', id, level: view.level + 1, price: view.price });
-      events.emit({ type: 'change' });
+      commit({ flush: true });
+      emit({ type: 'upgradeBought', id, level: view.level + 1, price: view.price });
+      emit({ type: 'change' });
       return true;
     },
     freeSlots,
     showcaseSlots,
+    offline(awaySec) {
+      const st = s();
+      const away = Math.max(0, Math.min(content.upgrades.offlineMaxHours * 3600, Number.isFinite(awaySec) ? awaySec : 0));
+      const worked = away * content.upgrades.offlineRate;
+      const before = { coins: st.coins, deals: st.stats.deals, hatched: st.stats.hatched, levelUps: st.stats.levelUps ?? 0 };
+      quiet = true;
+      try {
+        for (let t = 0; t < worked - 1e-9; t += OFFLINE_STEP_SEC) game.tick(Math.min(OFFLINE_STEP_SEC, worked - t));
+      } finally {
+        quiet = false;
+      }
+      const report: OfflineReport = {
+        awaySec: away,
+        workedSec: worked,
+        coins: st.coins - before.coins,
+        sold: st.stats.deals - before.deals,
+        hatched: st.stats.hatched - before.hatched,
+        levelUps: (st.stats.levelUps ?? 0) - before.levelUps,
+      };
+      if (worked > 0) {
+        commit({ flush: true });
+        emit({ type: 'change' });
+      }
+      return report;
+    },
   };
   return game;
 }

@@ -146,7 +146,7 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t(`deny.${e.reason}`), 'warn');
       sfx.play('fail');
     } else if (e.type === 'eggTap') sfx.play('eggTap');
-    else if (e.type === 'fed') sfx.play(e.levelUp ? 'levelUp' : 'tap');
+    else if (e.type === 'fed' && (e.by === 'tap' || e.levelUp)) sfx.play(e.levelUp ? 'levelUp' : 'tap');
     else if (e.type === 'sold') {
       sfx.play('coin');
       const p = shop.customerPoint(e.customerId) ?? shop.anchors()?.queue[0];

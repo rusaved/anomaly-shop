@@ -1,18 +1,18 @@
 {
   "$schema": "upgrades.schema.json",
-  "note": "Улучшения из docs/01a-content.md §5. levels — число покупок; цены — геометрический ряд от price1 до priceMax, округлённый до двух значащих цифр. Инкубатор: один есть с начала + 3 покупки = 4 (M2-01 «до 4»). shop — позиции магазина по порядку (M1: 2 позиции, M2 добавит остальные). Офлайн: до offlineMaxHours, offlineRate от активного темпа.",
+  "note": "Улучшения из docs/01a-content.md §5 и лесенка docs/01b §5.1. levels — число покупок; цены — геометрический ряд от price1 до priceMax, округлённый до двух значащих цифр. Инкубатор: один есть с начала + 3 покупки = 4. shop — позиции магазина по порядку; unlock — когда позиция появляется (нет — с начала). Помощники (M2-03): кормилец tapsPerSec тапов в секунду самому голодному; продавец продаёт покупателю, который ждёт у прилавка delaySec, по его предложению × priceShare; курьер раз в everySec покупает яйцо egg, если есть место и монеты. Офлайн: лавка работает до offlineMaxHours, со скоростью offlineRate от онлайна (помощники и инкубаторы).",
   "offlineMaxHours": 8,
   "offlineRate": 0.5,
   "prestige": {"thresholdCoinsEarned": 50000, "incomeBonusPerPrestige": 0.25},
-  "shop": ["incubator", "incubator_speed", "showcase"],
+  "shop": ["incubator", "incubator_speed", "showcase", "helper_feed", "helper_sell", "helper_courier"],
   "upgrades": [
     {"id": "incubator", "name": {"ru": "Инкубаторы", "en": "Incubators"}, "levels": 3, "price1": 50, "priceMax": 5000, "effect": {"type": "slots", "perLevel": 1}},
     {"id": "incubator_speed", "name": {"ru": "Скорость вылупления", "en": "Hatch Speed"}, "levels": 5, "price1": 40, "priceMax": 3000, "effect": {"type": "hatchTime", "perLevel": -0.1}},
     {"id": "showcase", "name": {"ru": "Витрина", "en": "Showcase"}, "levels": 5, "price1": 80, "priceMax": 8000, "effect": {"type": "showcaseSlots", "base": 3, "perLevel": 1}, "unlock": {"type": "deals", "count": 3}},
     {"id": "sign", "name": {"ru": "Вывеска", "en": "Sign"}, "levels": 5, "price1": 60, "priceMax": 4000, "effect": {"type": "spawnRate", "perLevel": -0.12}},
     {"id": "cash", "name": {"ru": "Касса", "en": "Register"}, "levels": 5, "price1": 100, "priceMax": 6000, "effect": {"type": "bargain", "perLevel": 0.03}},
-    {"id": "helper_feed", "name": {"ru": "Помощник-кормилец", "en": "Feeder"}, "levels": 1, "price1": 500, "priceMax": 500, "effect": {"type": "autoFeed", "creatures": 1, "offline": true, "tapsPerSec": 1}},
-    {"id": "helper_sell", "name": {"ru": "Помощник-продавец", "en": "Seller"}, "levels": 1, "price1": 1200, "priceMax": 1200, "effect": {"type": "autoSell", "priceShare": 1.0, "offline": true, "delaySec": 4}},
-    {"id": "helper_courier", "name": {"ru": "Курьер яиц", "en": "Egg Courier"}, "levels": 1, "price1": 2500, "priceMax": 2500, "currency": "crystals", "effect": {"type": "autoBuyEgg", "egg": "egg_basic", "offline": true, "everySec": 2}}
+    {"id": "helper_feed", "name": {"ru": "Помощник-кормилец", "en": "Feeder"}, "levels": 1, "price1": 500, "priceMax": 500, "effect": {"type": "autoFeed", "creatures": 1, "offline": true, "tapsPerSec": 1}, "unlock": {"type": "deals", "count": 10}},
+    {"id": "helper_sell", "name": {"ru": "Помощник-продавец", "en": "Seller"}, "levels": 1, "price1": 1200, "priceMax": 1200, "effect": {"type": "autoSell", "priceShare": 1.0, "offline": true, "delaySec": 4}, "unlock": {"type": "deals", "count": 20}},
+    {"id": "helper_courier", "name": {"ru": "Курьер яиц", "en": "Egg Courier"}, "levels": 1, "price1": 25, "priceMax": 25, "currency": "crystals", "effect": {"type": "autoBuyEgg", "egg": "egg_basic", "offline": true, "everySec": 2}, "unlock": {"type": "deals", "count": 30}}
   ]
 }

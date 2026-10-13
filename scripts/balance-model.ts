@@ -1,13 +1,16 @@
 // `npm run sim:balance` (docs/01a, section 9): the real game (src/sim) played headless by bots with human pace,
-// many seeds per bot; checks F1–F4 on the slowest 10% of runs (p90). Exit 1 when a check fails.
-//   F1 first deal ≤ 40 s · F2 100 coins earned ≤ 2 min · F3 first upgrade ≤ 3 min · F4 first rare ≤ 5 min
-// Usage: node scripts/balance-model.ts [--seeds 40] [--out docs/evidence/M1/balance.txt]
+// many seeds per bot; time checks on the slowest 10% of runs (p90), pace checks on the median. Exit 1 when a check fails.
+//   Short run (10 min, every bot): F1 first deal ≤ 40 s · F2 100 coins earned ≤ 2 min · F3 first upgrade ≤ 3 min · F4 first rare ≤ 5 min
+//     · F5 income per minute at 8–10 min ≥ 1.5 × at 1–3 min · F10 no stall (a deal every minute after the first) without ads
+//     · F11 (M2-12) in minutes 3–10 a shop goal within 2 minutes of current income at every check
+//   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play
+//     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
+// Usage: node scripts/balance-model.ts [--seeds 24] [--out docs/evidence/M2/balance.txt]
 // Erasable TypeScript only: Node runs this file without a bundler (relative .ts imports).
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createRng } from '../src/core/rng.ts';
-import { STEP_SEC } from '../src/core/runtime.ts';
-import { createGame, type Game, type GameEvent } from '../src/sim/game.ts';
+import { createGame, type Game, type GameContent, type GameEvent } from '../src/sim/game.ts';
 import { ftueHint } from '../src/sim/ftue.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
@@ -23,15 +26,15 @@ export interface Bot {
   sellLevel: number;
   /** Haggles once when the leave risk is at most this (0 = never). */
   haggleRisk: number;
-  /** Buys the warm egg when it is open and affordable. */
-  warmEggs: boolean;
+  /** Buys the dearest open egg it can afford twice over (false: basic eggs only). */
+  bestEggs: boolean;
 }
 
 export const BOTS: Bot[] = [
-  { name: 'casual', tapsPerSec: 3, reactSec: 1.2, sellLevel: 2, haggleRisk: 0, warmEggs: false },
-  { name: 'rusher', tapsPerSec: 2.5, reactSec: 1.5, sellLevel: 1, haggleRisk: 0, warmEggs: false },
-  { name: 'tapper', tapsPerSec: 5, reactSec: 0.8, sellLevel: 3, haggleRisk: 0.25, warmEggs: true },
-  { name: 'slow', tapsPerSec: 1.5, reactSec: 3, sellLevel: 2, haggleRisk: 0, warmEggs: false },
+  { name: 'casual', tapsPerSec: 3, reactSec: 1.2, sellLevel: 2, haggleRisk: 0, bestEggs: true },
+  { name: 'rusher', tapsPerSec: 2.5, reactSec: 1.5, sellLevel: 1, haggleRisk: 0, bestEggs: true },
+  { name: 'tapper', tapsPerSec: 5, reactSec: 0.8, sellLevel: 3, haggleRisk: 0.25, bestEggs: true },
+  { name: 'slow', tapsPerSec: 1.5, reactSec: 3, sellLevel: 2, haggleRisk: 0, bestEggs: true },
 ];
 
 export interface Check {
@@ -47,32 +50,42 @@ export const CHECKS: Check[] = [
   { id: 'F4', title: 'first rare', limitSec: 300 },
 ];
 
+/** Pace and long-run limits of docs/01a, section 9 (F11 from docs/01b, section 5.1). */
+export const LIMITS = {
+  F5growth: 1.5,
+  F6minutes: [30, 60] as const,
+  F7days: [2, 3] as const,
+  F8street: 600,
+  F8square: 2400,
+  F11goalMinutes: 2,
+  /** F11 is the criterion of M2-12 (the ladder of 8 things): reported from M2-09, failing the run from M2-12. */
+  F11enforced: false,
+};
+
+/** Model step: coarser than the game's 1/60 s, finer than any bot action (0.2 s and up). */
+const STEP = 1 / 30;
+const SHORT_SEC = 600;
+const DAY_ACTIVE_SEC = 30 * 60;
+const AWAY_SEC = 8 * 3600;
+
 export interface RunResult {
   times: Record<string, number>;
   deals5min: number;
   coins5min: number;
+  /** coinsEarned at the end of every whole minute. */
+  earned: number[];
+  /** Checks in minutes 3–10 without a shop goal within reach. */
+  goalMisses: number;
+  /** A whole minute without a deal after the first minute. */
+  stalled: boolean;
 }
 
-const HORIZON_SEC = 330;
-
-/** One bot plays one fresh profile for HORIZON_SEC game seconds. */
-export function playOnce(bot: Bot, seed: number): RunResult {
-  const content = loadGameContent();
-  const store = createStore(newSave(0), () => 0);
-  const game: Game = createGame(store, content, createRng(seed));
-  const times: Record<string, number> = {};
-  let t = 0;
-  let busyUntil = 1.5; // looks at the screen first
+/** One bot plays a game: returns the act function that makes one decision and says how long it took. */
+function botPlayer(bot: Bot, game: Game): () => number {
   let lastHint = '';
   let haggledWith = -1;
-  game.events.on((e: GameEvent) => {
-    if (e.type === 'sold' && times.F1 === undefined) times.F1 = t;
-    if (e.type === 'upgradeBought' && times.F3 === undefined) times.F3 = t;
-    if (e.type === 'hatched' && e.rarity !== 'common' && times.F4 === undefined) times.F4 = t;
-  });
   const tap = 1 / bot.tapsPerSec;
-
-  const act = (): number => {
+  return () => {
     const st = game.state;
     const view = game.view();
     const hint = ftueHint(st, view);
@@ -109,14 +122,12 @@ export function playOnce(bot: Bot, seed: number): RunResult {
       game.accept();
       return tap;
     }
-    // Keep the incubators busy.
-    const warm = bot.warmEggs ? game.eggList().find((e) => e.id === 'egg_warm' && e.check.ok) : undefined;
-    if (warm && st.coins >= 60 + 10) {
-      game.buyEgg('egg_warm');
-      return tap;
-    }
-    if (game.canBuyEgg().ok) {
-      game.buyEgg();
+    // Keep the incubators busy: the dearest egg affordable twice over, else a basic one.
+    const eggs = game.eggList().filter((e) => e.check.ok);
+    const best = bot.bestEggs ? eggs.filter((e) => st.coins >= e.check.price * 2).sort((a, b) => b.check.price - a.check.price)[0] : undefined;
+    const pick = best ?? eggs.find((e) => e.id === eggs[0]?.id);
+    if (pick && (best || game.canBuyEgg().ok)) {
+      game.buyEgg(pick.id);
       return tap;
     }
     // Feed the cheapest creature still below the sale level, else speed up an egg.
@@ -138,26 +149,111 @@ export function playOnce(bot: Bot, seed: number): RunResult {
     }
     return tap;
   };
+}
 
+function freshGame(content: GameContent, seed: number): Game {
+  return createGame(createStore(newSave(0), () => 0), content, createRng(seed));
+}
+
+/** Is there a shop goal the player reaches within `minutes` of the current income (docs/01b, section 5.1, F11)? */
+function goalWithin(game: Game, perMin: number, minutes: number): boolean {
+  const reach = game.state.coins + perMin * minutes;
+  return game.upgradeList().some((u) => !u.maxed && u.price <= (game.content.upgrades.upgrades.find((x) => x.id === u.id)?.currency === 'crystals' ? game.state.crystals : reach));
+}
+
+/** One bot plays one fresh profile for 10 game minutes. */
+export function playOnce(bot: Bot, seed: number, content: GameContent = loadGameContent()): RunResult {
+  const game = freshGame(content, seed);
+  const times: Record<string, number> = {};
+  let t = 0;
+  let busyUntil = 1.5; // looks at the screen first
+  game.events.on((e: GameEvent) => {
+    if (e.type === 'sold' && times.F1 === undefined) times.F1 = t;
+    if (e.type === 'upgradeBought' && times.F3 === undefined) times.F3 = t;
+    if (e.type === 'hatched' && e.rarity !== 'common' && times.F4 === undefined) times.F4 = t;
+  });
+  const act = botPlayer(bot, game);
   let deals5min = 0;
   let coins5min = 0;
-  while (t < HORIZON_SEC) {
+  const earned: number[] = [];
+  const dealsAt: number[] = [];
+  let goalMisses = 0;
+  let nextGoalCheck = 180;
+  while (t < SHORT_SEC) {
     if (t >= busyUntil) busyUntil = t + act();
-    game.tick(STEP_SEC);
-    t += STEP_SEC;
-    if (times.F2 === undefined && game.state.stats.coinsEarned >= 100) times.F2 = t;
+    game.tick(STEP);
+    t += STEP;
+    const st = game.state;
+    if (times.F2 === undefined && st.stats.coinsEarned >= 100) times.F2 = t;
     if (deals5min === 0 && t >= 300) {
-      deals5min = game.state.stats.deals;
-      coins5min = game.state.stats.coinsEarned;
+      deals5min = st.stats.deals;
+      coins5min = st.stats.coinsEarned;
+    }
+    if (t >= (earned.length + 1) * 60) {
+      earned.push(st.stats.coinsEarned);
+      dealsAt.push(st.stats.deals);
+    }
+    if (t >= nextGoalCheck) {
+      nextGoalCheck += 10;
+      const m = earned.length;
+      const perMin = m >= 1 ? (earned[m - 1]! - (m >= 2 ? earned[m - 2]! : 0)) : 0;
+      if (!goalWithin(game, perMin, LIMITS.F11goalMinutes)) goalMisses += 1;
     }
   }
-  return { times, deals5min, coins5min };
+  const stalled = dealsAt.some((d, i) => i >= 1 && d === dealsAt[i - 1]);
+  return { times, deals5min, coins5min, earned, goalMisses, stalled };
+}
+
+export interface DaysResult {
+  /** Active seconds when the street and the square opened (Infinity: not in 3 days). */
+  street: number;
+  square: number;
+  /** Minutes of the last 10 active minutes of day 1 that 8 hours away pay. */
+  awayMinutes: number;
+  /** Day (1-based, fractional within the active part) the rebirth threshold of coins earned was crossed. */
+  rebirthDay: number;
+}
+
+/** Three days of a player: 30 active minutes, then 8 hours away (the shop works on), twice, then a third active half hour. */
+export function playDays(bot: Bot, seed: number, content: GameContent = loadGameContent()): DaysResult {
+  const game = freshGame(content, seed);
+  const act = botPlayer(bot, game);
+  const threshold = content.upgrades.prestige.thresholdCoinsEarned;
+  let active = 0;
+  let street = Infinity;
+  let square = Infinity;
+  let rebirthDay = Infinity;
+  let awayMinutes = 0;
+  game.events.on((e: GameEvent) => {
+    if (e.type === 'districtOpened' && e.district === 'street') street = Math.min(street, active);
+    if (e.type === 'districtOpened' && e.district === 'square') square = Math.min(square, active);
+  });
+  for (let day = 1; day <= 3; day++) {
+    let busyUntil = active + 1.5;
+    const dayEnd = active + DAY_ACTIVE_SEC;
+    let tenMinBefore = 0;
+    while (active < dayEnd) {
+      if (active >= busyUntil) busyUntil = active + act();
+      game.tick(STEP);
+      active += STEP;
+      if (rebirthDay === Infinity && game.state.stats.coinsEarned >= threshold) rebirthDay = day - 1 + (active - (dayEnd - DAY_ACTIVE_SEC)) / DAY_ACTIVE_SEC;
+      if (tenMinBefore === 0 && active >= dayEnd - 600) tenMinBefore = game.state.stats.coinsEarned;
+    }
+    if (day === 3) break;
+    const perMin = (game.state.stats.coinsEarned - tenMinBefore) / 10;
+    const before = game.state.stats.coinsEarned;
+    const away = game.offline(AWAY_SEC);
+    if (day === 1) awayMinutes = perMin > 0 ? away.coins / perMin : 0;
+    if (rebirthDay === Infinity && game.state.stats.coinsEarned >= threshold && before < threshold) rebirthDay = day + 0.0;
+  }
+  return { street, square, awayMinutes, rebirthDay };
 }
 
 const quantile = (xs: number[], q: number): number => {
   const s = [...xs].sort((a, b) => a - b);
   return s[Math.min(s.length - 1, Math.floor(q * (s.length - 1) + 0.5))] ?? Infinity;
 };
+const fmt = (x: number, digits = 0): string => (Number.isFinite(x) ? x.toFixed(digits) : '∞');
 
 export interface BalanceReport {
   ok: boolean;
@@ -165,25 +261,64 @@ export interface BalanceReport {
   failures: string[];
 }
 
-export function runBalance(seeds = 40): BalanceReport {
+export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds / 3))): BalanceReport {
+  const content = loadGameContent();
   const lines: string[] = [];
   const failures: string[] = [];
-  lines.push(`sim:balance — ${BOTS.length} bots × ${seeds} seeds, p50 / p90 of game seconds (limit in brackets)`);
+  lines.push(`sim:balance — ${BOTS.length} bots × ${seeds} seeds × 10 min; p50 / p90 of game seconds (limit in brackets)`);
   for (const bot of BOTS) {
-    const runs = Array.from({ length: seeds }, (_, i) => playOnce(bot, 1000 + i * 7919));
+    const runs = Array.from({ length: seeds }, (_, i) => playOnce(bot, 1000 + i * 7919, content));
     const cells = CHECKS.map((c) => {
       const xs = runs.map((r) => r.times[c.id] ?? Infinity);
       const p50 = quantile(xs, 0.5);
       const p90 = quantile(xs, 0.9);
       const pass = p90 <= c.limitSec;
-      if (!pass) failures.push(`${bot.name} ${c.id} ${c.title}: p90 ${p90.toFixed(0)} s > ${c.limitSec} s`);
-      return `${c.id} ${p50.toFixed(0)}/${Number.isFinite(p90) ? p90.toFixed(0) : '∞'} (${c.limitSec}) ${pass ? 'ok' : 'FAIL'}`;
+      if (!pass) failures.push(`${bot.name} ${c.id} ${c.title}: p90 ${fmt(p90)} s > ${c.limitSec} s`);
+      return `${c.id} ${fmt(p50)}/${fmt(p90)} (${c.limitSec}) ${pass ? 'ok' : 'FAIL'}`;
     });
+    // F5: income per minute grows: minutes 8–10 against minutes 1–3 (median run).
+    const growth = quantile(
+      runs.map((r) => ((r.earned[9]! - r.earned[7]!) / 2) / Math.max(1, (r.earned[2]! - r.earned[0]!) / 2)),
+      0.5,
+    );
+    const f5 = growth >= LIMITS.F5growth;
+    if (!f5) failures.push(`${bot.name} F5 income growth ×${growth.toFixed(2)} < ×${LIMITS.F5growth}`);
+    // F10: never stuck without ads: a deal every minute after the first, in every run.
+    const stalls = runs.filter((r) => r.stalled).length;
+    if (stalls > 0) failures.push(`${bot.name} F10 ${stalls} run(s) with a minute without deals`);
+    // F11: a goal within 2 minutes of income at every check of minutes 3–10, in 90% of runs.
+    const missed = runs.filter((r) => r.goalMisses > 0).length;
+    const f11 = missed <= Math.floor(runs.length * 0.1);
+    if (!f11 && LIMITS.F11enforced) failures.push(`${bot.name} F11 ${missed}/${runs.length} runs had a moment without a near goal`);
     const deals = quantile(runs.map((r) => r.deals5min), 0.5);
     const coins = quantile(runs.map((r) => r.coins5min), 0.5);
-    lines.push(`${bot.name.padEnd(7)} ${cells.join(' · ')} · 5 min: ${deals} deals, ${coins} coins (p50)`);
+    const coins10 = quantile(runs.map((r) => r.earned[9] ?? 0), 0.5);
+    lines.push(
+      `${bot.name.padEnd(7)} ${cells.join(' · ')} · F5 ×${growth.toFixed(1)} ${f5 ? 'ok' : 'FAIL'} · F10 ${stalls ? 'FAIL' : 'ok'} · F11 ${missed}/${runs.length} ${f11 ? 'ok' : LIMITS.F11enforced ? 'FAIL' : 'miss (from M2-12)'}` +
+        ` · 5 min: ${deals} deals, ${coins} coins; 10 min: ${coins10} coins (p50)`,
+    );
   }
-  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : 'F1–F4: all green');
+  lines.push(`long run — casual and slow × ${longSeeds} seeds: 3 days of 30 active minutes + 8 h away`);
+  for (const bot of BOTS.filter((b) => b.name === 'casual' || b.name === 'slow')) {
+    const runs = Array.from({ length: longSeeds }, (_, i) => playDays(bot, 2000 + i * 104729, content));
+    const street = quantile(runs.map((r) => r.street), 0.9);
+    const square = quantile(runs.map((r) => r.square), 0.9);
+    const away = quantile(runs.map((r) => r.awayMinutes), 0.5);
+    const rebirth = quantile(runs.map((r) => r.rebirthDay), 0.5);
+    const f6 = away >= LIMITS.F6minutes[0] && away <= LIMITS.F6minutes[1];
+    const f7 = rebirth >= LIMITS.F7days[0] - 1 && rebirth <= LIMITS.F7days[1];
+    const f8 = street <= LIMITS.F8street && square <= LIMITS.F8square;
+    if (!f6) failures.push(`${bot.name} F6 8 h away = ${fmt(away)} min of play, want ${LIMITS.F6minutes.join('–')}`);
+    if (!f7) failures.push(`${bot.name} F7 rebirth threshold on day ${fmt(rebirth, 1)}, want day ${LIMITS.F7days.join('–')}`);
+    if (!f8) failures.push(`${bot.name} F8 districts at ${fmt(street)} s / ${fmt(square)} s (p90), want ≤ ${LIMITS.F8street} / ${LIMITS.F8square}`);
+    lines.push(
+      `${bot.name.padEnd(7)} F6 8 h away = ${fmt(away)} min of play (${LIMITS.F6minutes.join('–')}) ${f6 ? 'ok' : 'FAIL'}` +
+        ` · F7 rebirth threshold on day ${fmt(rebirth, 1)} (${LIMITS.F7days.join('–')}) ${f7 ? 'ok' : 'FAIL'}` +
+        ` · F8 street ${fmt(street)} s, square ${fmt(square)} s p90 (${LIMITS.F8street} / ${LIMITS.F8square}) ${f8 ? 'ok' : 'FAIL'}`,
+    );
+  }
+  lines.push('F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)');
+  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}: all green`);
   return { ok: failures.length === 0, lines, failures };
 }
 
@@ -191,8 +326,9 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename
   const args = process.argv.slice(2);
   const seedsAt = args.indexOf('--seeds');
   const outAt = args.indexOf('--out');
-  const report = runBalance(seedsAt >= 0 ? Number(args[seedsAt + 1]) : 40);
-  const text = report.lines.join('\n') + '\n';
+  const t0 = Date.now();
+  const report = runBalance(seedsAt >= 0 ? Number(args[seedsAt + 1]) : 24);
+  const text = report.lines.join('\n') + `\n(${((Date.now() - t0) / 1000).toFixed(1)} s)\n`;
   process.stdout.write(text);
   if (outAt >= 0 && args[outAt + 1]) {
     const file = resolve(import.meta.dirname, '..', args[outAt + 1] as string);

@@ -1,0 +1,40 @@
+# dependencies and builds
+node_modules/
+dist/
+dist-*/
+.vite/
+.cache/
+coverage/
+
+# release archives (zip for the platforms)
+release/
+*.zip
+
+# Playwright runs, reports and lock files
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.last-run.json
+
+# full-size evidence stays local; only PNG up to 300 KB go to git (tests/architecture.test.ts checks it)
+docs/evidence/**/raw/
+docs/evidence/**/*.webm
+docs/evidence/**/*.mp4
+
+# studio renders (only the shots the producer picks go to git)
+art/studio/*/
+
+# secrets and local settings
+.env
+.env.*
+*.pem
+*.key
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md
+
+# system junk
+*.log
+.DS_Store
+Thumbs.db

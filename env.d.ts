@@ -1,0 +1,23 @@
+// Build-time flags (vite.config.ts `define`). In the release builds debug, studio and test API are false and
+// the dynamic imports behind them are dropped from the bundle (docs/02-tech.md, section 9).
+declare const __DEBUG_TOOLS__: boolean;
+declare const __STUDIO__: boolean;
+declare const __TEST_API__: boolean;
+/** Milestone label for the producer link ("M1 · 2026-10-20 · 1a2b3c4"); empty string elsewhere. */
+declare const __BUILD_LABEL__: string;
+/** Platform profile of this build (docs/02-tech.md, section 6). */
+declare const __PLATFORM__: 'yandex' | 'null' | 'youtube';
+/** Public part of game.json for this profile; `community` is null in the youtube build. */
+declare const __GAME__: {
+  id: string;
+  title: Record<'ru' | 'en', string>;
+  languages: Array<'ru' | 'en'>;
+  fallbackLanguage: 'ru' | 'en';
+  community: { telegram: string; vk: string; placement: string[] } | null;
+  metrikaCounterId: number;
+  profile: { name: 'yandex' | 'null' | 'youtube'; community: boolean; ads: boolean; payments: boolean; analytics: boolean; externalRequests: boolean };
+};
+/** ZzFX 1.4.0 ships no types; the sound module uses only ZZFX.buildSamples on its own context. */
+declare module 'zzfx' {
+  export const ZZFX: { sampleRate: number; audioContext: AudioContext; buildSamples(...params: number[]): number[] };
+}

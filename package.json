@@ -1,0 +1,50 @@
+{
+  "name": "anomaly-shop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "2D idle shop game for web platforms: PixiJS 8 + TypeScript + Vite",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:lan": "vite --host",
+    "dev:null": "vite --mode local",
+    "build": "vite build",
+    "build:playtest": "vite build --mode playtest --outDir dist-playtest",
+    "build:e2e": "vite build --mode e2e --outDir dist-e2e",
+    "build:pages": "node scripts/build-pages.mjs",
+    "build:youtube": "vite build --mode youtube --outDir dist-youtube",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "validate:content": "node scripts/validate-content.mjs",
+    "e2e": "playwright test --grep-invert @full",
+    "e2e:full": "playwright test --grep @full",
+    "e2e:release": "node scripts/e2e-static.mjs release",
+    "size": "node scripts/size.mjs dist",
+    "pack": "node scripts/pack.mjs",
+    "check-release": "node scripts/check-release.mjs",
+    "check:youtube": "node scripts/check-bundle-urls.mjs dist-youtube --profile youtube",
+    "verify": "node scripts/verify.mjs",
+    "verify:fast": "node scripts/verify.mjs --fast",
+    "verify:full": "node scripts/verify.mjs --full"
+  },
+  "dependencies": {
+    "@fontsource/rubik": "5.3.0",
+    "lil-gui": "0.21.0",
+    "pixi.js": "8.21.0",
+    "zzfx": "1.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.5",
+    "@types/ysdk": "1.2.0",
+    "fflate": "0.8.3",
+    "typescript": "7.0.2",
+    "valibot": "1.5.0",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "upgrades.schema.json",
+  "note": "Улучшения из docs/01a-content.md §5. Цены уровней — геометрический ряд от price1 до price5 (сборщик считает промежуточные). Офлайн: до offlineMaxHours, offlineRate от активного темпа.",
+  "offlineMaxHours": 8,
+  "offlineRate": 0.5,
+  "prestige": { "thresholdCoinsEarned": 50000, "incomeBonusPerPrestige": 0.25 },
+  "upgrades": [
+    { "id": "incubator", "name": { "ru": "Инкубаторы", "en": "Incubators" }, "levels": 4, "price1": 50, "priceMax": 5000, "effect": { "type": "slots", "perLevel": 1 } },
+    { "id": "incubator_speed", "name": { "ru": "Скорость вылупления", "en": "Hatch Speed" }, "levels": 5, "price1": 40, "priceMax": 3000, "effect": { "type": "hatchTime", "perLevel": -0.10 } },
+    { "id": "showcase", "name": { "ru": "Витрина", "en": "Showcase" }, "levels": 5, "price1": 80, "priceMax": 8000, "effect": { "type": "showcaseSlots", "base": 3, "perLevel": 1 } },
+    { "id": "sign", "name": { "ru": "Вывеска", "en": "Sign" }, "levels": 5, "price1": 60, "priceMax": 4000, "effect": { "type": "spawnRate", "perLevel": -0.12 } },
+    { "id": "cash", "name": { "ru": "Касса", "en": "Register" }, "levels": 5, "price1": 100, "priceMax": 6000, "effect": { "type": "bargain", "perLevel": 0.03 } },
+    { "id": "helper_feed", "name": { "ru": "Помощник-кормилец", "en": "Feeder" }, "levels": 1, "price1": 500, "priceMax": 500, "effect": { "type": "autoFeed", "creatures": 1, "offline": true } },
+    { "id": "helper_sell", "name": { "ru": "Помощник-продавец", "en": "Seller" }, "levels": 1, "price1": 1200, "priceMax": 1200, "effect": { "type": "autoSell", "priceShare": 1.0, "offline": true } },
+    { "id": "helper_courier", "name": { "ru": "Курьер яиц", "en": "Egg Courier" }, "levels": 1, "price1": 2500, "priceMax": 2500, "currency": "crystals", "effect": { "type": "autoBuyEgg", "egg": "egg_basic", "offline": true } }
+  ]
+}

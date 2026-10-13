@@ -1,0 +1,45 @@
+{
+  "id": "anomaly-shop",
+  "title": {
+    "ru": "Вылупляй и Перепродавай! Лавка Аномалий",
+    "en": "Hatch & Resell: Anomaly Shop"
+  },
+  "age": { "yandex": "6+", "youtube": "13+" },
+  "languages": ["ru", "en"],
+  "fallbackLanguage": "en",
+  "ruFallbackLanguages": ["ru", "be", "kk", "uk", "uz"],
+  "orientation": "any",
+  "bootBackground": "#2a2140",
+  "metrikaCounterId": 0,
+  "community": {
+    "telegram": "https://t.me/sunhearth",
+    "vk": "https://vk.ru/sunhearth_yandex",
+    "placement": ["pause", "settings", "side"]
+  },
+  "profiles": {
+    "yandex": {
+      "community": true,
+      "ads": true,
+      "payments": false,
+      "analytics": true,
+      "externalRequests": true,
+      "sdk": "/sdk.js"
+    },
+    "null": {
+      "community": true,
+      "ads": false,
+      "payments": false,
+      "analytics": false,
+      "externalRequests": false
+    },
+    "youtube": {
+      "community": false,
+      "ads": false,
+      "payments": false,
+      "analytics": false,
+      "externalRequests": false,
+      "sdk": "https://www.youtube.com/game_api/v1",
+      "saveMaxBytes": 3145728
+    }
+  }
+}

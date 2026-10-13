@@ -1,0 +1,9 @@
+# LF everywhere: shell scripts and hooks run in Linux (cloud session, CI)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.webp binary
+*.woff2 binary
+*.mp3 binary
+*.ogg binary
+*.zip binary

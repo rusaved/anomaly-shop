@@ -1,0 +1,53 @@
+{
+  "game": "anomaly-shop",
+  "updated": "2026-10-13",
+  "legend": { "passes": "true после verify:fast и записи в progress.md; итог вехи — полный verify", "priority": "P1 обязательно для вехи, P2 можно резать", "deferred": "перенесено в следующую веху или обновление" },
+  "milestones": [
+    { "code": "M0", "name": "Каркас", "goal": "Проект собирается, запускается на телефоне и ПК, слой платформы и сохранения работают, verify зелёный", "plan": "2026-10-15" },
+    { "code": "M1", "name": "Петля", "goal": "Первая минута по 01 §4: яйцо → вылупление → кормёжка → торг → монеты; 8 видов; первое улучшение", "plan": "2026-10-18" },
+    { "code": "M2", "name": "Прокачка", "goal": "Инкубаторы, витрина, помощники, офлайн-доход, районы и типы покупателей, 12 видов, модель баланса F1–F10", "plan": "2026-10-22" },
+    { "code": "M3", "name": "Мета", "goal": "Коллекция, аномалий дня, задание дня, календарь входа, событие как конфиг, перерождение, поле ввода промокода (коды и награды в content/codes.json, только внутриигровые ценности) — чтобы подпись кнопок сообществ «промокоды и бонусы в канале» была правдой на релизе", "plan": "2026-10-26" },
+    { "code": "M4", "name": "Реклама и языки", "goal": "Реальный SDK Яндекса, 5 точек рекламы за награду, полноэкранная по правилам, покупки, аналитика, ru/en проверены", "plan": "2026-10-30" },
+    { "code": "M5", "name": "Полировка", "goal": "Сочность, звук, 30 видов, обложки и фотостудия, профиль youtube собирается и проходит тест «нет внешних URL», бюджеты размера", "plan": "2026-11-04" },
+    { "code": "M6", "name": "Сборка", "goal": "Чек-лист Яндекса, релизный архив, карточка ru/en, финальные тесты", "plan": "2026-11-08" }
+  ],
+  "features": [
+    { "id": "M0-01", "milestone": "M0", "priority": "P1", "title": "Скелет проекта: Vite + TypeScript + PixiJS 8, HTML-слой UI, запуск dev и build", "criteria": "npm run dev открывает пустую лавку с фоном; build < 2 МБ gzip", "passes": false },
+    { "id": "M0-02", "milestone": "M0", "priority": "P1", "title": "Слой платформы: профили yandex / null / youtube, выбор переменной сборки", "criteria": "три сборки собираются; youtube-сборка проходит тест «нет внешних URL»", "passes": false },
+    { "id": "M0-03", "milestone": "M0", "priority": "P1", "title": "Мок Яндекс SDK в dev и инициализация LoadingAPI.ready / GameplayAPI по правилам", "criteria": "в null-профиле игра стартует без SDK; в yandex — ready вызывается после первого кадра", "passes": false },
+    { "id": "M0-04", "milestone": "M0", "priority": "P1", "title": "Сохранения: схема состояния, версия, миграции, запись через платформу (Яндекс / localStorage / ytgame)", "criteria": "перезагрузка возвращает монеты и существ; строка сохранения < 100 КБ", "passes": false },
+    { "id": "M0-05", "milestone": "M0", "priority": "P1", "title": "Данные из content/*.json с валидацией схемы (validate:content)", "criteria": "eggs, species, customers, upgrades, calendar, i18n загружаются; ошибка схемы валит verify", "passes": false },
+    { "id": "M0-06", "milestone": "M0", "priority": "P1", "title": "Адаптивная раскладка: портрет и альбом, тач и мышь, без блокировки ориентации", "criteria": "375×812, 812×375, 1280×720 — ничего не обрезано", "passes": false },
+    { "id": "M0-07", "milestone": "M0", "priority": "P1", "title": "i18n ru/en: загрузка словаря, переключение по языку платформы", "criteria": "все строки каркаса из словаря; en без обрезаний", "passes": false },
+    { "id": "M0-08", "milestone": "M0", "priority": "P1", "title": "Сцена лавки: фон, прилавок, 1 инкубатор, 1 витрина, место очереди (заглушки-примитивы)", "criteria": "сцена рисуется в обеих ориентациях, 60 fps на слабом профиле", "passes": false },
+    { "id": "M0-09", "milestone": "M0", "priority": "P1", "title": "Кнопки сообществ в паузе: Telegram и ВКонтакте с подписью, адреса из game.json, без награды", "criteria": "кнопки открывают адреса в новой вкладке вне геймплея; в youtube-профиле кнопки скрыты", "passes": false },
+    { "id": "M0-10", "milestone": "M0", "priority": "P1", "title": "verify: typecheck, unit, validate:content, build, size, verify:fast до 10 минут; CI публикует Pages", "criteria": "verify:fast зелёный; ссылка продюсера с моком SDK открывается", "passes": false },
+    { "id": "M0-11", "milestone": "M0", "priority": "P2", "title": "Архитектурный тест: шапки модулей, без кириллицы в src, стоп-слова", "criteria": "tests/architecture.test.ts зелёный", "passes": false },
+    { "id": "M0-12", "milestone": "M0", "priority": "P1", "title": "Итог вехи M0: состояние, допущения, «что проверить продюсеру», стоп", "criteria": "progress.md по шаблону, строка «Ждёт решения продюсера»", "passes": false },
+
+    { "id": "M1-01", "milestone": "M1", "priority": "P1", "title": "Яйцо: покупка, инкубатор, таймер, тапы ускоряют", "criteria": "обычное яйцо вылупляется за 3 с, тапы сокращают до 1 с", "passes": false },
+    { "id": "M1-02", "milestone": "M1", "priority": "P1", "title": "Вылупление: выбор вида по шансам редкости, появление существа с сочным откликом", "criteria": "распределение редкостей по eggs.json на 1 000 прогонах ±3%", "passes": false },
+    { "id": "M1-03", "milestone": "M1", "priority": "P1", "title": "Существо: портрет-примитив, уровень, цена, реплика", "criteria": "8 видов из species.json видны и различимы", "passes": false },
+    { "id": "M1-04", "milestone": "M1", "priority": "P1", "title": "Кормёжка тапами: шкала сытости, уровень, рост цены, отклик (прыжок, цифра, звук-заглушка)", "criteria": "5 тапов = уровень; цена растёт по species.json", "passes": false },
+    { "id": "M1-05", "milestone": "M1", "priority": "P1", "title": "Очередь покупателей: появление по таймеру, тип «бережливый», предложение цены", "criteria": "покупатель каждые 6 с, очередь 3", "passes": false },
+    { "id": "M1-06", "milestone": "M1", "priority": "P1", "title": "Торг: принять / поторговаться / подождать с шансами из customers.json", "criteria": "монеты начисляются; провал торга уводит покупателя", "passes": false },
+    { "id": "M1-07", "milestone": "M1", "priority": "P1", "title": "Монеты и касса: счётчик, полёт монет, HUD", "criteria": "HUD обновляется без рывков", "passes": false },
+    { "id": "M1-08", "milestone": "M1", "priority": "P1", "title": "Первое улучшение: второй инкубатор и скорость вылупления (магазин улучшений, 2 позиции)", "criteria": "покупка меняет поведение; сохраняется", "passes": false },
+    { "id": "M1-09", "milestone": "M1", "priority": "P1", "title": "Первая минута по 01 §4: подсказки до 6 слов, последовательность 0–60 с", "criteria": "сценарий e2e первой минуты проходит без текста длиннее 6 слов", "passes": false },
+    { "id": "M1-10", "milestone": "M1", "priority": "P2", "title": "Тёплое яйцо после 5 сделок", "criteria": "открывается, шансы по eggs.json", "passes": false },
+    { "id": "M1-11", "milestone": "M1", "priority": "P1", "title": "Модель баланса F1–F4 (первая сделка до 40 с, 100 монет к 2 мин, улучшение к 3 мин, редкий к 5 мин)", "criteria": "sim:balance зелёный", "passes": false },
+    { "id": "M1-12", "milestone": "M1", "priority": "P1", "title": "Итог вехи M1: verify, плейтестер один прогон, «что проверить продюсеру» (5 пунктов), стоп", "criteria": "по шаблону; «Ждёт решения продюсера»", "passes": false },
+
+    { "id": "M2-01", "milestone": "M2", "priority": "P1", "title": "Инкубаторы до 4 и скорость до 5 уровней", "criteria": "по upgrades.json", "passes": false },
+    { "id": "M2-02", "milestone": "M2", "priority": "P1", "title": "Витрина 3 → 8 мест: рост цены со временем, привлечение покупателей", "criteria": "цена на витрине растёт; покупатели выбирают по типу", "passes": false },
+    { "id": "M2-03", "milestone": "M2", "priority": "P1", "title": "Помощники: автокорм, автопродажа, курьер", "criteria": "работают без тапов; офлайн-доход считается при возврате", "passes": false },
+    { "id": "M2-04", "milestone": "M2", "priority": "P1", "title": "Офлайн-доход до 8 часов, экран «пока тебя не было»", "criteria": "50% онлайн-темпа; экран показывает сумму", "passes": false },
+    { "id": "M2-05", "milestone": "M2", "priority": "P1", "title": "Районы и типы покупателей: двор, улица, площадь; коллекционер и богач", "criteria": "открытие по сделкам; доли предложений по customers.json", "passes": false },
+    { "id": "M2-06", "milestone": "M2", "priority": "P1", "title": "12 видов существ, странное и светящееся яйца", "criteria": "species.json и eggs.json расширены, валидны", "passes": false },
+    { "id": "M2-07", "milestone": "M2", "priority": "P1", "title": "Вывеска и касса", "criteria": "эффекты по upgrades.json", "passes": false },
+    { "id": "M2-08", "milestone": "M2", "priority": "P2", "title": "Кристаллы: источник и трата (редкие яйца, ускорения)", "criteria": "вторая валюта в HUD и магазине", "passes": false },
+    { "id": "M2-09", "milestone": "M2", "priority": "P1", "title": "Модель баланса F5–F10", "criteria": "sim:balance зелёный", "passes": false },
+    { "id": "M2-10", "milestone": "M2", "priority": "P1", "title": "Тест «скриншот другу: что тут делать» — три скриншота в docs/evidence для продюсера", "criteria": "скриншоты лавки, сделки, магазина", "passes": false },
+    { "id": "M2-11", "milestone": "M2", "priority": "P1", "title": "Итог вехи M2", "criteria": "по шаблону", "passes": false }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "_comment": "Stop-lists for automated checks only (docs/03-yandex-compliance.md, sections 3 and 4). Read by tests/architecture.test.ts and scripts/check-release.mjs; never shipped in a build. The only place where these words are written literally.",
+  "brands": [
+    "Roblox", "Роблокс", "Robux", "Робукс", "Робби", "Minecraft", "Майнкрафт", "Майн",
+    "Нубик", "Барри", "брейнрот", "brainrot", "скибиди", "skibidi", "Лабубу", "Labubu", "Спрунки", "Sprunki",
+    "Pokemon", "Покемон", "Pikachu", "Пикачу", "Tamagotchi", "Тамагочи", "SCP",
+    "Tralalero", "Тралалело", "Bombardiro", "Бомбардиро", "Tung Tung", "Тунг Тунг"
+  ],
+  "onlineWords": ["онлайн", "online", "мультиплеер", "multiplayer", "PvP"],
+  "devTraces": [
+    "demo", "beta", "alpha", "test", "тест", "debug", "TODO", "WIP",
+    "в разработке", "скоро", "coming soon", "lorem ipsum"
+  ],
+  "gambling": ["казино", "casino", "лутбокс", "loot box", "кейс", "кейсы", "ставка на", "jackpot"],
+  "age": {
+    "ru": [
+      "смерть", "умер", "умерла", "погиб", "гибель", "убит", "убили", "насмерть", "труп", "жертва", "кровь",
+      "конец игры", "ты проиграл", "бойня", "жуть", "ужас", "кошмар", "голодает"
+    ],
+    "en": [
+      "death", "dead", "die", "died", "kill", "killed", "killer", "victim", "corpse", "blood",
+      "game over", "you lost", "horror", "scary", "terror", "nightmare", "starving"
+    ]
+  }
+}

@@ -5,11 +5,11 @@
 ## Состояние
 Обновляется после каждой фичи, до 10 строк. Новая сессия начинает отсюда.
 - Веха: M0, в работе (сессия 2026-10-13)
-- Сделано: M0-01 скелет, M0-02 слой платформы (yandex / null / youtube, три сборки, check:youtube зелёный)
-- Дальше: M0-03 мок SDK в dev и инициализация ready / GameplayAPI по правилам (PauseManager, жизненный цикл вкладки)
+- Сделано: M0-01 скелет, M0-02 платформа (три профиля), M0-03 пауза, часы, ready по правилам, `__TEST__`
+- Дальше: M0-04 сохранения (схема, версия, миграции, очередь записи через платформу)
 - Открытые вопросы: `QUESTIONS.md` (Q-001…Q-007, сборка идёт по умолчанию)
-- Последний verify: verify:fast — код 0 (M0-02)
-- Заметка: зависимости ставить `npx npm@11 install` (npm 10.9.4 падает), Chromium — `bash scripts/ensure-chromium.sh`
+- Последний verify: verify:fast — код 0 (M0-03)
+- Заметка: зависимости ставить `npx npm@11 install` (npm 10.9.4 падает), Chromium — `bash scripts/ensure-chromium.sh`; dev null-профиля — `npm run dev:null` (режим `nosdk`)
 
 ## Шаблон записи о фиче
 ```
@@ -42,6 +42,14 @@
 ```
 
 ## Записи
+
+### 2026-10-13 19:58 · M0-03 · мок SDK и инициализация ready / GameplayAPI по правилам
+- Сделано: `src/core/pause.ts` (PauseManager: причины `ad`, `sdk`, `hidden`, `blur`, `menu`, `transition`), `src/core/runtime.ts` (шаги 1/60 с, ≤ 5 за кадр, накопитель сбрасывается после паузы, `timeScale`, `runSim`), `src/platform/lifecycle.ts` (visibilitychange, blur/focus, pagehide), `src/test-api/index.ts` (`window.__TEST__`: `state()` с `controllable` и причинами паузы, `events`, `setTimeScale`, `runSim`; только в сборках с `__TEST_API__`). В `main.ts`: подписка на паузу платформы до `init()`, `ready()` после первого кадра, `GameplayAPI.start` только когда игра управляема и не на паузе, `startup_ad_start/end` в аналитику. Проверено в браузере: `?mock_startup_ad=1` даёт порядок `init → on → on → getPlayer → game_api_pause → LoadingAPI.ready → game_api_resume → GameplayAPI.start`, нарушений мока нет; `dev:null` стартует без тега `sdk.js`.
+- Разведка: мок уже отдавался плагином Vite на `/sdk.js`; не хватало только клиентской части. Режим `local` запрещён Vite 8 — переименован в `nosdk` (допущение 14).
+- Тесты: verify:fast — код 0; unit 34 прошло, 0 упало
+- Данные: нет
+- Дальше: M0-04
+- Вопросы: нет
 
 ### 2026-10-13 19:50 · M0-02 · слой платформы
 - Сделано: `src/platform/` — `types.ts` (контракт из `02` §6.1), `shared.ts` (язык ru/be/kk/uk/uz → ru, устройство, выбор свежего сохранения по `rev`/`savedAt`), `storage.ts` (зеркало с префиксом, без исключений), `null.ts`, `yandex.ts` (init с повтором и откатом к поведению null, подписка на `game_api_pause/resume` до `ready()`, `ready()` один раз, GameplayAPI только на переходах, облако + зеркало, реклама по протоколу со сторожем 10 с), `youtube.ts` (firstFrameReady/gameReady, saveData/loadData, пауза и звук), `index.ts` (динамический импорт по `__PLATFORM__`). `src/analytics/` — имена событий и буфер `track()`. В `__GAME__` добавлен `ruFallbackLanguages`. Три сборки собираются; в каждой только свой модуль платформы (проверено grep по `dist*/assets`); `check:youtube` зелёный.

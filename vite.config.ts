@@ -13,7 +13,7 @@ const YOUTUBE_SDK = 'https://www.youtube.com/game_api/v1';
 
 const MODES: Record<string, Flags> = {
   development: { debug: true, studio: true, test: true, label: false, metrika: false, platform: 'yandex' },
-  local: { debug: true, studio: true, test: true, label: false, metrika: false, platform: 'null' },
+  nosdk: { debug: true, studio: true, test: true, label: false, metrika: false, platform: 'null' },
   production: { debug: false, studio: false, test: false, label: false, metrika: true, platform: 'yandex' },
   playtest: { debug: true, studio: false, test: false, label: false, metrika: false, platform: 'yandex' },
   e2e: { debug: true, studio: true, test: true, label: false, metrika: false, platform: 'yandex' },

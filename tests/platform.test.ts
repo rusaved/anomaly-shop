@@ -41,7 +41,7 @@ function yandexDeps(win: MockWindow, over: Partial<YandexDeps> = {}): YandexDeps
     storage: memoryStorage(),
     languageCode: 'de',
     device: 'desktop',
-    now: () => 1000,
+    now: () => Date.now(),
     caps: CAPS,
     prefix: 'anomaly-shop',
     track: () => undefined,
@@ -165,7 +165,7 @@ describe('yandex profile on the SDK mock', () => {
     await p.init();
     expect(await p.load()).toBeNull();
     const s1 = JSON.stringify({ v: 1, rev: 1, savedAt: 10 });
-    p.save(s1);
+    p.save(s1, { flush: true });
     await new Promise((r) => setTimeout(r, 0));
     expect(storage.getItem('anomaly-shop:save')).toBe(s1);
     expect(win.__YA_MOCK__!.playerData).toEqual({ save: s1 });
@@ -184,7 +184,7 @@ describe('yandex profile on the SDK mock', () => {
     const track = vi.fn();
     const p = createYandexPlatform(yandexDeps(win, { storage, track }));
     await p.init();
-    p.save('{"v":1,"rev":1,"savedAt":1}');
+    p.save('{"v":1,"rev":1,"savedAt":1}', { flush: true });
     await new Promise((r) => setTimeout(r, 0));
     expect(track).toHaveBeenCalledWith('cloud_save_failed');
     expect(await p.load()).toBe('{"v":1,"rev":1,"savedAt":1}');
@@ -261,7 +261,7 @@ describe('youtube profile on a fake ytgame', () => {
     };
     return { sdk, calls, fire, audio: (on) => audio(on), get data() { return box.data; } };
   }
-  const deps = (sdk: YtGame | null, over: Partial<YoutubeDeps> = {}): YoutubeDeps => ({ sdk, languageCode: 'ru', device: 'desktop', now: () => 7, caps: { ads: false, payments: false, community: false, analytics: false }, track: () => undefined, ...over });
+  const deps = (sdk: YtGame | null, over: Partial<YoutubeDeps> = {}): YoutubeDeps => ({ sdk, languageCode: 'ru', device: 'desktop', now: () => Date.now(), caps: { ads: false, payments: false, community: false, analytics: false }, track: () => undefined, ...over });
 
   it('firstFrameReady, then gameReady once; language from the SDK', async () => {
     const yt = fakeYt('ja');
@@ -283,7 +283,7 @@ describe('youtube profile on a fake ytgame', () => {
     p.onAudioChange(audio);
     await p.init();
     expect(await p.load()).toBeNull();
-    p.save('{"v":1,"rev":1,"savedAt":1}');
+    p.save('{"v":1,"rev":1,"savedAt":1}', { flush: true });
     await new Promise((r) => setTimeout(r, 0));
     expect(yt.data).toBe('{"v":1,"rev":1,"savedAt":1}');
     expect(await p.load()).toBe('{"v":1,"rev":1,"savedAt":1}');

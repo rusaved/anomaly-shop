@@ -6,6 +6,7 @@ import type { Player, SDK, SafeStorage } from 'ysdk';
 import type { DeviceType, Platform, PlatformCaps, PlatformTrack } from './types.ts';
 import { browserStorage, createMirror, type KeyValue, type Mirror } from './storage.ts';
 import { gameLanguage, guessDevice, pickNewestSave, profileCaps } from './shared.ts';
+import { CLOUD_QUEUE, createSaveQueue } from './save-queue.ts';
 
 export const SAVE_KEY = 'save';
 export const SLOW_INIT_MS = 8000;
@@ -50,6 +51,13 @@ export function createYandexPlatform(deps: YandexDeps): Platform {
   const pauseCbs: Array<() => void> = [];
   const resumeCbs: Array<() => void> = [];
   const fire = (list: Array<() => void>): void => list.forEach((cb) => cb());
+  const cloud = createSaveQueue({
+    ...CLOUD_QUEUE,
+    now: deps.now,
+    write: (data, flush) => {
+      player?.setData({ [SAVE_KEY]: data }, flush).catch(() => deps.track('cloud_save_failed'));
+    },
+  });
 
   async function initSdk(): Promise<SDK | null> {
     if (!deps.sdkInit) {
@@ -193,9 +201,7 @@ export function createYandexPlatform(deps: YandexDeps): Platform {
     },
     save(data, opts) {
       mirror.set(SAVE_KEY, data);
-      if (player) {
-        player.setData({ [SAVE_KEY]: data }, Boolean(opts?.flush)).catch(() => deps.track('cloud_save_failed'));
-      }
+      if (player) cloud.request(data, Boolean(opts?.flush));
     },
     now: () => (sdk ? sdk.serverTime() : deps.now()),
   };

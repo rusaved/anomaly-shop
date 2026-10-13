@@ -9,19 +9,24 @@ import '@fontsource/rubik/latin-700.css';
 import './ui/styles.css';
 import style from '@content/style.json';
 import { applyTheme } from './ui/theme.ts';
+import { createHud } from './ui/hud.ts';
 import { createSceneApp } from './scene/app.ts';
 import { loadPlatform } from './platform/index.ts';
 import { watchLifecycle } from './platform/lifecycle.ts';
+import { bindPersistence, loadState } from './platform/persist.ts';
 import { createRuntime } from './core/runtime.ts';
+import { createStore } from './sim/store.ts';
+import { newSave } from './sim/state.ts';
 import { track } from './analytics/track.ts';
 
 async function boot(): Promise<void> {
   applyTheme(style.colors);
   const platform = await loadPlatform(track);
   const runtime = createRuntime(() => {
-    /* the sim arrives with M0-04 and M1 */
+    /* the sim arrives with M1 */
   });
   let controllable = false;
+  let flushSave: () => void = () => undefined;
 
   // Pause wiring (docs/02-tech.md, section 4.2): sdk from the platform, hidden/blur from the browser.
   platform.onPause(() => {
@@ -33,11 +38,14 @@ async function boot(): Promise<void> {
     runtime.pause.resume('sdk');
   });
   watchLifecycle({
-    hidden: () => runtime.pause.pause('hidden'),
+    hidden: () => {
+      runtime.pause.pause('hidden');
+      flushSave();
+    },
     visible: () => runtime.pause.resume('hidden'),
     blur: () => runtime.pause.pause('blur'),
     focus: () => runtime.pause.resume('blur'),
-    pagehide: () => undefined,
+    pagehide: () => flushSave(),
   });
   runtime.pause.onChange((paused) => {
     if (!controllable) return;
@@ -46,10 +54,16 @@ async function boot(): Promise<void> {
   });
 
   await platform.init();
-  document.documentElement.lang = platform.language();
+  const lang = platform.language();
+  document.documentElement.lang = lang;
+
+  const store = createStore(await loadState(platform, track), () => platform.now());
+  const persistence = bindPersistence(store, platform);
+  flushSave = () => persistence.flush();
 
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
   const appRoot = document.getElementById('app') as HTMLElement;
+  const uiRoot = document.getElementById('ui') as HTMLElement;
   const scene = await createSceneApp(canvas, style.colors.sky, window.devicePixelRatio);
   const fit = (): void => {
     canvas.style.width = `${appRoot.clientWidth}px`;
@@ -59,9 +73,17 @@ async function boot(): Promise<void> {
   fit();
   window.addEventListener('resize', fit);
 
+  const hud = createHud(uiRoot, lang);
+  hud.update(store.state.coins);
+  store.onCommit((s) => hud.update(s.coins));
+
+  if (__DEBUG_TOOLS__ && new URLSearchParams(location.search).has('debug')) {
+    const { installDebugPanel } = await import('./debug/panel.ts');
+    installDebugPanel({ store, runtime, fresh: () => newSave(platform.now()) });
+  }
   if (__TEST_API__) {
     const { installTestApi } = await import('./test-api/index.ts');
-    installTestApi({ runtime, platform, isControllable: () => controllable, snapshot: () => ({ coins: 0, creatures: [] }) });
+    installTestApi({ runtime, platform, isControllable: () => controllable, snapshot: () => ({ coins: store.state.coins, creatures: store.state.creatures }) });
   }
 
   scene.app.ticker.add((ticker) => runtime.frame(ticker.deltaMS / 1000));

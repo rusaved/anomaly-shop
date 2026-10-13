@@ -5,10 +5,10 @@
 ## Состояние
 Обновляется после каждой фичи, до 10 строк. Новая сессия начинает отсюда.
 - Веха: M0, в работе (сессия 2026-10-13)
-- Сделано: M0-01 скелет, M0-02 платформа (три профиля), M0-03 пауза, часы, ready по правилам, `__TEST__`
-- Дальше: M0-04 сохранения (схема, версия, миграции, очередь записи через платформу)
+- Сделано: M0-01 скелет, M0-02 платформа, M0-03 пауза/часы/ready, M0-04 сохранения (схема v1, миграции, очередь, HUD монет, `?debug=1`)
+- Дальше: M0-05 данные content/*.json со схемами valibot, calendar.json, i18n ru/en
 - Открытые вопросы: `QUESTIONS.md` (Q-001…Q-007, сборка идёт по умолчанию)
-- Последний verify: verify:fast — код 0 (M0-03)
+- Последний verify: verify:fast — код 0 (M0-04)
 - Заметка: зависимости ставить `npx npm@11 install` (npm 10.9.4 падает), Chromium — `bash scripts/ensure-chromium.sh`; dev null-профиля — `npm run dev:null` (режим `nosdk`)
 
 ## Шаблон записи о фиче
@@ -42,6 +42,14 @@
 ```
 
 ## Записи
+
+### 2026-10-13 20:05 · M0-04 · сохранения через платформу
+- Сделано: `src/sim/state.ts` (SaveData v1: валюты, инкубаторы, существа, витрина, улучшения, помощники, коллекция, календарь, перерождения, статистика, настройки, флаги; `newSave`, `normalize`, `parseSave`, `serialize`), `src/sim/migrate.ts` (таблица vN → vN+1, незнакомая версия → новый профиль), `src/sim/store.ts` (`commit()` поднимает `rev` и `savedAt`, `flush` для ключевых моментов), `src/platform/save-queue.ts` (дебаунс 2 с, не дольше 10 с, не чаще раза в 3,5 с — ≤ 86 записей за 5 минут проверено тестом), `src/platform/persist.ts` (загрузка: разбор → миграция → умолчания, битое → новый профиль и `save_corrupted`), облачные записи yandex и youtube идут через очередь; `hidden`/`pagehide` → немедленная запись. UI: HUD с монетами (`src/ui/hud.ts`, Intl.NumberFormat) и панель `?debug=1` (`src/debug/panel.ts`: +100 монет, + существо, time scale, сброс). Проверено в браузере на обоих профилях: +200 монет и существо переживают F5; строка полной лавки (60 существ, 40 видов) — меньше 50 КБ (тест).
+- Разведка: платформа уже умела `load/save`; добавлены только очередь и слой разбора. Существа в M0 — тестовые из панели отладки (вылупление — M1).
+- Тесты: verify:fast — код 0; unit 45 прошло, 0 упало
+- Данные: нет
+- Дальше: M0-05
+- Вопросы: нет
 
 ### 2026-10-13 19:58 · M0-03 · мок SDK и инициализация ready / GameplayAPI по правилам
 - Сделано: `src/core/pause.ts` (PauseManager: причины `ad`, `sdk`, `hidden`, `blur`, `menu`, `transition`), `src/core/runtime.ts` (шаги 1/60 с, ≤ 5 за кадр, накопитель сбрасывается после паузы, `timeScale`, `runSim`), `src/platform/lifecycle.ts` (visibilitychange, blur/focus, pagehide), `src/test-api/index.ts` (`window.__TEST__`: `state()` с `controllable` и причинами паузы, `events`, `setTimeScale`, `runSim`; только в сборках с `__TEST_API__`). В `main.ts`: подписка на паузу платформы до `init()`, `ready()` после первого кадра, `GameplayAPI.start` только когда игра управляема и не на паузе, `startup_ad_start/end` в аналитику. Проверено в браузере: `?mock_startup_ad=1` даёт порядок `init → on → on → getPlayer → game_api_pause → LoadingAPI.ready → game_api_resume → GameplayAPI.start`, нарушений мока нет; `dev:null` стартует без тега `sdk.js`.

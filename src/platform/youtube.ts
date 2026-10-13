@@ -4,6 +4,7 @@
 
 import type { DeviceType, Platform, PlatformCaps, PlatformTrack } from './types.ts';
 import { gameLanguage, guessDevice, profileCaps } from './shared.ts';
+import { CLOUD_QUEUE, createSaveQueue } from './save-queue.ts';
 
 /** The part of the YouTube Playables SDK this game uses (the global is created by the SDK tag). */
 export interface YtGame {
@@ -53,6 +54,13 @@ export function createYoutubePlatform(deps: YoutubeDeps): Platform {
   const pauseCbs: Array<() => void> = [];
   const resumeCbs: Array<() => void> = [];
   const audioCbs: Array<(on: boolean) => void> = [];
+  const queue = createSaveQueue({
+    ...CLOUD_QUEUE,
+    now: deps.now,
+    write: (data) => {
+      sdk?.game.saveData(data).catch(() => report('save_failed'));
+    },
+  });
 
   function safeAudio(s: YtGame): boolean {
     try {
@@ -128,8 +136,8 @@ export function createYoutubePlatform(deps: YoutubeDeps): Platform {
         return null;
       }
     },
-    save(data) {
-      sdk?.game.saveData(data).catch(() => report('save_failed'));
+    save(data, opts) {
+      if (sdk) queue.request(data, Boolean(opts?.flush));
     },
     now: deps.now,
   };

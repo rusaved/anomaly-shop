@@ -71,7 +71,8 @@ describe('platform helpers', () => {
     expect(pickNewestSave([b, a])).toBe(b);
     expect(pickNewestSave([a, c])).toBe(c);
     expect(pickNewestSave(['{broken', a])).toBe(a);
-    expect(pickNewestSave([null, undefined, '{broken'])).toBeNull();
+    expect(pickNewestSave([null, undefined, '{broken'])).toBe('{broken');
+    expect(pickNewestSave([null, undefined, ''])).toBeNull();
     expect(saveStamp('[]')).toBeNull();
   });
 

@@ -21,7 +21,7 @@
     { "id": "M0-07", "milestone": "M0", "priority": "P1", "title": "i18n ru/en: загрузка словаря, переключение по языку платформы", "criteria": "все строки каркаса из словаря; en без обрезаний", "passes": true },
     { "id": "M0-08", "milestone": "M0", "priority": "P1", "title": "Сцена лавки: фон, прилавок, 1 инкубатор, 1 витрина, место очереди (заглушки-примитивы)", "criteria": "сцена рисуется в обеих ориентациях, 60 fps на слабом профиле", "passes": true },
     { "id": "M0-09", "milestone": "M0", "priority": "P1", "title": "Кнопки сообществ в паузе: Telegram и ВКонтакте с подписью, адреса из game.json, без награды", "criteria": "кнопки открывают адреса в новой вкладке вне геймплея; в youtube-профиле кнопки скрыты", "passes": true },
-    { "id": "M0-10", "milestone": "M0", "priority": "P1", "title": "verify: typecheck, unit, validate:content, build, size, verify:fast до 10 минут; CI публикует Pages", "criteria": "verify:fast зелёный; ссылка продюсера с моком SDK открывается", "passes": false },
+    { "id": "M0-10", "milestone": "M0", "priority": "P1", "title": "verify: typecheck, unit, validate:content, build, size, verify:fast до 10 минут; CI публикует Pages", "criteria": "verify:fast зелёный; ссылка продюсера с моком SDK открывается", "passes": true },
     { "id": "M0-11", "milestone": "M0", "priority": "P2", "title": "Архитектурный тест: шапки модулей, без кириллицы в src, стоп-слова", "criteria": "tests/architecture.test.ts зелёный", "passes": false },
     { "id": "M0-12", "milestone": "M0", "priority": "P1", "title": "Итог вехи M0: состояние, допущения, «что проверить продюсеру», стоп", "criteria": "progress.md по шаблону, строка «Ждёт решения продюсера»", "passes": false },
 

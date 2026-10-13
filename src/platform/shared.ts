@@ -57,7 +57,10 @@ export function saveStamp(text: string | null | undefined): { rev: number; saved
   return null;
 }
 
-/** The candidate with the biggest rev, then the latest savedAt; corrupted candidates lose. */
+/**
+ * The candidate with the biggest rev, then the latest savedAt; corrupted candidates lose to a valid one.
+ * When nothing is valid, the first non-empty text comes back as is, so the caller can report it (save_corrupted).
+ */
 export function pickNewestSave(candidates: ReadonlyArray<string | null | undefined>): string | null {
   let best: string | null = null;
   let bestStamp: { rev: number; savedAt: number } | null = null;
@@ -69,7 +72,7 @@ export function pickNewestSave(candidates: ReadonlyArray<string | null | undefin
       bestStamp = s;
     }
   }
-  return best;
+  return best ?? candidates.find((c): c is string => typeof c === 'string' && c.length > 0) ?? null;
 }
 
 /** Calls fn once; later calls are ignored (ready(), gameReady()). */

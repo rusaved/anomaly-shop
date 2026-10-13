@@ -256,3 +256,16 @@
   font-size: 12px;
   text-align: right;
 }
+
+.build-label {
+  position: absolute;
+  left: calc(6px + var(--safe-left));
+  bottom: calc(4px + var(--safe-bottom));
+  z-index: 45;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--c-uiOverlay);
+  color: var(--c-uiMuted);
+  font-size: 11px;
+  pointer-events: none;
+}

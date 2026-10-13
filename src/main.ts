@@ -16,6 +16,7 @@ import { createI18n } from './ui/i18n.ts';
 import { createPauseWindow } from './ui/pause.ts';
 import { createSettingsWindow } from './ui/settings.ts';
 import { communityLinks, renderCommunity } from './ui/community.ts';
+import { renderBuildLabel } from './ui/label.ts';
 import { dictionaries, style as styleData } from './content/index.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -34,15 +35,22 @@ async function boot(): Promise<void> {
     /* the sim arrives with M1 */
   });
   let controllable = false;
+  let startupAd = false;
   let flushSave: () => void = () => undefined;
 
   // Pause wiring (docs/02-tech.md, section 4.2): sdk from the platform, hidden/blur from the browser.
   platform.onPause(() => {
-    if (!controllable) track('startup_ad_start');
+    if (!controllable) {
+      startupAd = true;
+      track('startup_ad_start');
+    }
     runtime.pause.pause('sdk');
   });
   platform.onResume(() => {
-    if (!controllable) track('startup_ad_end');
+    if (startupAd) {
+      startupAd = false;
+      track('startup_ad_end');
+    }
     runtime.pause.resume('sdk');
   });
   watchLifecycle({
@@ -93,6 +101,7 @@ async function boot(): Promise<void> {
     if (settingsWindow.overlay.isOpen()) settingsWindow.close();
     else pauseWindow.toggle();
   });
+  renderBuildLabel(uiRoot, __BUILD_LABEL__);
   i18n.apply(uiRoot);
   i18n.onChange((next) => {
     document.documentElement.lang = next;

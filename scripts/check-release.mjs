@@ -137,7 +137,7 @@ const ALLOWED_URL = (u) => u === '/sdk.js' || /^(https?:)?\/\/mc\.yandex\.ru(\/|
 // 6. No development leftovers.
 {
   // ytgame and game_api: the youtube profile must not leak into the Yandex archive (docs/02-tech.md, section 6).
-  const needles = ['lil-gui', '__TEST__', '__STUDIO__', '__YA_MOCK__', 'yasdk-mock', 'localhost', 'sourceMappingURL', 'ytgame', 'game_api'];
+  const needles = ['lil-gui', '__TEST__', '__STUDIO__', '__YA_MOCK__', 'yasdk-mock', 'localhost', 'sourceMappingURL', 'ytgame', 'youtube.com/game_api'];
   const problems = [];
   for (const [name, data] of files) {
     if (!['.html', '.js', '.css', '.json'].includes(extname(name))) continue;
@@ -145,7 +145,7 @@ const ALLOWED_URL = (u) => u === '/sdk.js' || /^(https?:)?\/\/mc\.yandex\.ru(\/|
     for (const n of needles) if (src.includes(n)) problems.push(`${name}: ${n}`);
     if (/(^|[^.\w$])debugger\s*;?/m.test(src.replace(/["'`][^"'`]*["'`]/g, ''))) problems.push(`${name}: debugger`);
   }
-  check(6, 'no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, game_api', problems.length === 0, problems);
+  check(6, 'no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, youtube.com/game_api', problems.length === 0, problems);
 }
 // 7. Dev-trace words and stop-list words in shipped texts: json files of the archive plus content/i18n/*.json and
 // game.json (Vite inlines imported json into the JS chunks, so the texts may not exist as separate files).

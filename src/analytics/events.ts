@@ -1,0 +1,43 @@
+// What: the only list of analytics event names (docs/06-analytics.md); track() accepts nothing else.
+// Called by: src/analytics/track.ts, src/main.ts, src/ui/*.
+// Keep: names as in docs/06; new names go here first.
+
+export const EVENTS = [
+  'load_start',
+  'gameReady',
+  'startup_ad_start',
+  'startup_ad_end',
+  'first_tap',
+  'hatch_1',
+  'feed_1',
+  'sale_1',
+  'egg_buy_1',
+  'session_60s',
+  'session_180s',
+  'session_300s',
+  'session_600s',
+  'upgrade_buy',
+  'rare_hatch',
+  'haggle',
+  'helper_1',
+  'offline_claim',
+  'collection_row',
+  'daily_anomaly',
+  'rebirth_1',
+  'community_open',
+  'rewarded_shown',
+  'ad_resume_ok',
+  'sdk_init_slow',
+  'sdk_init_failed',
+  'sdk_missing',
+  'player_unavailable',
+  'cloud_load_failed',
+  'cloud_save_failed',
+  'ad_watchdog',
+  'language_failed',
+  'load_failed',
+  'save_failed',
+  'save_corrupted',
+] as const;
+
+export type EventName = (typeof EVENTS)[number];

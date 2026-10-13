@@ -5,10 +5,10 @@
 ## Состояние
 Обновляется после каждой фичи, до 10 строк. Новая сессия начинает отсюда.
 - Веха: M0, в работе (сессия 2026-10-13)
-- Сделано: M0-01 скелет (Vite + PixiJS, HTML-слой, style.json, lock-файл)
-- Дальше: M0-02 слой платформы (profiles yandex / null / youtube)
+- Сделано: M0-01 скелет, M0-02 слой платформы (yandex / null / youtube, три сборки, check:youtube зелёный)
+- Дальше: M0-03 мок SDK в dev и инициализация ready / GameplayAPI по правилам (PauseManager, жизненный цикл вкладки)
 - Открытые вопросы: `QUESTIONS.md` (Q-001…Q-007, сборка идёт по умолчанию)
-- Последний verify: verify:fast — код 0 (M0-01)
+- Последний verify: verify:fast — код 0 (M0-02)
 - Заметка: зависимости ставить `npx npm@11 install` (npm 10.9.4 падает), Chromium — `bash scripts/ensure-chromium.sh`
 
 ## Шаблон записи о фиче
@@ -42,6 +42,14 @@
 ```
 
 ## Записи
+
+### 2026-10-13 19:50 · M0-02 · слой платформы
+- Сделано: `src/platform/` — `types.ts` (контракт из `02` §6.1), `shared.ts` (язык ru/be/kk/uk/uz → ru, устройство, выбор свежего сохранения по `rev`/`savedAt`), `storage.ts` (зеркало с префиксом, без исключений), `null.ts`, `yandex.ts` (init с повтором и откатом к поведению null, подписка на `game_api_pause/resume` до `ready()`, `ready()` один раз, GameplayAPI только на переходах, облако + зеркало, реклама по протоколу со сторожем 10 с), `youtube.ts` (firstFrameReady/gameReady, saveData/loadData, пауза и звук), `index.ts` (динамический импорт по `__PLATFORM__`). `src/analytics/` — имена событий и буфер `track()`. В `__GAME__` добавлен `ruFallbackLanguages`. Три сборки собираются; в каждой только свой модуль платформы (проверено grep по `dist*/assets`); `check:youtube` зелёный.
+- Разведка: мок `dev/yasdk-mock/sdk.js` грузится в Node — юнит-тесты yandex-профиля идут против настоящего мока, без фейков. Строка `http://www.pixijs.com/` (баннер PixiJS) ловилась `check:youtube` — добавлена в `NEVER_FETCHED` (допущение 12); маркер `game_api` в `check-release` сужен до `youtube.com/game_api`, иначе он ловил события Яндекса (допущение 13).
+- Тесты: verify:fast — код 0; unit 29 прошло, 0 упало
+- Данные: нет (game.json без изменений)
+- Дальше: M0-03
+- Вопросы: нет
 
 ### 2026-10-13 19:45 · M0-01 · скелет проекта
 - Сделано: `src/main.ts` (загрузка стиля, PixiJS-сцена на `#scene`, прелоадер гаснет после первого кадра), `src/scene/app.ts` (Application: WebGL, разрешение ≤ 2, явный resize), `src/ui/theme.ts` + `styles.css` (цвета из `style.json` в CSS-переменные), шрифт Rubik локально (кириллица + латиница, 400/700), `src/content/validate.ts` в минимальном виде (полные схемы — M0-05), `package-lock.json`. Dev показывает лавку с фоном без ошибок консоли; `build` — JS gzip 143 КБ (лимит 600).

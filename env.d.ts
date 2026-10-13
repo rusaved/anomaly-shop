@@ -13,6 +13,8 @@ declare const __GAME__: {
   title: Record<'ru' | 'en', string>;
   languages: Array<'ru' | 'en'>;
   fallbackLanguage: 'ru' | 'en';
+  /** Platform language codes that mean Russian (be, kk, uk, uz); everything else falls back to fallbackLanguage. */
+  ruFallbackLanguages: string[];
   community: { telegram: string; vk: string; placement: string[] } | null;
   metrikaCounterId: number;
   profile: { name: 'yandex' | 'null' | 'youtube'; community: boolean; ads: boolean; payments: boolean; analytics: boolean; externalRequests: boolean };
@@ -20,4 +22,9 @@ declare const __GAME__: {
 /** ZzFX 1.4.0 ships no types; the sound module uses only ZZFX.buildSamples on its own context. */
 declare module 'zzfx' {
   export const ZZFX: { sampleRate: number; audioContext: AudioContext; buildSamples(...params: number[]): number[] };
+}
+/** Set by the first inline script of index.html: boot time and the analytics buffer (docs/06-analytics.md). */
+interface Window {
+  __T0: number;
+  __ANALYTICS_BUFFER__: Array<{ name: string; t: number; params?: Record<string, string | number> }>;
 }

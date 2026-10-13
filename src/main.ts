@@ -10,9 +10,15 @@ import './ui/styles.css';
 import style from '@content/style.json';
 import { applyTheme } from './ui/theme.ts';
 import { createSceneApp } from './scene/app.ts';
+import { loadPlatform } from './platform/index.ts';
+import { track } from './analytics/track.ts';
 
 async function boot(): Promise<void> {
   applyTheme(style.colors);
+  const platform = await loadPlatform(track);
+  await platform.init();
+  document.documentElement.lang = platform.language();
+
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
   const appRoot = document.getElementById('app') as HTMLElement;
   const scene = await createSceneApp(canvas, style.colors.sky, window.devicePixelRatio);
@@ -23,7 +29,13 @@ async function boot(): Promise<void> {
   };
   fit();
   window.addEventListener('resize', fit);
-  scene.app.ticker.addOnce(() => document.getElementById('preloader')?.classList.add('hidden'));
+  scene.app.ticker.addOnce(() => {
+    platform.firstFrame();
+    document.getElementById('preloader')?.classList.add('hidden');
+    platform.ready();
+    platform.gameplayStart();
+    track('gameReady');
+  });
 }
 
 void boot();

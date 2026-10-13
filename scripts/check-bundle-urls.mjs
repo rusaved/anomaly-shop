@@ -17,7 +17,10 @@ export const NAMESPACES = [
 ];
 // Strings that are never fetched but sit in a dependency (doc links in messages). Add one only with a line in
 // docs/допущения.md: what it is and why it is never requested.
-export const NEVER_FETCHED = [];
+export const NEVER_FETCHED = [
+  // PixiJS banner text (lib/utils/sayHello.mjs): a console.log string, never requested; see docs/допущения.md, row 12.
+  'http://www.pixijs.com/',
+];
 const TEXT_EXT = new Set(['.html', '.js', '.mjs', '.css', '.json', '.svg', '.txt', '.webmanifest']);
 const MIB = 1024 * 1024;
 export const YOUTUBE_LIMITS = { bundle: 250 * MIB, firstLoad: 30 * MIB, firstLoadTarget: 15 * MIB };

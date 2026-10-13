@@ -24,6 +24,7 @@ export default defineConfig({
       title: game.title,
       languages: game.languages,
       fallbackLanguage: game.fallbackLanguage,
+      ruFallbackLanguages: game.ruFallbackLanguages,
       community: game.community,
       metrikaCounterId: 0,
       profile: { name: 'null', ...game.profiles.null },

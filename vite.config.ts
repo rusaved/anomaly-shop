@@ -26,6 +26,7 @@ type GameJson = {
   title: Record<string, string>;
   languages: string[];
   fallbackLanguage: string;
+  ruFallbackLanguages?: string[];
   bootBackground: string;
   metrikaCounterId?: number;
   community?: { telegram: string; vk: string; placement: string[] };
@@ -47,6 +48,7 @@ function gameConfig(platform: Profile): Record<string, unknown> {
     title: game.title,
     languages: game.languages,
     fallbackLanguage: game.fallbackLanguage,
+    ruFallbackLanguages: game.ruFallbackLanguages ?? ['ru'],
     community: profile.community && game.community ? game.community : null,
     metrikaCounterId: platform === 'yandex' ? Number(game.metrikaCounterId || 0) : 0,
     profile: { name: platform, ...profileRest },

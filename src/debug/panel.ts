@@ -11,6 +11,7 @@ import species from '@content/species.json';
 export interface DebugHooks {
   store: GameStore;
   runtime: Runtime;
+  fps(): number;
   fresh(): SaveData;
 }
 
@@ -43,6 +44,11 @@ export function installDebugPanel(h: DebugHooks): GUI {
   gui.add(actions, 'creature').name('+ creature');
   gui.add(h.runtime, 'timeScale', 0.25, 8, 0.25).name('time scale');
   gui.add(actions, 'reset').name('reset save');
+  const meter = { fps: 0 };
+  gui.add(meter, 'fps').name('fps').listen().disable();
+  setInterval(() => {
+    meter.fps = Math.round(h.fps());
+  }, 500);
   gui.close();
   return gui;
 }

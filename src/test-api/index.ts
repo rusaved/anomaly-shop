@@ -12,6 +12,7 @@ export interface TestState {
   device: string;
   lang: string;
   controllable: boolean;
+  fps: number;
   pause: string[];
   elapsed: number;
   coins: number;
@@ -22,6 +23,7 @@ export interface TestHooks {
   runtime: Runtime;
   platform: Platform;
   i18n: I18n;
+  fps(): number;
   isControllable(): boolean;
   snapshot(): { coins: number; creatures: unknown[] };
 }
@@ -33,6 +35,7 @@ export function installTestApi(hooks: TestHooks): void {
       device: hooks.platform.device,
       lang: document.documentElement.lang,
       controllable: hooks.isControllable(),
+      fps: Math.round(hooks.fps()),
       pause: hooks.runtime.pause.reasons(),
       elapsed: hooks.runtime.elapsed(),
       ...hooks.snapshot(),

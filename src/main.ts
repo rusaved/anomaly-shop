@@ -13,8 +13,9 @@ import { createHud } from './ui/hud.ts';
 import { createPanel } from './ui/panel.ts';
 import { watchLayout } from './ui/layout.ts';
 import { createI18n } from './ui/i18n.ts';
-import { dictionaries } from './content/index.ts';
+import { dictionaries, style as styleData } from './content/index.ts';
 import { createSceneApp } from './scene/app.ts';
+import { createShopView } from './scene/shop.ts';
 import { loadPlatform } from './platform/index.ts';
 import { watchLifecycle } from './platform/lifecycle.ts';
 import { bindPersistence, loadState } from './platform/persist.ts';
@@ -71,6 +72,10 @@ async function boot(): Promise<void> {
   const appRoot = document.getElementById('app') as HTMLElement;
   const uiRoot = document.getElementById('ui') as HTMLElement;
   const scene = await createSceneApp(canvas, style.colors.sky, window.devicePixelRatio);
+  await document.fonts.ready;
+  const shop = createShopView(scene.app, styleData, i18n.t, scene.invalidate);
+  shop.update(store.state);
+  store.onCommit((s) => shop.update(s));
   const hud = createHud(uiRoot, lang);
   hud.update(store.state.coins);
   store.onCommit((s) => hud.update(s.coins));
@@ -82,6 +87,7 @@ async function boot(): Promise<void> {
     hud.update(store.state.coins);
     panel.setTitle(__GAME__.title[next]);
     i18n.apply(uiRoot);
+    shop.relabel();
     store.state.settings.lang = next;
     store.commit({ flush: true });
   });
@@ -90,15 +96,16 @@ async function boot(): Promise<void> {
     canvas.style.width = `${layout.width}px`;
     canvas.style.height = `${layout.height}px`;
     scene.resize(layout.width, layout.height);
+    shop.layout(layout.stage, layout.hudHeight);
   });
 
   if (__DEBUG_TOOLS__ && new URLSearchParams(location.search).has('debug')) {
     const { installDebugPanel } = await import('./debug/panel.ts');
-    installDebugPanel({ store, runtime, fresh: () => newSave(platform.now()) });
+    installDebugPanel({ store, runtime, fps: () => scene.app.ticker.FPS, fresh: () => newSave(platform.now()) });
   }
   if (__TEST_API__) {
     const { installTestApi } = await import('./test-api/index.ts');
-    installTestApi({ runtime, platform, i18n, isControllable: () => controllable, snapshot: () => ({ coins: store.state.coins, creatures: store.state.creatures }) });
+    installTestApi({ runtime, platform, i18n, fps: () => scene.app.ticker.FPS, isControllable: () => controllable, snapshot: () => ({ coins: store.state.coins, creatures: store.state.creatures }) });
   }
 
   scene.app.ticker.add((ticker) => runtime.frame(ticker.deltaMS / 1000));

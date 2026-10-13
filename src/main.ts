@@ -18,6 +18,7 @@ import { createSettingsWindow } from './ui/settings.ts';
 import { communityLinks, renderCommunity } from './ui/community.ts';
 import { renderBuildLabel } from './ui/label.ts';
 import { createActions } from './ui/actions.ts';
+import { createDealCard } from './ui/deal.ts';
 import { createToasts } from './ui/toast.ts';
 import { audio, customers, dictionaries, eggs, feel, ftue, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
@@ -104,9 +105,19 @@ async function boot(): Promise<void> {
   const panel = createPanel(uiRoot, __GAME__.title[lang]);
   const links = platform.caps.community ? communityLinks() : null;
   renderCommunity(panel.side, links, 'side', true);
+  const dealCard = createDealCard(panel.body, play, {
+    t: i18n.t,
+    lang: i18n.lang,
+    customerName: (id) => customers.districts.find((d) => d.customer.id === id)?.customer.name[i18n.lang()] ?? id,
+    customerColor: (id) => styleData.customers[id]?.body ?? styleData.colors.queueSpot,
+    speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
+  });
   const actions = createActions(panel.body, play, lang);
   const toasts = createToasts(uiRoot);
-  const renderUi = (): void => actions.render();
+  const renderUi = (): void => {
+    dealCard.render();
+    actions.render();
+  };
   renderUi();
   store.onCommit(renderUi);
   const sfx = createSfx(audio, () => store.state.settings.sound && platform.audioAllowed());
@@ -141,6 +152,7 @@ async function boot(): Promise<void> {
     document.documentElement.lang = next;
     hud.setLanguage(next);
     actions.setLanguage(next);
+    dealCard.render();
     hud.update(store.state.coins);
     panel.setTitle(__GAME__.title[next]);
     i18n.apply(uiRoot);

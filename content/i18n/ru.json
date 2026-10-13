@@ -32,5 +32,11 @@
   "deny.full": "Витрина полна",
   "deny.locked": "Пока закрыто",
   "fx.levelUp": "Ур. {n}!",
-  "fx.max": "MAX"
+  "fx.max": "MAX",
+  "fx.huff": "Хмф!",
+  "deal.idle": "Ждём покупателя",
+  "deal.next": "Подходит следующий",
+  "deal.noCreature": "Ждёт существо",
+  "deal.offer": "Даёт {price} за {name}",
+  "deal.queue": "В очереди: {n}"
 }

@@ -198,6 +198,34 @@ export function drawCreature(g: Graphics, look: CreatureLookData, rarity: Rarity
   }
 }
 
+/** A customer standing with the feet at 0,0 (height about 2.1 r); the hat tells the type (thrifty cap, collector beret, rich top hat). */
+export function drawCustomer(g: Graphics, type: string, look: { body: string; accent: string }, r: number, c: Colors, outline: number): void {
+  const w = outline;
+  g.clear();
+  g.ellipse(0, 0, r * 0.75, r * 0.2).fill({ color: c.outline, alpha: 0.18 });
+  g.ellipse(-r * 0.28, -r * 0.08, r * 0.2, r * 0.12).fill(c.outline);
+  g.ellipse(r * 0.28, -r * 0.08, r * 0.2, r * 0.12).fill(c.outline);
+  g.roundRect(-r * 0.62, -r * 1.7, r * 1.24, r * 1.62, r * 0.6).fill(look.body).stroke({ width: w, color: c.outline });
+  g.ellipse(0, -r * 0.55, r * 0.38, r * 0.3).fill({ color: c.eyeWhite, alpha: 0.35 });
+  dotEyes(g, 0, -r * 1.22, r * 0.2, r * 0.08, c);
+  blush(g, 0, -r * 1.08, r * 0.34, r * 0.07, c);
+  smile(g, 0, -r * 1.06, r * 0.1, r * 0.07, c, w * 0.7);
+  if (type === 'rich') {
+    g.roundRect(-r * 0.5, -r * 1.86, r * 1.0, r * 0.12, r * 0.05).fill(c.outline);
+    g.roundRect(-r * 0.32, -r * 2.36, r * 0.64, r * 0.54, r * 0.08).fill(c.outline);
+    g.rect(-r * 0.32, -r * 1.98, r * 0.64, r * 0.1).fill(look.accent);
+  } else if (type === 'collector') {
+    g.ellipse(r * 0.05, -r * 1.72, r * 0.58, r * 0.2).fill(look.accent).stroke({ width: w * 0.8, color: c.outline });
+    g.circle(r * 0.05, -r * 1.92, r * 0.07).fill(look.accent);
+    g.circle(r * 0.2, -r * 1.22, r * 0.17).stroke({ width: w * 0.6, color: c.counterTop });
+  } else {
+    g.moveTo(-r * 0.56, -r * 1.6).quadraticCurveTo(0, -r * 2.15, r * 0.56, -r * 1.6).closePath().fill(look.accent).stroke({ width: w * 0.8, color: c.outline, join: 'round' });
+    g.roundRect(r * 0.1, -r * 1.68, r * 0.62, r * 0.14, r * 0.07).fill(look.accent).stroke({ width: w * 0.6, color: c.outline });
+    // A small purse: the thrifty one counts every coin.
+    g.circle(r * 0.62, -r * 0.62, r * 0.2).fill(c.uiAccent).stroke({ width: w * 0.6, color: c.outline });
+  }
+}
+
 /** An egg centred at 0,0 (height 1.44 r); cracks grow with the hatch share. */
 export function drawEgg(g: Graphics, r: number, c: Colors, outline: number, share: number): void {
   const rx = r * 0.56;

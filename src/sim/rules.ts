@@ -57,3 +57,22 @@ export function coins(value: number): number {
 export function tapsForLevel(level: number, base: number): number {
   return base + Math.floor(Math.max(1, level) / 2);
 }
+
+export interface OfferParams {
+  /** Share of the appraisal this customer offers, rolled once on arrival (offer.min..offer.max). */
+  share: number;
+  /** Product of the successful haggles (1 + bonus each). */
+  mult: number;
+  rarityBonus?: number | undefined;
+  levelBonusPerLevel?: number | undefined;
+  /** Register upgrade: +x to every deal (docs/01a, section 5). */
+  cashBonus?: number | undefined;
+}
+
+/** What the customer pays for this creature, in whole coins (docs/01, section 3.4; docs/01a, section 4). */
+export function offerFor(spec: SpeciesEntry, level: number, p: OfferParams): number {
+  let k = p.share * p.mult * (1 + (p.cashBonus ?? 0));
+  if (p.rarityBonus && spec.rarity !== 'common') k *= 1 + p.rarityBonus;
+  if (p.levelBonusPerLevel) k *= 1 + p.levelBonusPerLevel * Math.max(0, level - 1);
+  return coins(creatureValue(spec, level) * k);
+}

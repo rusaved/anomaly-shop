@@ -2,12 +2,12 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CustomersData, EggsData, FtueData, RarityName, SpeciesData, UpgradesData } from '../content/schemas.ts';
+import type { CustomersData, DistrictData, EggsData, FtueData, RarityName, SpeciesData, UpgradesData } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { coins, creatureValue, hatchNeedSec, hatchShare, isHatched, pickRarity, pickSpecies, tapsForLevel } from './rules.ts';
+import { coins, creatureValue, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, tapsForLevel } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -24,6 +24,8 @@ export type GameEvent =
   | { type: 'eggTap'; incubator: number; started: boolean }
   | { type: 'hatched'; incubator: number; uid: string; species: string; rarity: RarityName }
   | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number }
+  | { type: 'customerArrived'; id: number; customer: string }
+  | { type: 'customerLeft'; id: number; reason: 'sold' | 'haggle' | 'wait' }
   | { type: 'denied'; action: 'buyEgg'; reason: DenyReason }
   | { type: 'change' };
 
@@ -47,8 +49,28 @@ export interface CreatureView {
   need: number;
 }
 
+export interface CustomerView {
+  id: number;
+  /** Customer type id from customers.json (thrifty, collector, rich). */
+  customer: string;
+}
+
+export interface DealView {
+  id: number;
+  customer: string;
+  /** The creature on offer (the selected one); null while the shop has none. */
+  uid: string | null;
+  species: string | null;
+  level: number;
+  offer: number;
+  bargains: number;
+}
+
 export interface GameView {
   incubators: IncubatorView[];
+  queue: CustomerView[];
+  /** The front customer's offer; null when nobody stands at the counter yet. */
+  deal: DealView | null;
   creatures: CreatureView[];
   /** The creature the player works with (last tapped); the deal is about it. */
   selected: string | null;
@@ -70,6 +92,7 @@ export interface Game {
   selected(): string | null;
   tick(dt: number): void;
   view(): GameView;
+  deal(): DealView | null;
   /** Free showcase places (creatures and eggs both take one). */
   freeSlots(): number;
   showcaseSlots(): number;
@@ -94,6 +117,51 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const egg = eggData(eggId);
     return egg ? hatchNeedSec(egg, speedEffect()) : 0;
   };
+
+  // Customers live only in the session (docs/01, section 3.4): the queue refills after a reload.
+  interface Visitor {
+    id: number;
+    district: DistrictData;
+    share: number;
+    mult: number;
+    bargains: number;
+  }
+  const queue: Visitor[] = [];
+  let nextVisitor = 1;
+  let spawnIn = content.customers.spawnEverySec;
+  /** Seconds until the front customer steps up (after «wait»). */
+  let frontIn = 0;
+
+  const effectSum = (type: string): number =>
+    content.upgrades.upgrades.reduce((sum, u) => (u.effect.type === type && 'perLevel' in u.effect ? sum + upgradeLevel(u.id) * u.effect.perLevel : sum), 0);
+  const spawnEvery = (): number => content.customers.spawnEverySec * Math.max(0.1, 1 + effectSum('spawnRate'));
+  /** Districts open in M1: the start ones (street and square arrive with M2-05). */
+  const openDistricts = (): DistrictData[] => content.customers.districts.filter((d) => d.unlock.type === 'start');
+  /** Customers start coming once the shop has had its first creature (an empty first visit stays calm). */
+  const shopOpen = (): boolean => s().stats.hatched > 0 || s().creatures.length > 0;
+
+  function spawnVisitor(): void {
+    const pool = openDistricts();
+    const district = pool[rng.int(pool.length)];
+    if (!district) return;
+    const offer = district.customer.offer;
+    const v: Visitor = { id: nextVisitor++, district, share: rng.range(offer.min, offer.max), mult: 1, bargains: 0 };
+    queue.push(v);
+    events.emit({ type: 'customerArrived', id: v.id, customer: district.customer.id });
+    events.emit({ type: 'change' });
+  }
+
+  function currentDeal(): DealView | null {
+    const v = queue[0];
+    if (!v || frontIn > 0) return null;
+    const uid = selected();
+    const cr = uid ? s().creatures.find((x) => x.uid === uid) : undefined;
+    const spec = cr ? speciesData(cr.species) : undefined;
+    const c = v.district.customer;
+    const offer =
+      cr && spec ? offerFor(spec, cr.level, { share: v.share, mult: v.mult, rarityBonus: c.rarityBonus, levelBonusPerLevel: c.levelBonusPerLevel, cashBonus: effectSum('bargain') }) : 0;
+    return { id: v.id, customer: c.id, uid: cr?.uid ?? null, species: cr?.species ?? null, level: cr?.level ?? 0, offer, bargains: v.bargains };
+  }
 
   let selectedUid: string | null = null;
   function selected(): string | null {
@@ -220,6 +288,20 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     selected,
     tick(dt) {
       const st = s();
+      if (frontIn > 0) {
+        frontIn = Math.max(0, frontIn - dt);
+        if (frontIn === 0) events.emit({ type: 'change' });
+      }
+      if (shopOpen()) {
+        if (queue.length >= content.customers.queueSize) spawnIn = spawnEvery();
+        else {
+          spawnIn -= dt;
+          if (spawnIn <= 1e-9) {
+            spawnIn += spawnEvery();
+            spawnVisitor();
+          }
+        }
+      }
       for (let i = 0; i < st.incubators.length; i++) {
         const inc = st.incubators[i]!;
         if (!inc.egg || inc.waiting) continue;
@@ -250,8 +332,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
           };
         }),
         selected: selected(),
+        queue: queue.map((v) => ({ id: v.id, customer: v.district.customer.id })),
+        deal: currentDeal(),
       };
     },
+    deal: currentDeal,
     freeSlots,
     showcaseSlots,
   };

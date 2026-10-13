@@ -358,3 +358,56 @@
     transform: none;
   }
 }
+
+/* M1: deal card */
+.deal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--c-uiPanelAlt);
+  min-height: 58px;
+  justify-content: center;
+}
+.deal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--c-uiMuted);
+  min-height: 18px;
+}
+.deal-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50% 50% 40% 40%;
+  background: var(--c-queueSpot);
+  box-shadow: 0 0 0 2px var(--c-outline);
+  flex: 0 0 auto;
+}
+.deal[data-deal='idle'] .deal-avatar,
+.deal[data-deal='next'] .deal-avatar {
+  visibility: hidden;
+}
+.deal-who {
+  font-weight: 700;
+  color: var(--c-uiText);
+}
+.deal-queue {
+  margin-left: auto;
+  font-size: 13px;
+}
+.deal-text {
+  font-size: 16px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.deal-text .price {
+  color: var(--c-uiAccent);
+  margin: 0 2px;
+}

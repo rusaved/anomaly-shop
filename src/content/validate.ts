@@ -183,6 +183,8 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   if (calendar) checkCalendar(calendar, eggs, errors);
   if (ftue) checkFtue(ftue, eggs, errors);
   if (style && species) checkLooks(style, species, errors);
+  if (style && customers)
+    for (const d of customers.districts) if (!style.customers[d.customer.id]) errors.push(`style.json: customers.${d.customer.id} — no look for this customer type`);
 
   if (game) {
     if (!game.languages.includes(game.fallbackLanguage)) errors.push('game.json: fallbackLanguage — not in languages');

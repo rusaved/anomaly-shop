@@ -143,6 +143,7 @@ export const StyleFile = v.object({
   colors: v.object(Object.fromEntries(STYLE_COLORS.map((k) => [k, Color])) as Record<(typeof STYLE_COLORS)[number], typeof Color>),
   scene: v.object({ outlineWidth: v.pipe(v.number(), v.minValue(0)), cornerRadius: v.pipe(v.number(), v.minValue(0)), floorShare: Share }),
   creatures: v.record(Id, CreatureLook),
+  customers: v.record(Id, v.object({ body: Color, accent: Color })),
 });
 
 export const I18nFile = v.record(v.string(), NonEmpty);

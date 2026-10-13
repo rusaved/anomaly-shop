@@ -32,5 +32,11 @@
   "deny.full": "Showcase is full",
   "deny.locked": "Locked for now",
   "fx.levelUp": "Lv {n}!",
-  "fx.max": "MAX"
+  "fx.max": "MAX",
+  "fx.huff": "Hmph!",
+  "deal.idle": "Waiting for a customer",
+  "deal.next": "Next one is coming",
+  "deal.noCreature": "Waiting for a creature",
+  "deal.offer": "Offers {price} for {name}",
+  "deal.queue": "In line: {n}"
 }

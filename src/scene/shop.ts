@@ -5,7 +5,7 @@
 import { Circle, Container, Graphics, Rectangle, Text, type Application } from 'pixi.js';
 import type { FeelData, StyleData } from '../content/schemas.ts';
 import type { GameEvent, GameView } from '../sim/game.ts';
-import { drawCreature, drawEgg, drawRing, rarityColor } from './art.ts';
+import { drawCreature, drawCustomer, drawEgg, drawRing, rarityColor } from './art.ts';
 import { createFx } from './fx.ts';
 import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop-layout.ts';
 
@@ -53,6 +53,15 @@ interface CreatureNode {
   landed: boolean;
 }
 
+interface CustomerNode {
+  box: Container;
+  art: Graphics;
+  key: string;
+  leaving: boolean;
+  mood: 'sold' | 'haggle' | 'wait' | null;
+  hop: number;
+}
+
 interface IncubatorNode {
   hit: Container;
   box: Container;
@@ -80,11 +89,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   const rings = new Graphics();
   const creaturesLayer = new Container();
   const selection = new Graphics();
+  const customersLayer = new Container();
+  customersLayer.sortableChildren = true;
   const eggsLayer = new Container();
   const hits = new Container();
   const labels = new Container();
   const fx = createFx(c.outline);
-  root.addChild(back, furniture, selection, rings, eggsLayer, creaturesLayer, labels, fx.layer, hits);
+  root.addChild(back, furniture, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, fx.layer, hits);
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
@@ -94,6 +105,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let time = 0;
   let incs: IncubatorNode[] = [];
   let slotHits: Container[] = [];
+  const visitors = new Map<number, CustomerNode>();
   let slotUids: Array<string | null> = [];
   let selectedKey = '';
   const creatures = new Map<string, CreatureNode>();
@@ -283,6 +295,124 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     return true;
   }
 
+  // Offer bubble over the front customer: coin and the price for the selected creature.
+  const offerBox = new Container();
+  const offerBg = new Graphics();
+  const offerText = new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontWeight: '700', fill: c.outline } });
+  offerText.anchor.set(0, 0.5);
+  offerBox.addChild(offerBg, offerText);
+  offerBox.visible = false;
+  root.addChild(offerBox);
+  let offerKey = '';
+  let offerPulse = 0;
+
+  function drawOffer(text: string, l: ShopLayout): void {
+    const size = Math.max(13, Math.min(18, l.unit * 0.46));
+    offerText.style.fontSize = size;
+    offerText.text = text;
+    const coinR = size * 0.45;
+    const w = offerText.width + coinR * 2 + size * 1.1;
+    const h = size * 1.6;
+    offerBg.clear();
+    offerBg.poly([-size * 0.35, h / 2 - 1, size * 0.35, h / 2 - 1, 0, h / 2 + size * 0.5]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline, join: 'round' });
+    offerBg.roundRect(-w / 2, -h / 2, w, h, h / 2).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+    offerBg.rect(-size * 0.35 + 1, h / 2 - l.outline, size * 0.7 - 2, l.outline + 1).fill(c.eyeWhite);
+    const hasCoin = /\d/.test(text);
+    if (hasCoin) offerBg.circle(-w / 2 + size * 0.45 + coinR, 0, coinR).fill(c.uiAccent).stroke({ width: Math.max(1, l.outline * 0.4), color: c.outline });
+    offerText.position.set(hasCoin ? -w / 2 + size * 0.7 + coinR * 2 : -offerText.width / 2, 0);
+  }
+
+  function animateCustomers(dt: number, view: GameView, l: ShopLayout): boolean {
+    let moving = false;
+    const first = l.queue[0];
+    if (!first) return false;
+    const r = first.r * 1.45;
+    const doorAt = { x: l.door.x + l.door.w / 2, y: l.door.y + l.door.h * 0.9 };
+    const present = new Set(view.queue.map((q) => q.id));
+    view.queue.forEach((q, i) => {
+      let node = visitors.get(q.id);
+      if (!node) {
+        const box = new Container();
+        const art = new Graphics();
+        box.addChild(art);
+        box.position.set(doorAt.x, doorAt.y);
+        box.alpha = 0;
+        customersLayer.addChild(box);
+        node = { box, art, key: '', leaving: false, mood: null, hop: 0 };
+        visitors.set(q.id, node);
+      }
+      const key = `${q.customer}:${r.toFixed(1)}`;
+      if (node.key !== key) {
+        node.key = key;
+        drawCustomer(node.art, q.customer, style.customers[q.customer] ?? { body: c.queueSpot, accent: c.outline }, r, c, l.outline * 0.8);
+      }
+      const spot = l.queue[Math.min(i, l.queue.length - 1)]!;
+      if (step(node, spot.x, spot.y, dt, r)) moving = true;
+      if (node.box.alpha < 1) {
+        node.box.alpha = Math.min(1, node.box.alpha + dt * 4);
+        moving = true;
+      }
+    });
+    for (const [id, node] of visitors) {
+      if (present.has(id)) continue;
+      if (!node.leaving) {
+        node.leaving = true;
+        if (node.mood === 'sold') node.hop = 0.35;
+      }
+      moving = true;
+      if (node.hop > 0) {
+        node.hop = Math.max(0, node.hop - dt);
+        node.box.y -= Math.sin((node.hop / 0.35) * Math.PI) * r * 0.05;
+        continue;
+      }
+      step(node, doorAt.x, doorAt.y, dt, r);
+      node.box.alpha -= dt * 2.2;
+      if (node.box.alpha <= 0) {
+        node.box.destroy({ children: true });
+        visitors.delete(id);
+      }
+    }
+    // Front customer's offer bubble.
+    const front = view.queue[0] ? visitors.get(view.queue[0].id) : undefined;
+    const deal = view.deal;
+    const text = deal ? (deal.uid ? fmt(deal.offer) : '…') : '';
+    if (front && text) {
+      if (text !== offerKey) {
+        offerKey = text;
+        drawOffer(text, l);
+      }
+      offerPulse = Math.max(0, offerPulse - dt);
+      const k = offerPulse > 0 ? Math.sin((offerPulse / 0.3) * Math.PI) * 0.25 : 0;
+      offerBox.scale.set(1 + k);
+      offerBox.position.set(front.box.x, front.box.y - r * 2.6);
+      offerBox.alpha = front.box.alpha;
+      if (!offerBox.visible || offerPulse > 0) moving = true;
+      offerBox.visible = true;
+    } else if (offerBox.visible) {
+      offerBox.visible = false;
+      offerKey = '';
+      moving = true;
+    }
+    return moving;
+  }
+
+  /** Walks a customer toward a point; true while still walking. */
+  function step(node: CustomerNode, tx: number, ty: number, dt: number, r: number): boolean {
+    const dx = tx - node.box.x;
+    const dy = ty - node.box.y;
+    const dist = Math.hypot(dx, dy);
+    node.box.zIndex = node.box.y;
+    if (dist < 0.5) {
+      node.box.position.set(tx, ty);
+      node.art.y = 0;
+      return false;
+    }
+    const k = Math.min(1, dt * 6);
+    node.box.position.set(node.box.x + dx * k, node.box.y + dy * k);
+    node.art.y = -Math.abs(Math.sin(time * 14)) * r * 0.12;
+    return true;
+  }
+
   function animateCreatures(dt: number, view: GameView, l: ShopLayout): boolean {
     let moving = false;
     const list = view.creatures.slice(0, l.slots.length);
@@ -367,6 +497,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     placeLabels(current);
     fx.clear();
     bubble.visible = false;
+    offerKey = '';
+    for (const node of visitors.values()) node.key = '';
     invalidate();
   }
 
@@ -428,8 +560,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       const before = selectedKey;
       drawSelection(view, current);
       const talking = animateBubble(dt);
+      const walking = animateCustomers(dt, view, current);
       const alive = fx.update(dt);
-      if (moving || flying || alive || talking || before !== selectedKey) invalidate();
+      if (moving || flying || alive || talking || walking || before !== selectedKey) invalidate();
     },
     onEvent(e) {
       if (!current) return;
@@ -461,6 +594,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         } else {
           fx.float(at.x + at.r * 0.5, at.y - at.r * 0.9, '+1', c.uiGood, size, current.unit * 0.8);
           fx.burst(at.x, at.y + at.r * 0.4, 3, [c.blush, c.uiGood], at.r * 2.5, current.outline);
+        }
+      } else if (e.type === 'customerLeft') {
+        const node = visitors.get(e.id);
+        if (node) node.mood = e.reason;
+        if (node && e.reason === 'haggle') {
+          fx.burst(node.box.x, node.box.y - current.unit, 8, [c.uiMuted, c.outline], current.unit * 2.5, current.outline);
+          fx.float(node.box.x, node.box.y - current.unit * 2.2, t('fx.huff'), c.uiMuted, Math.max(14, current.unit * 0.5), current.unit * 0.8);
         }
       } else if (e.type === 'eggBought') {
         const spot = current.incubators[e.incubator];

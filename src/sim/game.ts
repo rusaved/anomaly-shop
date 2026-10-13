@@ -108,6 +108,10 @@ export interface GameView {
   selected: string | null;
   /** Showcase places (upgrades included). */
   slots: number;
+  /** Places in the customer queue (the bell adds one). */
+  queueSize: number;
+  /** Bought things the scene draws, by decor item: level bought. */
+  decor: Record<string, number>;
 }
 
 export interface UpgradeView {
@@ -302,6 +306,20 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (selectedUid && list.some((x) => x.uid === selectedUid)) return selectedUid;
     selectedUid = list[0]?.uid ?? null;
     return selectedUid;
+  }
+
+  const queueSize = (): number => content.customers.queueSize + effectSum('queueSize');
+  let decorKey = '';
+  let decorCache: Record<string, number> = {};
+  /** Bought upgrades that show in the shop (docs/01b, section 1.4), cached between purchases. */
+  function decorLevels(): Record<string, number> {
+    const key = JSON.stringify(s().upgrades);
+    if (key !== decorKey) {
+      decorKey = key;
+      decorCache = {};
+      for (const u of content.upgrades.upgrades) if (u.decor && upgradeLevel(u.id) > 0) decorCache[u.decor] = upgradeLevel(u.id);
+    }
+    return decorCache;
   }
 
   /** Showcase places: the base of the showcase upgrade plus every bought level (showcase, stool). */
@@ -619,7 +637,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
           wasOpen = true;
           if (st.stats.deals === 0) spawnIn = content.ftue.firstCustomerSec;
         }
-        if (queue.length >= content.customers.queueSize) spawnIn = spawnEvery();
+        if (queue.length >= queueSize()) spawnIn = spawnEvery();
         else {
           spawnIn -= dt;
           if (spawnIn <= 1e-9) {
@@ -660,6 +678,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         }),
         selected: selected(),
         slots: showcaseSlots(),
+        queueSize: queueSize(),
+        decor: decorLevels(),
         queue: queue.map((v) => ({ id: v.id, customer: v.district.customer.id })),
         deal: currentDeal(),
       };

@@ -44,7 +44,7 @@
     { "id": "M2-04", "milestone": "M2", "priority": "P1", "title": "Офлайн-доход до 8 часов, экран «пока тебя не было»", "criteria": "50% онлайн-темпа; экран показывает сумму", "passes": true },
     { "id": "M2-05", "milestone": "M2", "priority": "P1", "title": "Районы и типы покупателей: двор, улица, площадь; коллекционер и богач", "criteria": "открытие по сделкам; доли предложений по customers.json", "passes": true },
     { "id": "M2-06", "milestone": "M2", "priority": "P1", "title": "12 видов существ, странное и светящееся яйца", "criteria": "species.json и eggs.json расширены, валидны", "passes": true },
-    { "id": "M2-07", "milestone": "M2", "priority": "P1", "title": "Вывеска и касса", "criteria": "эффекты по upgrades.json", "passes": false },
+    { "id": "M2-07", "milestone": "M2", "priority": "P1", "title": "Вывеска и касса", "criteria": "эффекты по upgrades.json", "passes": true },
     { "id": "M2-08", "milestone": "M2", "priority": "P2", "title": "Кристаллы: источник и трата (редкие яйца, ускорения)", "criteria": "вторая валюта в HUD и магазине", "passes": false },
     { "id": "M2-09", "milestone": "M2", "priority": "P1", "title": "Модель баланса F5–F10", "criteria": "sim:balance зелёный", "passes": false },
     { "id": "M2-10", "milestone": "M2", "priority": "P1", "title": "Тест «скриншот другу: что тут делать» — три скриншота в docs/evidence для продюсера", "criteria": "скриншоты лавки, сделки, магазина", "passes": false },

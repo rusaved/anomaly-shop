@@ -30,13 +30,49 @@ export interface ShopLayout {
   slotGap: number;
   door: Rect;
   queue: Spot[];
+  /** Where the bought things of the shop stand (M2-07, M2-12): sign, register, ladder items, helpers. */
+  decor: Decor;
   outline: number;
   radius: number;
 }
 
+export interface Decor {
+  /** Above the queue label, over the door. */
+  sign: Rect;
+  /** On the front of the counter, right end. */
+  register: Rect;
+  /** Hanging by the door, top left. */
+  bell: Spot;
+  /** On the floor at the door, under the first customer. */
+  mat: Rect;
+  /** On the floor in front of the counter. */
+  bowl: Spot;
+  stool: Spot;
+  /** On top of the showcase, right corner. */
+  radio: Rect;
+  /** On the wall at the top, between the HUD chips. */
+  clock: Spot;
+  lamp: Spot;
+  /** On the wall under the showcase, left. */
+  board: Rect;
+  /** Feeder by the showcase, seller by the counter, courier at the door. */
+  feeder: Spot;
+  seller: Spot;
+  courier: Spot;
+}
+
 export const SHOP = { showcaseSlots: 3, queueSpots: 3, minUnit: 18 };
 
-export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: number, outlineWidth: number, cornerRadius: number, incubatorCount = 1, slotCount = SHOP.showcaseSlots): ShopLayout {
+export function computeShopLayout(
+  stage: Rect,
+  hudHeight: number,
+  floorShare: number,
+  outlineWidth: number,
+  cornerRadius: number,
+  incubatorCount = 1,
+  slotCount = SHOP.showcaseSlots,
+  queueCount = SHOP.queueSpots,
+): ShopLayout {
   const u = Math.max(SHOP.minUnit, Math.min(stage.w, stage.h) / 10);
   const outline = Math.max(2, Math.min(outlineWidth, u * 0.2));
   const radius = Math.min(cornerRadius, u * 0.6);
@@ -53,8 +89,9 @@ export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: nu
   const spotR = Math.min(u * 0.5, doorW * 0.32);
   // The queue forms in front of the door, towards the viewer, so it never reaches the counter.
   const queue: Spot[] = [];
-  const spotStep = Math.min(spotR * 1.5, Math.max(spotR * 0.8, (floor.h - spotR * 2.2) / (SHOP.queueSpots - 1)));
-  for (let i = 0; i < SHOP.queueSpots; i++) {
+  const spots = Math.max(2, Math.floor(queueCount));
+  const spotStep = Math.min(spotR * 1.5, Math.max(spotR * 0.7, (floor.h - spotR * 2.2) / (spots - 1)));
+  for (let i = 0; i < spots; i++) {
     queue.push({ x: door.x + door.w / 2 - i * spotR * 0.5, y: floorY + spotR * 1.1 + i * spotStep, r: spotR });
   }
 
@@ -91,5 +128,28 @@ export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: nu
   for (let i = 0; i < count; i++) incubators.push({ x: counter.x + incR * 1.3 + i * incR * 2.4, y: counterTop.y - incR * 0.95, r: incR });
   const incubator = incubators[0] as Spot;
 
-  return { stage, unit: u, wall, floor, counter, counterTop, incubator, incubators, showcase, slots, slotGap: gap, door, queue, outline, radius };
+  const signH = Math.min(u * 0.75, Math.max(u * 0.4, door.y - top - u * 0.7));
+  const signW = door.w * 1.3;
+  const sideX = counter.x + counter.w;
+  const decor: Decor = {
+    sign: { x: door.x + door.w / 2 - signW / 2, y: Math.max(top + 2, door.y - u * 0.62 - signH), w: signW, h: signH },
+    register: { x: counter.x + counter.w - u * 1.05, y: counter.y + counter.h * 0.14, w: u * 0.85, h: counter.h * 0.72 },
+    bell: { x: door.x - u * 0.28, y: door.y + u * 0.35, r: u * 0.22 },
+    mat: { x: door.x - u * 0.25, y: floorY + outline, w: door.w + u * 0.5, h: Math.min(u * 0.45, floor.h * 0.2) },
+    bowl: { x: counter.x + u * 1.05, y: Math.min(stage.y + stage.h - u * 0.3, counter.y + counter.h + u * 0.45), r: u * 0.32 },
+    stool: { x: counter.x + counter.w * 0.6, y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.55), r: u * 0.36 },
+    radio: { x: showcase.x + showcase.w - u * 1.2, y: showcase.y - u * 0.5, w: u * 0.9, h: u * 0.55 },
+    clock: { x: stage.x + stage.w * 0.56, y: stage.y + Math.max(u * 0.75, top * 0.55), r: u * 0.42 },
+    lamp: { x: stage.x + stage.w * 0.4, y: stage.y + Math.max(u * 0.6, top * 0.45), r: u * 0.28 },
+    board: { x: showcase.x + u * 0.1, y: Math.min(floorY - u * 1.0, showcase.y + showcase.h + u * 0.6), w: u * 1.3, h: u * 0.9 },
+    feeder: { x: Math.max(stage.x + u * 0.35, counter.x - u * 0.05), y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.25), r: u * 0.3 },
+    seller: { x: Math.min(sideX + u * 0.5, door.x - spotR * 2.2), y: counter.y + counter.h * 0.8, r: u * 0.38 },
+    courier: { x: door.x + door.w - u * 0.1, y: door.y - u * 0.05, r: u * 0.24 },
+  };
+
+  // The clock steps left of the radio when they would meet over the showcase (wide screens).
+  const k = decor.clock;
+  if (k.x + k.r * 1.1 > decor.radio.x && k.x - k.r * 1.1 < decor.radio.x + decor.radio.w && k.y + k.r * 1.7 > decor.radio.y - decor.radio.h) k.x = decor.radio.x - k.r * 1.6;
+
+  return { stage, unit: u, wall, floor, counter, counterTop, incubator, incubators, showcase, slots, slotGap: gap, door, queue, decor, outline, radius };
 }

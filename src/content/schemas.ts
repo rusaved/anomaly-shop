@@ -72,6 +72,9 @@ export const CustomersFile = v.object({
   districts: v.pipe(v.array(District), v.minLength(1)),
 });
 
+/** Things the scene can draw for bought upgrades (src/scene/decor.ts). */
+export const DECOR_ITEMS = ['sign', 'register', 'bell', 'mat', 'bowl', 'stool', 'radio', 'clock', 'board', 'tags', 'feeder', 'seller', 'courier'] as const;
+
 export const Effect = v.variant('type', [
   v.object({ type: v.literal('slots'), perLevel: Count }),
   v.object({ type: v.literal('hatchTime'), perLevel: v.pipe(v.number(), v.minValue(-1), v.maxValue(0)) }),
@@ -101,6 +104,8 @@ export const Upgrade = v.object({
   unlock: v.optional(Unlock),
   /** A one-line joke for the shop card (docs/01b, section 4.5). */
   joke: v.optional(Text),
+  /** The thing the scene draws once it is bought (docs/01b, section 1.4: every upgrade is seen in the shop). */
+  decor: v.optional(v.picklist(DECOR_ITEMS)),
 });
 export const UpgradesFile = v.object({
   offlineMaxHours: v.pipe(v.number(), v.minValue(0)),

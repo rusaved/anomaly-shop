@@ -7,6 +7,7 @@ import type { FeelData, StyleData } from '../content/schemas.ts';
 import type { GameEvent, GameView } from '../sim/game.ts';
 import { drawCreature, drawCustomer, drawEgg, drawRing, rarityColor } from './art.ts';
 import { createFx } from './fx.ts';
+import { drawBell, drawDecor } from './decor.ts';
 import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop-layout.ts';
 
 export interface ShopHandlers {
@@ -88,6 +89,14 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   const root = new Container();
   const back = new Graphics();
   const furniture = new Graphics();
+  const decorG = new Graphics();
+  const bellBox = new Container();
+  const bellG = new Graphics();
+  bellBox.addChild(bellG);
+  bellBox.visible = false;
+  let decorKey = '';
+  let decorItems: Record<string, number> = {};
+  let bellSwing = 0;
   const rings = new Graphics();
   const creaturesLayer = new Container();
   const selection = new Graphics();
@@ -97,7 +106,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   const hits = new Container();
   const labels = new Container();
   const fx = createFx(c.outline);
-  root.addChild(back, furniture, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, fx.layer, hits);
+  root.addChild(back, furniture, decorG, bellBox, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, fx.layer, hits);
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
@@ -105,6 +114,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let current: ShopLayout | null = null;
   let incubatorCount = 1;
   let slotCount = 3;
+  let queueCount = 3;
   let time = 0;
   let incs: IncubatorNode[] = [];
   let slotHits: Container[] = [];
@@ -235,7 +245,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     const pillH = size * 1.35;
     const py = r * 1.12;
     node.tag.clear();
-    node.tag.roundRect(-pillW / 2, py - pillH / 2, pillW, pillH, pillH / 2).fill(picked ? c.uiAccent : c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+    node.tag.roundRect(-pillW / 2, py - pillH / 2, pillW, pillH, pillH / 2).fill(picked ? c.uiAccent : decorItems.tags ? c.rarityCommon : c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
     node.tag.circle(-pillW / 2 + size * 0.4 + coinR, py, coinR).fill(c.uiAccent).stroke({ width: Math.max(1, l.outline * 0.4), color: c.outline });
     node.price.position.set(coinR + size * 0.2, py);
     const max = cv.level >= cv.maxLevel;
@@ -516,12 +526,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
 
   function relayout(): void {
     if (!stageRect) return;
-    current = computeShopLayout(stageRect, hud, style.scene.floorShare, style.scene.outlineWidth, style.scene.cornerRadius, incubatorCount, slotCount);
+    current = computeShopLayout(stageRect, hud, style.scene.floorShare, style.scene.outlineWidth, style.scene.cornerRadius, incubatorCount, slotCount, queueCount);
     drawBack(current);
     drawFurniture(current);
     buildIncubators(current);
     buildSlots(current);
     selectedKey = '';
+    decorKey = '';
     for (const node of creatures.values()) node.key = '';
     for (const d of departing) d.node.box.destroy({ children: true });
     departing.length = 0;
@@ -581,12 +592,29 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     },
     frame(dt, view) {
       time += dt;
-      if (view.incubators.length !== incubatorCount || view.slots !== slotCount) {
+      if (view.incubators.length !== incubatorCount || view.slots !== slotCount || view.queueSize !== queueCount) {
         incubatorCount = Math.max(1, view.incubators.length);
         slotCount = Math.max(1, view.slots);
+        queueCount = Math.max(2, view.queueSize);
         relayout();
       }
       if (!current) return;
+      const key = JSON.stringify(view.decor);
+      if (key !== decorKey) {
+        decorKey = key;
+        decorItems = view.decor;
+        drawDecor(decorG, decorItems, current, c);
+        bellBox.visible = Boolean(decorItems.bell);
+        drawBell(bellG, current.decor.bell.r, c, current.outline);
+        bellBox.position.set(current.decor.bell.x, current.decor.bell.y);
+        for (const node of creatures.values()) node.shown = '';
+        invalidate();
+      }
+      if (bellSwing > 0) {
+        bellSwing = Math.max(0, bellSwing - dt);
+        bellBox.rotation = Math.sin(bellSwing * 28) * 0.45 * (bellSwing / 0.8);
+        invalidate();
+      }
       const moving = animateIncubators(dt, view, current);
       const flying = animateCreatures(dt, view, current);
       const before = selectedKey;
@@ -647,6 +675,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           fx.burst(node.box.x, node.box.y - current.unit, 8, [c.uiMuted, c.outline], current.unit * 2.5, current.outline);
           fx.float(node.box.x, node.box.y - current.unit * 2.6, t('fx.huff'), c.eyeWhite, Math.max(15, current.unit * 0.55), current.unit * 0.8);
         }
+      } else if (e.type === 'customerArrived') {
+        if (decorItems.bell) bellSwing = 0.8;
       } else if (e.type === 'eggBought' || e.type === 'rescueEgg') {
         const spot = current.incubators[e.incubator];
         if (spot) fx.burst(spot.x, spot.y, 8, [c.incubator, c.incubatorGlass, c.uiAccent], spot.r * 3.5, current.outline * 1.2);

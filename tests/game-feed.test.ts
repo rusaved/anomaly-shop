@@ -13,8 +13,8 @@ function setup(speciesId = 'kettle') {
   const save = newSave(0);
   save.flags.ftue_starter = true;
   save.creatures = [
-    { uid: 'a', species: speciesId, level: 1, fed: 0, hatchedAt: 0 },
-    { uid: 'b', species: 'cloudcat', level: 1, fed: 0, hatchedAt: 0 },
+    { uid: 'a', species: speciesId, level: 1, fed: 0, hatchedAt: 0, age: 0 },
+    { uid: 'b', species: 'cloudcat', level: 1, fed: 0, hatchedAt: 0, age: 0 },
   ];
   const store = createStore(save, () => 0);
   const game = createGame(store, content, createRng(1));

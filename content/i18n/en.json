@@ -67,5 +67,18 @@
   "deny.noCreature": "Hatch a creature first",
   "deal.share": "{n}% of price",
   "reason.full": "showcase full",
-  "reason.busy": "incubator busy"
+  "reason.busy": "incubator busy",
+  "upgrade.effect.showcaseSlots": "+{n} showcase spot",
+  "upgrade.effect.spawnRate": "Customers {n}% more often",
+  "upgrade.effect.bargain": "+{n}% to every deal",
+  "upgrade.effect.autoFeed": "Feeds the hungry for you",
+  "upgrade.effect.autoSell": "Sells while you are busy",
+  "upgrade.effect.autoBuyEgg": "Brings basic eggs for you",
+  "upgrade.effect.feedPerTap": "+{n} food per tap",
+  "upgrade.effect.queueSize": "Queue {n} longer",
+  "upgrade.effect.leaveChance": "Haggle risk {n}% lower",
+  "upgrade.effect.appraisal": "Price tags {n}% higher",
+  "upgrade.effect.shelfGrowth": "Showcase prices grow faster",
+  "upgrade.effect.orders": "Opens collector orders",
+  "upgrade.effect.cuckoo": "Feeds everyone once a minute"
 }

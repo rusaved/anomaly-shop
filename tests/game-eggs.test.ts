@@ -65,7 +65,7 @@ describe('M1-01 egg', () => {
     game.state.incubators[0] = { egg: null, startedAt: 0, progress: 0, elapsed: 0, waiting: false };
     expect(game.canBuyEgg()).toMatchObject({ ok: false, reason: 'coins' });
     game.state.coins = 100;
-    game.state.creatures = [1, 2, 3].map((n) => ({ uid: `x${n}`, species: 'kettle', level: 1, fed: 0, hatchedAt: 0 }));
+    game.state.creatures = [1, 2, 3].map((n) => ({ uid: `x${n}`, species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }));
     expect(game.buyEgg()).toBe(false);
     expect(seen.at(-1)).toMatchObject({ type: 'denied', reason: 'full' });
     expect(game.state.coins).toBe(100);

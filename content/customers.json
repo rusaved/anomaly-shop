@@ -1,14 +1,14 @@
 {
   "$schema": "customers.schema.json",
-  "note": "Районы и типы покупателей из docs/01a-content.md §4. offer — доля от оценки существа (min..max). bargain — успех +10..30% к предложению, провал — покупатель уходит с шансом leaveOnBargain. bargainMax — сколько раз можно торговаться с одним покупателем (дальше «последняя цена»). waitNextSec — «подождать»: следующий подходит через столько секунд.",
+  "note": "Районы и типы покупателей из docs/01a-content.md §4. offer — доля от оценки существа (min..max). bargain — успех +10..30% к предложению, провал — покупатель уходит с шансом leaveOnBargain. bargainMax — сколько раз можно торговаться с одним покупателем (дальше «последняя цена»). waitNextSec — «подождать»: следующий подходит через столько секунд. weight — доля прихода среди открытых районов; attract — +доля за каждое существо на витрине, которое этот тип любит (likes: cheap — обычные, rare — редкие и выше, level — уровень 3+).",
   "queueSize": 3,
   "spawnEverySec": 6,
   "waitNextSec": 2,
-  "bargainBonus": { "min": 0.10, "max": 0.30 },
+  "bargainBonus": {"min": 0.1, "max": 0.3},
   "bargainMax": 2,
   "districts": [
-    { "id": "yard", "name": { "ru": "Двор", "en": "Yard" }, "unlock": { "type": "start" }, "customer": { "id": "thrifty", "name": { "ru": "Бережливый", "en": "Thrifty" }, "offer": { "min": 0.70, "max": 0.85 }, "likes": "cheap", "leaveOnBargain": 0.25 } },
-    { "id": "street", "name": { "ru": "Улица", "en": "Street" }, "unlock": { "type": "deals", "count": 20 }, "customer": { "id": "collector", "name": { "ru": "Коллекционер", "en": "Collector" }, "offer": { "min": 0.85, "max": 1.00 }, "rarityBonus": 0.20, "likes": "rare", "leaveOnBargain": 0.15 } },
-    { "id": "square", "name": { "ru": "Площадь", "en": "Square" }, "unlock": { "type": "deals", "count": 100 }, "customer": { "id": "rich", "name": { "ru": "Богач", "en": "Big Spender" }, "offer": { "min": 1.00, "max": 1.30 }, "levelBonusPerLevel": 0.10, "likes": "level", "leaveOnBargain": 0.10 } }
+    {"id": "yard", "name": {"ru": "Двор", "en": "Yard"}, "unlock": {"type": "start"}, "customer": {"id": "thrifty", "name": {"ru": "Бережливый", "en": "Thrifty"}, "offer": {"min": 0.7, "max": 0.85}, "likes": "cheap", "leaveOnBargain": 0.25}, "weight": 0.5, "attract": 0.25},
+    {"id": "street", "name": {"ru": "Улица", "en": "Street"}, "unlock": {"type": "deals", "count": 20}, "customer": {"id": "collector", "name": {"ru": "Коллекционер", "en": "Collector"}, "offer": {"min": 0.85, "max": 1.0}, "rarityBonus": 0.2, "likes": "rare", "leaveOnBargain": 0.15}, "weight": 0.3, "attract": 0.25},
+    {"id": "square", "name": {"ru": "Площадь", "en": "Square"}, "unlock": {"type": "deals", "count": 100}, "customer": {"id": "rich", "name": {"ru": "Богач", "en": "Big Spender"}, "offer": {"min": 1.0, "max": 1.3}, "levelBonusPerLevel": 0.1, "likes": "level", "leaveOnBargain": 0.1}, "weight": 0.2, "attract": 0.25}
   ]
 }

@@ -26,6 +26,8 @@ export interface ShopLayout {
   incubators: Spot[];
   showcase: Rect;
   slots: Rect[];
+  /** Space between two showcase places; the tap zone of a place takes half of it on each side. */
+  slotGap: number;
   door: Rect;
   queue: Spot[];
   outline: number;
@@ -34,7 +36,7 @@ export interface ShopLayout {
 
 export const SHOP = { showcaseSlots: 3, queueSpots: 3, minUnit: 18 };
 
-export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: number, outlineWidth: number, cornerRadius: number, incubatorCount = 1): ShopLayout {
+export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: number, outlineWidth: number, cornerRadius: number, incubatorCount = 1, slotCount = SHOP.showcaseSlots): ShopLayout {
   const u = Math.max(SHOP.minUnit, Math.min(stage.w, stage.h) / 10);
   const outline = Math.max(2, Math.min(outlineWidth, u * 0.2));
   const radius = Math.min(cornerRadius, u * 0.6);
@@ -56,15 +58,26 @@ export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: nu
     queue.push({ x: door.x + door.w / 2 - i * spotR * 0.5, y: floorY + spotR * 1.1 + i * spotStep, r: spotR });
   }
 
-  // Showcase shelf on the wall, left half.
+  // Showcase shelf on the wall, left of the door: one row up to 4 places, two rows above (M2-02: 3 → 9 places).
   // Creatures sit here and take taps (feeding): slots large enough for a portrait and a 44 px tap.
-  const slot = Math.min(u * 1.75, (stage.w * 0.6 - u * 0.8) / SHOP.showcaseSlots, (wallFree * 0.8) / 1.36);
+  const n = Math.max(1, Math.floor(slotCount));
+  const rows = n <= 4 ? 1 : 2;
+  const cols = Math.ceil(n / rows);
+  const shelfX = stage.x + u * 0.5;
+  const availW = Math.max(stage.w * 0.6 - u * 0.8, door.x - u * 0.6 - shelfX);
+  // Rows sit apart so the price pill of the upper row stays clear of the lower one.
+  const rowGap = rows > 1 ? 0.34 : 0;
+  const slot = Math.min(u * 1.75, (n <= 3 ? stage.w * 0.6 - u * 0.8 : availW) / (cols + 0.18 * (cols + 1)), (wallFree * 0.8) / (1.36 * rows + rowGap));
   const gap = slot * 0.18;
-  const showcaseW = SHOP.showcaseSlots * slot + (SHOP.showcaseSlots + 1) * gap;
-  const showcaseH = slot + gap * 2;
-  const showcase: Rect = { x: stage.x + u * 0.5, y: top + Math.max(0, wallFree * 0.5 - showcaseH / 2), w: showcaseW, h: showcaseH };
+  const showcaseW = cols * slot + (cols + 1) * gap;
+  const showcaseH = rows * slot + (rows + 1) * gap + (rows - 1) * slot * rowGap;
+  const showcase: Rect = { x: shelfX, y: top + Math.max(0, wallFree * 0.5 - showcaseH / 2 - (rows > 1 ? slot * 0.15 : 0)), w: showcaseW, h: showcaseH };
   const slots: Rect[] = [];
-  for (let i = 0; i < SHOP.showcaseSlots; i++) slots.push({ x: showcase.x + gap + i * (slot + gap), y: showcase.y + gap, w: slot, h: slot });
+  for (let i = 0; i < n; i++) {
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    slots.push({ x: showcase.x + gap + col * (slot + gap), y: showcase.y + gap + row * (slot + gap + slot * rowGap), w: slot, h: slot });
+  }
 
   // Counter on the floor, centred; incubator stands on its left end.
   const counterW = Math.min(stage.w * 0.58, u * 6, door.x - spotR * 2.6 - u * 0.6 - stage.x);
@@ -78,5 +91,5 @@ export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: nu
   for (let i = 0; i < count; i++) incubators.push({ x: counter.x + incR * 1.3 + i * incR * 2.4, y: counterTop.y - incR * 0.95, r: incR });
   const incubator = incubators[0] as Spot;
 
-  return { stage, unit: u, wall, floor, counter, counterTop, incubator, incubators, showcase, slots, door, queue, outline, radius };
+  return { stage, unit: u, wall, floor, counter, counterTop, incubator, incubators, showcase, slots, slotGap: gap, door, queue, outline, radius };
 }

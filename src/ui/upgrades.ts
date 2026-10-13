@@ -22,9 +22,11 @@ export interface UpgradesWindow {
 /** Effect line of an upgrade from its data (the numbers are never typed into texts). */
 function effectText(u: UpgradeData, look: UpgradeLookups): string {
   const e = u.effect;
-  if (e.type === 'slots') return look.t('upgrade.effect.slots', { n: e.perLevel });
-  if (e.type === 'hatchTime') return look.t('upgrade.effect.hatchTime', { n: Math.round(-e.perLevel * 100) });
-  return '';
+  const pct = (x: number): number => Math.round(Math.abs(x) * 100);
+  const key = `upgrade.effect.${e.type}`;
+  if (e.type === 'slots' || e.type === 'showcaseSlots' || e.type === 'feedPerTap' || e.type === 'queueSize') return look.t(key, { n: e.perLevel });
+  if (e.type === 'hatchTime' || e.type === 'spawnRate' || e.type === 'bargain' || e.type === 'leaveChance' || e.type === 'appraisal') return look.t(key, { n: pct(e.perLevel) });
+  return look.t(key);
 }
 
 export function createUpgradesWindow(parent: HTMLElement, game: Game, look: UpgradeLookups): UpgradesWindow {

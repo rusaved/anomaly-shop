@@ -2,7 +2,7 @@
 // Called by: src/sim/game.ts, scripts/balance-model.ts, tests/*.test.ts.
 // Keep: no state and no randomness of its own (a roll in [0, 1) comes in as an argument); every number comes from content.
 
-import type { EggData, EggsData, RarityName, SpeciesData, SpeciesEntry, UpgradeData } from '../content/schemas.ts';
+import type { EggData, EggsData, RarityName, ShelfData, SpeciesData, SpeciesEntry, UnlockData, UpgradeData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 
 const EPS = 1e-6;
@@ -67,14 +67,42 @@ export interface OfferParams {
   levelBonusPerLevel?: number | undefined;
   /** Register upgrade: +x to every deal (docs/01a, section 5). */
   cashBonus?: number | undefined;
+  /** Price-tag multiplier on top of the level price: shelf growth and price tags (1 = none). */
+  valueMult?: number | undefined;
 }
 
 /** What the customer pays for this creature, in whole coins (docs/01, section 3.4; docs/01a, section 4). */
 export function offerFor(spec: SpeciesEntry, level: number, p: OfferParams): number {
-  let k = p.share * p.mult * (1 + (p.cashBonus ?? 0));
+  let k = p.share * p.mult * (1 + (p.cashBonus ?? 0)) * (p.valueMult ?? 1);
   if (p.rarityBonus && spec.rarity !== 'common') k *= 1 + p.rarityBonus;
   if (p.levelBonusPerLevel) k *= 1 + p.levelBonusPerLevel * Math.max(0, level - 1);
   return coins(creatureValue(spec, level) * k);
+}
+
+/** Showcase growth (docs/01, section 3.5): +growthPerMin of the price per minute on the shelf, capped; speed multiplies the rate (radio). */
+export function shelfBonus(ageSec: number, shelf: ShelfData, speed = 1): number {
+  return Math.min(shelf.maxBonus, Math.max(0, (ageSec / 60) * shelf.growthPerMin * speed));
+}
+
+export interface UnlockFacts {
+  deals: number;
+  hatched: number;
+  levelUps: number;
+  haggles: number;
+  /** Upgrade levels bought. */
+  upgrades: Record<string, number>;
+  /** Open district ids. */
+  districts: string[];
+}
+
+/** Is a condition of content (unlock of an egg, a district, a shop position) met for this player. */
+export function unlockMet(u: UnlockData | undefined, f: UnlockFacts): boolean {
+  if (!u || u.type === 'start') return true;
+  if (u.type === 'deals') return f.deals >= u.count;
+  if (u.type === 'stat') return f[u.stat] >= u.count;
+  if (u.type === 'upgrade') return (f.upgrades[u.id] ?? 0) > 0;
+  if (u.type === 'district') return f.districts.includes(u.id);
+  return false;
 }
 
 /** Two significant digits (117.7 → 120, 1019 → 1000): prices that read at a glance. */

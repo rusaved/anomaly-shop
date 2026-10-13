@@ -12,7 +12,7 @@ describe('rescue egg', () => {
   it('an empty shop with 8 coins gets a free basic egg, once', () => {
     const save = newSave(0);
     save.flags = { ftue_starter: true, ftue_fed: true, ftue_bought: true, ftue_done: true };
-    save.stats = { deals: 3, coinsEarned: 30, hatched: 3, taps: 40 };
+    save.stats = { deals: 3, coinsEarned: 30, hatched: 3, taps: 40, levelUps: 0, haggles: 0 };
     save.coins = 8;
     const game = createGame(createStore(save, () => 0), content, createRng(1));
     const seen: GameEvent[] = [];
@@ -33,7 +33,7 @@ describe('rescue egg', () => {
     game.tick(1 / 60);
     expect(game.state.incubators[0]!.egg).toBeNull();
     game.state.coins = 0;
-    game.state.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0 }];
+    game.state.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }];
     game.tick(1 / 60);
     expect(game.state.incubators[0]!.egg).toBeNull();
   });

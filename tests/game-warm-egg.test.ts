@@ -16,7 +16,7 @@ function setup(deals: number) {
   save.stats.deals = deals;
   save.stats.hatched = 3;
   save.coins = 200;
-  save.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0 }];
+  save.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }];
   const store = createStore(save, () => 0);
   const game = createGame(store, content, createRng(4));
   const seen: GameEvent[] = [];

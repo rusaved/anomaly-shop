@@ -15,8 +15,8 @@ function setup(seed = 11) {
   save.flags.ftue_starter = true;
   save.stats.hatched = 2;
   save.creatures = [
-    { uid: 'a', species: 'kettle', level: 2, fed: 0, hatchedAt: 0 },
-    { uid: 'b', species: 'cloudcat', level: 1, fed: 0, hatchedAt: 0 },
+    { uid: 'a', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 },
+    { uid: 'b', species: 'cloudcat', level: 1, fed: 0, hatchedAt: 0, age: 0 },
   ];
   const store = createStore(save, () => 0);
   const flushes: boolean[] = [];

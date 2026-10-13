@@ -15,6 +15,8 @@ export interface Creature {
   /** Taps toward the next level. */
   fed: number;
   hatchedAt: number;
+  /** Game seconds on the showcase: the price grows with it (docs/01, section 3.5). */
+  age: number;
 }
 
 export interface Incubator {
@@ -52,7 +54,7 @@ export interface SaveData {
   collection: Record<string, CollectionEntry>;
   calendar: { lastDailyAt: number; streak: number; lastLoginDay: string };
   prestige: number;
-  stats: { deals: number; coinsEarned: number; hatched: number; taps: number };
+  stats: { deals: number; coinsEarned: number; hatched: number; taps: number; levelUps: number; haggles: number };
   settings: { sound: boolean; lang: Lang | null };
   /** Once-per-player analytics flags and tutorial marks. */
   flags: Record<string, boolean>;
@@ -80,7 +82,7 @@ export function newSave(now: number): SaveData {
     collection: {},
     calendar: { lastDailyAt: 0, streak: 0, lastLoginDay: '' },
     prestige: 0,
-    stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0 },
+    stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0 },
     settings: { sound: true, lang: null },
     flags: {},
   };
@@ -125,7 +127,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     creatures: arr(r.creatures)
       .map((c) => rec(c))
       .filter((o) => typeof o.uid === 'string' && typeof o.species === 'string')
-      .map((o) => ({ uid: o.uid as string, species: o.species as string, level: Math.max(1, num(o.level, 1)), fed: Math.max(0, num(o.fed, 0)), hatchedAt: num(o.hatchedAt, 0) })),
+      .map((o) => ({ uid: o.uid as string, species: o.species as string, level: Math.max(1, num(o.level, 1)), fed: Math.max(0, num(o.fed, 0)), hatchedAt: num(o.hatchedAt, 0), age: Math.max(0, num(o.age, 0)) })),
     showcase: arr(r.showcase).filter((x): x is string => typeof x === 'string'),
     upgrades: numberMap(r.upgrades),
     helpers: numberMap(r.helpers),
@@ -137,7 +139,14 @@ export function normalize(raw: unknown, now: number): SaveData {
     ),
     calendar: { lastDailyAt: num(cal.lastDailyAt, 0), streak: num(cal.streak, 0), lastLoginDay: str(cal.lastLoginDay, '') },
     prestige: Math.max(0, num(r.prestige, 0)),
-    stats: { deals: num(st.deals, 0), coinsEarned: num(st.coinsEarned, 0), hatched: num(st.hatched, 0), taps: num(st.taps, 0) },
+    stats: {
+      deals: num(st.deals, 0),
+      coinsEarned: num(st.coinsEarned, 0),
+      hatched: num(st.hatched, 0),
+      taps: num(st.taps, 0),
+      levelUps: num(st.levelUps, 0),
+      haggles: num(st.haggles, 0),
+    },
     settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null },
     flags: Object.fromEntries(Object.entries(rec(r.flags)).filter(([, v]) => v === true).map(([k]) => [k, true])),
   };

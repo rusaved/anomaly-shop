@@ -67,5 +67,18 @@
   "deny.noCreature": "Сначала вылупи существо",
   "deal.share": "{n}% цены",
   "reason.full": "витрина полна",
-  "reason.busy": "инкубатор занят"
+  "reason.busy": "инкубатор занят",
+  "upgrade.effect.showcaseSlots": "+{n} место на витрине",
+  "upgrade.effect.spawnRate": "Покупатели чаще на {n}%",
+  "upgrade.effect.bargain": "+{n}% к каждой сделке",
+  "upgrade.effect.autoFeed": "Сам кормит голодных",
+  "upgrade.effect.autoSell": "Продаёт сам, пока ты занят",
+  "upgrade.effect.autoBuyEgg": "Сам приносит обычные яйца",
+  "upgrade.effect.feedPerTap": "+{n} сытости за тап",
+  "upgrade.effect.queueSize": "Очередь длиннее на {n}",
+  "upgrade.effect.leaveChance": "Риск торга ниже на {n}%",
+  "upgrade.effect.appraisal": "Ценники дороже на {n}%",
+  "upgrade.effect.shelfGrowth": "Цены на витрине растут быстрее",
+  "upgrade.effect.orders": "Открывает заказы коллекционеров",
+  "upgrade.effect.cuckoo": "Раз в минуту кормит всех"
 }

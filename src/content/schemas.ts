@@ -24,6 +24,8 @@ export const Unlock = v.variant('type', [
   v.object({ type: v.literal('deals'), count: Count }),
   v.object({ type: v.literal('district'), id: Id }),
   v.object({ type: v.literal('milestone'), id: v.pipe(v.string(), v.regex(/^M\d+$/)) }),
+  v.object({ type: v.literal('stat'), stat: v.picklist(['deals', 'hatched', 'levelUps', 'haggles']), count: Count }),
+  v.object({ type: v.literal('upgrade'), id: Id }),
 ]);
 
 export const Egg = v.object({
@@ -46,7 +48,9 @@ export const Species = v.object({
   maxLevel: Count,
   line: Text,
 });
-export const SpeciesFile = v.object({ tapsPerLevelBase: Count, species: v.pipe(v.array(Species), v.minLength(1)) });
+/** Showcase growth (docs/01, section 3.5): a creature gains growthPerMin of its price per minute on the shelf, up to maxBonus. */
+export const Shelf = v.object({ growthPerMin: v.pipe(v.number(), v.minValue(0)), maxBonus: v.pipe(v.number(), v.minValue(0)) });
+export const SpeciesFile = v.object({ tapsPerLevelBase: Count, shelf: Shelf, species: v.pipe(v.array(Species), v.minLength(1)) });
 
 export const Customer = v.object({
   id: Id,
@@ -57,7 +61,8 @@ export const Customer = v.object({
   rarityBonus: v.optional(Share),
   levelBonusPerLevel: v.optional(Share),
 });
-export const District = v.object({ id: Id, name: Text, unlock: Unlock, customer: Customer });
+/** weight: share of arrivals among open districts; attract: +weight per creature on the showcase this customer likes. */
+export const District = v.object({ id: Id, name: Text, unlock: Unlock, customer: Customer, weight: v.pipe(v.number(), v.minValue(0)), attract: v.pipe(v.number(), v.minValue(0)) });
 export const CustomersFile = v.object({
   queueSize: Count,
   spawnEverySec: v.pipe(v.number(), v.minValue(0.1)),
@@ -70,12 +75,19 @@ export const CustomersFile = v.object({
 export const Effect = v.variant('type', [
   v.object({ type: v.literal('slots'), perLevel: Count }),
   v.object({ type: v.literal('hatchTime'), perLevel: v.pipe(v.number(), v.minValue(-1), v.maxValue(0)) }),
-  v.object({ type: v.literal('showcaseSlots'), base: Count, perLevel: Count }),
+  v.object({ type: v.literal('showcaseSlots'), base: v.optional(Count), perLevel: Count }),
   v.object({ type: v.literal('spawnRate'), perLevel: v.pipe(v.number(), v.minValue(-1), v.maxValue(0)) }),
   v.object({ type: v.literal('bargain'), perLevel: Share }),
-  v.object({ type: v.literal('autoFeed'), creatures: Count, offline: v.boolean() }),
-  v.object({ type: v.literal('autoSell'), priceShare: v.pipe(v.number(), v.minValue(0)), offline: v.boolean() }),
-  v.object({ type: v.literal('autoBuyEgg'), egg: Id, offline: v.boolean() }),
+  v.object({ type: v.literal('autoFeed'), creatures: Count, tapsPerSec: v.pipe(v.number(), v.minValue(0)), offline: v.boolean() }),
+  v.object({ type: v.literal('autoSell'), priceShare: v.pipe(v.number(), v.minValue(0)), delaySec: v.pipe(v.number(), v.minValue(0)), offline: v.boolean() }),
+  v.object({ type: v.literal('autoBuyEgg'), egg: Id, everySec: v.pipe(v.number(), v.minValue(0)), offline: v.boolean() }),
+  v.object({ type: v.literal('feedPerTap'), perLevel: Count }),
+  v.object({ type: v.literal('queueSize'), perLevel: Count }),
+  v.object({ type: v.literal('leaveChance'), perLevel: v.pipe(v.number(), v.minValue(-1), v.maxValue(0)) }),
+  v.object({ type: v.literal('appraisal'), perLevel: Share }),
+  v.object({ type: v.literal('shelfGrowth'), perLevel: v.pipe(v.number(), v.minValue(0)) }),
+  v.object({ type: v.literal('orders') }),
+  v.object({ type: v.literal('cuckoo'), everySec: v.pipe(v.number(), v.minValue(1)), fed: Count }),
 ]);
 export const Upgrade = v.object({
   id: Id,
@@ -85,6 +97,10 @@ export const Upgrade = v.object({
   priceMax: v.pipe(v.number(), v.minValue(1)),
   currency: v.optional(v.picklist(['coins', 'crystals'])),
   effect: Effect,
+  /** When the position appears in the shop (docs/01b, section 5.1: mechanics as a reward); none = from the start. */
+  unlock: v.optional(Unlock),
+  /** A one-line joke for the shop card (docs/01b, section 4.5). */
+  joke: v.optional(Text),
 });
 export const UpgradesFile = v.object({
   offlineMaxHours: v.pipe(v.number(), v.minValue(0)),
@@ -187,6 +203,8 @@ export const GameFile = v.object({
 });
 
 export type EggsData = v.InferOutput<typeof EggsFile>;
+export type ShelfData = v.InferOutput<typeof Shelf>;
+export type UnlockData = v.InferOutput<typeof Unlock>;
 export type EggData = v.InferOutput<typeof Egg>;
 export type SpeciesData = v.InferOutput<typeof SpeciesFile>;
 export type SpeciesEntry = v.InferOutput<typeof Species>;

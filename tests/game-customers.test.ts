@@ -14,7 +14,7 @@ function setup(withCreature = true, seed = 7) {
   const save = newSave(0);
   save.flags.ftue_starter = true;
   if (withCreature) {
-    save.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0 }];
+    save.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }];
     save.stats.hatched = 1;
     // A player past the first sale: the first-minute rules (sooner, generous first customer) are tested below.
     save.stats.deals = 1;

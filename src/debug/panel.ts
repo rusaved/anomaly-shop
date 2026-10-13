@@ -38,7 +38,7 @@ export function installDebugPanel(h: DebugHooks): GUI {
       if (!next) return;
       counter += 1;
       const uid = `dbg-${Date.now().toString(36)}-${counter}`;
-      h.store.state.creatures.push({ uid, species: next.id, level: 1, fed: 0, hatchedAt: Date.now() });
+      h.store.state.creatures.push({ uid, species: next.id, level: 1, fed: 0, hatchedAt: Date.now(), age: 0 });
       h.store.commit({ flush: true });
     },
     reset: () => h.store.replace(h.fresh()),

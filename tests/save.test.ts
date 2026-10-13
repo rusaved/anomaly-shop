@@ -13,7 +13,7 @@ describe('SaveData', () => {
   it('normalize fills missing fields and drops broken ones; parseSave rejects junk', () => {
     const n = normalize({ v: 1, coins: -5, creatures: [{ uid: 'a', species: 'kettle', level: 'x' }, { species: 'no-uid' }, 7], settings: { lang: 'xx' } }, 50);
     expect(n.coins).toBe(0);
-    expect(n.creatures).toEqual([{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0 }]);
+    expect(n.creatures).toEqual([{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }]);
     expect(n.settings).toEqual({ sound: true, lang: null });
     expect(n.incubators).toHaveLength(1);
     expect(n.createdAt).toBe(50);
@@ -24,7 +24,7 @@ describe('SaveData', () => {
   it('a full shop stays far below the 100 KB limit (and below the 50 KB target)', () => {
     const s: SaveData = newSave(0);
     s.incubators = Array.from({ length: 4 }, () => ({ egg: 'egg_basic', startedAt: 1700000000000, progress: 1.5, elapsed: 1.2, waiting: false }));
-    s.creatures = Array.from({ length: 60 }, (_, i) => ({ uid: `c${i}-${Math.round(i * 1234567.89)}`, species: 'mirrorfrog', level: 20, fed: 7, hatchedAt: 1700000000000 + i }));
+    s.creatures = Array.from({ length: 60 }, (_, i) => ({ uid: `c${i}-${Math.round(i * 1234567.89)}`, species: 'mirrorfrog', level: 20, fed: 7, hatchedAt: 1700000000000 + i, age: 0 }));
     s.showcase = s.creatures.slice(0, 8).map((c) => c.uid);
     for (let i = 0; i < 40; i++) s.collection[`species_${i}`] = { seen: 99, hatched: 99, sold: 99 };
     for (let i = 0; i < 12; i++) s.upgrades[`upgrade_${i}`] = 5;

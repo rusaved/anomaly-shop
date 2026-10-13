@@ -5,9 +5,9 @@
 import type { CustomersData, DistrictData, EggsData, FtueData, RarityName, SpeciesData, UpgradesData } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
-import { emptyIncubator, type SaveData } from './state.ts';
+import { emptyIncubator, type Creature, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { coins, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, tapsForLevel, upgradePrice } from './rules.ts';
+import { coins, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -16,6 +16,8 @@ export interface GameContent {
   upgrades: UpgradesData;
   ftue: FtueData;
 }
+
+const RARITY_RANK: Record<RarityName, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
 
 export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noDeal' | 'noCreature' | 'lastPrice' | 'max';
 
@@ -86,6 +88,8 @@ export interface GameView {
   creatures: CreatureView[];
   /** The creature the player works with (last tapped); the deal is about it. */
   selected: string | null;
+  /** Showcase places (upgrades included). */
+  slots: number;
 }
 
 export interface UpgradeView {
@@ -169,15 +173,49 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
 
   const effectSum = (type: string): number =>
     content.upgrades.upgrades.reduce((sum, u) => (u.effect.type === type && 'perLevel' in u.effect ? sum + upgradeLevel(u.id) * u.effect.perLevel : sum), 0);
+  /** Price-tag multiplier of a creature: shelf growth (radio speeds it up) and price tags (docs/01, section 3.5; docs/01b, section 5.1). */
+  const valueMult = (cr: Creature): number => (1 + shelfBonus(cr.age ?? 0, species.shelf, 1 + effectSum('shelfGrowth'))) * (1 + effectSum('appraisal'));
+  /** The price tag in whole coins: level price × valueMult. */
+  const appraisal = (cr: Creature): number => {
+    const spec = speciesData(cr.species);
+    return spec ? coins(creatureValue(spec, cr.level) * valueMult(cr)) : 0;
+  };
+  const facts = (): UnlockFacts => {
+    const st = s().stats;
+    return { deals: st.deals, hatched: st.hatched, levelUps: st.levelUps ?? 0, haggles: st.haggles ?? 0, upgrades: s().upgrades, districts: openDistricts().map((d) => d.id) };
+  };
+  /** Does this customer type like the creature (docs/01, section 3.5: the showcase attracts its customers). */
+  const likes = (c: DistrictData['customer'], cr: Creature): boolean => {
+    const spec = speciesData(cr.species);
+    if (!spec) return false;
+    if (c.likes === 'cheap') return spec.rarity === 'common';
+    if (c.likes === 'rare') return spec.rarity !== 'common';
+    return cr.level >= 3;
+  };
+  /** The creature a customer picks from the showcase by type: thrifty the cheapest, collector the rarest, rich the highest level. */
+  const favorite = (c: DistrictData['customer']): string | null => {
+    const list = s().creatures.map((cr) => ({ cr, spec: speciesData(cr.species), price: appraisal(cr) }));
+    if (!list.length) return null;
+    const rank = (x: (typeof list)[number]): number =>
+      c.likes === 'cheap' ? -x.price : c.likes === 'rare' ? RARITY_RANK[x.spec?.rarity ?? 'common'] * 1e9 + x.price : x.cr.level * 1e9 + x.price;
+    return list.reduce((best, x) => (rank(x) > rank(best) ? x : best)).cr.uid;
+  };
   const spawnEvery = (): number => content.customers.spawnEverySec * Math.max(0.1, 1 + effectSum('spawnRate'));
   /** Districts open in M1: the start ones (street and square arrive with M2-05). */
   const openDistricts = (): DistrictData[] => content.customers.districts.filter((d) => d.unlock.type === 'start');
   /** Customers start coming once the shop has had its first creature (an empty first visit stays calm). */
   const shopOpen = (): boolean => s().stats.hatched > 0 || s().creatures.length > 0;
 
+  /** Arrival weights (docs/01a, section 4): the district share, raised by the creatures on the showcase this type likes. */
+  function arrivalWeights(): Array<{ district: DistrictData; weight: number }> {
+    return openDistricts().map((d) => ({ district: d, weight: d.weight * (1 + d.attract * s().creatures.filter((cr) => likes(d.customer, cr)).length) }));
+  }
+
   function spawnVisitor(): void {
-    const pool = openDistricts();
-    const district = pool[rng.int(pool.length)];
+    const pool = arrivalWeights();
+    const total = pool.reduce((sum, x) => sum + x.weight, 0);
+    let pick = rng.next() * total;
+    const district = (pool.find((x) => (pick -= x.weight) < 0) ?? pool[pool.length - 1])?.district;
     if (!district) return;
     const offer = district.customer.offer;
     const roll = rng.range(offer.min, offer.max);
@@ -197,7 +235,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const spec = cr ? speciesData(cr.species) : undefined;
     const c = v.district.customer;
     const offer =
-      cr && spec ? offerFor(spec, cr.level, { share: v.share, mult: v.mult, rarityBonus: c.rarityBonus, levelBonusPerLevel: c.levelBonusPerLevel, cashBonus: effectSum('bargain') }) : 0;
+      cr && spec
+        ? offerFor(spec, cr.level, { share: v.share, mult: v.mult, rarityBonus: c.rarityBonus, levelBonusPerLevel: c.levelBonusPerLevel, cashBonus: effectSum('bargain'), valueMult: valueMult(cr) })
+        : 0;
     return {
       id: v.id,
       customer: c.id,
@@ -208,7 +248,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       bargains: v.bargains,
       canHaggle: v.bargains < content.customers.bargainMax,
       leaveChance: c.leaveOnBargain,
-      share: cr && spec ? offer / coins(creatureValue(spec, cr.level)) : v.share * v.mult,
+      share: cr && spec ? offer / appraisal(cr) : v.share * v.mult,
     };
   }
 
@@ -223,6 +263,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
 
   /** The first customer of a new player comes sooner (ftue.json, firstCustomerSec). */
   let wasOpen = false;
+  /** Id of the customer who last stepped up to the counter. */
+  let frontSeen = 0;
 
   let selectedUid: string | null = null;
   function selected(): string | null {
@@ -232,9 +274,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return selectedUid;
   }
 
+  /** Showcase places: the base of the showcase upgrade plus every bought level (showcase, stool). */
   function showcaseSlots(): number {
-    const u = content.upgrades.upgrades.find((x) => x.effect.type === 'showcaseSlots');
-    return u && u.effect.type === 'showcaseSlots' ? u.effect.base + upgradeLevel(u.id) * u.effect.perLevel : 3;
+    const n = content.upgrades.upgrades.reduce((sum, u) => (u.effect.type === 'showcaseSlots' ? sum + (u.effect.base ?? 0) + upgradeLevel(u.id) * u.effect.perLevel : sum), 0);
+    return n > 0 ? n : 3;
   }
   function freeSlots(): number {
     const busy = s().creatures.length + s().incubators.filter((i) => i.egg).length;
@@ -269,7 +312,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const kind = pickSpecies(species, rarity, rng.next());
     st.stats.hatched += 1;
     const uid = `c${st.stats.hatched.toString(36)}${rng.int(1296).toString(36)}`;
-    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt });
+    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0 });
     const entry = (st.collection[kind.id] ??= { seen: 0, hatched: 0, sold: 0 });
     entry.seen += 1;
     entry.hatched += 1;
@@ -364,17 +407,18 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       st.stats.taps += 1;
       const maxed = cr.level >= spec.maxLevel;
       let levelUp = false;
-      const before = coins(creatureValue(spec, cr.level));
+      const before = appraisal(cr);
       if (!maxed) {
-        cr.fed += 1;
+        cr.fed += 1 + effectSum('feedPerTap');
         if (cr.fed >= tapsForLevel(cr.level, species.tapsPerLevelBase)) {
           cr.fed = 0;
           cr.level += 1;
           levelUp = true;
+          st.stats.levelUps = (st.stats.levelUps ?? 0) + 1;
           st.flags[FLAGS.fed] = true;
         }
       }
-      const price = coins(creatureValue(spec, cr.level));
+      const price = appraisal(cr);
       store.commit();
       events.emit({ type: 'fed', uid, level: cr.level, levelUp, maxed: cr.level >= spec.maxLevel, price, gain: price - before });
       if (changed || levelUp) events.emit({ type: 'change' });
@@ -416,6 +460,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         events.emit({ type: 'denied', action: 'haggle', reason: 'lastPrice' });
         return false;
       }
+      s().stats.haggles = (s().stats.haggles ?? 0) + 1;
       if (rng.next() < deal.leaveChance) {
         events.emit({ type: 'haggled', customerId: v.id, result: 'left', bonus: 0, offer: 0 });
         frontLeaves('haggle', 0);
@@ -440,9 +485,20 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     },
     tick(dt) {
       const st = s();
+      for (const cr of st.creatures) cr.age = (cr.age ?? 0) + dt;
       if (frontIn > 0) {
         frontIn = Math.max(0, frontIn - dt);
         if (frontIn === 0) events.emit({ type: 'change' });
+      }
+      // A customer stepping up to the counter picks a creature by type (docs/01, section 3.5); a tap picks another.
+      const front = frontIn > 0 ? undefined : queue[0];
+      if (front && front.id !== frontSeen) {
+        frontSeen = front.id;
+        const pick = favorite(front.district.customer);
+        if (pick && pick !== selectedUid) {
+          selectedUid = pick;
+          events.emit({ type: 'change' });
+        }
       }
       // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free.
       if (st.creatures.length === 0 && st.incubators[0] && !st.incubators.some((i) => i.egg) && st.stats.hatched > 0) {
@@ -492,22 +548,28 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
             rarity: spec?.rarity ?? 'common',
             level: x.level,
             maxLevel: spec?.maxLevel ?? 1,
-            price: spec ? coins(creatureValue(spec, x.level)) : 0,
+            price: appraisal(x),
             fed: x.fed,
             need: tapsForLevel(x.level, species.tapsPerLevelBase),
           };
         }),
         selected: selected(),
+        slots: showcaseSlots(),
         queue: queue.map((v) => ({ id: v.id, customer: v.district.customer.id })),
         deal: currentDeal(),
       };
     },
     deal: currentDeal,
     upgradeList() {
-      return content.upgrades.shop.map(upgradeView).filter((x): x is UpgradeView => x !== null);
+      const f = facts();
+      return content.upgrades.shop
+        .filter((id) => unlockMet(content.upgrades.upgrades.find((u) => u.id === id)?.unlock, f))
+        .map(upgradeView)
+        .filter((x): x is UpgradeView => x !== null);
     },
     buyUpgrade(id) {
-      const view = content.upgrades.shop.includes(id) ? upgradeView(id) : null;
+      const listed = content.upgrades.shop.includes(id) && unlockMet(content.upgrades.upgrades.find((u) => u.id === id)?.unlock, facts());
+      const view = listed ? upgradeView(id) : null;
       const u = content.upgrades.upgrades.find((x) => x.id === id);
       if (!view || !u) {
         events.emit({ type: 'denied', action: 'upgrade', reason: 'locked' });

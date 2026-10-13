@@ -104,6 +104,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let hud = 0;
   let current: ShopLayout | null = null;
   let incubatorCount = 1;
+  let slotCount = 3;
   let time = 0;
   let incs: IncubatorNode[] = [];
   let slotHits: Container[] = [];
@@ -185,7 +186,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       const hit = new Container();
       hit.eventMode = 'static';
       hit.cursor = 'pointer';
-      hit.hitArea = new Rectangle(slot.x, slot.y - slot.h * 0.1, slot.w, slot.h * 1.2);
+      hit.hitArea = new Rectangle(slot.x - l.slotGap / 2, slot.y - slot.h * 0.1, slot.w + l.slotGap, slot.h * 1.2);
       hit.on('pointerdown', () => {
         const uid = slotUids[index];
         if (uid) handlers.tapCreature(uid);
@@ -515,7 +516,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
 
   function relayout(): void {
     if (!stageRect) return;
-    current = computeShopLayout(stageRect, hud, style.scene.floorShare, style.scene.outlineWidth, style.scene.cornerRadius, incubatorCount);
+    current = computeShopLayout(stageRect, hud, style.scene.floorShare, style.scene.outlineWidth, style.scene.cornerRadius, incubatorCount, slotCount);
     drawBack(current);
     drawFurniture(current);
     buildIncubators(current);
@@ -580,8 +581,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     },
     frame(dt, view) {
       time += dt;
-      if (view.incubators.length !== incubatorCount) {
+      if (view.incubators.length !== incubatorCount || view.slots !== slotCount) {
         incubatorCount = Math.max(1, view.incubators.length);
+        slotCount = Math.max(1, view.slots);
         relayout();
       }
       if (!current) return;

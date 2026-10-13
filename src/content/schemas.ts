@@ -121,6 +121,11 @@ export const AudioFile = v.object({
 export const FtueFile = v.object({
   starterEgg: Id,
   starterWaitsForTap: v.boolean(),
+  firstRarity: Rarity,
+  secondRarity: Rarity,
+  firstCustomerSec: v.pipe(v.number(), v.minValue(0)),
+  firstOfferShare: Share,
+  maxHintWords: Count,
 });
 
 const IsoDate = v.pipe(v.string(), v.isoDate());

@@ -53,5 +53,12 @@
   "upgrade.effect.slots": "+{n} egg at a time",
   "upgrade.effect.hatchTime": "Eggs hatch {n}% faster",
   "deny.max": "Already at max",
-  "toast.upgrade": "{name}: level {n}"
+  "toast.upgrade": "{name}: level {n}",
+  "ftue.tapEgg": "Tap the egg",
+  "ftue.feed": "Feed it with taps",
+  "ftue.waitCustomer": "A customer is coming",
+  "ftue.sell": "Sell to the customer",
+  "ftue.buyEgg": "Buy a new egg",
+  "ftue.hatchRare": "Tap it, a surprise inside",
+  "ftue.rich": "That's how fortunes are made!"
 }

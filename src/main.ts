@@ -21,6 +21,9 @@ import { createActions } from './ui/actions.ts';
 import { createDealCard } from './ui/deal.ts';
 import { createCoinFlight } from './ui/coin-flight.ts';
 import { createUpgradesWindow } from './ui/upgrades.ts';
+import { createHints } from './ui/hints.ts';
+import { bindFunnel } from './analytics/funnel.ts';
+import { ftueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { audio, customers, dictionaries, eggs, feel, ftue, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
@@ -82,6 +85,7 @@ async function boot(): Promise<void> {
   flushSave = () => persistence.flush();
   const play = createGame(store, { eggs, species, customers, upgrades, ftue }, createRng(platform.now()));
   game = play;
+  const funnel = bindFunnel(play, store, track);
 
   // Language: the saved manual choice (LOC-05) wins over the platform language (SDK-05); set before the first frame.
   const i18n = createI18n(dictionaries, store.state.settings.lang ?? platform.language(), __GAME__.fallbackLanguage, __DEBUG_TOOLS__);
@@ -147,6 +151,7 @@ async function boot(): Promise<void> {
       }
     }
     else if (e.type === 'haggled') sfx.play(e.result === 'up' ? 'buy' : 'fail');
+    else if (e.type === 'ftueDone') toasts.show(i18n.t('ftue.rich'), 'good', 3200);
     else if (e.type === 'upgradeBought') {
       sfx.play('levelUp');
       const name = upgrades.upgrades.find((u) => u.id === e.id)?.name[i18n.lang()] ?? e.id;
@@ -167,6 +172,13 @@ async function boot(): Promise<void> {
     if (upgradesWindow.overlay.isOpen()) upgradesWindow.close();
     else if (settingsWindow.overlay.isOpen()) settingsWindow.close();
     else pauseWindow.toggle();
+  });
+  const hints = createHints(uiRoot, {
+    t: i18n.t,
+    anchors: () => shop.anchors(),
+    canvas,
+    panel: panel.root,
+    topInset: () => hud.root.getBoundingClientRect().bottom,
   });
   renderBuildLabel(uiRoot, __BUILD_LABEL__);
   i18n.apply(uiRoot);
@@ -196,7 +208,18 @@ async function boot(): Promise<void> {
   }
   if (__TEST_API__) {
     const { installTestApi } = await import('./test-api/index.ts');
-    installTestApi({ runtime, platform, i18n, fps: () => scene.app.ticker.FPS, isControllable: () => controllable, snapshot: () => ({ coins: store.state.coins, creatures: store.state.creatures, incubators: store.state.incubators, stats: store.state.stats }),
+    installTestApi({ runtime, platform, i18n, fps: () => scene.app.ticker.FPS, isControllable: () => controllable, snapshot: () => ({
+        coins: store.state.coins,
+        creatures: store.state.creatures,
+        incubators: store.state.incubators,
+        stats: store.state.stats,
+        upgrades: store.state.upgrades,
+        queue: play.view().queue.length,
+        deal: play.deal(),
+        hint: hints.text(),
+        ftue: ftueHint(store.state, play.view())?.step ?? null,
+        rarities: store.state.creatures.map((c) => speciesById(c.species)?.rarity ?? ''),
+      }),
       anchors: () => shop.anchors(),
       grant: (coins) => {
         store.state.coins += coins;
@@ -207,7 +230,10 @@ async function boot(): Promise<void> {
 
   scene.app.ticker.add((ticker) => {
     runtime.frame(ticker.deltaMS / 1000);
-    shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, play.view());
+    const view = play.view();
+    shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, view);
+    hints.update(controllable ? ftueHint(store.state, view) : null);
+    funnel.tick(runtime.elapsed());
   });
   scene.app.ticker.addOnce(() => {
     platform.firstFrame();

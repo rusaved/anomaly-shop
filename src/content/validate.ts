@@ -134,8 +134,16 @@ function checkLooks(style: StyleData, species: SpeciesData, errors: string[]): v
   for (const id of Object.keys(style.creatures)) if (!species.species.some((s) => s.id === id)) errors.push(`style.json: creatures.${id} — unknown species`);
 }
 
-function checkFtue(ftue: FtueData, eggs: EggsData | null, errors: string[]): void {
+function checkFtue(ftue: FtueData, eggs: EggsData | null, dicts: Record<string, I18nData | null>, errors: string[]): void {
   if (eggs && !eggs.eggs.some((e) => e.id === ftue.starterEgg && !e.special)) errors.push(`ftue.json: starterEgg — unknown egg "${ftue.starterEgg}"`);
+  // docs/01, section 4 and section 9: first-minute hints are 6 words at most, in every language.
+  for (const [lang, dict] of Object.entries(dicts)) {
+    for (const [key, text] of Object.entries(dict ?? {})) {
+      if (!key.startsWith('ftue.')) continue;
+      const words = text.trim().split(/\s+/).length;
+      if (words > ftue.maxHintWords) errors.push(`i18n/${lang}.json: ${key} — ${words} words, a first-minute hint has ${ftue.maxHintWords} at most`);
+    }
+  }
 }
 
 function checkI18n(game: GameData, dicts: Record<string, I18nData | null>, errors: string[]): void {
@@ -185,7 +193,6 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   if (customers) checkCustomers(customers, errors);
   if (upgrades) checkUpgrades(upgrades, eggs, errors);
   if (calendar) checkCalendar(calendar, eggs, errors);
-  if (ftue) checkFtue(ftue, eggs, errors);
   if (style && species) checkLooks(style, species, errors);
   if (style && customers)
     for (const d of customers.districts) if (!style.customers[d.customer.id]) errors.push(`style.json: customers.${d.customer.id} — no look for this customer type`);
@@ -195,6 +202,7 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
     const dicts: Record<string, I18nData | null> = {};
     for (const lang of game.languages) dicts[lang] = parseFile(`i18n/${lang}.json`, I18nFile, data(files[`i18n/${lang}.json`]), errors);
     checkI18n(game, dicts, errors);
+    if (ftue) checkFtue(ftue, eggs, dicts, errors);
   }
   for (const name of Object.keys(files)) {
     if (!(REQUIRED_FILES as readonly string[]).includes(name) && !/^i18n\/[a-z]{2}\.json$/.test(name)) errors.push(`${name}: (root) — unexpected content file (no schema)`);

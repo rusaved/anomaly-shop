@@ -16,6 +16,8 @@ function setup(withCreature = true, seed = 7) {
   if (withCreature) {
     save.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0 }];
     save.stats.hatched = 1;
+    // A player past the first sale: the first-minute rules (sooner, generous first customer) are tested below.
+    save.stats.deals = 1;
   }
   const store = createStore(save, () => 0);
   const game = createGame(store, content, createRng(seed));
@@ -77,6 +79,17 @@ describe('M1-05 customers', () => {
     run(game, 6.1);
     game.state.creatures = [];
     expect(game.view().deal).toMatchObject({ uid: null, offer: 0 });
+  });
+
+  it('first minute: before the first deal the first customer comes after firstCustomerSec and offers enough for an egg', () => {
+    const { game } = setup();
+    game.state.stats.deals = 0;
+    const fresh = createGame(createStore(game.state, () => 0), content, createRng(3));
+    run(fresh, content.ftue.firstCustomerSec - 0.1);
+    expect(fresh.view().queue).toHaveLength(0);
+    run(fresh, 0.2);
+    expect(fresh.view().queue).toHaveLength(1);
+    expect(fresh.deal()!.offer).toBeGreaterThanOrEqual(content.eggs.eggs[0]!.price.coins);
   });
 
   it('offerFor: collector likes rarity, the rich pay for level, the register adds to every deal', () => {

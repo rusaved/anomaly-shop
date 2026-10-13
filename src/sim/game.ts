@@ -28,6 +28,7 @@ export type GameEvent =
   | { type: 'customerLeft'; id: number; reason: 'sold' | 'haggle' | 'wait' }
   | { type: 'denied'; action: 'buyEgg' | 'sell' | 'haggle' | 'wait' | 'upgrade'; reason: DenyReason }
   | { type: 'upgradeBought'; id: string; level: number; price: number }
+  | { type: 'ftueDone' }
   | { type: 'sold'; uid: string; species: string; price: number; customer: string; customerId: number; haggled: boolean }
   | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
   | { type: 'change' };
@@ -125,7 +126,8 @@ export interface Game {
   showcaseSlots(): number;
 }
 
-export const FLAGS = { starter: 'ftue_starter' } as const;
+/** Tutorial marks in save.flags (docs/01, section 4). */
+export const FLAGS = { starter: 'ftue_starter', fed: 'ftue_fed', bought: 'ftue_bought', done: 'ftue_done' } as const;
 
 export function createGame(store: GameStore, content: GameContent, rng: Rng): Game {
   const events = createEmitter<GameEvent>();
@@ -172,7 +174,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const district = pool[rng.int(pool.length)];
     if (!district) return;
     const offer = district.customer.offer;
-    const v: Visitor = { id: nextVisitor++, district, share: rng.range(offer.min, offer.max), mult: 1, bargains: 0 };
+    const roll = rng.range(offer.min, offer.max);
+    // Until the first deal the offer covers the next egg (first minute: sale → «buy a new egg»).
+    const share = s().stats.deals === 0 ? Math.max(roll, content.ftue.firstOfferShare) : roll;
+    const v: Visitor = { id: nextVisitor++, district, share, mult: 1, bargains: 0 };
     queue.push(v);
     events.emit({ type: 'customerArrived', id: v.id, customer: district.customer.id });
     events.emit({ type: 'change' });
@@ -208,6 +213,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (!queue.length && delay > 0) spawnIn = Math.min(spawnIn, delay);
     events.emit({ type: 'customerLeft', id: v.id, reason });
   }
+
+  /** The first customer of a new player comes sooner (ftue.json, firstCustomerSec). */
+  let wasOpen = false;
 
   let selectedUid: string | null = null;
   function selected(): string | null {
@@ -247,9 +255,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const inc = s().incubators[index];
     const egg = inc?.egg ? eggData(inc.egg) : undefined;
     if (!inc || !egg) return;
-    const rarity = pickRarity(egg.chances, rng.next());
-    const kind = pickSpecies(species, rarity, rng.next());
     const st = s();
+    // The first minute (docs/01, section 4): the first creature is common, the second one rare.
+    const forced = st.stats.hatched === 0 ? content.ftue.firstRarity : st.stats.hatched === 1 && !st.flags[FLAGS.done] ? content.ftue.secondRarity : null;
+    const rarity = forced ?? pickRarity(egg.chances, rng.next());
+    const kind = pickSpecies(species, rarity, rng.next());
     st.stats.hatched += 1;
     const uid = `c${st.stats.hatched.toString(36)}${rng.int(1296).toString(36)}`;
     st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt });
@@ -257,8 +267,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     entry.seen += 1;
     entry.hatched += 1;
     Object.assign(inc, emptyIncubator());
+    const done = st.stats.hatched >= 2 && !st.flags[FLAGS.done];
+    if (done) st.flags[FLAGS.done] = true;
     store.commit({ flush: true });
     events.emit({ type: 'hatched', incubator: index, uid, species: kind.id, rarity: kind.rarity });
+    if (done) events.emit({ type: 'ftueDone' });
     events.emit({ type: 'change' });
   }
 
@@ -306,6 +319,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         return false;
       }
       s().coins -= check.price;
+      s().flags[FLAGS.bought] = true;
       placeEgg(check.incubator, eggId, false);
       store.commit({ flush: true });
       events.emit({ type: 'eggBought', incubator: check.incubator, egg: eggId, price: check.price });
@@ -343,6 +357,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
           cr.fed = 0;
           cr.level += 1;
           levelUp = true;
+          st.flags[FLAGS.fed] = true;
         }
       }
       const price = coins(creatureValue(spec, cr.level));
@@ -413,6 +428,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         if (frontIn === 0) events.emit({ type: 'change' });
       }
       if (shopOpen()) {
+        if (!wasOpen) {
+          wasOpen = true;
+          if (st.stats.deals === 0) spawnIn = content.ftue.firstCustomerSec;
+        }
         if (queue.length >= content.customers.queueSize) spawnIn = spawnEvery();
         else {
           spawnIn -= dt;

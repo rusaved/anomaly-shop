@@ -53,5 +53,12 @@
   "upgrade.effect.slots": "+{n} яйцо одновременно",
   "upgrade.effect.hatchTime": "Яйца быстрее на {n}%",
   "deny.max": "Уже максимум",
-  "toast.upgrade": "{name}: уровень {n}"
+  "toast.upgrade": "{name}: уровень {n}",
+  "ftue.tapEgg": "Тапни яйцо",
+  "ftue.feed": "Покорми его тапами",
+  "ftue.waitCustomer": "Покупатель уже идёт",
+  "ftue.sell": "Продай покупателю",
+  "ftue.buyEgg": "Купи новое яйцо",
+  "ftue.hatchRare": "Тапай, там сюрприз",
+  "ftue.rich": "Вот так и богатеют!"
 }

@@ -110,3 +110,22 @@ describe('M2-03 helpers', () => {
     expect(game.offline(-5000)).toMatchObject({ awaySec: 0, workedSec: 0, coins: 0 });
   });
 });
+
+describe('M2-04 offline pace', () => {
+  it('away time pays half the helpers pace of live play: 20 min away ≈ 10 min of helpers alone', () => {
+    const helpers = ['helper_feed', 'helper_sell', 'helper_courier'];
+    let live = 0;
+    let away = 0;
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const a = setup({ creatures: [cr('a'), cr('b')], helpers, seed });
+      a.game.state.coins = 100;
+      run(a.game, 600);
+      live += a.game.state.coins - 100;
+      const b = setup({ creatures: [cr('a'), cr('b')], helpers, seed: seed + 100 });
+      b.game.state.coins = 100;
+      away += b.game.offline(1200).coins;
+    }
+    expect(away / live).toBeGreaterThan(0.8);
+    expect(away / live).toBeLessThan(1.25);
+  });
+});

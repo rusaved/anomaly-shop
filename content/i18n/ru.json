@@ -80,5 +80,14 @@
   "upgrade.effect.appraisal": "Ценники дороже на {n}%",
   "upgrade.effect.shelfGrowth": "Цены на витрине растут быстрее",
   "upgrade.effect.orders": "Открывает заказы коллекционеров",
-  "upgrade.effect.cuckoo": "Раз в минуту кормит всех"
+  "upgrade.effect.cuckoo": "Раз в минуту кормит всех",
+  "away.title": "Пока тебя не было",
+  "away.time": "Тебя не было {time}",
+  "away.hours": "{n} ч",
+  "away.minutes": "{n} мин",
+  "away.sold": "Продано существ: {n}",
+  "away.hatched": "Вылупилось: {n}",
+  "away.levelUps": "Новых уровней: {n}",
+  "away.hint": "Помощник-продавец заработает и без тебя",
+  "away.ok": "Отлично"
 }

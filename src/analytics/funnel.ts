@@ -37,7 +37,10 @@ export function bindFunnel(game: Game, store: GameStore, track: Track): Funnel {
     else if (e.type === 'sold') once('a_sale_1', 'sale_1', { haggled: e.haggled ? 1 : 0 });
     else if (e.type === 'eggBought') once('a_egg_buy_1', 'egg_buy_1');
     else if (e.type === 'haggled') track('haggle', { result: e.result });
-    else if (e.type === 'upgradeBought') track('upgrade_buy', { id: e.id, level: e.level });
+    else if (e.type === 'upgradeBought') {
+      track('upgrade_buy', { id: e.id, level: e.level });
+      if (e.id.startsWith('helper_')) once('a_helper_1', 'helper_1', { id: e.id });
+    }
   });
   let next = 0;
   return {

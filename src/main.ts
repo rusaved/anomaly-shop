@@ -22,6 +22,7 @@ import { createDealCard } from './ui/deal.ts';
 import { createCoinFlight } from './ui/coin-flight.ts';
 import { createUpgradesWindow } from './ui/upgrades.ts';
 import { createHints } from './ui/hints.ts';
+import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
 import { ftueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
@@ -47,6 +48,9 @@ async function boot(): Promise<void> {
   let controllable = false;
   let startupAd = false;
   let flushSave: () => void = () => undefined;
+  /** Platform time the tab went hidden (the shop catches up on return, M2-04). */
+  let hiddenAt = 0;
+  let catchUp: (awaySec: number) => void = () => undefined;
 
   // Pause wiring (docs/02-tech.md, section 4.2): sdk from the platform, hidden/blur from the browser.
   platform.onPause(() => {
@@ -66,9 +70,14 @@ async function boot(): Promise<void> {
   watchLifecycle({
     hidden: () => {
       runtime.pause.pause('hidden');
+      hiddenAt = platform.now();
       flushSave();
     },
-    visible: () => runtime.pause.resume('hidden'),
+    visible: () => {
+      runtime.pause.resume('hidden');
+      if (hiddenAt > 0) catchUp((platform.now() - hiddenAt) / 1000);
+      hiddenAt = 0;
+    },
     blur: () => runtime.pause.pause('blur'),
     focus: () => runtime.pause.resume('blur'),
     pagehide: () => flushSave(),
@@ -81,6 +90,8 @@ async function boot(): Promise<void> {
 
   await platform.init();
   const store = createStore(await loadState(platform, track), () => platform.now());
+  /** Last save of the previous visit: the shop works on for the time since (helpers, incubators). */
+  const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
   const play = createGame(store, { eggs, species, customers, upgrades, ftue }, createRng(platform.now()));
@@ -136,6 +147,14 @@ async function boot(): Promise<void> {
   };
   renderUi();
   store.onCommit(renderUi);
+  const awayWindow = createAwayWindow(uiRoot, { t: i18n.t, lang: i18n.lang });
+  catchUp = (awaySec) => {
+    if (!(awaySec >= AWAY_MIN_SEC)) return;
+    const report = play.offline(awaySec);
+    hud.update(store.state.coins, { snap: true });
+    if (awayWindow.show(report)) track('offline_claim', { hours: Math.round(report.awaySec / 360) / 10, x2: 0 });
+  };
+  catchUp((platform.now() - lastSeen) / 1000);
   const sfx = createSfx(audio, () => store.state.settings.sound && platform.audioAllowed());
   document.addEventListener('pointerdown', () => sfx.unlock(), { capture: true });
   runtime.pause.onChange((paused) => sfx.setSuspended(paused));
@@ -184,7 +203,8 @@ async function boot(): Promise<void> {
   hud.pauseButton.addEventListener('click', () => pauseWindow.open());
   document.addEventListener('keydown', (e) => {
     if (e.code !== 'Escape' || !controllable) return;
-    if (upgradesWindow.overlay.isOpen()) upgradesWindow.close();
+    if (awayWindow.overlay.isOpen()) awayWindow.close();
+    else if (upgradesWindow.overlay.isOpen()) upgradesWindow.close();
     else if (settingsWindow.overlay.isOpen()) settingsWindow.close();
     else pauseWindow.toggle();
   });

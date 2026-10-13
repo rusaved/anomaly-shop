@@ -695,3 +695,35 @@
   font-weight: 700;
   flex: 0 0 auto;
 }
+
+/* M2-04: «while you were away» */
+.card-away {
+  text-align: center;
+}
+.away-time {
+  margin: 0;
+  color: var(--c-uiMuted);
+}
+.away-coins {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--c-uiAccent);
+}
+.away-coins[hidden] {
+  display: none;
+}
+.away-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.away-hint {
+  color: var(--c-uiMuted);
+  font-size: 14px;
+}

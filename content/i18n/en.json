@@ -80,5 +80,14 @@
   "upgrade.effect.appraisal": "Price tags {n}% higher",
   "upgrade.effect.shelfGrowth": "Showcase prices grow faster",
   "upgrade.effect.orders": "Opens collector orders",
-  "upgrade.effect.cuckoo": "Feeds everyone once a minute"
+  "upgrade.effect.cuckoo": "Feeds everyone once a minute",
+  "away.title": "While you were away",
+  "away.time": "You were away {time}",
+  "away.hours": "{n} h",
+  "away.minutes": "{n} min",
+  "away.sold": "Creatures sold: {n}",
+  "away.hatched": "Hatched: {n}",
+  "away.levelUps": "Level ups: {n}",
+  "away.hint": "The seller helper earns while you are away",
+  "away.ok": "Great"
 }

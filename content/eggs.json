@@ -1,8 +1,9 @@
 {
   "$schema": "eggs.schema.json",
-  "note": "Стартовые значения из docs/01a-content.md §2. Шансы в процентах, сумма 100. Время в секундах.",
+  "note": "Стартовые значения из docs/01a-content.md §2. Шансы в процентах, сумма 100. Время в секундах. rescueEgg — подарок, когда лавка пуста (ни существ, ни яиц) и монет не хватает на самое дешёвое яйцо: тупика не бывает.",
   "tapSpeedupSec": 0.5,
   "minHatchSec": 1,
+  "rescueEgg": "egg_basic",
   "eggs": [
     { "id": "egg_basic", "name": { "ru": "Обычное яйцо", "en": "Basic Egg" }, "price": { "coins": 10 }, "hatchSec": 3, "chances": { "common": 85, "rare": 13, "epic": 2, "legendary": 0 }, "unlock": { "type": "start" } },
     { "id": "egg_warm", "name": { "ru": "Тёплое яйцо", "en": "Warm Egg" }, "price": { "coins": 60 }, "hatchSec": 10, "chances": { "common": 60, "rare": 30, "epic": 9, "legendary": 1 }, "unlock": { "type": "deals", "count": 5 } },

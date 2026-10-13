@@ -61,6 +61,8 @@ function duplicates(name: string, what: string, ids: string[], errors: string[])
 
 function checkEggs(eggs: EggsData, customers: CustomersData | null, errors: string[]): void {
   duplicates('eggs.json', 'eggs', eggs.eggs.map((e) => e.id), errors);
+  const rescue = eggs.eggs.find((e) => e.id === eggs.rescueEgg);
+  if (!rescue || rescue.unlock.type !== 'start' || rescue.special) errors.push(`eggs.json: rescueEgg — "${eggs.rescueEgg}" must be an egg open from the start`);
   const districts = new Set((customers?.districts ?? []).map((d) => d.id));
   eggs.eggs.forEach((egg, i) => {
     const sum = RARITIES.reduce((s, r) => s + egg.chances[r], 0);

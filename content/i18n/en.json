@@ -62,5 +62,6 @@
   "ftue.hatchRare": "Tap it, a surprise inside",
   "ftue.rich": "That's how fortunes are made!",
   "egg.short.egg_warm": "Warm",
-  "toast.eggUnlocked": "New: {name}"
+  "toast.eggUnlocked": "New: {name}",
+  "toast.rescueEgg": "A gift: a free egg"
 }

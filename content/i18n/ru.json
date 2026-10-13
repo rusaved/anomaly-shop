@@ -62,5 +62,6 @@
   "ftue.hatchRare": "Тапай, там сюрприз",
   "ftue.rich": "Вот так и богатеют!",
   "egg.short.egg_warm": "Тёплое",
-  "toast.eggUnlocked": "Новое: {name}"
+  "toast.eggUnlocked": "Новое: {name}",
+  "toast.rescueEgg": "Подарок: бесплатное яйцо"
 }

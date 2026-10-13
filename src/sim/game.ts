@@ -30,6 +30,7 @@ export type GameEvent =
   | { type: 'upgradeBought'; id: string; level: number; price: number }
   | { type: 'ftueDone' }
   | { type: 'eggUnlocked'; egg: string }
+  | { type: 'rescueEgg'; incubator: number }
   | { type: 'sold'; uid: string; species: string; price: number; customer: string; customerId: number; haggled: boolean }
   | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
   | { type: 'change' };
@@ -439,6 +440,16 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       if (frontIn > 0) {
         frontIn = Math.max(0, frontIn - dt);
         if (frontIn === 0) events.emit({ type: 'change' });
+      }
+      // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free.
+      if (st.creatures.length === 0 && st.incubators[0] && !st.incubators.some((i) => i.egg) && st.stats.hatched > 0) {
+        const cheapest = Math.min(...eggs.eggs.filter((e) => eggUnlocked(e, st.stats.deals)).map((e) => e.price.coins));
+        if (st.coins + 1e-9 < cheapest) {
+          placeEgg(0, eggs.rescueEgg, false);
+          store.commit({ flush: true });
+          events.emit({ type: 'rescueEgg', incubator: 0 });
+          events.emit({ type: 'change' });
+        }
       }
       if (shopOpen()) {
         if (!wasOpen) {

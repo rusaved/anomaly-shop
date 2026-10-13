@@ -20,6 +20,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "validate:content": "node scripts/validate-content.mjs",
+    "sim:balance": "node scripts/balance-model.ts",
     "e2e": "playwright test --grep-invert @full",
     "e2e:full": "playwright test --grep @full",
     "e2e:release": "node scripts/e2e-static.mjs release",

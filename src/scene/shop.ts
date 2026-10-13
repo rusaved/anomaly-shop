@@ -642,7 +642,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           fx.burst(node.box.x, node.box.y - current.unit, 8, [c.uiMuted, c.outline], current.unit * 2.5, current.outline);
           fx.float(node.box.x, node.box.y - current.unit * 2.6, t('fx.huff'), c.eyeWhite, Math.max(15, current.unit * 0.55), current.unit * 0.8);
         }
-      } else if (e.type === 'eggBought') {
+      } else if (e.type === 'eggBought' || e.type === 'rescueEgg') {
         const spot = current.incubators[e.incubator];
         if (spot) fx.burst(spot.x, spot.y, 8, [c.incubator, c.incubatorGlass, c.uiAccent], spot.r * 3.5, current.outline * 1.2);
       }

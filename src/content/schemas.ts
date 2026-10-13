@@ -35,7 +35,7 @@ export const Egg = v.object({
   unlock: Unlock,
   special: v.optional(v.picklist(['daily'])),
 });
-export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
+export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, rescueEgg: Id, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
 
 export const Species = v.object({
   id: Id,

@@ -1,0 +1,6 @@
+sim:balance — 4 bots × 40 seeds, p50 / p90 of game seconds (limit in brackets)
+casual  F1 8/8 (40) ok · F2 25/31 (120) ok · F3 14/14 (180) ok · F4 12/12 (300) ok · 5 min: 49 deals, 1397 coins (p50)
+rusher  F1 10/10 (40) ok · F2 32/38 (120) ok · F3 15/15 (180) ok · F4 14/14 (300) ok · 5 min: 49 deals, 1161 coins (p50)
+tapper  F1 7/7 (40) ok · F2 13/19 (120) ok · F3 13/19 (180) ok · F4 10/10 (300) ok · 5 min: 37 deals, 3831 coins (p50)
+slow    F1 16/16 (40) ok · F2 42/45 (120) ok · F3 27/27 (180) ok · F4 23/23 (300) ok · 5 min: 48 deals, 1178 coins (p50)
+F1–F4: all green

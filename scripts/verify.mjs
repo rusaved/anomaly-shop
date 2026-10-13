@@ -1,6 +1,6 @@
 // `npm run verify` (docs/05-milestones-and-tests.md, section 2): the chain of checks, each stage named before
 // and timed after.
-//   --fast     typecheck + unit + validate:content: after every feature, budget 10 minutes.
+//   --fast     typecheck + unit + validate:content + sim:balance: after every feature, budget 10 minutes.
 //   (default)  the whole chain with e2e: only at the end of a milestone, once (plus one retry at most).
 //   --full     the whole chain + e2e:full (M6 and submission).
 //   --no-e2e   the whole chain without e2e stages (a build check in the middle of a milestone).
@@ -25,6 +25,7 @@ const STAGES = [
   { name: 'typecheck', fast: true },
   { name: 'test', fast: true },
   { name: 'validate:content', fast: true },
+  { name: 'sim:balance', fast: true },
   { name: 'build:e2e' },
   { name: 'e2e', e2e: true },
   { name: 'build' },

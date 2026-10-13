@@ -1,0 +1,112 @@
+// What: screen layout (docs/02-tech.md, section 4.4): portrait = shop above, panel below; landscape and desktop = shop left, panel right.
+// Called by: src/main.ts (watchLayout once), src/scene (stage rect), tests/layout.test.ts (computeLayout is pure).
+// Keep: computeLayout has no DOM; every size and ratio sits in PANEL; both orientations work at any proportion, never locked.
+
+export type Orientation = 'portrait' | 'landscape';
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+export interface Insets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+export interface Layout {
+  orientation: Orientation;
+  width: number;
+  height: number;
+  /** Where the PixiJS shop is drawn (full canvas minus the panel). */
+  stage: Rect;
+  /** Where the HTML panel sits. */
+  panel: Rect;
+  hudHeight: number;
+  safe: Insets;
+}
+
+export const PANEL = {
+  portraitShare: 0.36,
+  portraitMin: 190,
+  portraitMax: 320,
+  landscapeShare: 0.34,
+  landscapeMin: 260,
+  landscapeMax: 400,
+  hudHeight: 60,
+};
+
+const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
+
+export function computeLayout(width: number, height: number, safe: Insets = NO_INSETS): Layout {
+  const w = Math.max(1, Math.floor(width));
+  const h = Math.max(1, Math.floor(height));
+  if (h >= w) {
+    const panelH = Math.max(1, Math.min(h - 120, clamp(h * PANEL.portraitShare, PANEL.portraitMin, PANEL.portraitMax) + safe.bottom));
+    return {
+      orientation: 'portrait',
+      width: w,
+      height: h,
+      stage: { x: 0, y: 0, w, h: Math.max(1, h - panelH) },
+      panel: { x: 0, y: h - panelH, w, h: panelH },
+      hudHeight: PANEL.hudHeight + safe.top,
+      safe,
+    };
+  }
+  const panelW = Math.max(1, Math.min(w - 160, clamp(w * PANEL.landscapeShare, PANEL.landscapeMin, PANEL.landscapeMax) + safe.right));
+  return {
+    orientation: 'landscape',
+    width: w,
+    height: h,
+    stage: { x: 0, y: 0, w: Math.max(1, w - panelW), h },
+    panel: { x: w - panelW, y: 0, w: panelW, h },
+    hudHeight: PANEL.hudHeight + safe.top,
+    safe,
+  };
+}
+
+/** env(safe-area-inset-*) through a probe element (iPhone notch and home bar). */
+export function readSafeInsets(doc: Document): Insets {
+  const probe = doc.createElement('div');
+  probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left)';
+  doc.body.appendChild(probe);
+  const cs = getComputedStyle(probe);
+  const px = (s: string): number => Number.parseFloat(s) || 0;
+  const out = { top: px(cs.paddingTop), right: px(cs.paddingRight), bottom: px(cs.paddingBottom), left: px(cs.paddingLeft) };
+  probe.remove();
+  return out;
+}
+
+export function applyLayout(appRoot: HTMLElement, layout: Layout): void {
+  appRoot.classList.toggle('portrait', layout.orientation === 'portrait');
+  appRoot.classList.toggle('landscape', layout.orientation === 'landscape');
+  const size = layout.orientation === 'portrait' ? layout.panel.h : layout.panel.w;
+  appRoot.style.setProperty('--panel-size', `${size}px`);
+  appRoot.style.setProperty('--hud-height', `${layout.hudHeight}px`);
+}
+
+/** Recomputes on every size change (resize, rotation, address bar); calls cb at once and after each change. */
+export function watchLayout(appRoot: HTMLElement, cb: (layout: Layout) => void): () => void {
+  let last = '';
+  const run = (): void => {
+    const safe = readSafeInsets(appRoot.ownerDocument);
+    const layout = computeLayout(appRoot.clientWidth, appRoot.clientHeight, safe);
+    const key = `${layout.width}x${layout.height}:${layout.orientation}:${safe.top},${safe.right},${safe.bottom},${safe.left}`;
+    if (key === last) return;
+    last = key;
+    applyLayout(appRoot, layout);
+    cb(layout);
+  };
+  run();
+  const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(run) : null;
+  observer?.observe(appRoot);
+  window.addEventListener('resize', run);
+  window.addEventListener('orientationchange', run);
+  return () => {
+    observer?.disconnect();
+    window.removeEventListener('resize', run);
+    window.removeEventListener('orientationchange', run);
+  };
+}

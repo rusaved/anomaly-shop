@@ -10,6 +10,8 @@ import './ui/styles.css';
 import style from '@content/style.json';
 import { applyTheme } from './ui/theme.ts';
 import { createHud } from './ui/hud.ts';
+import { createPanel } from './ui/panel.ts';
+import { watchLayout } from './ui/layout.ts';
 import { createSceneApp } from './scene/app.ts';
 import { loadPlatform } from './platform/index.ts';
 import { watchLifecycle } from './platform/lifecycle.ts';
@@ -65,17 +67,16 @@ async function boot(): Promise<void> {
   const appRoot = document.getElementById('app') as HTMLElement;
   const uiRoot = document.getElementById('ui') as HTMLElement;
   const scene = await createSceneApp(canvas, style.colors.sky, window.devicePixelRatio);
-  const fit = (): void => {
-    canvas.style.width = `${appRoot.clientWidth}px`;
-    canvas.style.height = `${appRoot.clientHeight}px`;
-    scene.resize(appRoot.clientWidth, appRoot.clientHeight);
-  };
-  fit();
-  window.addEventListener('resize', fit);
-
   const hud = createHud(uiRoot, lang);
   hud.update(store.state.coins);
   store.onCommit((s) => hud.update(s.coins));
+  createPanel(uiRoot, __GAME__.title[lang]);
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+  watchLayout(appRoot, (layout) => {
+    canvas.style.width = `${layout.width}px`;
+    canvas.style.height = `${layout.height}px`;
+    scene.resize(layout.width, layout.height);
+  });
 
   if (__DEBUG_TOOLS__ && new URLSearchParams(location.search).has('debug')) {
     const { installDebugPanel } = await import('./debug/panel.ts');

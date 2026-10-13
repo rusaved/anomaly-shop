@@ -20,8 +20,9 @@ export function installDebugPanel(h: DebugHooks): GUI {
   const gui = new GUI({ title: 'debug', width: 230 });
   const el = gui.domElement;
   el.style.position = 'fixed';
-  el.style.top = '64px';
-  el.style.right = '0';
+  el.style.top = 'var(--hud-height, 60px)';
+  el.style.left = '0';
+  el.style.right = 'auto';
   el.style.zIndex = '40';
   const actions = {
     coins100: () => {

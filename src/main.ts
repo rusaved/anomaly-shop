@@ -12,6 +12,8 @@ import { applyTheme } from './ui/theme.ts';
 import { createHud } from './ui/hud.ts';
 import { createPanel } from './ui/panel.ts';
 import { watchLayout } from './ui/layout.ts';
+import { createI18n } from './ui/i18n.ts';
+import { dictionaries } from './content/index.ts';
 import { createSceneApp } from './scene/app.ts';
 import { loadPlatform } from './platform/index.ts';
 import { watchLifecycle } from './platform/lifecycle.ts';
@@ -56,12 +58,14 @@ async function boot(): Promise<void> {
   });
 
   await platform.init();
-  const lang = platform.language();
-  document.documentElement.lang = lang;
-
   const store = createStore(await loadState(platform, track), () => platform.now());
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
+
+  // Language: the saved manual choice (LOC-05) wins over the platform language (SDK-05); set before the first frame.
+  const i18n = createI18n(dictionaries, store.state.settings.lang ?? platform.language(), __GAME__.fallbackLanguage, __DEBUG_TOOLS__);
+  const lang = i18n.lang();
+  document.documentElement.lang = lang;
 
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
   const appRoot = document.getElementById('app') as HTMLElement;
@@ -70,7 +74,17 @@ async function boot(): Promise<void> {
   const hud = createHud(uiRoot, lang);
   hud.update(store.state.coins);
   store.onCommit((s) => hud.update(s.coins));
-  createPanel(uiRoot, __GAME__.title[lang]);
+  const panel = createPanel(uiRoot, __GAME__.title[lang]);
+  i18n.apply(uiRoot);
+  i18n.onChange((next) => {
+    document.documentElement.lang = next;
+    hud.setLanguage(next);
+    hud.update(store.state.coins);
+    panel.setTitle(__GAME__.title[next]);
+    i18n.apply(uiRoot);
+    store.state.settings.lang = next;
+    store.commit({ flush: true });
+  });
   document.addEventListener('contextmenu', (e) => e.preventDefault());
   watchLayout(appRoot, (layout) => {
     canvas.style.width = `${layout.width}px`;
@@ -84,7 +98,7 @@ async function boot(): Promise<void> {
   }
   if (__TEST_API__) {
     const { installTestApi } = await import('./test-api/index.ts');
-    installTestApi({ runtime, platform, isControllable: () => controllable, snapshot: () => ({ coins: store.state.coins, creatures: store.state.creatures }) });
+    installTestApi({ runtime, platform, i18n, isControllable: () => controllable, snapshot: () => ({ coins: store.state.coins, creatures: store.state.creatures }) });
   }
 
   scene.app.ticker.add((ticker) => runtime.frame(ticker.deltaMS / 1000));

@@ -4,6 +4,7 @@
 
 import type { Runtime } from '../core/runtime.ts';
 import type { Platform } from '../platform/types.ts';
+import type { I18n } from '../ui/i18n.ts';
 import { events } from '../analytics/track.ts';
 
 export interface TestState {
@@ -20,6 +21,7 @@ export interface TestState {
 export interface TestHooks {
   runtime: Runtime;
   platform: Platform;
+  i18n: I18n;
   isControllable(): boolean;
   snapshot(): { coins: number; creatures: unknown[] };
 }
@@ -43,6 +45,10 @@ export function installTestApi(hooks: TestHooks): void {
     },
     runSim(sec: number): number {
       return hooks.runtime.runSim(sec);
+    },
+    /** Reads a translated string (to compare UI texts in e2e without hard-coding them). */
+    t(key: string): string {
+      return hooks.i18n.t(key);
     },
   };
   (window as unknown as { __TEST__: typeof api }).__TEST__ = api;

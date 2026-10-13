@@ -11,7 +11,7 @@ export interface Hud {
 export function createHud(parent: HTMLElement, lang: string): Hud {
   const root = document.createElement('div');
   root.className = 'hud';
-  root.innerHTML = '<div class="hud-coins" data-hud="coins"><span class="coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></div>';
+  root.innerHTML = '<div class="hud-coins" data-hud="coins" role="status" data-i18n="hud.coins" data-i18n-attr="aria-label"><span class="coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></div>';
   parent.appendChild(root);
   const value = root.querySelector('.hud-coins-value') as HTMLElement;
   let format = new Intl.NumberFormat(lang);

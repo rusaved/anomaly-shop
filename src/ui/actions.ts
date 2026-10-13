@@ -1,8 +1,14 @@
 // What: the action row of the panel: buy an egg (price on the button) and open the upgrade shop (dot when one is affordable).
 // Called by: src/main.ts (create once, render on every commit and game change).
-// Keep: the button calls game commands only; it stays tappable when unaffordable (aria-disabled), so the player learns why.
+// Keep: commands only; unaffordable stays tappable (aria-disabled) to explain why; basic egg = buy-egg, later eggs = buy-<id>.
 
 import type { Game } from '../sim/game.ts';
+
+export interface ActionLookups {
+  t(key: string): string;
+  /** Shell color of an egg for its icon. */
+  eggColor(id: string): string;
+}
 
 export interface Actions {
   root: HTMLElement;
@@ -10,27 +16,58 @@ export interface Actions {
   setLanguage(lang: string): void;
 }
 
-export function createActions(parent: HTMLElement, game: Game, lang: string, openUpgrades: () => void): Actions {
+export function createActions(parent: HTMLElement, game: Game, lang: string, look: ActionLookups, openUpgrades: () => void): Actions {
   const root = document.createElement('div');
   root.className = 'actions';
-  root.innerHTML =
-    '<button type="button" class="btn btn-primary btn-egg" data-action="buy-egg"><span class="egg-icon" aria-hidden="true"></span><span data-i18n="action.buyEgg"></span><span class="price"><span class="coin coin-sm" aria-hidden="true"></span><span data-price></span></span></button>' +
-    '<button type="button" class="btn btn-upgrades" data-action="upgrades"><span class="up-icon" aria-hidden="true"></span><span data-i18n="upgrades.open"></span><span class="dot" data-dot hidden></span></button>';
+  const eggsBox = document.createElement('div');
+  eggsBox.className = 'actions-eggs';
+  root.appendChild(eggsBox);
+  root.insertAdjacentHTML(
+    'beforeend',
+    '<button type="button" class="btn btn-upgrades" data-action="upgrades"><span class="up-icon" aria-hidden="true"></span><span data-i18n="upgrades.open"></span><span class="dot" data-dot hidden></span></button>',
+  );
   parent.appendChild(root);
-  const buy = root.querySelector('[data-action="buy-egg"]') as HTMLButtonElement;
-  const price = root.querySelector('[data-price]') as HTMLElement;
   const upgrades = root.querySelector('[data-action="upgrades"]') as HTMLButtonElement;
   const dot = root.querySelector('[data-dot]') as HTMLElement;
   upgrades.addEventListener('click', openUpgrades);
   let format = new Intl.NumberFormat(lang);
-  buy.addEventListener('click', () => game.buyEgg());
+  let eggKey = '';
+  const buttons = new Map<string, HTMLButtonElement>();
+
+  function buildEggs(ids: string[]): void {
+    eggsBox.replaceChildren();
+    buttons.clear();
+    ids.forEach((id, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-primary btn-egg';
+      b.dataset.action = i === 0 ? 'buy-egg' : `buy-${id}`;
+      b.innerHTML = '<span class="egg-icon" aria-hidden="true"></span><span data-label></span><span class="price"><span class="coin coin-sm" aria-hidden="true"></span><span data-price></span></span><span class="dot" data-dot hidden></span>';
+      (b.querySelector('.egg-icon') as HTMLElement).style.background = look.eggColor(id);
+      b.addEventListener('click', () => game.buyEgg(id));
+      eggsBox.appendChild(b);
+      buttons.set(id, b);
+    });
+    eggKey = '';
+  }
+
   const actions: Actions = {
     root,
     render() {
-      const check = game.canBuyEgg();
-      price.textContent = format.format(check.price);
-      buy.setAttribute('aria-disabled', String(!check.ok));
-      buy.dataset.reason = check.ok ? '' : check.reason;
+      const list = game.eggList();
+      const ids = list.map((e) => e.id).join(',');
+      if (ids !== eggKey.split('|')[0]) buildEggs(list.map((e) => e.id));
+      eggKey = `${ids}|`;
+      list.forEach((e, i) => {
+        const b = buttons.get(e.id);
+        if (!b) return;
+        (b.querySelector('[data-label]') as HTMLElement).textContent = look.t(i === 0 ? 'action.buyEgg' : `egg.short.${e.id}`);
+        (b.querySelector('[data-price]') as HTMLElement).textContent = format.format(e.check.price);
+        b.setAttribute('aria-disabled', String(!e.check.ok));
+        b.dataset.reason = e.check.ok ? '' : e.check.reason;
+        (b.querySelector('[data-dot]') as HTMLElement).hidden = !e.fresh;
+      });
+      root.dataset.eggs = String(list.length);
       dot.hidden = !game.upgradeList().some((u) => u.affordable);
     },
     setLanguage(next) {

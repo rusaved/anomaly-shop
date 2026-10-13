@@ -7,7 +7,7 @@ import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { coins, creatureValue, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, tapsForLevel, upgradePrice } from './rules.ts';
+import { coins, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, tapsForLevel, upgradePrice } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -29,6 +29,7 @@ export type GameEvent =
   | { type: 'denied'; action: 'buyEgg' | 'sell' | 'haggle' | 'wait' | 'upgrade'; reason: DenyReason }
   | { type: 'upgradeBought'; id: string; level: number; price: number }
   | { type: 'ftueDone' }
+  | { type: 'eggUnlocked'; egg: string }
   | { type: 'sold'; uid: string; species: string; price: number; customer: string; customerId: number; haggled: boolean }
   | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
   | { type: 'change' };
@@ -103,6 +104,8 @@ export interface Game {
   readonly events: Emitter<GameEvent>;
   readonly state: SaveData;
   canBuyEgg(eggId?: string): BuyCheck;
+  /** Eggs on sale now (unlocked ones), cheapest first, with their purchase check. */
+  eggList(): Array<{ id: string; check: BuyCheck; fresh: boolean }>;
   buyEgg(eggId?: string): boolean;
   tapIncubator(index: number): void;
   /** Feeds the creature (+1 toward its next level) and selects it. */
@@ -237,7 +240,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   function canBuyEgg(eggId = basicEgg): BuyCheck {
     const egg = eggData(eggId);
     const price = egg?.price.coins ?? 0;
-    if (!egg || egg.special) return { ok: false, reason: 'locked', price };
+    if (!egg || !eggUnlocked(egg, s().stats.deals)) return { ok: false, reason: 'locked', price };
     const incubator = s().incubators.findIndex((i) => !i.egg);
     if (incubator < 0) return { ok: false, reason: 'busy', price };
     if (freeSlots() <= 0) return { ok: false, reason: 'full', price };
@@ -312,6 +315,12 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       return s();
     },
     canBuyEgg,
+    eggList() {
+      return eggs.eggs
+        .filter((e) => eggUnlocked(e, s().stats.deals))
+        .sort((a, b) => a.price.coins - b.price.coins)
+        .map((e) => ({ id: e.id, check: canBuyEgg(e.id), fresh: Boolean(s().flags[`egg_new_${e.id}`]) }));
+    },
     buyEgg(eggId = basicEgg) {
       const check = canBuyEgg(eggId);
       if (!check.ok) {
@@ -320,6 +329,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       }
       s().coins -= check.price;
       s().flags[FLAGS.bought] = true;
+      delete s().flags[`egg_new_${eggId}`];
       placeEgg(check.incubator, eggId, false);
       store.commit({ flush: true });
       events.emit({ type: 'eggBought', incubator: check.incubator, egg: eggId, price: check.price });
@@ -379,12 +389,15 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       st.stats.deals += 1;
       st.stats.coinsEarned += deal.offer;
       st.creatures = st.creatures.filter((x) => x.uid !== cr.uid);
+      const opened = eggs.eggs.filter((e) => e.unlock.type === 'deals' && e.unlock.count === st.stats.deals && eggUnlocked(e, st.stats.deals));
+      for (const e of opened) st.flags[`egg_new_${e.id}`] = true;
       const entry = (st.collection[cr.species] ??= { seen: 1, hatched: 0, sold: 0 });
       entry.sold += 1;
       if (selectedUid === cr.uid) selectedUid = null;
       store.commit({ flush: true });
       events.emit({ type: 'sold', uid: cr.uid, species: cr.species, price: deal.offer, customer: deal.customer, customerId: deal.id, haggled });
       frontLeaves('sold', 0);
+      for (const e of opened) events.emit({ type: 'eggUnlocked', egg: e.id });
       events.emit({ type: 'change' });
       return true;
     },

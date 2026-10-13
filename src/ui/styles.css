@@ -271,18 +271,39 @@
   pointer-events: none;
 }
 
-/* M1: actions row, egg button, toasts */
-.actions {
+/* M1: actions row, egg buttons, toasts */
+.actions,
+.actions-eggs {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+}
+.actions-eggs {
+  flex: 2 1 0;
+  min-width: 0;
 }
 .actions .btn {
   flex: 1 1 0;
   min-width: 0;
-  gap: 8px;
-  padding: 0 12px;
+  gap: 6px;
+  padding: 0 10px;
   white-space: nowrap;
+  position: relative;
+}
+.actions[data-eggs='1'] .actions-eggs {
+  flex: 1 1 0;
+}
+.actions:not([data-eggs='1']) {
+  flex-wrap: wrap;
+}
+.actions:not([data-eggs='1']) .actions-eggs,
+.actions:not([data-eggs='1']) .btn-upgrades {
+  flex: 1 1 100%;
+}
+.actions .btn .dot {
+  width: 10px;
+  height: 10px;
+  top: 4px;
+  right: 4px;
 }
 .btn[aria-disabled='true'] {
   filter: saturate(0.35);
@@ -427,10 +448,10 @@
   min-width: 0;
   white-space: nowrap;
 }
-.landscape .deal-actions {
+.panel-narrow .deal-actions {
   grid-template-columns: 1fr 1fr;
 }
-.landscape .deal-actions .btn-sell {
+.panel-narrow .deal-actions .btn-sell {
   grid-column: 1 / -1;
 }
 .btn-two {

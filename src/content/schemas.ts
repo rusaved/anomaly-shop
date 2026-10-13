@@ -154,6 +154,7 @@ export const StyleFile = v.object({
   scene: v.object({ outlineWidth: v.pipe(v.number(), v.minValue(0)), cornerRadius: v.pipe(v.number(), v.minValue(0)), floorShare: Share }),
   creatures: v.record(Id, CreatureLook),
   customers: v.record(Id, v.object({ body: Color, accent: Color })),
+  eggs: v.record(Id, v.object({ shell: Color, spots: Color })),
 });
 
 export const I18nFile = v.record(v.string(), NonEmpty);

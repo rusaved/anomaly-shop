@@ -121,7 +121,13 @@ async function boot(): Promise<void> {
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
   });
   const upgradesWindow = createUpgradesWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, upgrade: (id) => upgrades.upgrades.find((u) => u.id === id) });
-  const actions = createActions(panel.body, play, lang, () => upgradesWindow.open());
+  const actions = createActions(
+    panel.body,
+    play,
+    lang,
+    { t: i18n.t, eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg },
+    () => upgradesWindow.open(),
+  );
   const toasts = createToasts(uiRoot);
   const renderUi = (): void => {
     dealCard.render();
@@ -152,6 +158,11 @@ async function boot(): Promise<void> {
     }
     else if (e.type === 'haggled') sfx.play(e.result === 'up' ? 'buy' : 'fail');
     else if (e.type === 'ftueDone') toasts.show(i18n.t('ftue.rich'), 'good', 3200);
+    else if (e.type === 'eggUnlocked') {
+      const name = eggs.eggs.find((x) => x.id === e.egg)?.name[i18n.lang()] ?? e.egg;
+      toasts.show(i18n.t('toast.eggUnlocked', { name }), 'rare', 2600);
+      sfx.play('rare');
+    }
     else if (e.type === 'upgradeBought') {
       sfx.play('levelUp');
       const name = upgrades.upgrades.find((u) => u.id === e.id)?.name[i18n.lang()] ?? e.id;

@@ -546,7 +546,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       const key = `${iv.egg}:${stage}:${spot.r.toFixed(1)}`;
       if (node.key !== key) {
         node.key = key;
-        drawEgg(node.egg, spot.r, c, l.outline * 0.8, iv.share);
+        drawEgg(node.egg, spot.r, c, l.outline * 0.8, iv.share, style.eggs[iv.egg]);
       }
       node.squash = Math.max(0, node.squash - dt);
       const k = feel.bounceSec > 0 ? node.squash / feel.bounceSec : 0;

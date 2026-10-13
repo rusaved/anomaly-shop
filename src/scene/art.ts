@@ -227,14 +227,16 @@ export function drawCustomer(g: Graphics, type: string, look: { body: string; ac
 }
 
 /** An egg centred at 0,0 (height 1.44 r); cracks grow with the hatch share. */
-export function drawEgg(g: Graphics, r: number, c: Colors, outline: number, share: number): void {
+export function drawEgg(g: Graphics, r: number, c: Colors, outline: number, share: number, look?: { shell: string; spots: string }): void {
+  const shell = look?.shell ?? c.egg;
+  const spots = look?.spots ?? c.eggSpots;
   const rx = r * 0.56;
   const ry = r * 0.72;
   g.clear();
-  g.ellipse(0, 0, rx, ry).fill(c.egg).stroke({ width: outline, color: c.outline });
-  g.circle(-rx * 0.3, -ry * 0.25, r * 0.12).fill(c.eggSpots);
-  g.circle(rx * 0.4, ry * 0.25, r * 0.1).fill(c.eggSpots);
-  g.circle(-rx * 0.15, ry * 0.45, r * 0.07).fill(c.eggSpots);
+  g.ellipse(0, 0, rx, ry).fill(shell).stroke({ width: outline, color: c.outline });
+  g.circle(-rx * 0.3, -ry * 0.25, r * 0.12).fill(spots);
+  g.circle(rx * 0.4, ry * 0.25, r * 0.1).fill(spots);
+  g.circle(-rx * 0.15, ry * 0.45, r * 0.07).fill(spots);
   // Shine.
   g.ellipse(-rx * 0.45, -ry * 0.5, rx * 0.16, ry * 0.12).fill({ color: c.incubatorGlass, alpha: 0.9 });
   if (share > 0.45) {

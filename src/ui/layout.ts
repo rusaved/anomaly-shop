@@ -31,9 +31,11 @@ export const PANEL = {
   portraitShare: 0.42,
   portraitMin: 220,
   portraitMax: 360,
-  landscapeShare: 0.34,
+  landscapeShare: 0.4,
   landscapeMin: 260,
-  landscapeMax: 400,
+  landscapeMax: 420,
+  /** A landscape panel narrower than this stacks the deal buttons in two rows. */
+  narrowPanel: 300,
   hudHeight: 60,
 };
 
@@ -82,6 +84,7 @@ export function readSafeInsets(doc: Document): Insets {
 export function applyLayout(appRoot: HTMLElement, layout: Layout): void {
   appRoot.classList.toggle('portrait', layout.orientation === 'portrait');
   appRoot.classList.toggle('landscape', layout.orientation === 'landscape');
+  appRoot.classList.toggle('panel-narrow', layout.orientation === 'landscape' && layout.panel.w < PANEL.narrowPanel);
   const size = layout.orientation === 'portrait' ? layout.panel.h : layout.panel.w;
   appRoot.style.setProperty('--panel-size', `${size}px`);
   appRoot.style.setProperty('--hud-height', `${layout.hudHeight}px`);

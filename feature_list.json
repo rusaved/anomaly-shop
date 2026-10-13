@@ -38,7 +38,7 @@
     { "id": "M1-11", "milestone": "M1", "priority": "P1", "title": "Модель баланса F1–F4 (первая сделка до 40 с, 100 монет к 2 мин, улучшение к 3 мин, редкий к 5 мин)", "criteria": "sim:balance зелёный", "passes": true },
     { "id": "M1-12", "milestone": "M1", "priority": "P1", "title": "Итог вехи M1: verify, плейтестер один прогон, «что проверить продюсеру» (5 пунктов), стоп", "criteria": "по шаблону; «Ждёт решения продюсера»", "passes": true },
 
-    { "id": "M2-01", "milestone": "M2", "priority": "P1", "title": "Инкубаторы до 4 и скорость до 5 уровней", "criteria": "по upgrades.json", "passes": false },
+    { "id": "M2-01", "milestone": "M2", "priority": "P1", "title": "Инкубаторы до 4 и скорость до 5 уровней", "criteria": "по upgrades.json", "passes": true },
     { "id": "M2-02", "milestone": "M2", "priority": "P1", "title": "Витрина 3 → 8 мест: рост цены со временем, привлечение покупателей", "criteria": "цена на витрине растёт; покупатели выбирают по типу", "passes": false },
     { "id": "M2-03", "milestone": "M2", "priority": "P1", "title": "Помощники: автокорм, автопродажа, курьер", "criteria": "работают без тапов; офлайн-доход считается при возврате", "passes": false },
     { "id": "M2-04", "milestone": "M2", "priority": "P1", "title": "Офлайн-доход до 8 часов, экран «пока тебя не было»", "criteria": "50% онлайн-темпа; экран показывает сумму", "passes": false },

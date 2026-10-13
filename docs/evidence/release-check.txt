@@ -1,15 +1,16 @@
 check-release: release/anomaly-shop-0.1.0.zip
-date: 2026-10-13T20:16:04.116Z
-files: 20
+date: 2026-10-13T22:21:16.752Z
+files: 21
   assets/BufferResource-7657QUKQ.js  10.8 KB
   assets/CanvasPool-BZOfdiYK.js  107.7 KB
   assets/RenderTargetSystem-k-tnMFYl.js  76.2 KB
-  assets/browserAll-CA6KPqcc.js  41.6 KB
+  assets/ZzFX-C1HKDoVW.js  2.0 KB
+  assets/browserAll-DxLZqGI7.js  41.6 KB
   assets/canvasUtils-_2Xt0X_j.js  5.9 KB
   assets/getTextureBatchBindGroup-Bz0KTaOB.js  0.3 KB
-  assets/index-DN3fwqxH.css  5.4 KB
-  assets/index-DazXlYue.js  309.3 KB
-  assets/init-oSCA1YIr.js  15.0 KB
+  assets/index-Bv2deIbL.js  364.2 KB
+  assets/index-DSEVgG4i.css  11.4 KB
+  assets/init-0SAAnuO_.js  15.0 KB
   assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2  7.7 KB
   assets/rubik-cyrillic-400-normal-D5R8xuhl.woff  9.6 KB
   assets/rubik-cyrillic-700-normal-C_jxLOfU.woff  9.6 KB
@@ -18,13 +19,13 @@ files: 20
   assets/rubik-latin-400-normal-j0pmKyiQ.woff2  18.5 KB
   assets/rubik-latin-700-normal-D-tMm-eS.woff2  18.7 KB
   assets/rubik-latin-700-normal-KHOtubUA.woff  23.7 KB
-  assets/webworkerAll-C1gRpDpR.js  0.1 KB
+  assets/webworkerAll-D3UBjBf5.js  0.1 KB
   assets/yandex-tRMV2YKJ.js  6.8 KB
   index.html  2.1 KB
 
 PASS  1. index.html at the root, paths only [A-Za-z0-9._/-]
 PASS  2. unpacked ≤ 30 MB and JS gzip ≤ 600 KB
-        zip 299.8 KB, unpacked 700.1 KB, js gzip 169.7 KB
+        zip 321.5 KB, unpacked 763.0 KB, js gzip 189.1 KB
 PASS  3. no external addresses except /sdk.js and mc.yandex.ru (namespaces allowed)
 PASS  4. <script src="/sdk.js"> exactly once
         found 1

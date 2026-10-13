@@ -202,7 +202,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     selectedKey = key;
     selection.clear();
     const slot = l.slots[index];
-    if (!slot || view.creatures.length < 2) return;
+    if (!slot) return;
     const pad = l.outline * 1.2;
     selection.roundRect(slot.x - pad, slot.y - pad, slot.w + pad * 2, slot.h + pad * 2, l.radius * 0.9).stroke({ width: l.outline * 1.2, color: c.uiAccent });
   }
@@ -223,16 +223,18 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   const fmt = (n: number): string => n.toLocaleString(document.documentElement.lang || 'ru');
 
   /** Price pill under the portrait and a level badge at its top right (local to the creature box). */
-  function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout): void {
+  /** picked: the customer at the counter bids for this one — its pill takes the offer bubble's accent color. */
+  function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout, picked: boolean): void {
     const size = Math.max(11, r * 0.42);
     node.price.text = fmt(cv.price);
     node.price.style.fontSize = size;
     const coinR = size * 0.42;
+    node.price.style.fill = c.outline;
     const pillW = node.price.width + coinR * 2 + size * 0.9;
     const pillH = size * 1.35;
     const py = r * 1.12;
     node.tag.clear();
-    node.tag.roundRect(-pillW / 2, py - pillH / 2, pillW, pillH, pillH / 2).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+    node.tag.roundRect(-pillW / 2, py - pillH / 2, pillW, pillH, pillH / 2).fill(picked ? c.uiAccent : c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
     node.tag.circle(-pillW / 2 + size * 0.4 + coinR, py, coinR).fill(c.uiAccent).stroke({ width: Math.max(1, l.outline * 0.4), color: c.outline });
     node.price.position.set(coinR + size * 0.2, py);
     const max = cv.level >= cv.maxLevel;
@@ -477,10 +479,11 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         node.shown = '';
         drawCreature(node.art, style.creatures[cv.species] ?? FALLBACK_LOOK, cv.rarity, at.r, c, l.outline * 0.8);
       }
-      const shown = `${cv.price}:${cv.level}:${cv.maxLevel}:${cv.fed}:${cv.need}`;
+      const picked = cv.uid === view.selected && view.deal?.uid === cv.uid;
+      const shown = `${cv.price}:${cv.level}:${cv.maxLevel}:${cv.fed}:${cv.need}:${picked}`;
       if (node.shown !== shown) {
         node.shown = shown;
-        drawTags(node, cv, at.r, l);
+        drawTags(node, cv, at.r, l, picked);
         moving = true;
       }
       if (node.arrive < 1 && node.from) {

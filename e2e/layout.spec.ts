@@ -7,7 +7,19 @@ test('SCR-01 phone: HUD, panel and side buttons inside the viewport, no scroll',
   await open(page, '?mock_device=mobile');
   expect((await state(page)).device).toBe('mobile');
   await expectNoPageScroll(page);
-  await expectInsideViewport(page, ['[data-hud=coins]', '[data-action=pause]', '#panel', '[data-panel=title]', '[data-community=side] [data-action=community-telegram]', '[data-community=side] [data-action=community-vk]']);
+  await expectInsideViewport(page, [
+    '[data-hud=coins]',
+    '[data-action=pause]',
+    '#panel',
+    '[data-panel=title]',
+    '[data-action=sell]',
+    '[data-action=haggle]',
+    '[data-action=wait]',
+    '[data-action=buy-egg]',
+    '[data-action=upgrades]',
+    '[data-community=side] [data-action=community-telegram]',
+    '[data-community=side] [data-action=community-vk]',
+  ]);
   const vp = page.viewportSize()!;
   const panel = (await page.locator('#panel').boundingBox())!;
   if (vp.height >= vp.width) expect(panel.width).toBeCloseTo(vp.width, 0);

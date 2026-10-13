@@ -40,7 +40,7 @@ export function createDealCard(parent: HTMLElement, game: Game, look: DealLookup
   root.className = 'deal';
   root.dataset.deal = 'idle';
   root.innerHTML =
-    '<div class="deal-head"><span class="deal-avatar" aria-hidden="true"></span><span class="deal-who" data-deal-who></span><span class="deal-queue" data-deal-queue></span></div><div class="deal-text" data-deal-text></div>' +
+    '<div class="deal-head"><span class="deal-avatar" aria-hidden="true"></span><span class="deal-who" data-deal-who></span><span class="deal-share" data-deal-share></span><span class="deal-queue" data-deal-queue></span></div><div class="deal-text" data-deal-text></div>' +
     '<div class="deal-actions">' +
     '<button type="button" class="btn btn-primary btn-sell" data-action="sell"><span data-i18n="deal.sell"></span><span class="price"><span class="coin coin-sm" aria-hidden="true"></span><span data-sell-price></span></span></button>' +
     '<button type="button" class="btn btn-haggle" data-action="haggle"><span class="btn-two"><span data-i18n="deal.haggle"></span><small data-haggle-hint></small></span></button>' +
@@ -49,6 +49,7 @@ export function createDealCard(parent: HTMLElement, game: Game, look: DealLookup
   parent.appendChild(root);
   const who = root.querySelector('[data-deal-who]') as HTMLElement;
   const queue = root.querySelector('[data-deal-queue]') as HTMLElement;
+  const share = root.querySelector('[data-deal-share]') as HTMLElement;
   const text = root.querySelector('[data-deal-text]') as HTMLElement;
   const avatar = root.querySelector('.deal-avatar') as HTMLElement;
   const sell = root.querySelector('[data-action="sell"]') as HTMLButtonElement;
@@ -86,6 +87,8 @@ export function createDealCard(parent: HTMLElement, game: Game, look: DealLookup
       root.dataset.deal = state;
       avatar.style.background = deal ? look.customerColor(deal.customer) : '';
       who.textContent = deal ? look.customerName(deal.customer) : '';
+      // The share explains why the offer is below the price tag (thrifty pays 70–85%).
+      share.textContent = deal?.uid ? look.t('deal.share', { n: Math.round(deal.share * 100) }) : '';
       queue.textContent = view.queue.length > 1 ? look.t('deal.queue', { n: view.queue.length }) : '';
       if (state === 'offer' && deal?.species) fill(text, look.t('deal.offer'), fmt.format(deal.offer), look.speciesName(deal.species));
       else text.textContent = look.t(state === 'idle' ? 'deal.idle' : state === 'next' ? 'deal.next' : 'deal.noCreature');

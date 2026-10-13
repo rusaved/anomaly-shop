@@ -63,5 +63,9 @@
   "ftue.rich": "That's how fortunes are made!",
   "egg.short.egg_warm": "Warm",
   "toast.eggUnlocked": "New: {name}",
-  "toast.rescueEgg": "A gift: a free egg"
+  "toast.rescueEgg": "A gift: a free egg",
+  "deny.noCreature": "Hatch a creature first",
+  "deal.share": "{n}% of price",
+  "reason.full": "showcase full",
+  "reason.busy": "incubator busy"
 }

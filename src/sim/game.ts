@@ -17,7 +17,7 @@ export interface GameContent {
   ftue: FtueData;
 }
 
-export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noDeal' | 'lastPrice' | 'max';
+export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noDeal' | 'noCreature' | 'lastPrice' | 'max';
 
 export type GameEvent =
   | { type: 'eggBought'; incubator: number; egg: string; price: number }
@@ -74,6 +74,8 @@ export interface DealView {
   canHaggle: boolean;
   /** Chance that a haggle sends this customer away, 0..1. */
   leaveChance: number;
+  /** Share of the creature's price tag offered now (haggles included). */
+  share: number;
 }
 
 export interface GameView {
@@ -206,6 +208,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       bargains: v.bargains,
       canHaggle: v.bargains < content.customers.bargainMax,
       leaveChance: c.leaveOnBargain,
+      share: cr && spec ? offer / coins(creatureValue(spec, cr.level)) : v.share * v.mult,
     };
   }
 
@@ -382,7 +385,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const st = s();
       const cr = deal?.uid ? st.creatures.find((x) => x.uid === deal.uid) : undefined;
       if (!deal || !cr) {
-        events.emit({ type: 'denied', action: 'sell', reason: 'noDeal' });
+        events.emit({ type: 'denied', action: 'sell', reason: deal ? 'noCreature' : 'noDeal' });
         return false;
       }
       const haggled = deal.bargains > 0;
@@ -406,7 +409,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const deal = currentDeal();
       const v = queue[0];
       if (!deal || !deal.uid || !v) {
-        events.emit({ type: 'denied', action: 'haggle', reason: 'noDeal' });
+        events.emit({ type: 'denied', action: 'haggle', reason: deal ? 'noCreature' : 'noDeal' });
         return false;
       }
       if (!deal.canHaggle) {

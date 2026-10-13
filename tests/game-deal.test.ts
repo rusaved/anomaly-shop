@@ -38,6 +38,7 @@ describe('M1-06 deal', () => {
     const offer = game.deal()!.offer;
     expect(game.accept()).toBe(true);
     expect(game.state.coins).toBe(offer);
+    expect(seen.find((e) => e.type === 'sold')).toBeDefined();
     expect(game.state.creatures.map((c) => c.uid)).toEqual(['b']);
     expect(game.state.stats).toMatchObject({ deals: 1, coinsEarned: offer });
     expect(game.state.collection.kettle?.sold).toBe(1);
@@ -119,6 +120,7 @@ describe('M1-06 deal', () => {
     run(game, 6.1);
     game.state.creatures = [];
     expect(game.accept()).toBe(false);
+    expect(seen.at(-1)).toMatchObject({ type: 'denied', action: 'sell', reason: 'noCreature' });
     expect(game.haggle()).toBe(false);
   });
 });

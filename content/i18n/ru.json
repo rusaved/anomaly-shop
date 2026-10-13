@@ -63,5 +63,9 @@
   "ftue.rich": "Вот так и богатеют!",
   "egg.short.egg_warm": "Тёплое",
   "toast.eggUnlocked": "Новое: {name}",
-  "toast.rescueEgg": "Подарок: бесплатное яйцо"
+  "toast.rescueEgg": "Подарок: бесплатное яйцо",
+  "deny.noCreature": "Сначала вылупи существо",
+  "deal.share": "{n}% цены",
+  "reason.full": "витрина полна",
+  "reason.busy": "инкубатор занят"
 }

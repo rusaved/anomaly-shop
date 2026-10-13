@@ -20,8 +20,12 @@ export interface Creature {
 export interface Incubator {
   egg: string | null;
   startedAt: number;
-  /** Seconds of hatching already done. */
+  /** Seconds of hatching already done, taps included. */
   progress: number;
+  /** Game seconds since the egg started (the floor of minHatchSec counts these). */
+  elapsed: number;
+  /** The starter egg waits for the first tap before its timer runs (docs/01, section 4). */
+  waiting: boolean;
 }
 
 export interface CollectionEntry {
@@ -54,6 +58,10 @@ export interface SaveData {
   flags: Record<string, boolean>;
 }
 
+export function emptyIncubator(): Incubator {
+  return { egg: null, startedAt: 0, progress: 0, elapsed: 0, waiting: false };
+}
+
 export function newSave(now: number): SaveData {
   return {
     v: SAVE_VERSION,
@@ -64,7 +72,7 @@ export function newSave(now: number): SaveData {
     coins: 0,
     crystals: 0,
     collectionPoints: 0,
-    incubators: [{ egg: null, startedAt: 0, progress: 0 }],
+    incubators: [emptyIncubator()],
     creatures: [],
     showcase: [],
     upgrades: {},
@@ -110,7 +118,8 @@ export function normalize(raw: unknown, now: number): SaveData {
     incubators: arr(r.incubators).length
       ? arr(r.incubators).map((i) => {
           const o = rec(i);
-          return { egg: typeof o.egg === 'string' ? o.egg : null, startedAt: num(o.startedAt, 0), progress: num(o.progress, 0) };
+          const egg = typeof o.egg === 'string' ? o.egg : null;
+          return { egg, startedAt: num(o.startedAt, 0), progress: Math.max(0, num(o.progress, 0)), elapsed: Math.max(0, num(o.elapsed, 0)), waiting: egg !== null && bool(o.waiting, false) };
         })
       : d.incubators,
     creatures: arr(r.creatures)

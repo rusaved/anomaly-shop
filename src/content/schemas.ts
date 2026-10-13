@@ -92,6 +92,19 @@ export const UpgradesFile = v.object({
   upgrades: v.pipe(v.array(Upgrade), v.minLength(1)),
 });
 
+const Positive = v.pipe(v.number(), v.minValue(0));
+export const FeelFile = v.object({
+  eggTapSquash: Positive,
+  eggWobbleDeg: Positive,
+  bounceSec: Positive,
+  waitPulse: Positive,
+});
+
+export const FtueFile = v.object({
+  starterEgg: Id,
+  starterWaitsForTap: v.boolean(),
+});
+
 const IsoDate = v.pipe(v.string(), v.isoDate());
 export const CalendarFile = v.object({
   daily: v.object({ eggId: Id, holdMinutes: Money, priceMultiplier: v.pipe(v.number(), v.minValue(1)) }),
@@ -152,6 +165,8 @@ export type DistrictData = v.InferOutput<typeof District>;
 export type UpgradesData = v.InferOutput<typeof UpgradesFile>;
 export type UpgradeData = v.InferOutput<typeof Upgrade>;
 export type CalendarData = v.InferOutput<typeof CalendarFile>;
+export type FtueData = v.InferOutput<typeof FtueFile>;
+export type FeelData = v.InferOutput<typeof FeelFile>;
 export type StyleData = v.InferOutput<typeof StyleFile>;
 export type I18nData = v.InferOutput<typeof I18nFile>;
 export type GameData = v.InferOutput<typeof GameFile>;

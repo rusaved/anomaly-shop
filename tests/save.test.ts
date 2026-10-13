@@ -23,7 +23,7 @@ describe('SaveData', () => {
 
   it('a full shop stays far below the 100 KB limit (and below the 50 KB target)', () => {
     const s: SaveData = newSave(0);
-    s.incubators = Array.from({ length: 4 }, () => ({ egg: 'egg_basic', startedAt: 1700000000000, progress: 1.5 }));
+    s.incubators = Array.from({ length: 4 }, () => ({ egg: 'egg_basic', startedAt: 1700000000000, progress: 1.5, elapsed: 1.2, waiting: false }));
     s.creatures = Array.from({ length: 60 }, (_, i) => ({ uid: `c${i}-${Math.round(i * 1234567.89)}`, species: 'mirrorfrog', level: 20, fed: 7, hatchedAt: 1700000000000 + i }));
     s.showcase = s.creatures.slice(0, 8).map((c) => c.uid);
     for (let i = 0; i < 40; i++) s.collection[`species_${i}`] = { seen: 99, hatched: 99, sold: 99 };

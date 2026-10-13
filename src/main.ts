@@ -17,7 +17,9 @@ import { createPauseWindow } from './ui/pause.ts';
 import { createSettingsWindow } from './ui/settings.ts';
 import { communityLinks, renderCommunity } from './ui/community.ts';
 import { renderBuildLabel } from './ui/label.ts';
-import { dictionaries, style as styleData } from './content/index.ts';
+import { createActions } from './ui/actions.ts';
+import { createToasts } from './ui/toast.ts';
+import { customers, dictionaries, eggs, feel, ftue, species, style as styleData, upgrades } from './content/index.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
 import { loadPlatform } from './platform/index.ts';
@@ -25,15 +27,16 @@ import { watchLifecycle } from './platform/lifecycle.ts';
 import { bindPersistence, loadState } from './platform/persist.ts';
 import { createRuntime } from './core/runtime.ts';
 import { createStore } from './sim/store.ts';
+import { createGame, type Game } from './sim/game.ts';
+import { createRng } from './core/rng.ts';
 import { newSave } from './sim/state.ts';
 import { track } from './analytics/track.ts';
 
 async function boot(): Promise<void> {
   applyTheme(style.colors);
   const platform = await loadPlatform(track);
-  const runtime = createRuntime(() => {
-    /* the sim arrives with M1 */
-  });
+  let game: Game | null = null;
+  const runtime = createRuntime((dt) => game?.tick(dt));
   let controllable = false;
   let startupAd = false;
   let flushSave: () => void = () => undefined;
@@ -73,6 +76,8 @@ async function boot(): Promise<void> {
   const store = createStore(await loadState(platform, track), () => platform.now());
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue }, createRng(platform.now()));
+  game = play;
 
   // Language: the saved manual choice (LOC-05) wins over the platform language (SDK-05); set before the first frame.
   const i18n = createI18n(dictionaries, store.state.settings.lang ?? platform.language(), __GAME__.fallbackLanguage, __DEBUG_TOOLS__);
@@ -84,15 +89,23 @@ async function boot(): Promise<void> {
   const uiRoot = document.getElementById('ui') as HTMLElement;
   const scene = await createSceneApp(canvas, style.colors.sky, window.devicePixelRatio);
   await document.fonts.ready;
-  const shop = createShopView(scene.app, styleData, i18n.t, scene.invalidate);
-  shop.update(store.state);
-  store.onCommit((s) => shop.update(s));
+  const shop = createShopView(scene.app, styleData, feel, i18n.t, scene.invalidate, { tapIncubator: (i) => play.tapIncubator(i) });
   const hud = createHud(uiRoot, lang);
   hud.update(store.state.coins);
   store.onCommit((s) => hud.update(s.coins));
   const panel = createPanel(uiRoot, __GAME__.title[lang]);
   const links = platform.caps.community ? communityLinks() : null;
   renderCommunity(panel.side, links, 'side', true);
+  const actions = createActions(panel.body, play, lang);
+  const toasts = createToasts(uiRoot);
+  const renderUi = (): void => actions.render();
+  renderUi();
+  store.onCommit(renderUi);
+  play.events.on((e) => {
+    shop.onEvent(e);
+    if (e.type === 'change') renderUi();
+    else if (e.type === 'denied') toasts.show(i18n.t(`deny.${e.reason}`), 'warn');
+  });
   const pauseWindow = createPauseWindow(uiRoot, runtime.pause, links, () => settingsWindow.open());
   const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.show());
   hud.pauseButton.addEventListener('click', () => pauseWindow.open());
@@ -106,6 +119,7 @@ async function boot(): Promise<void> {
   i18n.onChange((next) => {
     document.documentElement.lang = next;
     hud.setLanguage(next);
+    actions.setLanguage(next);
     hud.update(store.state.coins);
     panel.setTitle(__GAME__.title[next]);
     i18n.apply(uiRoot);
@@ -127,10 +141,19 @@ async function boot(): Promise<void> {
   }
   if (__TEST_API__) {
     const { installTestApi } = await import('./test-api/index.ts');
-    installTestApi({ runtime, platform, i18n, fps: () => scene.app.ticker.FPS, isControllable: () => controllable, snapshot: () => ({ coins: store.state.coins, creatures: store.state.creatures }) });
+    installTestApi({ runtime, platform, i18n, fps: () => scene.app.ticker.FPS, isControllable: () => controllable, snapshot: () => ({ coins: store.state.coins, creatures: store.state.creatures, incubators: store.state.incubators, stats: store.state.stats }),
+      anchors: () => shop.anchors(),
+      grant: (coins) => {
+        store.state.coins += coins;
+        store.commit();
+      },
+    });
   }
 
-  scene.app.ticker.add((ticker) => runtime.frame(ticker.deltaMS / 1000));
+  scene.app.ticker.add((ticker) => {
+    runtime.frame(ticker.deltaMS / 1000);
+    shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, play.view());
+  });
   scene.app.ticker.addOnce(() => {
     platform.firstFrame();
     document.getElementById('preloader')?.classList.add('hidden');

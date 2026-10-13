@@ -21,7 +21,9 @@ export interface ShopLayout {
   floor: Rect;
   counter: Rect;
   counterTop: Rect;
+  /** First incubator (M0 shape); all of them are in incubators. */
   incubator: Spot;
+  incubators: Spot[];
   showcase: Rect;
   slots: Rect[];
   door: Rect;
@@ -32,7 +34,7 @@ export interface ShopLayout {
 
 export const SHOP = { showcaseSlots: 3, queueSpots: 3, minUnit: 18 };
 
-export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: number, outlineWidth: number, cornerRadius: number): ShopLayout {
+export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: number, outlineWidth: number, cornerRadius: number, incubatorCount = 1): ShopLayout {
   const u = Math.max(SHOP.minUnit, Math.min(stage.w, stage.h) / 10);
   const outline = Math.max(2, Math.min(outlineWidth, u * 0.2));
   const radius = Math.min(cornerRadius, u * 0.6);
@@ -68,8 +70,12 @@ export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: nu
   const counterH = Math.min(u * 1.1, floor.h * 0.45);
   const counter: Rect = { x: stage.x + Math.min(stage.w * 0.42 - counterW / 2, door.x - spotR * 2.6 - counterW - stage.x), y: floorY + floor.h * 0.3, w: counterW, h: counterH };
   const counterTop: Rect = { x: counter.x - u * 0.15, y: counter.y - u * 0.25, w: counterW + u * 0.3, h: u * 0.35 };
-  const incR = Math.min(u * 0.9, counterW * 0.2);
-  const incubator: Spot = { x: counter.x + incR * 1.3, y: counterTop.y - incR * 0.95, r: incR };
+  // Incubators stand side by side on the left part of the counter; the right part stays free for the deal.
+  const count = Math.max(1, Math.floor(incubatorCount));
+  const incR = Math.min(u * 0.9, counterW * 0.2, counterW / (count * 2.4 + 0.2));
+  const incubators: Spot[] = [];
+  for (let i = 0; i < count; i++) incubators.push({ x: counter.x + incR * 1.3 + i * incR * 2.4, y: counterTop.y - incR * 0.95, r: incR });
+  const incubator = incubators[0] as Spot;
 
-  return { stage, unit: u, wall, floor, counter, counterTop, incubator, showcase, slots, door, queue, outline, radius };
+  return { stage, unit: u, wall, floor, counter, counterTop, incubator, incubators, showcase, slots, door, queue, outline, radius };
 }

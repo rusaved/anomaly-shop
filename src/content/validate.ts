@@ -7,6 +7,8 @@ import {
   CalendarFile,
   CustomersFile,
   EggsFile,
+  FeelFile,
+  FtueFile,
   GameFile,
   I18nFile,
   RARITIES,
@@ -16,6 +18,7 @@ import {
   type CalendarData,
   type CustomersData,
   type EggsData,
+  type FtueData,
   type GameData,
   type I18nData,
   type SpeciesData,
@@ -25,7 +28,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json'] as const;
 
 const CYRILLIC = /[\u0400-\u04ff]/;
 const PLACEHOLDER = /\{[a-zA-Z0-9_]+\}/g;
@@ -109,6 +112,10 @@ function checkCalendar(calendar: CalendarData, eggs: EggsData | null, errors: st
   });
 }
 
+function checkFtue(ftue: FtueData, eggs: EggsData | null, errors: string[]): void {
+  if (eggs && !eggs.eggs.some((e) => e.id === ftue.starterEgg && !e.special)) errors.push(`ftue.json: starterEgg — unknown egg "${ftue.starterEgg}"`);
+}
+
 function checkI18n(game: GameData, dicts: Record<string, I18nData | null>, errors: string[]): void {
   const base = dicts[game.fallbackLanguage];
   if (!base) return;
@@ -147,12 +154,15 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   const upgrades = parseFile('upgrades.json', UpgradesFile, data(files['upgrades.json']), errors);
   const calendar = parseFile('calendar.json', CalendarFile, data(files['calendar.json']), errors);
   parseFile('style.json', StyleFile, data(files['style.json']), errors);
+  const ftue = parseFile('ftue.json', FtueFile, data(files['ftue.json']), errors);
+  parseFile('feel.json', FeelFile, data(files['feel.json']), errors);
 
   if (eggs) checkEggs(eggs, customers, errors);
   if (species) checkSpecies(species, eggs, errors);
   if (customers) checkCustomers(customers, errors);
   if (upgrades) checkUpgrades(upgrades, eggs, errors);
   if (calendar) checkCalendar(calendar, eggs, errors);
+  if (ftue) checkFtue(ftue, eggs, errors);
 
   if (game) {
     if (!game.languages.includes(game.fallbackLanguage)) errors.push('game.json: fallbackLanguage — not in languages');

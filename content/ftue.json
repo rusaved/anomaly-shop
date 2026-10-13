@@ -1,0 +1,6 @@
+{
+  "$schema": "ftue.schema.json",
+  "note": "Первая минута из docs/01-gdd.md §4: стартовое яйцо уже в инкубаторе и ждёт первого тапа (подсказка «тапни яйцо»). Остальные шаги — M1-09.",
+  "starterEgg": "egg_basic",
+  "starterWaitsForTap": true
+}

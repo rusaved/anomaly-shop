@@ -25,5 +25,10 @@
   "rarity.rare": "Редкий",
   "rarity.epic": "Эпический",
   "rarity.legendary": "Легендарный",
-  "boot.unsupported": "Лавка не открылась в этом браузере. Попробуй другой"
+  "boot.unsupported": "Лавка не открылась в этом браузере. Попробуй другой",
+  "action.buyEgg": "Яйцо",
+  "deny.coins": "Не хватает монет",
+  "deny.busy": "Инкубатор занят",
+  "deny.full": "Витрина полна",
+  "deny.locked": "Пока закрыто"
 }

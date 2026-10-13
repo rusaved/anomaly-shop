@@ -1,37 +1,71 @@
-// What: the shop scene drawn with primitives (docs/01, section 6; feature M0-08): wall, floor, counter, incubator, showcase, door and queue.
-// Called by: src/main.ts (create once, layout on every size change, update on every store commit).
-// Keep: reads state only; colors from style.json; real art replaces the primitives from M1 without changing the layout math.
+// What: the shop scene (docs/01, section 6): wall, floor, counter, incubators with eggs, showcase, door and queue; taps go to the sim.
+// Called by: src/main.ts (create once, layout on every size change, frame on every ticker tick, onEvent for game events).
+// Keep: reads the game view only, never writes state (taps call the handlers); colors from style.json, feel from feel.json.
 
-import { Container, Graphics, Text, type Application } from 'pixi.js';
-import type { StyleData } from '../content/schemas.ts';
-import type { SaveData } from '../sim/state.ts';
-import { computeShopLayout, type Rect, type ShopLayout } from './shop-layout.ts';
+import { Circle, Container, Graphics, Text, type Application } from 'pixi.js';
+import type { FeelData, StyleData } from '../content/schemas.ts';
+import type { GameEvent, GameView } from '../sim/game.ts';
+import { drawEgg, drawRing } from './art.ts';
+import { createFx } from './fx.ts';
+import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop-layout.ts';
+
+export interface ShopHandlers {
+  tapIncubator(index: number): void;
+}
+
+export interface ShopAnchors {
+  incubators: Spot[];
+  slots: Rect[];
+  queue: Spot[];
+  counter: Rect;
+}
 
 export interface ShopView {
   root: Container;
   layout(stage: Rect, hudHeight: number): void;
-  update(state: SaveData): void;
+  /** One ticker tick: animations, then a render request only when something moved. */
+  frame(dt: number, view: GameView): void;
+  onEvent(e: GameEvent): void;
   relabel(): void;
+  /** Stage coordinates of the tappable pieces (hints, test API); null before the first layout. */
+  anchors(): ShopAnchors | null;
 }
 
 type Translate = (key: string) => string;
 
-export function createShopView(app: Application, style: StyleData, t: Translate, invalidate: () => void): ShopView {
+interface IncubatorNode {
+  hit: Container;
+  box: Container;
+  egg: Graphics;
+  key: string;
+  squash: number;
+}
+
+export function createShopView(app: Application, style: StyleData, feel: FeelData, t: Translate, invalidate: () => void, handlers: ShopHandlers): ShopView {
   const c = style.colors;
   const root = new Container();
   const back = new Graphics();
   const furniture = new Graphics();
-  const live = new Graphics();
+  const rings = new Graphics();
+  const creaturesG = new Graphics();
+  const eggsLayer = new Container();
+  const hits = new Container();
   const labels = new Container();
-  root.addChild(back, furniture, live, labels);
+  const fx = createFx(c.outline);
+  root.addChild(back, furniture, rings, eggsLayer, creaturesG, labels, fx.layer, hits);
   app.stage.addChild(root);
 
+  let stageRect: Rect | null = null;
+  let hud = 0;
   let current: ShopLayout | null = null;
-  let state: SaveData | null = null;
+  let incubatorCount = 1;
+  let time = 0;
+  let incs: IncubatorNode[] = [];
+  let creaturesKey = '';
 
   const label = (key: string): Text =>
     new Text({ text: t(key), style: { fontFamily: 'Rubik, sans-serif', fontSize: 14, fontWeight: '700', fill: c.outline, align: 'center' } });
-  const texts = { incubator: label('shop.incubator'), showcase: label('shop.showcase'), queue: label('shop.queue'), counter: label('shop.counter') };
+  const texts = { showcase: label('shop.showcase'), queue: label('shop.queue') };
   for (const tx of Object.values(texts)) {
     tx.anchor.set(0.5, 0);
     tx.alpha = 0.75;
@@ -63,24 +97,47 @@ export function createShopView(app: Application, style: StyleData, t: Translate,
     // Counter with a lighter top board.
     g.roundRect(l.counter.x, l.counter.y, l.counter.w, l.counter.h, l.radius * 0.6).fill(c.counter).stroke(stroke);
     g.roundRect(l.counterTop.x, l.counterTop.y, l.counterTop.w, l.counterTop.h, l.radius * 0.5).fill(c.counterTop).stroke(stroke);
-    // Incubator: base and glass dome.
-    const i = l.incubator;
-    g.roundRect(i.x - i.r * 1.1, i.y + i.r * 0.6, i.r * 2.2, i.r * 0.5, l.radius * 0.4).fill(c.incubator).stroke(stroke);
-    g.circle(i.x, i.y, i.r).fill({ color: c.incubatorGlass, alpha: 0.9 }).stroke(stroke);
+    // Incubators: base and glass dome.
+    for (const i of l.incubators) {
+      g.roundRect(i.x - i.r * 1.1, i.y + i.r * 0.6, i.r * 2.2, i.r * 0.5, l.radius * 0.4).fill(c.incubator).stroke(stroke);
+      g.circle(i.x, i.y, i.r).fill({ color: c.incubatorGlass, alpha: 0.9 }).stroke(stroke);
+    }
   }
 
-  function drawLive(l: ShopLayout, s: SaveData | null): void {
-    const g = live;
+  function buildIncubators(l: ShopLayout): void {
+    for (const n of incs) {
+      n.hit.destroy({ children: true });
+      n.box.destroy({ children: true });
+    }
+    incs = l.incubators.map((spot, index) => {
+      const hit = new Container();
+      hit.eventMode = 'static';
+      hit.cursor = 'pointer';
+      hit.hitArea = new Circle(0, 0, spot.r * 1.25);
+      hit.position.set(spot.x, spot.y);
+      hit.on('pointerdown', () => handlers.tapIncubator(index));
+      hits.addChild(hit);
+      const box = new Container();
+      const egg = new Graphics();
+      box.addChild(egg);
+      box.position.set(spot.x, spot.y + spot.r * 0.12);
+      eggsLayer.addChild(box);
+      return { hit, box, egg, key: '', squash: 0 };
+    });
+  }
+
+  function placeLabels(l: ShopLayout): void {
+    const size = Math.max(11, Math.min(16, l.unit * 0.42));
+    for (const tx of Object.values(texts)) tx.style.fontSize = size;
+    texts.showcase.position.set(l.showcase.x + l.showcase.w / 2, l.showcase.y + l.showcase.h + l.outline);
+    texts.queue.position.set(l.door.x + l.door.w / 2, l.door.y - size - l.outline * 2);
+  }
+
+  function drawCreatures(view: GameView, l: ShopLayout): void {
+    const g = creaturesG;
     g.clear();
     const stroke = { width: l.outline * 0.8, color: c.outline };
-    const i = l.incubator;
-    if (s?.incubators[0]?.egg) {
-      g.ellipse(i.x, i.y + i.r * 0.1, i.r * 0.5, i.r * 0.65).fill(c.egg).stroke(stroke);
-      g.circle(i.x - i.r * 0.15, i.y - i.r * 0.15, i.r * 0.12).fill(c.eggSpots);
-      g.circle(i.x + i.r * 0.2, i.y + i.r * 0.2, i.r * 0.1).fill(c.eggSpots);
-    }
-    const creatures = s?.creatures.slice(0, l.slots.length) ?? [];
-    creatures.forEach((_, n) => {
+    view.creatures.slice(0, l.slots.length).forEach((_, n) => {
       const slot = l.slots[n];
       if (!slot) return;
       const cx = slot.x + slot.w / 2;
@@ -92,37 +149,100 @@ export function createShopView(app: Application, style: StyleData, t: Translate,
     });
   }
 
-  function placeLabels(l: ShopLayout): void {
-    const size = Math.max(11, Math.min(16, l.unit * 0.42));
-    for (const tx of Object.values(texts)) tx.style.fontSize = size;
-    texts.showcase.position.set(l.showcase.x + l.showcase.w / 2, l.showcase.y + l.showcase.h + l.outline);
-    texts.queue.position.set(l.door.x + l.door.w / 2, l.door.y - size - l.outline * 2);
-    texts.counter.position.set(l.counter.x + l.counter.w / 2, l.counter.y + l.counter.h + l.outline);
-    texts.incubator.anchor.set(0, 0.5);
-    texts.incubator.position.set(l.incubator.x + l.incubator.r + l.outline * 2, l.incubator.y - l.incubator.r * 0.35);
+  function relayout(): void {
+    creaturesKey = '';
+    if (!stageRect) return;
+    current = computeShopLayout(stageRect, hud, style.scene.floorShare, style.scene.outlineWidth, style.scene.cornerRadius, incubatorCount);
+    drawBack(current);
+    drawFurniture(current);
+    buildIncubators(current);
+    placeLabels(current);
+    fx.clear();
+    invalidate();
+  }
+
+  function animateIncubators(dt: number, view: GameView, l: ShopLayout): boolean {
+    let moving = false;
+    rings.clear();
+    view.incubators.forEach((iv, i) => {
+      const node = incs[i];
+      const spot = l.incubators[i];
+      if (!node || !spot) return;
+      node.box.visible = Boolean(iv.egg);
+      if (!iv.egg) return;
+      moving = true;
+      const stage = iv.share > 0.75 ? 2 : iv.share > 0.45 ? 1 : 0;
+      const key = `${iv.egg}:${stage}:${spot.r.toFixed(1)}`;
+      if (node.key !== key) {
+        node.key = key;
+        drawEgg(node.egg, spot.r, c, l.outline * 0.8, iv.share);
+      }
+      node.squash = Math.max(0, node.squash - dt);
+      const k = feel.bounceSec > 0 ? node.squash / feel.bounceSec : 0;
+      const sq = feel.eggTapSquash * Math.sin(k * Math.PI) * (k > 0 ? 1 : 0);
+      if (iv.waiting) {
+        // The starter egg invites a tap: a soft hop and pulse.
+        const hop = Math.abs(Math.sin(time * 3.2));
+        node.box.rotation = Math.sin(time * 6.4) * 0.06;
+        node.box.y = spot.y + spot.r * 0.12 - hop * spot.r * 0.12;
+        node.box.scale.set(1 + feel.waitPulse * hop + sq, 1 + feel.waitPulse * hop - sq);
+      } else {
+        const wobble = ((feel.eggWobbleDeg * Math.PI) / 180) * (0.3 + iv.share);
+        node.box.rotation = Math.sin(time * (8 + 14 * iv.share)) * wobble;
+        node.box.y = spot.y + spot.r * 0.12;
+        node.box.scale.set(1 + sq, 1 - sq);
+        drawRing(rings, spot.x, spot.y, spot.r + l.outline * 1.6, iv.share, c, Math.max(3, l.outline));
+      }
+    });
+    return moving;
   }
 
   return {
     root,
     layout(stage, hudHeight) {
-      current = computeShopLayout(stage, hudHeight, style.scene.floorShare, style.scene.outlineWidth, style.scene.cornerRadius);
-      drawBack(current);
-      drawFurniture(current);
-      drawLive(current, state);
-      placeLabels(current);
-      invalidate();
+      stageRect = stage;
+      hud = hudHeight;
+      relayout();
     },
-    update(next) {
-      state = next;
-      if (current) drawLive(current, state);
+    frame(dt, view) {
+      time += dt;
+      if (view.incubators.length !== incubatorCount) {
+        incubatorCount = Math.max(1, view.incubators.length);
+        relayout();
+      }
+      if (!current) return;
+      const moving = animateIncubators(dt, view, current);
+      const key = view.creatures.map((x) => x.uid).join(',');
+      if (key !== creaturesKey) {
+        creaturesKey = key;
+        drawCreatures(view, current);
+        invalidate();
+      }
+      const alive = fx.update(dt);
+      if (moving || alive) invalidate();
+    },
+    onEvent(e) {
+      if (!current) return;
+      if (e.type === 'eggTap') {
+        const node = incs[e.incubator];
+        const spot = current.incubators[e.incubator];
+        if (!node || !spot) return;
+        node.squash = feel.bounceSec;
+        fx.burst(spot.x, spot.y - spot.r * 0.2, 5, [c.eggSpots, c.uiAccent, c.incubatorGlass], spot.r * 3, current.outline * 1.2);
+      } else if (e.type === 'eggBought') {
+        const spot = current.incubators[e.incubator];
+        if (spot) fx.burst(spot.x, spot.y, 8, [c.incubator, c.incubatorGlass, c.uiAccent], spot.r * 3.5, current.outline * 1.2);
+      }
       invalidate();
     },
     relabel() {
-      texts.incubator.text = t('shop.incubator');
       texts.showcase.text = t('shop.showcase');
       texts.queue.text = t('shop.queue');
-      texts.counter.text = t('shop.counter');
       invalidate();
+    },
+    anchors() {
+      if (!current) return null;
+      return { incubators: current.incubators, slots: current.slots, queue: current.queue, counter: current.counter };
     },
   };
 }

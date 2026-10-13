@@ -269,3 +269,92 @@
   font-size: 11px;
   pointer-events: none;
 }
+
+/* M1: actions row, egg button, toasts */
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 8px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+.btn[aria-disabled='true'] {
+  filter: saturate(0.35);
+  opacity: 0.7;
+}
+.price {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.coin-sm {
+  width: 16px;
+  height: 16px;
+  box-shadow: inset 0 0 0 3px var(--c-counterTop), inset 0 0 0 4px var(--c-uiAccentText);
+}
+.egg-icon {
+  width: 16px;
+  height: 20px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: var(--c-egg);
+  box-shadow: inset -3px -3px 0 var(--c-eggSpots), 0 0 0 2px var(--c-outline);
+  flex: 0 0 auto;
+}
+.toasts {
+  position: absolute;
+  left: 0;
+  top: calc(var(--hud-height, 60px) + 4px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 20;
+}
+.landscape .toasts {
+  width: calc(100% - var(--panel-size, 0px));
+}
+.toast {
+  max-width: calc(100% - 32px);
+  padding: 8px 16px;
+  border-radius: 16px;
+  background: var(--c-uiPanel);
+  color: var(--c-uiText);
+  font-weight: 700;
+  font-size: 16px;
+  box-shadow: 0 3px 0 var(--c-outline);
+  animation: toast-in 0.18s ease-out;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.toast.out {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.toast-good {
+  background: var(--c-uiGood);
+  color: var(--c-uiAccentText);
+}
+.toast-rare {
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+}
+.toast-warn {
+  background: var(--c-uiPanelAlt);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

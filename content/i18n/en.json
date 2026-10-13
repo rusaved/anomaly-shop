@@ -25,5 +25,10 @@
   "rarity.rare": "Rare",
   "rarity.epic": "Epic",
   "rarity.legendary": "Legendary",
-  "boot.unsupported": "The shop could not open in this browser. Try another one"
+  "boot.unsupported": "The shop could not open in this browser. Try another one",
+  "action.buyEgg": "Egg",
+  "deny.coins": "Not enough coins",
+  "deny.busy": "Incubator is busy",
+  "deny.full": "Showcase is full",
+  "deny.locked": "Locked for now"
 }

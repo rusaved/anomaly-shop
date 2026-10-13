@@ -13,6 +13,9 @@ import { createHud } from './ui/hud.ts';
 import { createPanel } from './ui/panel.ts';
 import { watchLayout } from './ui/layout.ts';
 import { createI18n } from './ui/i18n.ts';
+import { createPauseWindow } from './ui/pause.ts';
+import { createSettingsWindow } from './ui/settings.ts';
+import { communityLinks, renderCommunity } from './ui/community.ts';
 import { dictionaries, style as styleData } from './content/index.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -80,6 +83,16 @@ async function boot(): Promise<void> {
   hud.update(store.state.coins);
   store.onCommit((s) => hud.update(s.coins));
   const panel = createPanel(uiRoot, __GAME__.title[lang]);
+  const links = platform.caps.community ? communityLinks() : null;
+  renderCommunity(panel.side, links, 'side', true);
+  const pauseWindow = createPauseWindow(uiRoot, runtime.pause, links, () => settingsWindow.open());
+  const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.show());
+  hud.pauseButton.addEventListener('click', () => pauseWindow.open());
+  document.addEventListener('keydown', (e) => {
+    if (e.code !== 'Escape' || !controllable) return;
+    if (settingsWindow.overlay.isOpen()) settingsWindow.close();
+    else pauseWindow.toggle();
+  });
   i18n.apply(uiRoot);
   i18n.onChange((next) => {
     document.documentElement.lang = next;

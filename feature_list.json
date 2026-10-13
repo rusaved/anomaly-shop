@@ -12,7 +12,7 @@
     { "code": "M6", "name": "Сборка", "goal": "Чек-лист Яндекса, релизный архив, карточка ru/en, финальные тесты", "plan": "2026-11-08" }
   ],
   "features": [
-    { "id": "M0-01", "milestone": "M0", "priority": "P1", "title": "Скелет проекта: Vite + TypeScript + PixiJS 8, HTML-слой UI, запуск dev и build", "criteria": "npm run dev открывает пустую лавку с фоном; build < 2 МБ gzip", "passes": false },
+    { "id": "M0-01", "milestone": "M0", "priority": "P1", "title": "Скелет проекта: Vite + TypeScript + PixiJS 8, HTML-слой UI, запуск dev и build", "criteria": "npm run dev открывает пустую лавку с фоном; build < 2 МБ gzip", "passes": true },
     { "id": "M0-02", "milestone": "M0", "priority": "P1", "title": "Слой платформы: профили yandex / null / youtube, выбор переменной сборки", "criteria": "три сборки собираются; youtube-сборка проходит тест «нет внешних URL»", "passes": false },
     { "id": "M0-03", "milestone": "M0", "priority": "P1", "title": "Мок Яндекс SDK в dev и инициализация LoadingAPI.ready / GameplayAPI по правилам", "criteria": "в null-профиле игра стартует без SDK; в yandex — ready вызывается после первого кадра", "passes": false },
     { "id": "M0-04", "milestone": "M0", "priority": "P1", "title": "Сохранения: схема состояния, версия, миграции, запись через платформу (Яндекс / localStorage / ytgame)", "criteria": "перезагрузка возвращает монеты и существ; строка сохранения < 100 КБ", "passes": false },

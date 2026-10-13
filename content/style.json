@@ -1,0 +1,38 @@
+{
+  "$schema": "style.schema.json",
+  "note": "Стиль по Q-001, вариант A: плоский милый вектор с толстым контуром. Цвета сцены (PixiJS) и интерфейса (CSS-переменные --c-*). Размеры сцены в условных единицах, масштабируются раскладкой.",
+  "art": "flat-outline",
+  "colors": {
+    "sky": "#3a2d5c",
+    "skyLow": "#6b4a8a",
+    "wall": "#f3dcb8",
+    "wallShade": "#e3c79c",
+    "floor": "#8c5a3c",
+    "floorLine": "#6b4530",
+    "counter": "#c98a4b",
+    "counterTop": "#f2c27b",
+    "incubator": "#5fc8bc",
+    "incubatorGlass": "#dcfff9",
+    "egg": "#fff3d6",
+    "eggSpots": "#f0b67f",
+    "showcase": "#ffd166",
+    "showcaseSlot": "#fff5cc",
+    "queueSpot": "#a7d8ff",
+    "door": "#4a6fa5",
+    "doorFrame": "#2f4a73",
+    "outline": "#2b1b3d",
+    "uiPanel": "#241c3a",
+    "uiPanelAlt": "#332a52",
+    "uiText": "#fff7ea",
+    "uiMuted": "#b9afd1",
+    "uiAccent": "#ffb347",
+    "uiAccentText": "#2b1b3d",
+    "uiGood": "#7ddc8a",
+    "uiOverlay": "rgba(20, 14, 36, 0.82)"
+  },
+  "scene": {
+    "outlineWidth": 4,
+    "cornerRadius": 18,
+    "floorShare": 0.34
+  }
+}

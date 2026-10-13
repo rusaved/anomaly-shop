@@ -101,6 +101,9 @@ export const FeelFile = v.object({
   hatchFlySec: Positive,
   hatchBurst: Positive,
   lineSec: v.pipe(v.number(), v.minValue(0.1)),
+  feedJump: Positive,
+  feedSquash: Positive,
+  levelUpBurst: Positive,
 });
 
 export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail'] as const;

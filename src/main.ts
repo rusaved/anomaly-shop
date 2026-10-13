@@ -96,7 +96,7 @@ async function boot(): Promise<void> {
     t: i18n.t,
     line: (id) => speciesById(id)?.line[i18n.lang()] ?? '',
     invalidate: scene.invalidate,
-    handlers: { tapIncubator: (i) => play.tapIncubator(i) },
+    handlers: { tapIncubator: (i) => play.tapIncubator(i), tapCreature: (uid) => play.tapCreature(uid) },
   });
   const hud = createHud(uiRoot, lang);
   hud.update(store.state.coins);
@@ -119,6 +119,7 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t(`deny.${e.reason}`), 'warn');
       sfx.play('fail');
     } else if (e.type === 'eggTap') sfx.play('eggTap');
+    else if (e.type === 'fed') sfx.play(e.levelUp ? 'levelUp' : 'tap');
     else if (e.type === 'eggBought') sfx.play('buy');
     else if (e.type === 'hatched') {
       sfx.play(e.rarity === 'common' ? 'hatch' : 'rare');

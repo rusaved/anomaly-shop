@@ -52,3 +52,8 @@ export function creatureValue(spec: SpeciesEntry, level: number): number {
 export function coins(value: number): number {
   return Math.max(1, Math.round(value));
 }
+
+/** Feeding taps from this level to the next: tapsPerLevelBase + 1 per 2 levels (docs/01a, section 3). */
+export function tapsForLevel(level: number, base: number): number {
+  return base + Math.floor(Math.max(1, level) / 2);
+}

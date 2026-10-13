@@ -30,5 +30,7 @@
   "deny.coins": "Not enough coins",
   "deny.busy": "Incubator is busy",
   "deny.full": "Showcase is full",
-  "deny.locked": "Locked for now"
+  "deny.locked": "Locked for now",
+  "fx.levelUp": "Lv {n}!",
+  "fx.max": "MAX"
 }

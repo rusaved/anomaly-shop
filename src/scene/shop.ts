@@ -2,7 +2,7 @@
 // Called by: src/main.ts (create once, layout on every size change, frame on every ticker tick, onEvent for game events).
 // Keep: reads the game view only, never writes state (taps call the handlers); colors from style.json, feel from feel.json.
 
-import { Circle, Container, Graphics, Text, type Application } from 'pixi.js';
+import { Circle, Container, Graphics, Rectangle, Text, type Application } from 'pixi.js';
 import type { FeelData, StyleData } from '../content/schemas.ts';
 import type { GameEvent, GameView } from '../sim/game.ts';
 import { drawCreature, drawEgg, drawRing, rarityColor } from './art.ts';
@@ -11,6 +11,7 @@ import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop
 
 export interface ShopHandlers {
   tapIncubator(index: number): void;
+  tapCreature(uid: string): void;
 }
 
 export interface ShopAnchors {
@@ -31,7 +32,7 @@ export interface ShopView {
   anchors(): ShopAnchors | null;
 }
 
-type Translate = (key: string) => string;
+type Translate = (key: string, vars?: Record<string, string | number>) => string;
 
 const FALLBACK_LOOK = { shape: 'kettle', body: '#cccccc', accent: '#ffffff' } as const;
 
@@ -41,8 +42,11 @@ interface CreatureNode {
   tag: Graphics;
   price: Text;
   level: Text;
+  bar: Graphics;
   key: string;
   shown: string;
+  /** Seconds left of the feeding hop. */
+  hop: number;
   /** Arrival from the incubator, 0..1 (1 = sitting in its slot). */
   arrive: number;
   from: { x: number; y: number } | null;
@@ -75,11 +79,12 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   const furniture = new Graphics();
   const rings = new Graphics();
   const creaturesLayer = new Container();
+  const selection = new Graphics();
   const eggsLayer = new Container();
   const hits = new Container();
   const labels = new Container();
   const fx = createFx(c.outline);
-  root.addChild(back, furniture, rings, eggsLayer, creaturesLayer, labels, fx.layer, hits);
+  root.addChild(back, furniture, selection, rings, eggsLayer, creaturesLayer, labels, fx.layer, hits);
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
@@ -88,6 +93,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let incubatorCount = 1;
   let time = 0;
   let incs: IncubatorNode[] = [];
+  let slotHits: Container[] = [];
+  let slotUids: Array<string | null> = [];
+  let selectedKey = '';
   const creatures = new Map<string, CreatureNode>();
   const spawnFrom = new Map<string, { x: number; y: number }>();
 
@@ -154,6 +162,34 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     });
   }
 
+  function buildSlots(l: ShopLayout): void {
+    for (const h of slotHits) h.destroy();
+    slotHits = l.slots.map((slot, index) => {
+      const hit = new Container();
+      hit.eventMode = 'static';
+      hit.cursor = 'pointer';
+      hit.hitArea = new Rectangle(slot.x, slot.y - slot.h * 0.1, slot.w, slot.h * 1.2);
+      hit.on('pointerdown', () => {
+        const uid = slotUids[index];
+        if (uid) handlers.tapCreature(uid);
+      });
+      hits.addChild(hit);
+      return hit;
+    });
+  }
+
+  function drawSelection(view: GameView, l: ShopLayout): void {
+    const index = view.creatures.slice(0, l.slots.length).findIndex((x) => x.uid === view.selected);
+    const key = `${index}:${view.creatures.length}`;
+    if (key === selectedKey) return;
+    selectedKey = key;
+    selection.clear();
+    const slot = l.slots[index];
+    if (!slot || view.creatures.length < 2) return;
+    const pad = l.outline * 1.2;
+    selection.roundRect(slot.x - pad, slot.y - pad, slot.w + pad * 2, slot.h + pad * 2, l.radius * 0.9).stroke({ width: l.outline * 1.2, color: c.uiAccent });
+  }
+
   function placeLabels(l: ShopLayout): void {
     const size = Math.max(11, Math.min(16, l.unit * 0.42));
     for (const tx of Object.values(texts)) tx.style.fontSize = size;
@@ -186,6 +222,17 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     node.tag.circle(r * 0.92, -r * 0.88, br).fill(max ? c.rarityLegendary : c.uiPanel).stroke({ width: l.outline * 0.6, color: c.outline });
     node.level.style.fill = max ? c.outline : c.uiText;
     node.level.position.set(r * 0.92, -r * 0.88);
+    // Satiety bar flows into the level badge (genre standard XP bar).
+    node.bar.clear();
+    if (!max) {
+      const bx = -r * 0.95;
+      const bw = r * 1.75;
+      const bh = Math.max(6, r * 0.24);
+      const by = -r * 0.88 - bh / 2;
+      node.bar.roundRect(bx, by, bw, bh, bh / 2).fill(c.uiPanel).stroke({ width: l.outline * 0.5, color: c.outline });
+      const share = cv.need > 0 ? Math.min(1, cv.fed / cv.need) : 0;
+      if (share > 0) node.bar.roundRect(bx + 1, by + 1, Math.max(bh - 2, (bw - 2) * share), bh - 2, (bh - 2) / 2).fill(c.uiGood);
+    }
   }
 
   // One speech bubble at a time: the creature's line on arrival (and at the sale, M1-06).
@@ -239,6 +286,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   function animateCreatures(dt: number, view: GameView, l: ShopLayout): boolean {
     let moving = false;
     const list = view.creatures.slice(0, l.slots.length);
+    slotUids = l.slots.map((_, i) => list[i]?.uid ?? null);
     const alive = new Set(list.map((x) => x.uid));
     for (const [uid, node] of creatures) {
       if (alive.has(uid)) continue;
@@ -255,15 +303,16 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         const box = new Container();
         const art = new Graphics();
         const tag = new Graphics();
+        const bar = new Graphics();
         const price = new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontWeight: '700', fill: c.outline, align: 'center' } });
         const level = new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontWeight: '700', fill: c.uiText, align: 'center' } });
         price.anchor.set(0.5);
         level.anchor.set(0.5);
-        box.addChild(art, tag, price, level);
+        box.addChild(art, bar, tag, price, level);
         creaturesLayer.addChild(box);
         const from = spawnFrom.get(cv.uid) ?? null;
         spawnFrom.delete(cv.uid);
-        node = { box, art, tag, price, level, key: '', shown: '', arrive: from ? 0 : 1, from, landed: !from };
+        node = { box, art, tag, bar, price, level, key: '', shown: '', hop: 0, arrive: from ? 0 : 1, from, landed: !from };
         creatures.set(cv.uid, node);
         moving = true;
       }
@@ -273,7 +322,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         node.shown = '';
         drawCreature(node.art, style.creatures[cv.species] ?? FALLBACK_LOOK, cv.rarity, at.r, c, l.outline * 0.8);
       }
-      const shown = `${cv.price}:${cv.level}:${cv.maxLevel}`;
+      const shown = `${cv.price}:${cv.level}:${cv.maxLevel}:${cv.fed}:${cv.need}`;
       if (node.shown !== shown) {
         node.shown = shown;
         drawTags(node, cv, at.r, l);
@@ -288,8 +337,12 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         node.box.position.set(node.from.x + (at.x - node.from.x) * e, node.from.y + (at.y - node.from.y) * e - lift);
         node.box.scale.set(0.3 + 0.7 * easeOutBack(k));
       } else {
-        node.box.position.set(at.x, at.y);
-        node.box.scale.set(1);
+        node.hop = Math.max(0, node.hop - dt);
+        const k = feel.bounceSec > 0 ? node.hop / feel.bounceSec : 0;
+        const jump = Math.sin(k * Math.PI);
+        node.box.position.set(at.x, at.y - jump * at.r * feel.feedJump);
+        node.box.scale.set(1 - feel.feedSquash * jump * 0.5, 1 + feel.feedSquash * jump);
+        if (node.hop > 0) moving = true;
         if (!node.landed) {
           node.landed = true;
           say(cv.species, at, l);
@@ -308,6 +361,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     drawBack(current);
     drawFurniture(current);
     buildIncubators(current);
+    buildSlots(current);
+    selectedKey = '';
     for (const node of creatures.values()) node.key = '';
     placeLabels(current);
     fx.clear();
@@ -370,9 +425,11 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       if (!current) return;
       const moving = animateIncubators(dt, view, current);
       const flying = animateCreatures(dt, view, current);
+      const before = selectedKey;
+      drawSelection(view, current);
       const talking = animateBubble(dt);
       const alive = fx.update(dt);
-      if (moving || flying || alive || talking) invalidate();
+      if (moving || flying || alive || talking || before !== selectedKey) invalidate();
     },
     onEvent(e) {
       if (!current) return;
@@ -387,6 +444,23 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         if (spot) {
           spawnFrom.set(e.uid, { x: spot.x, y: spot.y });
           fx.burst(spot.x, spot.y, Math.round(feel.hatchBurst * 0.75), [c.egg, c.eggSpots, rarityColor(c, e.rarity)], spot.r * 4, current.outline * 1.4);
+        }
+      } else if (e.type === 'fed') {
+        const node = creatures.get(e.uid);
+        const index = slotUids.indexOf(e.uid);
+        const slot = current.slots[index];
+        if (!node || !slot) return;
+        const at = slotCenter(slot);
+        node.hop = feel.bounceSec;
+        const size = Math.max(14, at.r * 0.6);
+        if (e.levelUp) {
+          fx.burst(at.x, at.y, Math.round(feel.levelUpBurst), [c.uiGood, c.uiAccent, c.eyeWhite], at.r * 5, current.outline * 1.3);
+          fx.float(at.x, at.y - at.r * 1.2, t('fx.levelUp', { n: e.level }), c.uiGood, size * 1.25, current.unit * 1.2);
+        } else if (e.maxed) {
+          fx.float(at.x, at.y - at.r * 1.1, t('fx.max'), c.rarityLegendary, size, current.unit * 0.8);
+        } else {
+          fx.float(at.x + at.r * 0.5, at.y - at.r * 0.9, '+1', c.uiGood, size, current.unit * 0.8);
+          fx.burst(at.x, at.y + at.r * 0.4, 3, [c.blush, c.uiGood], at.r * 2.5, current.outline);
         }
       } else if (e.type === 'eggBought') {
         const spot = current.incubators[e.incubator];

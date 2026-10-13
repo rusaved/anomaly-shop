@@ -7,5 +7,8 @@
   "waitPulse": 0.06,
   "hatchFlySec": 0.5,
   "hatchBurst": 16,
-  "lineSec": 2.6
+  "lineSec": 2.6,
+  "feedJump": 0.32,
+  "feedSquash": 0.14,
+  "levelUpBurst": 18
 }

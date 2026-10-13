@@ -30,5 +30,7 @@
   "deny.coins": "Не хватает монет",
   "deny.busy": "Инкубатор занят",
   "deny.full": "Витрина полна",
-  "deny.locked": "Пока закрыто"
+  "deny.locked": "Пока закрыто",
+  "fx.levelUp": "Ур. {n}!",
+  "fx.max": "MAX"
 }

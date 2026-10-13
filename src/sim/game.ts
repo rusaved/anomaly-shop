@@ -7,7 +7,7 @@ import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { coins, creatureValue, hatchNeedSec, hatchShare, isHatched, pickRarity, pickSpecies } from './rules.ts';
+import { coins, creatureValue, hatchNeedSec, hatchShare, isHatched, pickRarity, pickSpecies, tapsForLevel } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -23,6 +23,7 @@ export type GameEvent =
   | { type: 'eggBought'; incubator: number; egg: string; price: number }
   | { type: 'eggTap'; incubator: number; started: boolean }
   | { type: 'hatched'; incubator: number; uid: string; species: string; rarity: RarityName }
+  | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number }
   | { type: 'denied'; action: 'buyEgg'; reason: DenyReason }
   | { type: 'change' };
 
@@ -41,11 +42,16 @@ export interface CreatureView {
   maxLevel: number;
   /** Appraisal in whole coins at the current level. */
   price: number;
+  /** Feeding taps done toward the next level and taps it needs. */
+  fed: number;
+  need: number;
 }
 
 export interface GameView {
   incubators: IncubatorView[];
   creatures: CreatureView[];
+  /** The creature the player works with (last tapped); the deal is about it. */
+  selected: string | null;
 }
 
 export type BuyCheck = { ok: true; incubator: number; price: number } | { ok: false; reason: DenyReason; price: number };
@@ -58,6 +64,10 @@ export interface Game {
   canBuyEgg(eggId?: string): BuyCheck;
   buyEgg(eggId?: string): boolean;
   tapIncubator(index: number): void;
+  /** Feeds the creature (+1 toward its next level) and selects it. */
+  tapCreature(uid: string): void;
+  /** The selected creature, falling back to the first one. */
+  selected(): string | null;
   tick(dt: number): void;
   view(): GameView;
   /** Free showcase places (creatures and eggs both take one). */
@@ -84,6 +94,14 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const egg = eggData(eggId);
     return egg ? hatchNeedSec(egg, speedEffect()) : 0;
   };
+
+  let selectedUid: string | null = null;
+  function selected(): string | null {
+    const list = s().creatures;
+    if (selectedUid && list.some((x) => x.uid === selectedUid)) return selectedUid;
+    selectedUid = list[0]?.uid ?? null;
+    return selectedUid;
+  }
 
   function showcaseSlots(): number {
     const u = content.upgrades.upgrades.find((x) => x.effect.type === 'showcaseSlots');
@@ -175,6 +193,31 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       store.commit();
       events.emit({ type: 'eggTap', incubator: index, started });
     },
+    tapCreature(uid) {
+      const st = s();
+      const cr = st.creatures.find((x) => x.uid === uid);
+      const spec = cr ? speciesData(cr.species) : undefined;
+      if (!cr || !spec) return;
+      const changed = selectedUid !== uid;
+      selectedUid = uid;
+      st.stats.taps += 1;
+      const maxed = cr.level >= spec.maxLevel;
+      let levelUp = false;
+      const before = coins(creatureValue(spec, cr.level));
+      if (!maxed) {
+        cr.fed += 1;
+        if (cr.fed >= tapsForLevel(cr.level, species.tapsPerLevelBase)) {
+          cr.fed = 0;
+          cr.level += 1;
+          levelUp = true;
+        }
+      }
+      const price = coins(creatureValue(spec, cr.level));
+      store.commit();
+      events.emit({ type: 'fed', uid, level: cr.level, levelUp, maxed: cr.level >= spec.maxLevel, price, gain: price - before });
+      if (changed || levelUp) events.emit({ type: 'change' });
+    },
+    selected,
     tick(dt) {
       const st = s();
       for (let i = 0; i < st.incubators.length; i++) {
@@ -195,8 +238,18 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         incubators: s().incubators.map((inc) => ({ egg: inc.egg, waiting: inc.waiting, share: inc.egg ? hatchShare(inc.progress, needFor(inc.egg)) : 0 })),
         creatures: s().creatures.map((x) => {
           const spec = speciesData(x.species);
-          return { uid: x.uid, species: x.species, rarity: spec?.rarity ?? 'common', level: x.level, maxLevel: spec?.maxLevel ?? 1, price: spec ? coins(creatureValue(spec, x.level)) : 0 };
+          return {
+            uid: x.uid,
+            species: x.species,
+            rarity: spec?.rarity ?? 'common',
+            level: x.level,
+            maxLevel: spec?.maxLevel ?? 1,
+            price: spec ? coins(creatureValue(spec, x.level)) : 0,
+            fed: x.fed,
+            need: tapsForLevel(x.level, species.tapsPerLevelBase),
+          };
         }),
+        selected: selected(),
       };
     },
     freeSlots,

@@ -42,3 +42,13 @@ export function pickSpecies(data: SpeciesData, rarity: RarityName, roll: number)
   }
   return data.species[0] as SpeciesEntry;
 }
+
+/** Appraisal of a creature: basePrice × growth^(level − 1) (docs/01a, section 3); the customer offers a share of it. */
+export function creatureValue(spec: SpeciesEntry, level: number): number {
+  return spec.basePrice * Math.pow(spec.growth, Math.max(0, Math.min(level, spec.maxLevel) - 1));
+}
+
+/** Coins shown and paid: whole coins, at least 1. */
+export function coins(value: number): number {
+  return Math.max(1, Math.round(value));
+}

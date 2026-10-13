@@ -23,6 +23,7 @@ import {
   type GameData,
   type I18nData,
   type SpeciesData,
+  type StyleData,
   type UpgradesData,
 } from './schemas.ts';
 
@@ -113,6 +114,22 @@ function checkCalendar(calendar: CalendarData, eggs: EggsData | null, errors: st
   });
 }
 
+function checkLooks(style: StyleData, species: SpeciesData, errors: string[]): void {
+  const seen = new Map<string, string>();
+  for (const s of species.species) {
+    const look = style.creatures[s.id];
+    if (!look) {
+      errors.push(`style.json: creatures.${s.id} — no look for this species (shape and colors)`);
+      continue;
+    }
+    const key = `${look.shape}:${look.body.toLowerCase()}`;
+    const twin = seen.get(key);
+    if (twin) errors.push(`style.json: creatures.${s.id} — same shape and body color as "${twin}", the two would look alike`);
+    seen.set(key, s.id);
+  }
+  for (const id of Object.keys(style.creatures)) if (!species.species.some((s) => s.id === id)) errors.push(`style.json: creatures.${id} — unknown species`);
+}
+
 function checkFtue(ftue: FtueData, eggs: EggsData | null, errors: string[]): void {
   if (eggs && !eggs.eggs.some((e) => e.id === ftue.starterEgg && !e.special)) errors.push(`ftue.json: starterEgg — unknown egg "${ftue.starterEgg}"`);
 }
@@ -154,7 +171,7 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   const customers = parseFile('customers.json', CustomersFile, data(files['customers.json']), errors);
   const upgrades = parseFile('upgrades.json', UpgradesFile, data(files['upgrades.json']), errors);
   const calendar = parseFile('calendar.json', CalendarFile, data(files['calendar.json']), errors);
-  parseFile('style.json', StyleFile, data(files['style.json']), errors);
+  const style = parseFile('style.json', StyleFile, data(files['style.json']), errors);
   const ftue = parseFile('ftue.json', FtueFile, data(files['ftue.json']), errors);
   parseFile('feel.json', FeelFile, data(files['feel.json']), errors);
   parseFile('audio.json', AudioFile, data(files['audio.json']), errors);
@@ -165,6 +182,7 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   if (upgrades) checkUpgrades(upgrades, eggs, errors);
   if (calendar) checkCalendar(calendar, eggs, errors);
   if (ftue) checkFtue(ftue, eggs, errors);
+  if (style && species) checkLooks(style, species, errors);
 
   if (game) {
     if (!game.languages.includes(game.fallbackLanguage)) errors.push('game.json: fallbackLanguage — not in languages');

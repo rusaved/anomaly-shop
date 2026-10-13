@@ -57,7 +57,8 @@ export function computeShopLayout(stage: Rect, hudHeight: number, floorShare: nu
   }
 
   // Showcase shelf on the wall, left half.
-  const slot = Math.min(u * 1.3, (stage.w * 0.55 - u * 0.8) / SHOP.showcaseSlots);
+  // Creatures sit here and take taps (feeding): slots large enough for a portrait and a 44 px tap.
+  const slot = Math.min(u * 1.75, (stage.w * 0.6 - u * 0.8) / SHOP.showcaseSlots, (wallFree * 0.8) / 1.36);
   const gap = slot * 0.18;
   const showcaseW = SHOP.showcaseSlots * slot + (SHOP.showcaseSlots + 1) * gap;
   const showcaseH = slot + gap * 2;

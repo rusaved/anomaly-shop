@@ -7,7 +7,7 @@ import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { hatchNeedSec, hatchShare, isHatched, pickRarity, pickSpecies } from './rules.ts';
+import { coins, creatureValue, hatchNeedSec, hatchShare, isHatched, pickRarity, pickSpecies } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -38,6 +38,9 @@ export interface CreatureView {
   species: string;
   rarity: RarityName;
   level: number;
+  maxLevel: number;
+  /** Appraisal in whole coins at the current level. */
+  price: number;
 }
 
 export interface GameView {
@@ -190,7 +193,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     view() {
       return {
         incubators: s().incubators.map((inc) => ({ egg: inc.egg, waiting: inc.waiting, share: inc.egg ? hatchShare(inc.progress, needFor(inc.egg)) : 0 })),
-        creatures: s().creatures.map((x) => ({ uid: x.uid, species: x.species, rarity: speciesData(x.species)?.rarity ?? 'common', level: x.level })),
+        creatures: s().creatures.map((x) => {
+          const spec = speciesData(x.species);
+          return { uid: x.uid, species: x.species, rarity: spec?.rarity ?? 'common', level: x.level, maxLevel: spec?.maxLevel ?? 1, price: spec ? coins(creatureValue(spec, x.level)) : 0 };
+        }),
       };
     },
     freeSlots,

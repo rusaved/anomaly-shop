@@ -100,6 +100,7 @@ export const FeelFile = v.object({
   waitPulse: Positive,
   hatchFlySec: Positive,
   hatchBurst: Positive,
+  lineSec: v.pipe(v.number(), v.minValue(0.1)),
 });
 
 export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail'] as const;
@@ -129,12 +130,16 @@ export const STYLE_COLORS = [
   'sky', 'skyLow', 'wall', 'wallShade', 'floor', 'floorLine', 'counter', 'counterTop', 'incubator', 'incubatorGlass', 'egg', 'eggSpots',
   'showcase', 'showcaseSlot', 'queueSpot', 'door', 'doorFrame', 'outline',
   'uiPanel', 'uiPanelAlt', 'uiText', 'uiMuted', 'uiAccent', 'uiAccentText', 'uiGood', 'uiOverlay',
-  'rarityCommon', 'rarityRare', 'rarityEpic', 'rarityLegendary',
+  'rarityCommon', 'rarityRare', 'rarityEpic', 'rarityLegendary', 'blush', 'eyeWhite',
 ] as const;
+/** Creature shapes the scene can draw (src/scene/art.ts); species pick one with two colors in style.json. */
+export const CREATURE_SHAPES = ['kettle', 'sock', 'cloudcat', 'lampbug', 'toast', 'frog', 'teacup', 'goldsock'] as const;
+export const CreatureLook = v.object({ shape: v.picklist(CREATURE_SHAPES), body: Color, accent: Color });
 export const StyleFile = v.object({
   art: Id,
   colors: v.object(Object.fromEntries(STYLE_COLORS.map((k) => [k, Color])) as Record<(typeof STYLE_COLORS)[number], typeof Color>),
   scene: v.object({ outlineWidth: v.pipe(v.number(), v.minValue(0)), cornerRadius: v.pipe(v.number(), v.minValue(0)), floorShare: Share }),
+  creatures: v.record(Id, CreatureLook),
 });
 
 export const I18nFile = v.record(v.string(), NonEmpty);
@@ -180,6 +185,8 @@ export type FeelData = v.InferOutput<typeof FeelFile>;
 export type AudioData = v.InferOutput<typeof AudioFile>;
 export type SfxName = (typeof SFX_NAMES)[number];
 export type StyleData = v.InferOutput<typeof StyleFile>;
+export type CreatureLookData = v.InferOutput<typeof CreatureLook>;
+export type CreatureShape = (typeof CREATURE_SHAPES)[number];
 export type I18nData = v.InferOutput<typeof I18nFile>;
 export type GameData = v.InferOutput<typeof GameFile>;
 export type RarityName = (typeof RARITIES)[number];

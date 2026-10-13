@@ -31,11 +31,12 @@ export function installDebugPanel(h: DebugHooks): GUI {
       h.store.commit();
     },
     creature: () => {
-      const first = species.species[0];
-      if (!first) return;
+      // Cycles through every species, so all portraits can be checked on the showcase (M1-03).
+      const next = species.species[counter % species.species.length];
+      if (!next) return;
       counter += 1;
       const uid = `dbg-${Date.now().toString(36)}-${counter}`;
-      h.store.state.creatures.push({ uid, species: first.id, level: 1, fed: 0, hatchedAt: Date.now() });
+      h.store.state.creatures.push({ uid, species: next.id, level: 1, fed: 0, hatchedAt: Date.now() });
       h.store.commit({ flush: true });
     },
     reset: () => h.store.replace(h.fresh()),

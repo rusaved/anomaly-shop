@@ -33,10 +33,16 @@ export interface ShopView {
 
 type Translate = (key: string) => string;
 
+const FALLBACK_LOOK = { shape: 'kettle', body: '#cccccc', accent: '#ffffff' } as const;
+
 interface CreatureNode {
   box: Container;
   art: Graphics;
+  tag: Graphics;
+  price: Text;
+  level: Text;
   key: string;
+  shown: string;
   /** Arrival from the incubator, 0..1 (1 = sitting in its slot). */
   arrive: number;
   from: { x: number; y: number } | null;
@@ -51,7 +57,18 @@ interface IncubatorNode {
   squash: number;
 }
 
-export function createShopView(app: Application, style: StyleData, feel: FeelData, t: Translate, invalidate: () => void, handlers: ShopHandlers): ShopView {
+export interface ShopDeps {
+  style: StyleData;
+  feel: FeelData;
+  t: Translate;
+  /** The creature's line in the current language. */
+  line(species: string): string;
+  invalidate(): void;
+  handlers: ShopHandlers;
+}
+
+export function createShopView(app: Application, deps: ShopDeps): ShopView {
+  const { style, feel, t, invalidate, handlers } = deps;
   const c = style.colors;
   const root = new Container();
   const back = new Graphics();
@@ -147,6 +164,78 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
   const slotCenter = (slot: Rect) => ({ x: slot.x + slot.w / 2, y: slot.y + slot.h * 0.56, r: slot.w * 0.36 });
   const easeOutBack = (k: number): number => 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);
 
+  const fmt = (n: number): string => n.toLocaleString(document.documentElement.lang || 'ru');
+
+  /** Price pill under the portrait and a level badge at its top right (local to the creature box). */
+  function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout): void {
+    const size = Math.max(11, r * 0.42);
+    node.price.text = fmt(cv.price);
+    node.price.style.fontSize = size;
+    const coinR = size * 0.42;
+    const pillW = node.price.width + coinR * 2 + size * 0.9;
+    const pillH = size * 1.35;
+    const py = r * 1.12;
+    node.tag.clear();
+    node.tag.roundRect(-pillW / 2, py - pillH / 2, pillW, pillH, pillH / 2).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+    node.tag.circle(-pillW / 2 + size * 0.4 + coinR, py, coinR).fill(c.uiAccent).stroke({ width: Math.max(1, l.outline * 0.4), color: c.outline });
+    node.price.position.set(coinR + size * 0.2, py);
+    const max = cv.level >= cv.maxLevel;
+    node.level.text = max ? 'MAX' : String(cv.level);
+    node.level.style.fontSize = size * (max ? 0.62 : 0.85);
+    const br = size * 0.72;
+    node.tag.circle(r * 0.92, -r * 0.88, br).fill(max ? c.rarityLegendary : c.uiPanel).stroke({ width: l.outline * 0.6, color: c.outline });
+    node.level.style.fill = max ? c.outline : c.uiText;
+    node.level.position.set(r * 0.92, -r * 0.88);
+  }
+
+  // One speech bubble at a time: the creature's line on arrival (and at the sale, M1-06).
+  const bubble = new Container();
+  const bubbleBg = new Graphics();
+  const bubbleText = new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontWeight: '700', fill: c.outline, align: 'center', wordWrap: true } });
+  bubbleText.anchor.set(0.5);
+  bubble.addChild(bubbleBg, bubbleText);
+  bubble.visible = false;
+  root.addChild(bubble);
+  let bubbleLife = 0;
+
+  function say(species: string, at: { x: number; y: number; r: number }, l: ShopLayout): void {
+    const text = deps.line(species);
+    if (!text) return;
+    const size = Math.max(13, Math.min(17, l.unit * 0.42));
+    bubbleText.style.fontSize = size;
+    bubbleText.style.wordWrapWidth = Math.min(l.stage.w * 0.6, l.unit * 6);
+    bubbleText.text = text;
+    const w = bubbleText.width + size * 1.4;
+    const h = bubbleText.height + size * 0.9;
+    const x = Math.max(l.stage.x + w / 2 + 4, Math.min(l.stage.x + l.stage.w - w / 2 - 4, at.x));
+    const below = at.y - at.r * 1.3 - h < l.stage.y + Math.min(l.stage.h * 0.3, hud);
+    const y = below ? at.y + at.r * 1.9 + h / 2 : at.y - at.r * 1.3 - h / 2;
+    bubbleBg.clear();
+    const tipX = Math.max(-w / 2 + size, Math.min(w / 2 - size, at.x - x));
+    if (below) bubbleBg.poly([tipX - size * 0.4, -h / 2 + 1, tipX + size * 0.4, -h / 2 + 1, tipX, -h / 2 - size * 0.6]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline, join: 'round' });
+    else bubbleBg.poly([tipX - size * 0.4, h / 2 - 1, tipX + size * 0.4, h / 2 - 1, tipX, h / 2 + size * 0.6]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline, join: 'round' });
+    bubbleBg.roundRect(-w / 2, -h / 2, w, h, Math.min(h / 2, size)).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+    if (below) bubbleBg.rect(tipX - size * 0.4 + 1, -h / 2 - 1, size * 0.8 - 2, l.outline * 0.8 + 2).fill(c.eyeWhite);
+    else bubbleBg.rect(tipX - size * 0.4 + 1, h / 2 - l.outline * 0.8 - 1, size * 0.8 - 2, l.outline * 0.8 + 2).fill(c.eyeWhite);
+    bubble.position.set(x, y);
+    bubble.visible = true;
+    bubble.alpha = 0;
+    bubbleLife = feel.lineSec;
+  }
+
+  function animateBubble(dt: number): boolean {
+    if (!bubble.visible) return false;
+    bubbleLife -= dt;
+    if (bubbleLife <= 0) {
+      bubble.visible = false;
+      return true;
+    }
+    const k = bubbleLife / feel.lineSec;
+    bubble.alpha = k > 0.9 ? (1 - k) / 0.1 : k < 0.15 ? k / 0.15 : 1;
+    bubble.scale.set(k > 0.9 ? 0.85 + 0.15 * ((1 - k) / 0.1) : 1);
+    return true;
+  }
+
   function animateCreatures(dt: number, view: GameView, l: ShopLayout): boolean {
     let moving = false;
     const list = view.creatures.slice(0, l.slots.length);
@@ -155,6 +244,7 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
       if (alive.has(uid)) continue;
       node.box.destroy({ children: true });
       creatures.delete(uid);
+      moving = true;
     }
     list.forEach((cv, n) => {
       const slot = l.slots[n];
@@ -164,17 +254,30 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
       if (!node) {
         const box = new Container();
         const art = new Graphics();
-        box.addChild(art);
+        const tag = new Graphics();
+        const price = new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontWeight: '700', fill: c.outline, align: 'center' } });
+        const level = new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontWeight: '700', fill: c.uiText, align: 'center' } });
+        price.anchor.set(0.5);
+        level.anchor.set(0.5);
+        box.addChild(art, tag, price, level);
         creaturesLayer.addChild(box);
         const from = spawnFrom.get(cv.uid) ?? null;
         spawnFrom.delete(cv.uid);
-        node = { box, art, key: '', arrive: from ? 0 : 1, from, landed: !from };
+        node = { box, art, tag, price, level, key: '', shown: '', arrive: from ? 0 : 1, from, landed: !from };
         creatures.set(cv.uid, node);
+        moving = true;
       }
       const key = `${cv.species}:${at.r.toFixed(1)}`;
       if (node.key !== key) {
         node.key = key;
-        drawCreature(node.art, cv.species, cv.rarity, at.r, c, l.outline * 0.8);
+        node.shown = '';
+        drawCreature(node.art, style.creatures[cv.species] ?? FALLBACK_LOOK, cv.rarity, at.r, c, l.outline * 0.8);
+      }
+      const shown = `${cv.price}:${cv.level}:${cv.maxLevel}`;
+      if (node.shown !== shown) {
+        node.shown = shown;
+        drawTags(node, cv, at.r, l);
+        moving = true;
       }
       if (node.arrive < 1 && node.from) {
         moving = true;
@@ -189,6 +292,7 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
         node.box.scale.set(1);
         if (!node.landed) {
           node.landed = true;
+          say(cv.species, at, l);
           fx.burst(at.x, at.y, Math.round(feel.hatchBurst), [rarityColor(c, cv.rarity), c.uiAccent, c.showcaseSlot], at.r * 5, l.outline * 1.3);
           fx.float(at.x, at.y - at.r * 1.4, t(`rarity.${cv.rarity}`), rarityColor(c, cv.rarity), Math.max(14, at.r * 0.7), l.unit * 0.9);
           moving = true;
@@ -207,6 +311,7 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
     for (const node of creatures.values()) node.key = '';
     placeLabels(current);
     fx.clear();
+    bubble.visible = false;
     invalidate();
   }
 
@@ -217,7 +322,10 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
       const node = incs[i];
       const spot = l.incubators[i];
       if (!node || !spot) return;
-      node.box.visible = Boolean(iv.egg);
+      if (node.box.visible !== Boolean(iv.egg)) {
+        node.box.visible = Boolean(iv.egg);
+        moving = true;
+      }
       if (!iv.egg) return;
       moving = true;
       const stage = iv.share > 0.75 ? 2 : iv.share > 0.45 ? 1 : 0;
@@ -262,8 +370,9 @@ export function createShopView(app: Application, style: StyleData, feel: FeelDat
       if (!current) return;
       const moving = animateIncubators(dt, view, current);
       const flying = animateCreatures(dt, view, current);
+      const talking = animateBubble(dt);
       const alive = fx.update(dt);
-      if (moving || flying || alive) invalidate();
+      if (moving || flying || alive || talking) invalidate();
     },
     onEvent(e) {
       if (!current) return;

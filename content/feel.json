@@ -6,5 +6,6 @@
   "bounceSec": 0.22,
   "waitPulse": 0.06,
   "hatchFlySec": 0.5,
-  "hatchBurst": 16
+  "hatchBurst": 16,
+  "lineSec": 2.6
 }

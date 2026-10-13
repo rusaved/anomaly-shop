@@ -1,6 +1,6 @@
 {
   "$schema": "style.schema.json",
-  "note": "Стиль по Q-001, вариант A: плоский милый вектор с толстым контуром. Цвета сцены (PixiJS) и интерфейса (CSS-переменные --c-*). Размеры сцены в условных единицах, масштабируются раскладкой.",
+  "note": "Стиль по Q-001, вариант A: плоский милый вектор с толстым контуром. Цвета сцены (PixiJS) и интерфейса (CSS-переменные --c-*). Размеры сцены в условных единицах, масштабируются раскладкой. creatures — облик каждого вида: форма из набора сцены (shape) и два цвета; новый вид = новая запись (форму можно переиспользовать с другими цветами).",
   "art": "flat_outline",
   "colors": {
     "sky": "#3a2d5c",
@@ -32,11 +32,55 @@
     "rarityCommon": "#9fd8a0",
     "rarityRare": "#5fb4ff",
     "rarityEpic": "#c58cff",
-    "rarityLegendary": "#ffc533"
+    "rarityLegendary": "#ffc533",
+    "blush": "#ff9eb5",
+    "eyeWhite": "#ffffff"
   },
   "scene": {
     "outlineWidth": 4,
     "cornerRadius": 18,
     "floorShare": 0.34
+  },
+  "creatures": {
+    "kettle": {
+      "shape": "kettle",
+      "body": "#7fc8f8",
+      "accent": "#e8f6ff"
+    },
+    "sockfish": {
+      "shape": "sock",
+      "body": "#8fa3c8",
+      "accent": "#ff7a7a"
+    },
+    "cloudcat": {
+      "shape": "cloudcat",
+      "body": "#eef2ff",
+      "accent": "#6cb6ff"
+    },
+    "lampbug": {
+      "shape": "lampbug",
+      "body": "#ffe36e",
+      "accent": "#a0a8b8"
+    },
+    "jellytoast": {
+      "shape": "toast",
+      "body": "#e9b36c",
+      "accent": "#d94f8a"
+    },
+    "mirrorfrog": {
+      "shape": "frog",
+      "body": "#7ed6a5",
+      "accent": "#e6f7ff"
+    },
+    "teacup_dragon": {
+      "shape": "teacup",
+      "body": "#f7f1e8",
+      "accent": "#5ccf7a"
+    },
+    "sockfish_gold": {
+      "shape": "goldsock",
+      "body": "#ffcc3d",
+      "accent": "#fff6c2"
+    }
   }
 }

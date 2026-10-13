@@ -90,7 +90,14 @@ async function boot(): Promise<void> {
   const uiRoot = document.getElementById('ui') as HTMLElement;
   const scene = await createSceneApp(canvas, style.colors.sky, window.devicePixelRatio);
   await document.fonts.ready;
-  const shop = createShopView(scene.app, styleData, feel, i18n.t, scene.invalidate, { tapIncubator: (i) => play.tapIncubator(i) });
+  const shop = createShopView(scene.app, {
+    style: styleData,
+    feel,
+    t: i18n.t,
+    line: (id) => speciesById(id)?.line[i18n.lang()] ?? '',
+    invalidate: scene.invalidate,
+    handlers: { tapIncubator: (i) => play.tapIncubator(i) },
+  });
   const hud = createHud(uiRoot, lang);
   hud.update(store.state.coins);
   store.onCommit((s) => hud.update(s.coins));

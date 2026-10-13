@@ -1,0 +1,159 @@
+// What: valibot schemas of game.json and every content/*.json (docs/02-tech.md, section 5); the types of the data come from here.
+// Called by: src/content/validate.ts (validate:content, tests), src/content/index.ts (typed load at boot).
+// Keep: Node loads this file without a bundler — relative imports with .ts, erasable syntax only (no enum, no namespaces).
+
+import * as v from 'valibot';
+
+const Id = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9_]*$/, 'id: lowercase letters, digits and _'));
+const NonEmpty = v.pipe(v.string(), v.trim(), v.minLength(1, 'empty string'));
+const Text = v.object({ ru: NonEmpty, en: NonEmpty });
+const Count = v.pipe(v.number(), v.integer(), v.minValue(1));
+const Money = v.pipe(v.number(), v.minValue(0));
+const Share = v.pipe(v.number(), v.minValue(0), v.maxValue(1));
+const Pct = v.pipe(v.number(), v.minValue(0), v.maxValue(100));
+const Range = v.object({ min: Share, max: Share });
+const Color = v.pipe(v.string(), v.regex(/^(#[0-9a-fA-F]{6}|rgba?\([0-9., ]+\))$/, 'color: #rrggbb or rgb()/rgba()'));
+const Reward = v.object({ coins: v.optional(Money), crystals: v.optional(Money) });
+
+export const RARITIES = ['common', 'rare', 'epic', 'legendary'] as const;
+export const Rarity = v.picklist(RARITIES);
+export const LANGS = ['ru', 'en'] as const;
+
+export const Unlock = v.variant('type', [
+  v.object({ type: v.literal('start') }),
+  v.object({ type: v.literal('deals'), count: Count }),
+  v.object({ type: v.literal('district'), id: Id }),
+  v.object({ type: v.literal('milestone'), id: v.pipe(v.string(), v.regex(/^M\d+$/)) }),
+]);
+
+export const Egg = v.object({
+  id: Id,
+  name: Text,
+  price: v.object({ coins: Money }),
+  hatchSec: Money,
+  chances: v.object({ common: Pct, rare: Pct, epic: Pct, legendary: Pct }),
+  unlock: Unlock,
+  special: v.optional(v.picklist(['daily'])),
+});
+export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
+
+export const Species = v.object({
+  id: Id,
+  name: Text,
+  rarity: Rarity,
+  basePrice: v.pipe(v.number(), v.minValue(1)),
+  growth: v.pipe(v.number(), v.minValue(1)),
+  maxLevel: Count,
+  line: Text,
+});
+export const SpeciesFile = v.object({ tapsPerLevelBase: Count, species: v.pipe(v.array(Species), v.minLength(1)) });
+
+export const Customer = v.object({
+  id: Id,
+  name: Text,
+  offer: v.object({ min: v.pipe(v.number(), v.minValue(0)), max: v.pipe(v.number(), v.minValue(0)) }),
+  likes: v.picklist(['cheap', 'rare', 'level']),
+  leaveOnBargain: Share,
+  rarityBonus: v.optional(Share),
+  levelBonusPerLevel: v.optional(Share),
+});
+export const District = v.object({ id: Id, name: Text, unlock: Unlock, customer: Customer });
+export const CustomersFile = v.object({
+  queueSize: Count,
+  spawnEverySec: v.pipe(v.number(), v.minValue(0.1)),
+  waitNextSec: Money,
+  bargainBonus: Range,
+  districts: v.pipe(v.array(District), v.minLength(1)),
+});
+
+export const Effect = v.variant('type', [
+  v.object({ type: v.literal('slots'), perLevel: Count }),
+  v.object({ type: v.literal('hatchTime'), perLevel: v.pipe(v.number(), v.minValue(-1), v.maxValue(0)) }),
+  v.object({ type: v.literal('showcaseSlots'), base: Count, perLevel: Count }),
+  v.object({ type: v.literal('spawnRate'), perLevel: v.pipe(v.number(), v.minValue(-1), v.maxValue(0)) }),
+  v.object({ type: v.literal('bargain'), perLevel: Share }),
+  v.object({ type: v.literal('autoFeed'), creatures: Count, offline: v.boolean() }),
+  v.object({ type: v.literal('autoSell'), priceShare: v.pipe(v.number(), v.minValue(0)), offline: v.boolean() }),
+  v.object({ type: v.literal('autoBuyEgg'), egg: Id, offline: v.boolean() }),
+]);
+export const Upgrade = v.object({
+  id: Id,
+  name: Text,
+  levels: Count,
+  price1: v.pipe(v.number(), v.minValue(1)),
+  priceMax: v.pipe(v.number(), v.minValue(1)),
+  currency: v.optional(v.picklist(['coins', 'crystals'])),
+  effect: Effect,
+});
+export const UpgradesFile = v.object({
+  offlineMaxHours: v.pipe(v.number(), v.minValue(0)),
+  offlineRate: Share,
+  prestige: v.object({ thresholdCoinsEarned: v.pipe(v.number(), v.minValue(1)), incomeBonusPerPrestige: v.pipe(v.number(), v.minValue(0)) }),
+  upgrades: v.pipe(v.array(Upgrade), v.minLength(1)),
+});
+
+const IsoDate = v.pipe(v.string(), v.isoDate());
+export const CalendarFile = v.object({
+  daily: v.object({ eggId: Id, holdMinutes: Money, priceMultiplier: v.pipe(v.number(), v.minValue(1)) }),
+  tasks: v.object({
+    perDay: Count,
+    pool: v.pipe(v.array(v.object({ id: Id, type: v.picklist(['deals', 'hatch', 'feed', 'earn', 'haggle']), count: Count, name: Text, reward: Reward })), v.minLength(1)),
+  }),
+  login: v.pipe(v.array(v.object({ day: Count, reward: Reward })), v.minLength(1)),
+  events: v.array(v.object({ id: Id, theme: Id, name: Text, from: IsoDate, to: IsoDate, multiplier: v.pipe(v.number(), v.minValue(1)), reward: Reward })),
+});
+
+export const STYLE_COLORS = [
+  'sky', 'skyLow', 'wall', 'wallShade', 'floor', 'floorLine', 'counter', 'counterTop', 'incubator', 'incubatorGlass', 'egg', 'eggSpots',
+  'showcase', 'showcaseSlot', 'queueSpot', 'door', 'doorFrame', 'outline',
+  'uiPanel', 'uiPanelAlt', 'uiText', 'uiMuted', 'uiAccent', 'uiAccentText', 'uiGood', 'uiOverlay',
+] as const;
+export const StyleFile = v.object({
+  art: Id,
+  colors: v.object(Object.fromEntries(STYLE_COLORS.map((k) => [k, Color])) as Record<(typeof STYLE_COLORS)[number], typeof Color>),
+  scene: v.object({ outlineWidth: v.pipe(v.number(), v.minValue(0)), cornerRadius: v.pipe(v.number(), v.minValue(0)), floorShare: Share }),
+});
+
+export const I18nFile = v.record(v.string(), NonEmpty);
+
+const Profile = v.object({
+  community: v.boolean(),
+  ads: v.boolean(),
+  payments: v.boolean(),
+  analytics: v.boolean(),
+  externalRequests: v.boolean(),
+  sdk: v.optional(v.string()),
+  saveMaxBytes: v.optional(Count),
+});
+export const GameFile = v.object({
+  id: v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]*$/)),
+  title: Text,
+  age: v.object({ yandex: NonEmpty, youtube: NonEmpty }),
+  languages: v.pipe(v.array(v.picklist(LANGS)), v.minLength(1)),
+  fallbackLanguage: v.picklist(LANGS),
+  ruFallbackLanguages: v.array(NonEmpty),
+  orientation: v.picklist(['any', 'portrait', 'landscape']),
+  bootBackground: Color,
+  metrikaCounterId: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  community: v.object({
+    telegram: v.pipe(v.string(), v.url(), v.startsWith('https://')),
+    vk: v.pipe(v.string(), v.url(), v.startsWith('https://')),
+    placement: v.array(v.picklist(['pause', 'settings', 'side'])),
+  }),
+  profiles: v.object({ yandex: Profile, null: Profile, youtube: Profile }),
+});
+
+export type EggsData = v.InferOutput<typeof EggsFile>;
+export type EggData = v.InferOutput<typeof Egg>;
+export type SpeciesData = v.InferOutput<typeof SpeciesFile>;
+export type SpeciesEntry = v.InferOutput<typeof Species>;
+export type CustomersData = v.InferOutput<typeof CustomersFile>;
+export type DistrictData = v.InferOutput<typeof District>;
+export type UpgradesData = v.InferOutput<typeof UpgradesFile>;
+export type UpgradeData = v.InferOutput<typeof Upgrade>;
+export type CalendarData = v.InferOutput<typeof CalendarFile>;
+export type StyleData = v.InferOutput<typeof StyleFile>;
+export type I18nData = v.InferOutput<typeof I18nFile>;
+export type GameData = v.InferOutput<typeof GameFile>;
+export type RarityName = (typeof RARITIES)[number];
+export type LangName = (typeof LANGS)[number];

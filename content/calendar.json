@@ -1,0 +1,27 @@
+{
+  "$schema": "calendar.schema.json",
+  "note": "Календарь из docs/01a-content.md §7: аномалий дня, задание дня (3 цели из пула), календарь 7 дней входа, событие недели как конфиг. Даты событий — ISO, включительно. Стартовые значения, уточняются на M3.",
+  "daily": { "eggId": "egg_daily", "holdMinutes": 10, "priceMultiplier": 3 },
+  "tasks": {
+    "perDay": 3,
+    "pool": [
+      { "id": "deals_3", "type": "deals", "count": 3, "name": { "ru": "Продай 3 существа", "en": "Sell 3 creatures" }, "reward": { "coins": 40 } },
+      { "id": "hatch_2", "type": "hatch", "count": 2, "name": { "ru": "Вылупи 2 яйца", "en": "Hatch 2 eggs" }, "reward": { "coins": 30 } },
+      { "id": "feed_20", "type": "feed", "count": 20, "name": { "ru": "Покорми 20 раз", "en": "Feed 20 times" }, "reward": { "coins": 25 } },
+      { "id": "earn_200", "type": "earn", "count": 200, "name": { "ru": "Заработай 200 монет", "en": "Earn 200 coins" }, "reward": { "coins": 60 } },
+      { "id": "haggle_2", "type": "haggle", "count": 2, "name": { "ru": "Выторгуй 2 раза", "en": "Win 2 haggles" }, "reward": { "crystals": 1 } }
+    ]
+  },
+  "login": [
+    { "day": 1, "reward": { "coins": 20 } },
+    { "day": 2, "reward": { "coins": 30 } },
+    { "day": 3, "reward": { "coins": 50 } },
+    { "day": 4, "reward": { "coins": 80 } },
+    { "day": 5, "reward": { "coins": 120 } },
+    { "day": 6, "reward": { "coins": 180 } },
+    { "day": 7, "reward": { "crystals": 3 } }
+  ],
+  "events": [
+    { "id": "warm_week", "theme": "warm", "name": { "ru": "Тёплая неделя", "en": "Warm Week" }, "from": "2026-11-16", "to": "2026-11-22", "multiplier": 1.5, "reward": { "crystals": 5 } }
+  ]
+}

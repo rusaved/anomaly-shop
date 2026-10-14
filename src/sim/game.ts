@@ -1380,7 +1380,14 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         return;
       }
       s().stats.taps += 1;
+      // UB-03: the very first egg opens with one tap (ftue.json firstEggOneTap) — the case show starts at once.
       if (eggReady(inc)) {
+        hatch(index, 'tap');
+        return;
+      }
+      if (inc.waiting && s().stats.hatched === 0 && content.ftue.firstEggOneTap) {
+        // The tap is the player's first touch (the funnel's first_tap), then the egg opens at once.
+        emit({ type: 'eggTap', incubator: index, started: true });
         hatch(index, 'tap');
         return;
       }

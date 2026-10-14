@@ -30,13 +30,12 @@ function secondsToHatch(game: ReturnType<typeof setup>['game'], seen: GameEvent[
 }
 
 describe('M1-01 egg', () => {
-  it('a fresh shop starts with the starter egg in the incubator, waiting for the first tap', () => {
+  it('a fresh shop starts with the starter egg in the incubator, waiting for the first tap — which opens it (UB-03)', () => {
     const { game, seen } = setup();
     expect(game.state.incubators[0]).toMatchObject({ egg: 'egg_basic', waiting: true });
     expect(secondsToHatch(game, seen, 5)).toBeNull();
     game.tapIncubator(0);
-    expect(game.state.incubators[0]!.waiting).toBe(false);
-    expect(seen.find((e) => e.type === 'eggTap')).toMatchObject({ started: true });
+    expect(seen.find((e) => e.type === 'hatched')).toMatchObject({ by: 'tap' });
   });
 
   it('a basic egg hatches in 3 s without taps', () => {
@@ -90,6 +89,9 @@ describe('M1-01 egg', () => {
   it('the egg timer survives a save round trip', async () => {
     const { serialize, parseSave, normalize } = await import('../src/sim/state.ts');
     const { game } = setup();
+    // A second egg (the first one opens with one tap, UB-03): one tap warms it, the timer runs.
+    game.state.stats.hatched = 1;
+    game.state.incubators[0]!.waiting = false;
     game.tapIncubator(0);
     game.tick(1);
     const back = normalize(parseSave(serialize(game.state)), 0);

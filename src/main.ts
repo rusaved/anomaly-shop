@@ -226,6 +226,7 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
     spinSec: () => feel.hatchShowSec,
+    onReveal: (rarity) => sfx.play(rarity === 'common' ? 'hatch' : 'rare'),
   });
   // Timers on the egg screen (free egg, hatching) tick each second while it is open.
   window.setInterval(() => {
@@ -488,7 +489,9 @@ async function boot(): Promise<void> {
       sfx.play('buy');
     } else if (e.type === 'eggFed') sfx.play('buy');
     else if (e.type === 'hatched') {
-      sfx.play(e.rarity === 'common' ? 'hatch' : 'rare');
+      // UB-03: a tapped egg says nothing about its rarity until the case show reveals it.
+      if (e.by !== 'tap') sfx.play(e.rarity === 'common' ? 'hatch' : 'rare');
+      else sfx.play('eggTap');
       // The player opened it: the hatch show (M3-05); by itself (helpers, time away) — a toast for the rare ones.
       if (e.by === 'tap') hatchShow.play(e);
       else if (e.rarity !== 'common') toasts.show(`${i18n.t(`rarity.${e.rarity}`)}: ${speciesById(e.species)?.name[i18n.lang()] ?? e.species}`, 'rare', 2200);

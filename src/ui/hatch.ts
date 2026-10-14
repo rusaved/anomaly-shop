@@ -1,4 +1,4 @@
-// What: the hatch show (docs/01 §3 p. 12; M3-05): portraits run under a marker 4–5 s, slow down; «Hatched!» with the range, Keep / Sell now / To the shop.
+// What: the hatch show as a case (docs/01 §3 p. 12; M3-05, UB-03): portraits run under a marker 4–5 s; «Hatched!» with the range, Take / Sell now / To the shop.
 // Called by: src/main.ts on a hatched event the player tapped (by: 'tap'); hatches by themselves (helpers, time away) skip the show.
 // Keep: the result is the game's roll (the uid from the event); the strip around it is decoration (Math.random is fine in ui); a tap skips to the end.
 
@@ -17,6 +17,8 @@ export interface HatchLookups {
   /** Seconds of the run (feel.json hatchShowSec, 4–5). */
   spinSec(): number;
   onResult?(): void;
+  /** The result shows (UB-03: the rare sound plays here, not when the egg cracks — no spoiler). */
+  onReveal?(rarity: RarityName): void;
 }
 
 export interface HatchShow {
@@ -37,12 +39,14 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   overlay.card.classList.add('card-hatch');
   overlay.card.innerHTML =
     '<h2 data-hatch-title></h2><div class="hatch-window" data-action="hatch-skip"><div class="hatch-strip" data-hatch-strip></div><i class="hatch-marker" aria-hidden="true"></i></div>' +
+    '<p class="hatch-skip" data-hatch-skip data-i18n="hatch.skip"></p>' +
     '<div class="hatch-result" data-hatch-result hidden><img alt="" data-hatch-pic><h3 data-hatch-name></h3><p class="hatch-rarity"><i class="rarity-dot" data-hatch-dot></i><span data-hatch-rarity></span></p>' +
     '<p class="hatch-range"><span data-i18n="hatch.range"></span> <b data-hatch-range></b></p><div class="hatch-buttons"></div></div>';
   const q = <T extends HTMLElement>(sel: string): T => overlay.card.querySelector(sel) as T;
   const title = q('[data-hatch-title]');
   const strip = q('[data-hatch-strip]');
   const result = q('[data-hatch-result]');
+  const skipHint = q('[data-hatch-skip]');
   const keep = button('hatch-keep', 'hatch.keep');
   const sell = button('hatch-sell', 'hatch.sell');
   const toShop = button('hatch-shop', 'hatch.toShop', 'btn-primary');
@@ -83,11 +87,13 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     const cr: CreatureView | undefined = [...view.inventory, ...view.creatures].find((c) => c.uid === uid);
     title.textContent = look.t('hatch.done');
     result.hidden = false;
+    skipHint.hidden = true;
     overlay.card.classList.add('shown');
     if (!cr) {
       sell.hidden = true;
       return;
     }
+    look.onReveal?.(cr.rarity);
     const fmt = new Intl.NumberFormat(look.lang());
     q<HTMLImageElement>('[data-hatch-pic]').src = look.portrait(cr.species, cr.rarity);
     q('[data-hatch-name]').textContent = look.speciesName(cr.species);
@@ -107,6 +113,8 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
       uid = e.uid;
       done = false;
       result.hidden = true;
+      skipHint.hidden = false;
+      skipHint.textContent = look.t('hatch.skip');
       overlay.card.classList.remove('shown');
       title.textContent = look.t('hatch.title');
       const odds = look.odds(e.egg);

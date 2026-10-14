@@ -125,7 +125,8 @@ export function botPlayer(bot: Bot, game: Game): () => number {
       return tap * 2;
     }
     const lot = game.market().lots.find((l) => !l.sold && l.verdict === 'below' && st.coins >= l.price * 3);
-    if (lot && game.freeSlots() > 0) {
+    // UB-05: a bought lot waits in the inventory when the shelf is full, like a hatched one.
+    if (lot) {
       game.buyLot(lot.id);
       return tap + bot.reactSec;
     }

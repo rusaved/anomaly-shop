@@ -119,22 +119,27 @@ describe('M2-03 helpers', () => {
 });
 
 describe('M2-04 offline pace', () => {
-  it('away time pays half the helpers pace of live play: 20 min away ≈ 10 min of helpers alone', () => {
+  it('away time works at offlineRate of the helpers pace of live play: 20 min away ≈ 20 × rate min of helpers alone', () => {
     const helpers = ['helper_feed', 'helper_sell', 'helper_courier'];
-    let live = 0;
-    let away = 0;
-    for (const seed of [1, 2, 3, 4, 5]) {
+    let live = { coins: 0, deals: 0 };
+    let away = { coins: 0, deals: 0 };
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
       const a = setup({ creatures: [cr('a'), cr('b')], helpers, seed });
       a.game.state.coins = 100;
+      const deals = a.game.state.stats.deals;
       run(a.game, 600);
-      live += a.game.state.coins - 100;
+      live = { coins: live.coins + a.game.state.coins - 100, deals: live.deals + a.game.state.stats.deals - deals };
       const b = setup({ creatures: [cr('a'), cr('b')], helpers, seed: seed + 100 });
       b.game.state.coins = 100;
-      away += b.game.offline(1200).coins;
+      const r = b.game.offline(1200);
+      away = { coins: away.coins + r.coins, deals: away.deals + r.sold };
     }
     // 20 minutes away at offlineRate of the live pace ≈ 20 × rate minutes of helpers alone (rate 0.5 → 10 min).
+    // UB-05: the deals keep the pace; the coins follow them with the heavy-tailed noise of the rarities (one rare sale weighs dozens).
     const want = 2 * content.upgrades.offlineRate;
-    expect(away / live).toBeGreaterThan(want * 0.8);
-    expect(away / live).toBeLessThan(want * 1.25);
+    expect(away.deals / live.deals).toBeGreaterThan(want * 0.85);
+    expect(away.deals / live.deals).toBeLessThan(want * 1.2);
+    expect(away.coins / live.coins).toBeGreaterThan(want * 0.5);
+    expect(away.coins / live.coins).toBeLessThan(want * 2);
   });
 });

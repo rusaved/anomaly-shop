@@ -201,6 +201,8 @@ export const AudioFile = v.object({
 export const FtueFile = v.object({
   starterEgg: Id,
   starterWaitsForTap: v.boolean(),
+  /** UB-03: the very first egg opens with one tap (no timer): the case show runs at once. */
+  firstEggOneTap: v.boolean(),
   firstRarity: Rarity,
   secondRarity: Rarity,
   firstCustomerSec: v.pipe(v.number(), v.minValue(0)),

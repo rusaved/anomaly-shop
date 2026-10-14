@@ -1266,6 +1266,16 @@
 .hatch-range {
   margin: 4px 0 10px;
 }
+/* UB-03: a small caption under the running strip: a tap shows the result at once. */
+.hatch-skip {
+  margin: 0;
+  font-size: 12px;
+  color: var(--c-uiMuted);
+  text-align: center;
+}
+.hatch-skip[hidden] {
+  display: none;
+}
 .hatch-buttons {
   display: flex;
   flex-wrap: wrap;

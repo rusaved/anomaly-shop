@@ -139,3 +139,41 @@ export async function listFromInventory(page: Page): Promise<void> {
   await page.locator('[data-overlay=sale] [data-action^=sale-list-]').first().click();
 }
 
+
+/**
+ * UB-07: what on screen now is too small to read or to tap — visible text under 12 px, buttons under 44 px on the short side.
+ * The debug panel (only with ?debug=1) is not part of the game.
+ */
+export function readability(page: Page): Promise<{ small: string[]; tiny: string[] }> {
+  return page.evaluate(() => {
+    const small: string[] = [];
+    const tiny: string[] = [];
+    const name = (el: Element): string => {
+      const h = el as HTMLElement;
+      const hook = h.dataset.action ?? h.dataset.tab ?? h.className.toString().split(' ')[0] ?? el.tagName;
+      return `${el.tagName.toLowerCase()}.${hook} «${(h.innerText ?? '').trim().slice(0, 24)}»`;
+    };
+    const shown = (el: Element): boolean => {
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1 || r.bottom <= 0 || r.right <= 0 || r.top >= innerHeight || r.left >= innerWidth) return false;
+      for (let e: Element | null = el; e; e = e.parentElement) {
+        const cs = getComputedStyle(e);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0 || (e as HTMLElement).hidden) return false;
+      }
+      return true;
+    };
+    for (const el of document.querySelectorAll('body *')) {
+      if (el.closest('.lil-gui, canvas, svg, [aria-hidden="true"]')) continue;
+      const text = [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim() !== '');
+      const tap = el.matches('button, [role="button"], input[type="range"], select');
+      if (!text && !tap) continue;
+      if (!shown(el)) continue;
+      if (text && parseFloat(getComputedStyle(el).fontSize) < 11.5) small.push(`${name(el)} ${getComputedStyle(el).fontSize}`);
+      if (tap) {
+        const r = el.getBoundingClientRect();
+        if (Math.min(r.width, r.height) < 43.5) tiny.push(`${name(el)} ${Math.round(r.width)}×${Math.round(r.height)}`);
+      }
+    }
+    return { small: [...new Set(small)], tiny: [...new Set(tiny)] };
+  });
+}

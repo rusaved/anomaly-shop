@@ -565,7 +565,8 @@ async function boot(): Promise<void> {
     topInset: () => hud.root.getBoundingClientRect().bottom,
     window: () => topWindow()?.card ?? null,
   });
-  renderBuildLabel(uiRoot, __BUILD_LABEL__);
+  // UB-07: the milestone label is a dev trace — only with ?debug=1 (the producer link keeps it there).
+  if (new URLSearchParams(location.search).has('debug')) renderBuildLabel(uiRoot, __BUILD_LABEL__);
   i18n.apply(uiRoot);
   i18n.onChange((next) => {
     document.documentElement.lang = next;

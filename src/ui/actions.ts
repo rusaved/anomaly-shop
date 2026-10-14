@@ -1,6 +1,6 @@
-// What: the action rows of the panel: buy an egg (price on the button); the upgrade shop (dot when one is affordable or new) with the «Next» card beside it.
+// What: the action rows of the panel: quick egg buttons (the basic one and the last other egg bought; the rest live in the Eggs tab, M3-03) and the «Next» card row.
 // Called by: src/main.ts (create once, render on every commit and game change).
-// Keep: commands only; unaffordable stays tappable (aria-disabled) to explain why; basic egg = buy-egg, later eggs = buy-<id>.
+// Keep: commands only; unaffordable stays tappable (aria-disabled) to explain why; basic egg = buy-egg, later eggs = buy-<id>; two eggs at most.
 
 import type { Game } from '../sim/game.ts';
 
@@ -18,7 +18,7 @@ export interface Actions {
   setLanguage(lang: string): void;
 }
 
-export function createActions(parent: HTMLElement, game: Game, lang: string, look: ActionLookups, openUpgrades: () => void): Actions {
+export function createActions(parent: HTMLElement, game: Game, lang: string, look: ActionLookups): Actions {
   const root = document.createElement('div');
   root.className = 'actions';
   const eggsBox = document.createElement('div');
@@ -27,14 +27,12 @@ export function createActions(parent: HTMLElement, game: Game, lang: string, loo
   const more = document.createElement('div');
   more.className = 'actions-more';
   root.appendChild(more);
-  more.insertAdjacentHTML(
-    'beforeend',
-    '<button type="button" class="btn btn-upgrades" data-action="upgrades"><span class="up-icon" aria-hidden="true"></span><span data-i18n="upgrades.open"></span><span class="dot" data-dot hidden></span></button>',
-  );
   parent.appendChild(root);
-  const upgrades = root.querySelector('[data-action="upgrades"]') as HTMLButtonElement;
-  const dot = root.querySelector('[data-dot]') as HTMLElement;
-  upgrades.addEventListener('click', openUpgrades);
+  /** The last other egg the player bought: the panel keeps it at hand («one more»). */
+  let lastOther: string | null = null;
+  game.events.on((e) => {
+    if (e.type === 'eggBought' && e.by === 'player') lastOther = e.egg;
+  });
   let format = new Intl.NumberFormat(lang);
   let eggKey = '';
   const buttons = new Map<string, HTMLButtonElement>();
@@ -61,7 +59,10 @@ export function createActions(parent: HTMLElement, game: Game, lang: string, loo
     root,
     more,
     render() {
-      const list = game.eggList();
+      const all = game.eggList();
+      const first = all[0];
+      const other = all.find((e) => e.id === lastOther && e.id !== first?.id) ?? all.slice(1).filter((e) => e.check.ok).at(-1);
+      const list = [first, other].filter((e): e is (typeof all)[number] => Boolean(e));
       const ids = list.map((e) => e.id).join(',');
       if (ids !== eggKey.split('|')[0]) buildEggs(list.map((e) => e.id));
       eggKey = `${ids}|`;
@@ -82,7 +83,6 @@ export function createActions(parent: HTMLElement, game: Game, lang: string, loo
         why.textContent = reason ? look.t(`reason.${reason}`) : '';
       });
       root.dataset.eggs = String(list.length);
-      dot.hidden = !game.upgradeList().some((u) => u.affordable || u.fresh);
     },
     setLanguage(next) {
       format = new Intl.NumberFormat(next);

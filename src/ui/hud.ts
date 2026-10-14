@@ -1,4 +1,4 @@
-// What: the HUD strip over the scene: the coin counter rolling to its value (M1-07) and the pause button.
+// What: the HUD strip over the scene (the top bar of docs/01 §6): pause and settings on the left, the balance on the right (coins roll, M1-07; a tap opens the shop).
 // Called by: src/main.ts (create once, update on every store commit, delayed while sale coins fly in).
 // Keep: numbers through Intl.NumberFormat of the current language; the HUD only reads state; tabular digits, no layout jumps.
 
@@ -7,6 +7,10 @@ import { createCounter } from './counter.ts';
 export interface Hud {
   root: HTMLElement;
   pauseButton: HTMLButtonElement;
+  /** The left group next to pause: Gifts and Side job buttons (M3-11, M3-12). */
+  side: HTMLElement;
+  /** The balance chips: a tap opens the shop. */
+  balance: HTMLElement;
   /** The coin icon the sale coins fly into. */
   coinIcon: HTMLElement;
   /** Rolls to coins; delaySec waits for flying coins (and restarts a roll that began this frame). */
@@ -22,9 +26,9 @@ export function createHud(parent: HTMLElement, lang: string, rollSec: () => numb
   const root = document.createElement('div');
   root.className = 'hud';
   root.innerHTML =
-    '<div class="hud-left"><div class="hud-coins" data-hud="coins" role="status" data-i18n="hud.coins" data-i18n-attr="aria-label"><span class="coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></div>' +
-    '<div class="hud-crystals" data-hud="crystals" role="status" data-i18n="hud.crystals" data-i18n-attr="aria-label" hidden><span class="gem" aria-hidden="true"></span><span class="hud-crystals-value">0</span></div></div>' +
-    '<button type="button" class="hud-pause" data-action="pause" data-i18n="hud.pause" data-i18n-attr="aria-label"><span class="hud-pause-icon" aria-hidden="true"></span></button>';
+    '<div class="hud-side" data-hud="side"><button type="button" class="hud-pause" data-action="pause" data-i18n="hud.pause" data-i18n-attr="aria-label"><span class="hud-pause-icon" aria-hidden="true"></span></button></div>' +
+    '<div class="hud-left hud-balance" data-action="balance"><div class="hud-coins" data-hud="coins" role="status" data-i18n="hud.coins" data-i18n-attr="aria-label"><span class="coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></div>' +
+    '<div class="hud-crystals" data-hud="crystals" role="status" data-i18n="hud.crystals" data-i18n-attr="aria-label" hidden><span class="gem" aria-hidden="true"></span><span class="hud-crystals-value">0</span></div></div>';
   parent.appendChild(root);
   const chip = root.querySelector('.hud-coins') as HTMLElement;
   const value = root.querySelector('.hud-coins-value') as HTMLElement;
@@ -63,6 +67,8 @@ export function createHud(parent: HTMLElement, lang: string, rollSec: () => numb
   return {
     root,
     pauseButton,
+    side: root.querySelector('[data-hud="side"]') as HTMLElement,
+    balance: root.querySelector('[data-action="balance"]') as HTMLElement,
     coinIcon,
     update(coins, opts) {
       if (opts?.snap || reduced) {

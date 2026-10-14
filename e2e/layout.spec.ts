@@ -17,13 +17,14 @@ test('SCR-01 phone: HUD, panel and side buttons inside the viewport, no scroll',
     '[data-action=wait]',
     '[data-action=buy-egg]',
     '[data-action=upgrades]',
-    '[data-community=side] [data-action=community-telegram]',
-    '[data-community=side] [data-action=community-vk]',
+    ...['market', 'inventory', 'sales', 'eggs', 'chats', 'shop', 'season'].map((tab) => `[data-tab=${tab}]`),
   ]);
   const vp = page.viewportSize()!;
+  // M3-03: the side community buttons stay in landscape; in portrait they live in pause and settings (the panel gave room to the tabs).
+  if (vp.width > vp.height) await expectInsideViewport(page, ['[data-community=side] [data-action=community-telegram]', '[data-community=side] [data-action=community-vk]']);
   const panel = (await page.locator('#panel').boundingBox())!;
   if (vp.height >= vp.width) expect(panel.width).toBeCloseTo(vp.width, 0);
-  else expect(panel.height).toBeCloseTo(vp.height, 0);
+  else expect(panel.height + (await page.locator('#nav').boundingBox())!.height).toBeCloseTo(vp.height, 0);
   expect(errors).toEqual([]);
 });
 

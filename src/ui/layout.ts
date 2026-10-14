@@ -1,4 +1,4 @@
-// What: screen layout (docs/02-tech.md, section 4.4): portrait = shop above, panel below; landscape and desktop = shop left, panel right.
+// What: screen layout (docs/02-tech.md, 4.4; docs/01 §6): portrait = shop, panel, tab bar top to bottom; landscape = shop left, panel and tab bar right; a tab's sheet covers the panel.
 // Called by: src/main.ts (watchLayout once), src/scene (stage rect), tests/layout.test.ts (computeLayout is pure).
 // Keep: computeLayout has no DOM; every size and ratio sits in PANEL; both orientations work at any proportion, never locked.
 
@@ -23,14 +23,18 @@ export interface Layout {
   stage: Rect;
   /** Where the HTML panel sits. */
   panel: Rect;
+  /** The bottom tab bar (M3-03). */
+  nav: Rect;
+  /** Where an open tab (a sheet) sits: over the panel, taller in portrait; the shop stays visible above or to the left. */
+  sheet: Rect;
   hudHeight: number;
   safe: Insets;
 }
 
 export const PANEL = {
-  portraitShare: 0.42,
-  portraitMin: 220,
-  portraitMax: 360,
+  portraitShare: 0.36,
+  portraitMin: 200,
+  portraitMax: 320,
   landscapeShare: 0.4,
   landscapeMin: 260,
   landscapeMax: 420,
@@ -39,6 +43,10 @@ export const PANEL = {
   /** A portrait panel lower than this hides its title and side community buttons (they stay in pause). */
   shortPanel: 280,
   hudHeight: 60,
+  /** The tab bar height (plus the bottom safe inset). */
+  navHeight: 58,
+  /** A portrait sheet rises to this share of the screen; the rest above shows the shop. */
+  sheetPortraitShare: 0.66,
 };
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -47,26 +55,36 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
 export function computeLayout(width: number, height: number, safe: Insets = NO_INSETS): Layout {
   const w = Math.max(1, Math.floor(width));
   const h = Math.max(1, Math.floor(height));
+  const hudHeight = PANEL.hudHeight + safe.top;
   if (h >= w) {
-    const panelH = Math.max(1, Math.min(h - 120, clamp(h * PANEL.portraitShare, PANEL.portraitMin, PANEL.portraitMax) + safe.bottom));
+    const navH = Math.min(PANEL.navHeight + safe.bottom, Math.max(1, h - 160));
+    const panelH = Math.max(1, Math.min(h - navH - 120, clamp(h * PANEL.portraitShare, PANEL.portraitMin, PANEL.portraitMax)));
+    const stageH = Math.max(1, h - panelH - navH);
+    const sheetY = Math.min(stageH, Math.max(hudHeight, Math.round(h - navH - h * PANEL.sheetPortraitShare)));
     return {
       orientation: 'portrait',
       width: w,
       height: h,
-      stage: { x: 0, y: 0, w, h: Math.max(1, h - panelH) },
-      panel: { x: 0, y: h - panelH, w, h: panelH },
-      hudHeight: PANEL.hudHeight + safe.top,
+      stage: { x: 0, y: 0, w, h: stageH },
+      panel: { x: 0, y: stageH, w, h: panelH },
+      nav: { x: 0, y: h - navH, w, h: navH },
+      sheet: { x: 0, y: sheetY, w, h: Math.max(1, h - navH - sheetY) },
+      hudHeight,
       safe,
     };
   }
   const panelW = Math.max(1, Math.min(w - 160, clamp(w * PANEL.landscapeShare, PANEL.landscapeMin, PANEL.landscapeMax) + safe.right));
+  const navH = Math.min(PANEL.navHeight + safe.bottom, Math.max(1, h - 120));
+  const panel = { x: w - panelW, y: 0, w: panelW, h: Math.max(1, h - navH) };
   return {
     orientation: 'landscape',
     width: w,
     height: h,
     stage: { x: 0, y: 0, w: Math.max(1, w - panelW), h },
-    panel: { x: w - panelW, y: 0, w: panelW, h },
-    hudHeight: PANEL.hudHeight + safe.top,
+    panel,
+    nav: { x: w - panelW, y: h - navH, w: panelW, h: navH },
+    sheet: { ...panel },
+    hudHeight,
     safe,
   };
 }
@@ -92,6 +110,8 @@ export function applyLayout(appRoot: HTMLElement, layout: Layout): void {
   const size = layout.orientation === 'portrait' ? layout.panel.h : layout.panel.w;
   appRoot.style.setProperty('--panel-size', `${size}px`);
   appRoot.style.setProperty('--hud-height', `${layout.hudHeight}px`);
+  appRoot.style.setProperty('--nav-size', `${layout.nav.h}px`);
+  appRoot.style.setProperty('--sheet-top', `${layout.sheet.y}px`);
 }
 
 /** Recomputes on every size change (resize, rotation, address bar); calls cb at once and after each change. */

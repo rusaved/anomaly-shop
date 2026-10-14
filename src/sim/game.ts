@@ -1177,7 +1177,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         if (d.unlock.type === 'deals' && st.stats.deals < d.unlock.count) goals.push({ kind: 'district', id: d.id, have: st.stats.deals, need: d.unlock.count, unit: 'deals' });
       }
       for (const e of eggs.eggs) {
-        if (forSale(e) && e.unlock.type === 'deals' && st.stats.deals < e.unlock.count) goals.push({ kind: 'egg', id: e.id, have: st.stats.deals, need: e.unlock.count, unit: 'deals' });
+        if (e.section === 'ladder' && !e.special && e.unlock.type === 'deals' && st.stats.deals < e.unlock.count) goals.push({ kind: 'egg', id: e.id, have: st.stats.deals, need: e.unlock.count, unit: 'deals' });
       }
       const share = (g: GoalView): number => (g.need > 0 ? g.have / g.need : 1);
       const best = goals.reduce<GoalView | null>((a, g) => (!a || share(g) > share(a) + 1e-9 ? g : a), null);

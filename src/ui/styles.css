@@ -85,18 +85,18 @@
 .portrait #panel {
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--nav-size, 0px);
   height: var(--panel-size);
   border-radius: 22px 22px 0 0;
-  padding: 12px calc(14px + var(--safe-right)) calc(10px + var(--safe-bottom)) calc(14px + var(--safe-left));
+  padding: 12px calc(14px + var(--safe-right)) 8px calc(14px + var(--safe-left));
 }
 .landscape #panel {
   top: 0;
-  bottom: 0;
+  bottom: var(--nav-size, 0px);
   right: 0;
   width: var(--panel-size);
   border-radius: 22px 0 0 22px;
-  padding: calc(12px + var(--safe-top)) calc(14px + var(--safe-right)) calc(12px + var(--safe-bottom)) 14px;
+  padding: calc(12px + var(--safe-top)) calc(14px + var(--safe-right)) 8px 14px;
   box-shadow: -2px 0 0 var(--c-outline);
 }
 .panel-title {
@@ -964,6 +964,7 @@
   font-size: 11px;
 }
 .panel-short .panel-title,
+.portrait .panel-side,
 .panel-short .panel-side {
   display: none;
 }
@@ -1121,4 +1122,262 @@
   .actions[data-eggs='4'] .btn-egg [data-why]:not([hidden]) {
     display: block;
   }
+}
+
+/* M3-03: the tab bar of the genre standard (docs/01 §6) and the sheets of the tabs. */
+.nav {
+  position: absolute;
+  z-index: 6;
+  bottom: 0;
+  height: var(--nav-size, 58px);
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding: 0 calc(2px + var(--safe-right)) var(--safe-bottom) calc(2px + var(--safe-left));
+  background: var(--c-uiPanelAlt);
+  box-shadow: 0 -2px 0 var(--c-outline);
+  pointer-events: auto;
+}
+.portrait .nav {
+  left: 0;
+  right: 0;
+}
+.landscape .nav {
+  right: 0;
+  width: var(--panel-size);
+}
+.nav-tab {
+  position: relative;
+  flex: 1 1 0;
+  height: 58px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--c-uiMuted);
+}
+.nav-tab.active {
+  color: var(--c-uiText);
+}
+.nav-icon svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+.landscape .nav-label {
+  font-size: 9px;
+}
+.nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+.nav-tab[data-tab='eggs'] .nav-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-top: -18px;
+  border-radius: 50%;
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+  box-shadow: 0 3px 0 var(--c-outline);
+}
+.nav-tab[data-tab='eggs'] .nav-icon svg {
+  width: 28px;
+  height: 28px;
+}
+.nav-badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 22px);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--c-uiGood);
+  color: var(--c-uiAccentText);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+.nav-badge.nav-dot {
+  min-width: 10px;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  top: 8px;
+  right: calc(50% - 16px);
+}
+.nav-badge[hidden] {
+  display: none;
+}
+.sheet {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-uiPanel);
+  color: var(--c-uiText);
+  pointer-events: auto;
+  overflow: hidden;
+}
+.sheet[hidden] {
+  display: none;
+}
+.portrait .sheet {
+  left: 0;
+  right: 0;
+  top: var(--sheet-top, 30%);
+  bottom: var(--nav-size, 58px);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -2px 0 var(--c-outline);
+  padding: 10px calc(12px + var(--safe-right)) 8px calc(12px + var(--safe-left));
+}
+.landscape .sheet {
+  right: 0;
+  top: 0;
+  width: var(--panel-size);
+  bottom: var(--nav-size, 58px);
+  border-radius: 22px 0 0 22px;
+  box-shadow: -2px 0 0 var(--c-outline);
+  padding: calc(10px + var(--safe-top)) calc(12px + var(--safe-right)) 8px 12px;
+}
+.sheet-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.sheet-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sheet-close {
+  width: 44px;
+  height: 44px;
+  margin: -6px -6px -6px 0;
+  border-radius: 50%;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--c-uiMuted);
+}
+.sheet-head:empty {
+  display: none;
+}
+.sheet-head {
+  flex: 0 0 auto;
+  margin-top: 6px;
+}
+.sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 8px;
+  overscroll-behavior: contain;
+}
+.subtabs {
+  display: flex;
+  gap: 6px;
+}
+.subtab {
+  flex: 1 1 0;
+  min-height: 36px;
+  border-radius: 18px;
+  background: var(--c-uiPanelAlt);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--c-uiMuted);
+}
+.subtab.active {
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+.cards-sum,
+.empty {
+  grid-column: 1 / -1;
+  margin: 4px 0;
+  color: var(--c-uiMuted);
+  font-size: 14px;
+  text-align: center;
+}
+.empty {
+  margin-top: 24px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 6px;
+  border-radius: 14px;
+  background: var(--c-uiPanelAlt);
+  text-align: center;
+}
+.card-pic {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+}
+.card-pic img {
+  width: 64px;
+  height: 64px;
+}
+.card-col.unknown .card-pic img {
+  filter: brightness(0);
+  opacity: 0.25;
+}
+.rarity-dash {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: -2px;
+  height: 4px;
+  border-radius: 2px;
+}
+.card-name {
+  font-weight: 700;
+  font-size: 13px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.card-sub {
+  font-size: 11px;
+  color: var(--c-uiMuted);
+}
+.card-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.hud-balance {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.hud-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }

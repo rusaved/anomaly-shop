@@ -30,6 +30,12 @@ import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
 import { ftueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
+import { createNav, type TabId } from './ui/nav.ts';
+import { createSheet, type Sheet } from './ui/sheet.ts';
+import { createInventoryTab } from './ui/inventory.ts';
+import { createEggsTab } from './ui/eggs.ts';
+import { createPortraits } from './scene/portraits.ts';
+import { rarityColor } from './scene/art.ts';
 import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, lines, news, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
@@ -160,13 +166,58 @@ async function boot(): Promise<void> {
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
   });
   const upgradesWindow = createUpgradesWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, upgrade: (id) => upgrades.upgrades.find((u) => u.id === id) });
-  const actions = createActions(
-    panel.body,
-    play,
-    lang,
-    { t: i18n.t, eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg },
-    () => upgradesWindow.open(),
-  );
+  const actions = createActions(panel.body, play, lang, { t: i18n.t, eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg });
+  // The genre-standard frame (docs/01 §6; M3-03): the tab bar, one sheet per tab over the panel; the shop stays in view.
+  const portraits = createPortraits(scene.app, styleData);
+  const sheets = new Map<TabId, Sheet>();
+  const showTab = (tab: TabId | null): void => {
+    if (tab === 'shop') {
+      // Q-021 B: until M5 the Shop tab is the shop upgrades.
+      nav.mark(null);
+      upgradesWindow.open();
+      tab = null;
+    }
+    for (const [id, s] of sheets) {
+      if (id === tab) s.show();
+      else s.hide();
+    }
+    renderTabs();
+  };
+  const closeTab = (): void => {
+    nav.mark(null);
+    showTab(null);
+  };
+  for (const id of ['market', 'inventory', 'sales', 'eggs', 'chats', 'season'] as const) sheets.set(id, createSheet(uiRoot, id, closeTab));
+  const nav = createNav(uiRoot, showTab);
+  hud.balance.addEventListener('click', () => showTab('shop'));
+  for (const [id, key] of [['market', 'market.wait'], ['sales', 'sales.empty'], ['chats', 'chats.empty'], ['season', 'season.later']] as const) {
+    const s = sheets.get(id)!;
+    s.body.innerHTML = `<p class="empty" data-i18n="${key}"></p>`;
+    s.setTitle(i18n.t(id === 'sales' ? 'sales.title' : `nav.${id}`));
+  }
+  const inventoryTab = createInventoryTab(sheets.get('inventory')!, play, () => store.state, {
+    t: i18n.t,
+    lang: i18n.lang,
+    speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
+    species: () => species.species.map((s) => ({ id: s.id, rarity: s.rarity })),
+    portrait: (id, r) => portraits.creature(id, r),
+    rarityColor: (r) => rarityColor(styleData.rarity, r),
+    pick: (uid) => play.tapCreature(uid),
+  });
+  const eggsTab = createEggsTab(sheets.get('eggs')!, play, {
+    t: i18n.t,
+    lang: i18n.lang,
+    eggName: (id) => eggs.eggs.find((e) => e.id === id)?.name[i18n.lang()] ?? id,
+    eggPicture: (id) => portraits.egg(id),
+  });
+  function renderTabs(): void {
+    const tab = nav.active();
+    if (tab === 'inventory') inventoryTab.render();
+    if (tab === 'eggs') eggsTab.render();
+    for (const [id, s] of sheets) if (id !== 'inventory' && id !== 'eggs' && s.shown()) s.setTitle(i18n.t(id === 'sales' ? 'sales.title' : `nav.${id}`));
+    nav.badge('shop', play.upgradeList().some((u) => u.affordable || u.fresh));
+    nav.badge('eggs', play.eggList().some((e) => e.fresh));
+  }
   const nextCard = createNextCard(
     actions.more,
     play,
@@ -181,7 +232,13 @@ async function boot(): Promise<void> {
         return i18n.t('next.rebirth');
       },
     },
-    () => upgradesWindow.open(),
+    () => {
+      // An egg goal opens the Eggs tab, everything else the shop upgrades.
+      if (play.nextGoal().kind === 'egg') {
+        nav.mark('eggs');
+        showTab('eggs');
+      } else upgradesWindow.open();
+    },
   );
   /** Game second of the player's last touch (idle news) and the events of the last minute (event news). */
   let lastTouch = 0;
@@ -217,6 +274,7 @@ async function boot(): Promise<void> {
   const renderUi = (): void => {
     dealCard.render();
     actions.render();
+    renderTabs();
     nextCard.render();
     upgradesWindow.render();
     merchantWindow.render();

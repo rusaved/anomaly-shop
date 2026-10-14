@@ -13,11 +13,11 @@ test('M2-13 the Next card: inside the viewport, one goal, a flash and the next o
   const before = await card.locator('b').textContent();
   expect(before?.length).toBeGreaterThan(0);
   await expect(card.locator('[data-next-left]')).toContainText(/\d/);
-  await page.evaluate(() => (window as unknown as { __TEST__: { grant(n: number): void } }).__TEST__.grant(60));
+  await page.evaluate(() => (window as unknown as { __TEST__: { grant(n: number): void } }).__TEST__.grant(150));
   await expect(card).toHaveClass(/flash/);
   await expect(card.locator('b')).not.toHaveText(before ?? '');
   await card.tap();
-  await expect(page.locator('[data-overlay=upgrades]')).toBeVisible();
+  await expect(page.locator('[data-overlay=upgrades], [data-sheet=eggs]').first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 

@@ -77,6 +77,8 @@ export interface SaveData {
   /** «Chats» (M3-08): buyers' messages, newest last; and seconds until a buyer writes about each creature on sale. */
   chats: Chat[];
   chatIn: Record<string, number>;
+  /** The market (M3-09): the lots and game seconds until the sellers bring new ones. */
+  market: { lots: Lot[]; refreshIn: number };
 }
 
 export interface Order {
@@ -107,6 +109,21 @@ export interface Chat {
   state: 'open' | 'sold' | 'gone';
   unread: boolean;
   lines: ChatLine[];
+}
+
+/** A lot on the market (M3-09): a creature from a seller-character; price in coins; sold lots stay greyed until the refresh. */
+export interface Lot {
+  id: number;
+  species: string;
+  level: number;
+  price: number;
+  person: number;
+  character: string;
+  hobby: string;
+  sold: boolean;
+  /** Seller chat (M3-10): the discount for a shared hobby was given; the bargain was tried. */
+  hobbyDone: boolean;
+  bargained: boolean;
 }
 
 export function emptyIncubator(): Incubator {
@@ -140,6 +157,7 @@ export function newSave(now: number): SaveData {
     freeIn: {},
     chats: [],
     chatIn: {},
+    market: { lots: [], refreshIn: 0 },
   };
 }
 
@@ -219,7 +237,28 @@ export function normalize(raw: unknown, now: number): SaveData {
     freeIn: Object.fromEntries(Object.entries(numberMap(r.freeIn)).map(([k, n]) => [k, Math.max(0, n)])),
     chats: arr(r.chats).map(normalizeChat).filter((c): c is Chat => c !== null),
     chatIn: numberMap(r.chatIn),
+    market: normalizeMarket(r.market),
   };
+}
+
+function normalizeMarket(v: unknown): { lots: Lot[]; refreshIn: number } {
+  const o = rec(v);
+  const lots = arr(o.lots)
+    .map((x) => rec(x))
+    .filter((x) => typeof x.species === 'string' && typeof x.character === 'string')
+    .map((x) => ({
+      id: Math.floor(num(x.id, 0)),
+      species: x.species as string,
+      level: Math.max(1, Math.floor(num(x.level, 1))),
+      price: Math.max(1, num(x.price, 1)),
+      person: Math.floor(num(x.person, 0)),
+      character: x.character as string,
+      hobby: str(x.hobby, ''),
+      sold: bool(x.sold, false),
+      hobbyDone: bool(x.hobbyDone, false),
+      bargained: bool(x.bargained, false),
+    }));
+  return { lots, refreshIn: Math.max(0, num(o.refreshIn, 0)) };
 }
 
 function normalizeChat(v: unknown): Chat | null {

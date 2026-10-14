@@ -10,7 +10,8 @@ describe('balance model', () => {
     for (const bot of BOTS) expect(text).toContain(bot.name);
     expect(report.lines.some((l) => l.includes('F9') && l.includes('M4'))).toBe(true);
     expect(report.ok).toBe(report.failures.length === 0);
-  });
+    // The long runs (three days with nights away) take most of it.
+  }, 60_000);
 
   it('the checks are the ones of docs/01a: 40 s, 2 min, 3 min, 5 min; ×1.5; 30–60 min; day 2–3; 10 and 40 min', () => {
     expect(CHECKS.map((c) => [c.id, c.limitSec])).toEqual([['F1', 40], ['F2', 120], ['F3', 180], ['F4', 300]]);

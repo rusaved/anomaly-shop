@@ -212,5 +212,13 @@
   "chats.counter": "Встречная цена {n}",
   "chats.sold": "Продано",
   "chats.gone": "Покупатель ушёл",
-  "chats.ask": "Моя цена {n}"
+  "chats.ask": "Моя цена {n}",
+  "market.next": "Новый товар через {t}",
+  "market.now": "Не ждать",
+  "market.below": "Ниже рынка",
+  "market.market": "По рынку",
+  "market.above": "Выше рынка",
+  "market.sold": "Продано",
+  "market.take": "Заберу сейчас за {n}",
+  "market.seller": "Продаёт {who}"
 }

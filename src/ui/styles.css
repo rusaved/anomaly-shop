@@ -1768,3 +1768,45 @@
   flex: 1 1 40%;
   font-size: 15px;
 }
+/* M3-09: the Market */
+.market-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--c-uiMuted);
+}
+.card-lot.sold {
+  opacity: 0.45;
+}
+.verdict {
+  font-size: 11px;
+  font-weight: 700;
+}
+.v-below {
+  color: var(--c-uiGood);
+}
+.v-market {
+  color: var(--c-uiMuted);
+}
+.v-above {
+  color: var(--c-uiAccent);
+}
+.lot-bar {
+  position: relative;
+  width: 70%;
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: var(--c-uiPanel);
+}
+.lot-bar i {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 10px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--c-uiText);
+}

@@ -212,5 +212,13 @@
   "chats.counter": "Counter {n}",
   "chats.sold": "Sold",
   "chats.gone": "The buyer left",
-  "chats.ask": "My price {n}"
+  "chats.ask": "My price {n}",
+  "market.next": "New goods in {t}",
+  "market.now": "Don't wait",
+  "market.below": "Below market",
+  "market.market": "At market",
+  "market.above": "Above market",
+  "market.sold": "Sold",
+  "market.take": "Take it now for {n}",
+  "market.seller": "Sold by {who}"
 }

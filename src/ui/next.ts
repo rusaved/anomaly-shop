@@ -29,7 +29,7 @@ export function createNextCard(parent: HTMLElement, game: Game, look: NextLookup
   root.className = 'next';
   root.dataset.action = 'next';
   root.innerHTML =
-    '<span class="next-icon" aria-hidden="true"></span><span class="next-text"><small><span data-next-label></span> · <span class="next-left" data-next-left></span></small><b data-next-name></b></span>' +
+    '<span class="next-icon" aria-hidden="true"></span><span class="next-text"><small><span data-next-label></span><span class="next-sep"> · </span><span class="next-left" data-next-left></span></small><b data-next-name></b></span>' +
     '<span class="next-bar" aria-hidden="true"><span data-next-bar></span></span>';
   parent.appendChild(root);
   const label = root.querySelector('[data-next-label]') as HTMLElement;

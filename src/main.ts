@@ -23,11 +23,12 @@ import { createCoinFlight } from './ui/coin-flight.ts';
 import { createUpgradesWindow } from './ui/upgrades.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
+import { createNewsTicker } from './ui/news.ts';
 import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
 import { ftueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
-import { audio, customers, dictionaries, eggs, feel, ftue, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, customers, dictionaries, eggs, feel, ftue, news, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -158,6 +159,30 @@ async function boot(): Promise<void> {
     },
     () => upgradesWindow.open(),
   );
+  /** Game second of the player's last touch (idle news) and the events of the last minute (event news). */
+  let lastTouch = 0;
+  const recentEvents: Array<{ id: string; at: number }> = [];
+  document.addEventListener('pointerdown', () => (lastTouch = runtime.elapsed()), { capture: true });
+  const newsTicker = createNewsTicker(
+    panel.root.querySelector('[data-panel="title"]') as HTMLElement,
+    news,
+    () => {
+      const st = store.state;
+      const now = runtime.elapsed();
+      while (recentEvents.length && now - (recentEvents[0]?.at ?? 0) > 60) recentEvents.shift();
+      return {
+        deals: st.stats.deals,
+        coins: st.coins,
+        species: [...new Set(st.creatures.map((c) => c.species))],
+        upgrades: Object.keys(st.upgrades).filter((id) => (st.upgrades[id] ?? 0) > 0),
+        districts: play.districts(),
+        hour: new Date().getHours(),
+        idleSec: now - lastTouch,
+        events: recentEvents.map((e) => e.id),
+      };
+    },
+    () => i18n.lang(),
+  );
   const toasts = createToasts(uiRoot);
   const renderUi = (): void => {
     dealCard.render();
@@ -257,6 +282,7 @@ async function boot(): Promise<void> {
     panel.setTitle(__GAME__.title[next]);
     i18n.apply(uiRoot);
     shop.relabel();
+    newsTicker.refresh();
     store.state.settings.lang = next;
     store.commit({ flush: true });
   });
@@ -299,6 +325,7 @@ async function boot(): Promise<void> {
     const view = play.view();
     shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, view);
     hints.update(controllable ? ftueHint(store.state, view) : null);
+    newsTicker.tick(runtime.pause.isPaused() ? 0 : ticker.deltaMS / 1000, controllable && Boolean(store.state.flags.ftue_done));
     funnel.tick(runtime.elapsed());
   });
   scene.app.ticker.addOnce(() => {

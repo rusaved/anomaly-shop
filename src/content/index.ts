@@ -12,9 +12,10 @@ import styleJson from '@content/style.json';
 import ftueJson from '@content/ftue.json';
 import feelJson from '@content/feel.json';
 import audioJson from '@content/audio.json';
+import newsJson from '@content/news.json';
 import ruJson from '@content/i18n/ru.json';
 import enJson from '@content/i18n/en.json';
-import { AudioFile, CalendarFile, CustomersFile, EggsFile, FeelFile, FtueFile, I18nFile, SpeciesFile, StyleFile, UpgradesFile, type LangName } from './schemas.ts';
+import { AudioFile, CalendarFile, CustomersFile, EggsFile, FeelFile, FtueFile, I18nFile, NewsFile, SpeciesFile, StyleFile, UpgradesFile, type LangName } from './schemas.ts';
 
 export const eggs = v.parse(EggsFile, eggsJson);
 export const species = v.parse(SpeciesFile, speciesJson);
@@ -26,6 +27,7 @@ export const ftue = v.parse(FtueFile, ftueJson);
 /** Mutable on purpose: the ?debug=1 sliders tune it live (CLAUDE.md, «Как работать» p. 5). */
 export const feel = v.parse(FeelFile, feelJson);
 export const audio = v.parse(AudioFile, audioJson);
+export const news = v.parse(NewsFile, newsJson);
 
 function dictionary(json: Record<string, unknown>): Record<string, string> {
   const { $schema: _s, note: _n, ...rest } = json;

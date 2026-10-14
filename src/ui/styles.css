@@ -990,3 +990,75 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* M2-14: «Zone news» ticker in the title row */
+.news {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 18px;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--c-uiMuted);
+}
+.news[hidden],
+.panel-title[hidden] {
+  display: none;
+}
+.news-tag {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c-uiGood);
+  box-shadow: 0 0 0 3px rgba(125, 220, 138, 0.25);
+  animation: news-dot 1.6s ease-in-out infinite;
+}
+.news-window {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.news-text {
+  display: inline-block;
+  font-weight: 700;
+}
+.news-in {
+  animation: news-in 0.4s ease-out;
+}
+.news-scroll {
+  animation: news-scroll var(--news-scroll-sec, 6s) linear 1s 1 forwards;
+}
+@keyframes news-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes news-scroll {
+  to {
+    transform: translateX(var(--news-shift, 0));
+  }
+}
+@keyframes news-dot {
+  50% {
+    opacity: 0.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .news-in,
+  .news-scroll,
+  .news-tag {
+    animation: none;
+  }
+}
+.panel-short .news {
+  display: none;
+}
+/* A narrow «Next» card (landscape phones) keeps «N more coins» and drops the «Next ·» label */
+.landscape .next [data-next-label],
+.landscape .next .next-sep {
+  display: none;
+}

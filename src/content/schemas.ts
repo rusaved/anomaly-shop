@@ -179,6 +179,25 @@ export const StyleFile = v.object({
   eggs: v.record(Id, v.object({ shell: Color, spots: Color })),
 });
 
+/** News ticker (docs/01b, section 4.4; M2-14): a line shows when its condition holds. */
+export const NewsWhen = v.variant('type', [
+  v.object({ type: v.literal('always') }),
+  v.object({ type: v.literal('deals'), min: Count }),
+  v.object({ type: v.literal('species'), id: Id }),
+  v.object({ type: v.literal('upgrade'), id: Id }),
+  v.object({ type: v.literal('hours'), from: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(23)), to: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(24)) }),
+  v.object({ type: v.literal('coins'), min: Count }),
+  v.object({ type: v.literal('district'), id: Id }),
+  v.object({ type: v.literal('idle'), sec: Count }),
+  v.object({ type: v.literal('event'), id: Id }),
+]);
+export const NewsFile = v.object({
+  everySec: v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(v.number(), v.minValue(1)) }),
+  noRepeat: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  specificWeight: v.pipe(v.number(), v.minValue(1)),
+  lines: v.pipe(v.array(v.object({ when: NewsWhen, ru: NonEmpty, en: NonEmpty })), v.minLength(1)),
+});
+
 export const I18nFile = v.record(v.string(), NonEmpty);
 
 const Profile = v.object({
@@ -227,6 +246,8 @@ export type StyleData = v.InferOutput<typeof StyleFile>;
 export type CreatureLookData = v.InferOutput<typeof CreatureLook>;
 export type CreatureShape = (typeof CREATURE_SHAPES)[number];
 export type I18nData = v.InferOutput<typeof I18nFile>;
+export type NewsData = v.InferOutput<typeof NewsFile>;
+export type NewsWhenData = v.InferOutput<typeof NewsWhen>;
 export type GameData = v.InferOutput<typeof GameFile>;
 export type RarityName = (typeof RARITIES)[number];
 export type LangName = (typeof LANGS)[number];

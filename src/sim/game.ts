@@ -170,6 +170,8 @@ export interface Game {
   buyUpgrade(id: string): boolean;
   /** The player looked at the shop: «New!» marks go out. */
   seenShop(): void;
+  /** Open district ids (yard first). */
+  districts(): string[];
   /** The nearest goal not reached yet: the one with the largest share done (shop positions, districts, eggs; rebirth when all is bought). */
   nextGoal(): GoalView;
   /** Free showcase places (creatures and eggs both take one). */
@@ -775,6 +777,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       emit({ type: 'upgradeBought', id, level: view.level + 1, price: view.price });
       emit({ type: 'change' });
       return true;
+    },
+    districts() {
+      return openDistricts().map((d) => d.id);
     },
     nextGoal() {
       const st = s();

@@ -12,6 +12,7 @@ import {
   FtueFile,
   GameFile,
   I18nFile,
+  NewsFile,
   RARITIES,
   SpeciesFile,
   StyleFile,
@@ -22,6 +23,7 @@ import {
   type FtueData,
   type GameData,
   type I18nData,
+  type NewsData,
   type SpeciesData,
   type StyleData,
   type UpgradesData,
@@ -30,7 +32,11 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json'] as const;
+/** Lines players read in the scene and the panel (news, creature and customer lines): no full stop at the end (docs/01a, section 8). */
+const TRAILING_STOP = /[.。]$/;
+/** Long dashes stay out of player texts (producer's style rule). */
+const LONG_DASH = /—/;
 
 const CYRILLIC = /[\u0400-\u04ff]/;
 const PLACEHOLDER = /\{[a-zA-Z0-9_]+\}/g;
@@ -136,6 +142,24 @@ function checkLooks(style: StyleData, species: SpeciesData, errors: string[]): v
   for (const id of Object.keys(style.creatures)) if (!species.species.some((s) => s.id === id)) errors.push(`style.json: creatures.${id} — unknown species`);
 }
 
+function checkNews(news: NewsData, refs: { species: string[]; upgrades: string[]; districts: string[]; events: string[] | null }, errors: string[]): void {
+  if (news.lines.length < 40) errors.push(`news.json: lines — ${news.lines.length} lines, 40 at least (M2-14)`);
+  if (news.everySec.min > news.everySec.max) errors.push('news.json: everySec — min above max');
+  news.lines.forEach((line, i) => {
+    for (const lang of ['ru', 'en'] as const) {
+      const text = line[lang];
+      if (TRAILING_STOP.test(text)) errors.push(`news.json: lines.${i}.${lang} — no full stop at the end`);
+      if (LONG_DASH.test(text)) errors.push(`news.json: lines.${i}.${lang} — no long dash in player texts`);
+      if (text.length > 70) errors.push(`news.json: lines.${i}.${lang} — ${text.length} characters, 70 at most`);
+    }
+    if (CYRILLIC.test(line.en)) errors.push(`news.json: lines.${i}.en — Cyrillic in the English text`);
+    const w = line.when;
+    const known =
+      w.type === 'species' ? refs.species : w.type === 'upgrade' ? refs.upgrades : w.type === 'district' ? refs.districts : w.type === 'event' ? refs.events : null;
+    if (known && 'id' in w && !known.includes(w.id)) errors.push(`news.json: lines.${i}.when.id — unknown ${w.type} "${w.id}"`);
+  });
+}
+
 function checkFtue(ftue: FtueData, eggs: EggsData | null, dicts: Record<string, I18nData | null>, errors: string[]): void {
   if (eggs && !eggs.eggs.some((e) => e.id === ftue.starterEgg && !e.special)) errors.push(`ftue.json: starterEgg — unknown egg "${ftue.starterEgg}"`);
   // docs/01, section 4 and section 9: first-minute hints are 6 words at most, in every language.
@@ -189,6 +213,7 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   const ftue = parseFile('ftue.json', FtueFile, data(files['ftue.json']), errors);
   parseFile('feel.json', FeelFile, data(files['feel.json']), errors);
   parseFile('audio.json', AudioFile, data(files['audio.json']), errors);
+  const news = parseFile('news.json', NewsFile, data(files['news.json']), errors);
 
   if (eggs) checkEggs(eggs, customers, errors);
   if (species) checkSpecies(species, eggs, errors);
@@ -196,6 +221,10 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   if (upgrades) checkUpgrades(upgrades, eggs, errors);
   if (calendar) checkCalendar(calendar, eggs, errors);
   if (style && species) checkLooks(style, species, errors);
+  if (news && species && upgrades && customers) {
+    const events = (data(files['events.json']) as { events?: Array<{ id?: string }> } | undefined)?.events?.map((e) => String(e.id)) ?? null;
+    checkNews(news, { species: species.species.map((s) => s.id), upgrades: upgrades.upgrades.map((u) => u.id), districts: customers.districts.map((d) => d.id), events }, errors);
+  }
   if (style && customers)
     for (const d of customers.districts) if (!style.customers[d.customer.id]) errors.push(`style.json: customers.${d.customer.id} — no look for this customer type`);
 

@@ -283,6 +283,12 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   labels.addChild(caption);
   let captionKey = '';
   let captionsOn = true;
+  /** UB-10: the caption stays on the counter front — two lines at most, smaller when the counter is low. */
+  let counterH = 0;
+  const fitCaption = (): void => {
+    caption.scale.set(1);
+    if (counterH > 0 && caption.height > counterH * 0.82) caption.scale.set((counterH * 0.82) / caption.height);
+  };
 
   function drawBack(l: ShopLayout): void {
     back.clear();
@@ -370,8 +376,10 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     const size = Math.max(12, Math.min(16, l.unit * 0.42));
     for (const tx of Object.values(texts)) tx.style.fontSize = size;
     caption.style.fontSize = size;
-    caption.style.wordWrapWidth = l.counter.w * 0.72;
-    caption.position.set(l.counter.x + l.counter.w * 0.45, l.counter.y + l.counter.h * 0.58);
+    caption.style.wordWrapWidth = l.counter.w * 0.92;
+    caption.position.set(l.counter.x + l.counter.w / 2, l.counter.y + l.counter.h * 0.58);
+    counterH = l.counter.h;
+    fitCaption();
     texts.showcase.position.set(l.showcase.x + l.showcase.w / 2, l.showcase.y + l.showcase.h + l.outline);
     // The label gives way to the incubators when the wall is short (landscape phones).
     const domeTop = Math.min(...l.incubators.map((i) => i.y - i.r - l.outline));
@@ -872,6 +880,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       if (sign !== captionKey) {
         captionKey = sign;
         caption.text = sign ? t(sign) : '';
+        fitCaption();
       }
       if (view.incubators.length !== incubatorCount || view.slots !== slotCount || view.queueSize !== queueCount) {
         incubatorCount = Math.max(1, view.incubators.length);
@@ -1016,6 +1025,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     lastUpgradeText: () => upgradeText,
     relabel() {
       caption.text = captionKey ? t(captionKey) : '';
+      fitCaption();
       texts.showcase.text = t('shop.showcase');
       texts.queue.text = t('shop.queue');
       invalidate();

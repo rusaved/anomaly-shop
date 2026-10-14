@@ -114,8 +114,13 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
       tab.render();
     });
     const buttons = root.querySelector('.chat-buttons') as HTMLElement;
+    // UB-10: a chat opens on its latest lines (a short landscape phone: the offer is right above the answers).
+    const toLatest = (): void => {
+      sheet.body.scrollTop = sheet.body.scrollHeight;
+    };
     if (c.state !== 'open') {
       buttons.innerHTML = `<p class="card-sub">${look.t(c.state === 'sold' ? 'chats.sold' : 'chats.gone')}</p>`;
+      toLatest();
       return;
     }
     const add = (action: string, label: string, cls: string, fn: () => void): void => {
@@ -131,6 +136,7 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     // UB-06: no counter price in the first deal (customers.json chat.firstCounter) nor with the golden buyer.
     if (game.canCounter(c.id) && cr && cr.ask > c.offer) add('chat-counter', look.t('chats.counter', { n: f.format(cr.ask) }), 'btn-alt', () => game.chatCounter(c.id));
     add('chat-decline', look.t('chats.decline'), 'btn-alt', () => game.chatDecline(c.id));
+    toLatest();
   }
 
   const tab: ChatsTab = {

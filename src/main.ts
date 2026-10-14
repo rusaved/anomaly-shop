@@ -34,9 +34,11 @@ import { createNav, type TabId } from './ui/nav.ts';
 import { createSheet, type Sheet } from './ui/sheet.ts';
 import { createInventoryTab } from './ui/inventory.ts';
 import { createEggsTab } from './ui/eggs.ts';
+import { createHatchShow } from './ui/hatch.ts';
+import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
-import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, lines, news, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, lines, market, news, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -104,7 +106,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -216,6 +218,18 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     districtName: (id) => customers.districts.find((d) => d.id === id)?.name[i18n.lang()] ?? id,
     careShell: eggs.care.shell,
+  });
+  const hatchShow = createHatchShow(uiRoot, play, {
+    t: i18n.t,
+    lang: i18n.lang,
+    odds: (id) => {
+      const egg = eggs.eggs.find((e) => e.id === id);
+      return egg ? eggOdds(egg.chances, species) : [];
+    },
+    portrait: (id, r) => portraits.creature(id, r),
+    rarityColor: (r) => rarityColor(styleData.rarity, r),
+    speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
+    spinSec: () => feel.hatchShowSec,
   });
   // Timers on the egg screen (free egg, hatching) tick each second while it is open.
   window.setInterval(() => {
@@ -382,8 +396,12 @@ async function boot(): Promise<void> {
     } else if (e.type === 'eggFed') sfx.play('buy');
     else if (e.type === 'hatched') {
       sfx.play(e.rarity === 'common' ? 'hatch' : 'rare');
-      const name = speciesById(e.species)?.name[i18n.lang()] ?? e.species;
-      if (e.rarity !== 'common') toasts.show(`${i18n.t(`rarity.${e.rarity}`)}: ${name}`, 'rare', 2200);
+      // The player opened it: the hatch show (M3-05); by itself (helpers, time away) — a toast for the rare ones.
+      if (e.by === 'tap') hatchShow.play(e);
+      else if (e.rarity !== 'common') toasts.show(`${i18n.t(`rarity.${e.rarity}`)}: ${speciesById(e.species)?.name[i18n.lang()] ?? e.species}`, 'rare', 2200);
+    } else if (e.type === 'soldNow') {
+      sfx.play('coin');
+      hud.pulse();
     }
   });
   const pauseWindow = createPauseWindow(uiRoot, runtime.pause, links, () => settingsWindow.open());
@@ -445,6 +463,12 @@ async function boot(): Promise<void> {
         ftue: ftueHint(store.state, play.view())?.step ?? null,
         rarities: store.state.creatures.map((c) => speciesById(c.species)?.rarity ?? ''),
         event: play.view().event?.kind ?? null,
+        tab: nav.active(),
+        hatchTiming: hatchShow.timing(),
+        newest: (() => {
+          const c = play.view().creatures.at(-1);
+          return c ? { uid: c.uid, species: c.species, low: c.low, high: c.high, name: speciesById(c.species)?.name[i18n.lang()] ?? c.species } : null;
+        })(),
       }),
       anchors: () => shop.anchors(),
       grant: (coins) => {

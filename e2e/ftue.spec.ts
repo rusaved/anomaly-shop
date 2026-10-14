@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { collectErrors, events, mockViolations, open, state } from './helpers.ts';
+import { closeHatch, collectErrors, events, mockViolations, open, state } from './helpers.ts';
 
 /**
  * M1-09: the first minute (docs/01, section 4) on the phone projects, played by taps on what is visible:
@@ -34,6 +34,7 @@ test('M1-09 first minute: hints up to 6 words lead from the starter egg to a rar
   await expect(page.locator('.hint [data-hint-text]')).toBeVisible();
   const deadline = Date.now() + 90_000;
   while (Date.now() < deadline) {
+    if (await closeHatch(page)) continue;
     const s = await note();
     if (!s.ftue) break;
     const t = await targets(page);

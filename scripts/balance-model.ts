@@ -2,7 +2,7 @@
 // many seeds per bot; time checks on the slowest 10% of runs (p90), pace checks on the median. Exit 1 when a check fails.
 //   Short run (10 min, every bot): F1 first deal ≤ 40 s · F2 100 coins earned ≤ 2 min · F3 first upgrade ≤ 3 min · F4 first rare ≤ 5 min
 //     · F5 income per minute at 8–10 min ≥ 1.5 × at 1–3 min · F10 no stall (a deal every minute after the first) without ads
-//     · F11 (M2-12) in minutes 3–10 a shop goal within 2 minutes of current income at every check
+//     · F11 (M2-12) in minutes 3–10 a shop goal (an upgrade or, from M3, a new egg) within 2 minutes of current income at every check
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
 //     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
 //   Keeper (feeds every creature to the top before selling): F12 earns at most ×2 of the casual player in 10 min and
@@ -170,6 +170,8 @@ function freshGame(content: GameContent, seed: number): Game {
 /** Is there a shop goal the player reaches within `minutes` of the current income (docs/01b, section 5.1, F11)? */
 function goalWithin(game: Game, perMin: number, minutes: number): boolean {
   const reach = game.state.coins + perMin * minutes;
+  // From M3 a new egg of the ladder (opened, not bought yet) is a goal too: eggs are the main coin sink of the genre standard.
+  if (game.eggList().some((e) => e.fresh && e.check.price <= reach)) return true;
   return game.upgradeList().some((u) => !u.maxed && u.price <= (game.content.upgrades.upgrades.find((x) => x.id === u.id)?.currency === 'crystals' ? game.state.crystals : reach));
 }
 

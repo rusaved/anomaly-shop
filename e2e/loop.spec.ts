@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { collectErrors, mockViolations, open, state } from './helpers.ts';
+import { closeHatch, collectErrors, mockViolations, open, state } from './helpers.ts';
 
 /** M1 loop on the desktop project: F5 after a deal (SAV), an upgrade survives a reload (M1-08), English texts in the panel. */
 type S = Awaited<ReturnType<typeof state>> & { ftue: string | null; stats: { deals: number }; upgrades: Record<string, number>; incubators: unknown[] };
@@ -9,6 +9,7 @@ const targets = (page: Page) =>
 
 async function playToFirstDeal(page: Page): Promise<void> {
   for (let i = 0; i < 300; i++) {
+    if (await closeHatch(page)) continue;
     const s = await st(page);
     if (s.stats.deals >= 1) return;
     const t = await targets(page);

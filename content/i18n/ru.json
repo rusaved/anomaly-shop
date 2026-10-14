@@ -181,5 +181,12 @@
   "eggs.feed": "Покормить",
   "eggs.fed": "Сыто",
   "eggs.stored": "{n} в «Мои яйца»",
-  "eggs.freeTaken": "Подарочное яйцо твоё!"
+  "eggs.freeTaken": "Подарочное яйцо твоё!",
+  "hatch.title": "Вылупляется…",
+  "hatch.done": "Вылупился!",
+  "hatch.range": "Цена",
+  "hatch.keep": "Оставить",
+  "hatch.sell": "Продать сразу",
+  "hatch.sellFor": "Продать сразу за {n}",
+  "hatch.toShop": "В лавку"
 }

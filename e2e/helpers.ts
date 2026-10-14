@@ -105,3 +105,13 @@ export async function seedSave(page: Page, patch: Record<string, unknown> = {}):
     sessionStorage.setItem('e2e-seeded', '1');
   }, JSON.stringify(save));
 }
+
+/** M3-05: a tapped egg plays the hatch show; flows that go on playing skip it and keep the creature in the shop. */
+export async function closeHatch(page: Page): Promise<boolean> {
+  const overlay = page.locator('[data-overlay=hatch]');
+  if (!(await overlay.isVisible())) return false;
+  const toShop = overlay.locator('[data-action=hatch-shop]');
+  if (!(await toShop.isVisible())) await overlay.locator('[data-action=hatch-skip]').click();
+  await toShop.click();
+  return true;
+}

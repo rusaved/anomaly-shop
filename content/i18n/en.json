@@ -181,5 +181,12 @@
   "eggs.feed": "Feed",
   "eggs.fed": "Well fed",
   "eggs.stored": "{n} to My eggs",
-  "eggs.freeTaken": "The gift egg is yours!"
+  "eggs.freeTaken": "The gift egg is yours!",
+  "hatch.title": "Hatching…",
+  "hatch.done": "Hatched!",
+  "hatch.range": "Price",
+  "hatch.keep": "Keep",
+  "hatch.sell": "Sell now",
+  "hatch.sellFor": "Sell now for {n}",
+  "hatch.toShop": "To the shop"
 }

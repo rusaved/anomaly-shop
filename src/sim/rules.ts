@@ -66,6 +66,11 @@ export function eggOdds(chances: EggData['chances'], data: SpeciesData): Array<{
   return out;
 }
 
+/** The price range of a creature (M3-05): low — «sell now» at once, high — the top of «above the market». */
+export function priceRange(appraisal: number, range: { low: number; high: number }): { low: number; high: number } {
+  return { low: Math.max(1, coins(appraisal * range.low)), high: Math.max(1, coins(appraisal * range.high)) };
+}
+
 export function pickRarity(chances: EggData['chances'], roll: number): RarityName {
   const total = RARITIES.reduce((s, r) => s + chances[r], 0);
   let x = roll * total;

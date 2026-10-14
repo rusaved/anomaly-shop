@@ -56,7 +56,7 @@ export const Care = v.object({
   warm: v.object({ tapsPerStep: Count, steps: Count, bonus: Share }),
   feed: v.object({ steps: Count, bonus: Share, priceShare: Share }),
   /** Ripening: a ready egg left afterSec gives its bonus; after selfSec it hatches by itself (an idle shop keeps going). */
-  ripe: v.object({ afterSec: Money, bonus: Share, selfSec: v.pipe(v.number(), v.minValue(1)) }),
+  ripe: v.object({ afterSec: Money, bonus: Share, selfSec: v.pipe(v.number(), v.minValue(1)), helperIdleSec: Money }),
   maxBonus: Share,
   shell: v.pipe(v.array(Color), v.minLength(2)),
 });
@@ -176,6 +176,8 @@ export const FeelFile = v.object({
   coinsPerSale: Positive,
   coinFlySec: v.pipe(v.number(), v.minValue(0.1)),
   hudRollSec: Positive,
+  /** The hatch show (M3-05): seconds the portraits run before the result, 4–5. */
+  hatchShowSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(8)),
 });
 
 export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail'] as const;
@@ -236,6 +238,8 @@ export const MarketFile = v.object({
   hobbyDiscount: v.object({ min: Share, max: Share }),
   /** The lowest «Discount? I'll take it for…» on the slider, as a share of the asking price. */
   bargainFloor: Share,
+  /** A creature's price range as shares of its appraisal: low — «sell now», high — «above the market». */
+  range: v.object({ low: Share, high: v.pipe(v.number(), v.minValue(1)) }),
 });
 /** Gifts (docs/01 §3 p. 15): an egg for following a community (once each), for a review, and seven days of growing rewards. */
 export const GiftsFile = v.object({

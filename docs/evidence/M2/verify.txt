@@ -1,7 +1,7 @@
 verify (milestone): 13 stages, full log /home/user/anomaly-shop/docs/evidence/M2/verify.txt
 
 == verify: typecheck
-ok   typecheck 1.3 s
+ok   typecheck 2.4 s
 
 == verify: test
 
@@ -9,14 +9,14 @@ ok   typecheck 1.3 s
 
 
  Test Files  36 passed (36)
-      Tests  188 passed (188)
-   Start at  00:33:26
-   Duration  10.93s (tests 84%, transform 9%, import 6%, worker 1%)
+      Tests  189 passed (189)
+   Start at  01:16:42
+   Duration  17.57s (tests 89%, transform 6%, import 4%, worker 1%)
 
-    Isolate  36 workers spawned · ~155ms startup each (spawn + environment, per file)
-             at least ~1.70s faster with isolate: false — reuses workers across files instead of one per file
+    Isolate  36 workers spawned · ~145ms startup each (spawn + environment, per file)
+             at least ~1.59s faster with isolate: false — reuses workers across files instead of one per file
 
-ok   test 11.6 s
+ok   test 18.3 s
 
 == verify: validate:content
 validate:content: game.json and 15 content files — ok
@@ -24,17 +24,18 @@ ok   validate:content 0.3 s
 
 == verify: sim:balance
 sim:balance — 4 bots × 24 seeds × 10 min; p50 / p90 of game seconds (limit in brackets)
-casual  F1 8/8 (40) ok · F2 20/26 (120) ok · F3 15/15 (180) ok · F4 12/12 (300) ok · F5 ×2.8 ok · F10 ok · F11 0/24 ok · 5 min: 59 deals, 2359 coins; 10 min: 8032 coins (p50)
-rusher  F1 10/10 (40) ok · F2 26/38 (120) ok · F3 15/15 (180) ok · F4 14/14 (300) ok · F5 ×2.0 ok · F10 ok · F11 0/24 ok · 5 min: 58 deals, 1824 coins; 10 min: 4638 coins (p50)
-tapper  F1 7/7 (40) ok · F2 13/25 (120) ok · F3 13/25 (180) ok · F4 10/10 (300) ok · F5 ×3.4 ok · F10 ok · F11 0/24 ok · 5 min: 52 deals, 7108 coins; 10 min: 22689 coins (p50)
-slow    F1 16/16 (40) ok · F2 40/43 (120) ok · F3 28/28 (180) ok · F4 23/23 (300) ok · F5 ×3.5 ok · F10 ok · F11 0/24 ok · 5 min: 52 deals, 1455 coins; 10 min: 5555 coins (p50)
+casual  F1 8/8 (40) ok · F2 20/26 (120) ok · F3 15/15 (180) ok · F4 12/12 (300) ok · F5 ×2.3 ok · F10 ok · F11 0/24 ok · 5 min: 59 deals, 2192 coins; 10 min: 7056 coins (p50)
+rusher  F1 10/10 (40) ok · F2 26/38 (120) ok · F3 15/15 (180) ok · F4 14/14 (300) ok · F5 ×1.9 ok · F10 ok · F11 0/24 ok · 5 min: 58 deals, 1784 coins; 10 min: 4521 coins (p50)
+tapper  F1 7/7 (40) ok · F2 13/25 (120) ok · F3 13/25 (180) ok · F4 10/10 (300) ok · F5 ×4.0 ok · F10 ok · F11 2/24 ok · 5 min: 49 deals, 3683 coins; 10 min: 13413 coins (p50)
+slow    F1 16/16 (40) ok · F2 40/43 (120) ok · F3 28/28 (180) ok · F4 23/23 (300) ok · F5 ×3.1 ok · F10 ok · F11 1/24 ok · 5 min: 52 deals, 1381 coins; 10 min: 5140 coins (p50)
 long run — casual and slow × 8 seeds: 3 days of 30 active minutes + 8 h away
-casual  F6 8 h away = 39 min of play (30–60) ok · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 120 s, square 496 s p90 (600 / 2400) ok
-slow    F6 8 h away = 63 min of play (30–60) info · F7 rebirth threshold on day 2.1 (2–3) ok · F8 street 138 s, square 514 s p90 (600 / 2400) ok
+casual  F6 8 h away = 41 min of play (30–60) ok · F7 rebirth threshold on day 2.1 (2–3) ok · F8 street 120 s, square 499 s p90 (600 / 2400) ok
+slow    F6 8 h away = 48 min of play (30–60) info · F7 rebirth threshold on day 2.4 (2–3) ok · F8 street 137 s, square 514 s p90 (600 / 2400) ok
+keeper  F12 10 min = ×0.41 of casual (≤ ×2) · rebirth threshold on day 1.4 (≥ 1.0) ok
 F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)
-F1–F8, F10, F11: all green
-(28.6 s)
-ok   sim:balance 28.9 s
+F1–F8, F10, F11, F12: all green
+(37.5 s)
+ok   sim:balance 37.8 s
 
 == verify: build:e2e
 vite v8.3.2 building client environment for e2e...
@@ -51,58 +52,58 @@ dist-e2e/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
 dist-e2e/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
 dist-e2e/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
 dist-e2e/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
-dist-e2e/assets/index-D8fvty80.css                         18.38 kB │ gzip:   4.30 kB
-dist-e2e/assets/webworkerAll-BnAwRcLW.js                    0.05 kB │ gzip:   0.06 kB
+dist-e2e/assets/index-BUbpsnHx.css                         19.11 kB │ gzip:   4.45 kB
+dist-e2e/assets/webworkerAll-BqdNMmgz.js                    0.05 kB │ gzip:   0.06 kB
 dist-e2e/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
-dist-e2e/assets/test-api-CgEBZFVi.js                        1.10 kB │ gzip:   0.55 kB
+dist-e2e/assets/test-api-DpVE2aO0.js                        1.10 kB │ gzip:   0.55 kB
 dist-e2e/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
 dist-e2e/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
 dist-e2e/assets/yandex-tRMV2YKJ.js                          7.00 kB │ gzip:   2.30 kB
 dist-e2e/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
-dist-e2e/assets/init-qwpDpMTt.js                           15.31 kB │ gzip:   4.79 kB
-dist-e2e/assets/panel-DCudayuT.js                          31.83 kB │ gzip:   8.57 kB
-dist-e2e/assets/browserAll-CD0gcK9A.js                     42.64 kB │ gzip:  11.19 kB
+dist-e2e/assets/init-5lUbag-B.js                           15.31 kB │ gzip:   4.79 kB
+dist-e2e/assets/panel-BccFpWbu.js                          31.83 kB │ gzip:   8.57 kB
+dist-e2e/assets/browserAll-BG4pRLlS.js                     42.64 kB │ gzip:  11.19 kB
 dist-e2e/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
 dist-e2e/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
-dist-e2e/assets/index-B11IRBdC.js                         468.73 kB │ gzip: 146.17 kB
+dist-e2e/assets/index-Cm186S8n.js                         469.97 kB │ gzip: 146.62 kB
 
-✓ built in 889ms
-ok   build:e2e 1.4 s
+✓ built in 881ms
+ok   build:e2e 1.6 s
 
 == verify: e2e [e2e: end of milestone only]
 
 Running 27 tests using 2 workers
 
-  ✓   1 [desktop] › e2e/loop.spec.ts:43:1 › M1-08 the upgrade shop: buying the second incubator changes the shop and survives F5 (9.5s)
-  ✓   2 [desktop] › e2e/loop.spec.ts:23:1 › SAV-01 F5 after a deal: coins, the deal count and the creatures come back (22.6s)
-  ✓   3 [desktop] › e2e/loop.spec.ts:63:1 › LOC-03 English: the deal card, the action buttons and the upgrade shop have no Russian text (15.7s)
-  ✓   4 [desktop] › e2e/smoke.spec.ts:9:1 › environment: the game boots on the mock, WebGL renders, the test API answers (3.0s)
-  ✓   5 [desktop] › e2e/smoke.spec.ts:19:1 › SDK-02 ready() once, after the shop is drawn, within 4 s; the loading screen is gone (3.3s)
-  ✓   7 [desktop] › e2e/smoke.spec.ts:43:1 › SDK-03 startup ad: pause before ready, gameplay starts only after the resume (3.9s)
-  ✓   6 [desktop] › e2e/smoke.spec.ts:31:1 › SCR-09 zero console errors, page errors and dialogs through pause, settings and a reload (7.4s)
-  ✓   8 [desktop] › e2e/smoke.spec.ts:56:1 › SDK-04 GameplayAPI stop on pause and start on resume, only on transitions (5.4s)
-  ✓  10 [desktop] › e2e/smoke.spec.ts:83:1 › SAV-05 a corrupted save gives a fresh profile, no crash (2.8s)
-  ✓   9 [desktop] › e2e/smoke.spec.ts:67:1 › SAV-01 coins and a creature survive F5 (debug panel actions) (11.9s)
-  ✓  11 [desktop] › e2e/smoke.spec.ts:97:1 › SDK-05 LOC-03 language from the SDK: en → English UI, uk → Russian (5.2s)
-  ✓  13 [desktop] › e2e/smoke.spec.ts:122:1 › CNT-08 community buttons open the game.json addresses in a new tab, no reward, game paused (5.3s)
-  ✓  12 [desktop] › e2e/smoke.spec.ts:110:1 › LOC-05 manual language choice wins over the platform language and survives F5 (6.8s)
-  ✓  15 [desktop] › e2e/smoke.spec.ts:150:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU (4.7s)
-  ✓  14 [desktop] › e2e/smoke.spec.ts:140:1 › SCR-01 1280×720: HUD, panel, side buttons, pause and settings windows fit the screen (5.3s)
-  ✓  17 [phone] › e2e/layout-m2.spec.ts:5:1 › M2-13 the Next card: inside the viewport, one goal, a flash and the next one when reached (3.4s)
-  ✓  18 [phone] › e2e/layout-m2.spec.ts:25:1 › M2-04 away window after two hours with the helpers (2.7s)
-  ✓  19 [phone] › e2e/layout.spec.ts:5:1 › SCR-01 phone: HUD, panel and side buttons inside the viewport, no scroll (2.3s)
-  ✓  16 [phone] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (12.2s)
-  ✓  20 [phone] › e2e/layout.spec.ts:30:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (4.5s)
-  ✓  21 [phone] › e2e/layout.spec.ts:43:1 › SAV-03 rotation keeps the state and the layout follows (3.4s)
-  ✓  23 [phone-landscape] › e2e/layout-m2.spec.ts:5:1 › M2-13 the Next card: inside the viewport, one goal, a flash and the next one when reached (3.7s)
-  ✓  24 [phone-landscape] › e2e/layout-m2.spec.ts:25:1 › M2-04 away window after two hours with the helpers (3.1s)
-  ✓  22 [phone-landscape] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (11.8s)
-  ✓  25 [phone-landscape] › e2e/layout.spec.ts:5:1 › SCR-01 phone: HUD, panel and side buttons inside the viewport, no scroll (2.8s)
-  ✓  27 [phone-landscape] › e2e/layout.spec.ts:43:1 › SAV-03 rotation keeps the state and the layout follows (3.6s)
-  ✓  26 [phone-landscape] › e2e/layout.spec.ts:30:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (4.2s)
+  ✓   1 [desktop] › e2e/loop.spec.ts:43:1 › M1-08 the upgrade shop: buying the second incubator changes the shop and survives F5 (13.6s)
+  ✓   2 [desktop] › e2e/loop.spec.ts:23:1 › SAV-01 F5 after a deal: coins, the deal count and the creatures come back (26.1s)
+  ✓   3 [desktop] › e2e/loop.spec.ts:63:1 › LOC-03 English: the deal card, the action buttons and the upgrade shop have no Russian text (15.6s)
+  ✓   4 [desktop] › e2e/smoke.spec.ts:9:1 › environment: the game boots on the mock, WebGL renders, the test API answers (3.1s)
+  ✓   6 [desktop] › e2e/smoke.spec.ts:19:1 › SDK-02 ready() once, after the shop is drawn, within 4 s; the loading screen is gone (3.4s)
+  ✓   5 [desktop] › e2e/smoke.spec.ts:31:1 › SCR-09 zero console errors, page errors and dialogs through pause, settings and a reload (7.5s)
+  ✓   7 [desktop] › e2e/smoke.spec.ts:43:1 › SDK-03 startup ad: pause before ready, gameplay starts only after the resume (4.3s)
+  ✓   8 [desktop] › e2e/smoke.spec.ts:56:1 › SDK-04 GameplayAPI stop on pause and start on resume, only on transitions (4.6s)
+  ✓  10 [desktop] › e2e/smoke.spec.ts:83:1 › SAV-05 a corrupted save gives a fresh profile, no crash (3.0s)
+  ✓   9 [desktop] › e2e/smoke.spec.ts:67:1 › SAV-01 coins and a creature survive F5 (debug panel actions) (11.6s)
+  ✓  11 [desktop] › e2e/smoke.spec.ts:97:1 › SDK-05 LOC-03 language from the SDK: en → English UI, uk → Russian (6.2s)
+  ✓  13 [desktop] › e2e/smoke.spec.ts:122:1 › CNT-08 community buttons open the game.json addresses in a new tab, no reward, game paused (5.5s)
+  ✓  12 [desktop] › e2e/smoke.spec.ts:110:1 › LOC-05 manual language choice wins over the platform language and survives F5 (7.7s)
+  ✓  14 [desktop] › e2e/smoke.spec.ts:140:1 › SCR-01 1280×720: HUD, panel, side buttons, pause and settings windows fit the screen (4.3s)
+  ✓  15 [desktop] › e2e/smoke.spec.ts:150:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU (5.2s)
+  ✓  17 [phone] › e2e/layout-m2.spec.ts:5:1 › M2-13 the Next card: inside the viewport, one goal, a flash and the next one when reached (3.7s)
+  ✓  18 [phone] › e2e/layout-m2.spec.ts:25:1 › M2-04 away window after two hours with the helpers (3.0s)
+  ✓  19 [phone] › e2e/layout.spec.ts:5:1 › SCR-01 phone: HUD, panel and side buttons inside the viewport, no scroll (2.5s)
+  ✓  16 [phone] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (11.9s)
+  ✓  20 [phone] › e2e/layout.spec.ts:30:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (5.3s)
+  ✓  21 [phone] › e2e/layout.spec.ts:43:1 › SAV-03 rotation keeps the state and the layout follows (3.7s)
+  ✓  23 [phone-landscape] › e2e/layout-m2.spec.ts:5:1 › M2-13 the Next card: inside the viewport, one goal, a flash and the next one when reached (3.5s)
+  ✓  24 [phone-landscape] › e2e/layout-m2.spec.ts:25:1 › M2-04 away window after two hours with the helpers (3.0s)
+  ✓  25 [phone-landscape] › e2e/layout.spec.ts:5:1 › SCR-01 phone: HUD, panel and side buttons inside the viewport, no scroll (3.1s)
+  ✓  22 [phone-landscape] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (12.3s)
+  ✓  26 [phone-landscape] › e2e/layout.spec.ts:30:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (4.8s)
+  ✓  27 [phone-landscape] › e2e/layout.spec.ts:43:1 › SAV-03 rotation keeps the state and the layout follows (3.5s)
 
-  27 passed (1.5m)
-ok   e2e [e2e: end of milestone only] 92.1 s
+  27 passed (1.8m)
+ok   e2e [e2e: end of milestone only] 110.8 s
 
 == verify: build
 vite v8.3.2 building client environment for production...
@@ -119,32 +120,32 @@ dist/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
 dist/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
 dist/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
 dist/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
-dist/assets/index-D8fvty80.css                         18.38 kB │ gzip:   4.30 kB
-dist/assets/webworkerAll-CkMY7uZY.js                    0.05 kB │ gzip:   0.06 kB
+dist/assets/index-BUbpsnHx.css                         19.11 kB │ gzip:   4.45 kB
+dist/assets/webworkerAll-BeUe749k.js                    0.05 kB │ gzip:   0.06 kB
 dist/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
 dist/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
 dist/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
 dist/assets/yandex-tRMV2YKJ.js                          7.00 kB │ gzip:   2.30 kB
 dist/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
-dist/assets/init-DLWB5JaG.js                           15.31 kB │ gzip:   4.79 kB
-dist/assets/browserAll-D0xT9ftS.js                     42.64 kB │ gzip:  11.19 kB
+dist/assets/init-DXp3QhqJ.js                           15.31 kB │ gzip:   4.80 kB
+dist/assets/browserAll-DtDxTMnP.js                     42.64 kB │ gzip:  11.19 kB
 dist/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
 dist/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
-dist/assets/index-CuliqrGE.js                         467.76 kB │ gzip: 145.81 kB
+dist/assets/index-Bf6YlE6_.js                         468.98 kB │ gzip: 146.22 kB
 
-✓ built in 753ms
-ok   build 1.2 s
+✓ built in 822ms
+ok   build 1.3 s
 
 == verify: size
 size: dist
-  assets/browserAll-D0xT9ftS.js                       41.6 KB gzip 10.8 KB
+  assets/browserAll-DtDxTMnP.js                       41.6 KB gzip 10.8 KB
   assets/BufferResource-7657QUKQ.js                   10.8 KB gzip 2.7 KB
   assets/CanvasPool-BZOfdiYK.js                      107.7 KB gzip 32.5 KB
   assets/canvasUtils-_2Xt0X_j.js                       5.9 KB gzip 2.0 KB
   assets/getTextureBatchBindGroup-Bz0KTaOB.js          0.3 KB gzip 0.3 KB
-  assets/index-CuliqrGE.js                           456.8 KB gzip 141.2 KB
-  assets/index-D8fvty80.css                           18.0 KB 
-  assets/init-DLWB5JaG.js                             15.0 KB gzip 4.7 KB
+  assets/index-Bf6YlE6_.js                           458.0 KB gzip 141.6 KB
+  assets/index-BUbpsnHx.css                           18.7 KB 
+  assets/init-DXp3QhqJ.js                             15.0 KB gzip 4.7 KB
   assets/RenderTargetSystem-k-tnMFYl.js               76.2 KB gzip 21.4 KB
   assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2      7.7 KB 
   assets/rubik-cyrillic-400-normal-D5R8xuhl.woff       9.6 KB 
@@ -154,32 +155,32 @@ size: dist
   assets/rubik-latin-400-normal-j0pmKyiQ.woff2        18.5 KB 
   assets/rubik-latin-700-normal-D-tMm-eS.woff2        18.7 KB 
   assets/rubik-latin-700-normal-KHOtubUA.woff         23.7 KB 
-  assets/webworkerAll-CkMY7uZY.js                      0.1 KB gzip 0.1 KB
+  assets/webworkerAll-BeUe749k.js                      0.1 KB gzip 0.1 KB
   assets/yandex-tRMV2YKJ.js                            6.8 KB gzip 2.2 KB
   assets/ZzFX-C1HKDoVW.js                              2.0 KB gzip 1.1 KB
   index.html                                           2.1 KB 
-  total 862.2 KB (target 15360.0 KB, limit 30720.0 KB)
-  js 723.2 KB → gzip 218.9 KB (target 400.0 KB, limit 600.0 KB)
+  total 864.1 KB (target 15360.0 KB, limit 30720.0 KB)
+  js 724.4 KB → gzip 219.3 KB (target 400.0 KB, limit 600.0 KB)
 ok   size 0.2 s
 
 == verify: pack
-pack: 21 files, 862.2 KB → release/anomaly-shop-0.1.0.zip 353.2 KB
+pack: 21 files, 864.1 KB → release/anomaly-shop-0.1.0.zip 353.8 KB
 ok   pack 0.3 s
 
 == verify: check-release
 check-release: release/anomaly-shop-0.1.0.zip
-date: 2026-10-14T00:35:41.964Z
+date: 2026-10-14T01:19:32.965Z
 files: 21
   assets/BufferResource-7657QUKQ.js  10.8 KB
   assets/CanvasPool-BZOfdiYK.js  107.7 KB
   assets/RenderTargetSystem-k-tnMFYl.js  76.2 KB
   assets/ZzFX-C1HKDoVW.js  2.0 KB
-  assets/browserAll-D0xT9ftS.js  41.6 KB
+  assets/browserAll-DtDxTMnP.js  41.6 KB
   assets/canvasUtils-_2Xt0X_j.js  5.9 KB
   assets/getTextureBatchBindGroup-Bz0KTaOB.js  0.3 KB
-  assets/index-CuliqrGE.js  456.8 KB
-  assets/index-D8fvty80.css  18.0 KB
-  assets/init-DLWB5JaG.js  15.0 KB
+  assets/index-BUbpsnHx.css  18.7 KB
+  assets/index-Bf6YlE6_.js  458.0 KB
+  assets/init-DXp3QhqJ.js  15.0 KB
   assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2  7.7 KB
   assets/rubik-cyrillic-400-normal-D5R8xuhl.woff  9.6 KB
   assets/rubik-cyrillic-700-normal-C_jxLOfU.woff  9.6 KB
@@ -188,13 +189,13 @@ files: 21
   assets/rubik-latin-400-normal-j0pmKyiQ.woff2  18.5 KB
   assets/rubik-latin-700-normal-D-tMm-eS.woff2  18.7 KB
   assets/rubik-latin-700-normal-KHOtubUA.woff  23.7 KB
-  assets/webworkerAll-CkMY7uZY.js  0.1 KB
+  assets/webworkerAll-BeUe749k.js  0.1 KB
   assets/yandex-tRMV2YKJ.js  6.8 KB
   index.html  2.1 KB
 
 PASS  1. index.html at the root, paths only [A-Za-z0-9._/-]
 PASS  2. unpacked ≤ 30 MB and JS gzip ≤ 600 KB
-        zip 353.2 KB, unpacked 862.2 KB, js gzip 218.9 KB
+        zip 353.8 KB, unpacked 864.1 KB, js gzip 219.3 KB
 PASS  3. no external addresses except /sdk.js and mc.yandex.ru (namespaces allowed)
 PASS  4. <script src="/sdk.js"> exactly once
         found 1
@@ -211,10 +212,10 @@ e2e:release: unpacked /home/user/anomaly-shop/release/anomaly-shop-0.1.0.zip (21
 
 Running 1 test using 1 worker
 
-  ✓  1 e2e/smoke-release.spec.ts:4:1 › BLD-04 release boots on the mock, ready once, no console errors, no debug or test API (1.9s)
+  ✓  1 e2e/smoke-release.spec.ts:4:1 › BLD-04 release boots on the mock, ready once, no console errors, no debug or test API (2.1s)
 
   1 passed (3.3s)
-ok   e2e:release [e2e: end of milestone only] 4.8 s
+ok   e2e:release [e2e: end of milestone only] 4.7 s
 
 == verify: build:youtube
 vite v8.3.2 building client environment for youtube...
@@ -231,25 +232,25 @@ dist-youtube/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
 dist-youtube/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
 dist-youtube/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
 dist-youtube/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
-dist-youtube/assets/index-D8fvty80.css                         18.38 kB │ gzip:   4.30 kB
-dist-youtube/assets/webworkerAll-D6mkfVUI.js                    0.05 kB │ gzip:   0.06 kB
+dist-youtube/assets/index-BUbpsnHx.css                         19.11 kB │ gzip:   4.45 kB
+dist-youtube/assets/webworkerAll-WCx5DwFG.js                    0.05 kB │ gzip:   0.06 kB
 dist-youtube/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
 dist-youtube/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
 dist-youtube/assets/youtube-BQwB8hke.js                         3.85 kB │ gzip:   1.45 kB
 dist-youtube/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
 dist-youtube/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
-dist-youtube/assets/init-CvgN8ZQ1.js                           15.31 kB │ gzip:   4.79 kB
-dist-youtube/assets/browserAll-Brac50hT.js                     42.64 kB │ gzip:  11.19 kB
+dist-youtube/assets/init-_zwCtyNI.js                           15.31 kB │ gzip:   4.79 kB
+dist-youtube/assets/browserAll-XHewAOXy.js                     42.64 kB │ gzip:  11.19 kB
 dist-youtube/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
 dist-youtube/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
-dist-youtube/assets/index-HoyDKtUd.js                         467.14 kB │ gzip: 145.72 kB
+dist-youtube/assets/index-t7hIpCLS.js                         468.36 kB │ gzip: 146.13 kB
 
-✓ built in 791ms
-ok   build:youtube 1.3 s
+✓ built in 831ms
+ok   build:youtube 1.4 s
 
 == verify: check:youtube
 check-bundle-urls: bundle 0.84 MiB, first load 0.84 MiB
 check-bundle-urls (youtube): 21 files, no external addresses — ok
 ok   check:youtube 0.2 s
-verify (milestone): all 13 stages green in 144 s
+verify (milestone): all 13 stages green in 180 s
 EXIT=0

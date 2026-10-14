@@ -1965,3 +1965,54 @@
 .landscape [data-overlay='settings'] .card h2 {
   margin: 0;
 }
+/* M3-17: the upgrade shop is a side panel — the shop stays in view (portrait: above it; landscape and desktop: to the left). */
+.overlay[data-overlay='upgrades'] {
+  inset: auto;
+  padding: 0;
+  background: transparent;
+  z-index: 7;
+  align-items: stretch;
+  animation: panel-in 0.22s ease-out;
+}
+.portrait .overlay[data-overlay='upgrades'] {
+  left: 0;
+  right: 0;
+  top: var(--sheet-top, 30%);
+  bottom: var(--nav-size, 58px);
+}
+.landscape .overlay[data-overlay='upgrades'] {
+  right: 0;
+  top: 0;
+  bottom: var(--nav-size, 58px);
+  width: var(--panel-size);
+}
+.overlay[data-overlay='upgrades'] .card {
+  width: 100%;
+  max-height: none;
+  height: 100%;
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -2px 0 var(--c-outline);
+}
+.landscape .overlay[data-overlay='upgrades'] .card {
+  border-radius: 22px 0 0 22px;
+  box-shadow: -2px 0 0 var(--c-outline);
+}
+@keyframes panel-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+.shop-icon-box {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+.tier-dash {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: -6px;
+  height: 4px;
+  border-radius: 2px;
+}

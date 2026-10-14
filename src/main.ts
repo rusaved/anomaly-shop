@@ -174,7 +174,7 @@ async function boot(): Promise<void> {
     customerColor: (id) => styleData.customers[id]?.body ?? styleData.colors.queueSpot,
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
   });
-  const upgradesWindow = createUpgradesWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, upgrade: (id) => upgrades.upgrades.find((u) => u.id === id) });
+  const upgradesWindow = createUpgradesWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, upgrade: (id) => upgrades.upgrades.find((u) => u.id === id), tierColors: Object.values(styleData.rarity) });
   const actions = createActions(panel.body, play, lang, { t: i18n.t, eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg });
   // The genre-standard frame (docs/01 §6; M3-03): the tab bar, one sheet per tab over the panel; the shop stays in view.
   const portraits = createPortraits(scene.app, styleData);
@@ -571,6 +571,7 @@ async function boot(): Promise<void> {
         rarities: store.state.creatures.map((c) => speciesById(c.species)?.rarity ?? ''),
         event: play.view().event?.kind ?? null,
         tab: nav.active(),
+        upgradeFx: shop.lastUpgradeText(),
         hatchTiming: hatchShow.timing(),
         newest: (() => {
           const c = play.view().creatures.at(-1);

@@ -10,6 +10,8 @@ export interface UpgradeLookups {
   t(key: string, vars?: Record<string, string | number>): string;
   lang(): string;
   upgrade(id: string): UpgradeData | undefined;
+  /** Tier colors grey to red (Q-022, style.json rarity): the dash under an upgrade shows how far it is levelled. */
+  tierColors?: readonly string[];
 }
 
 export interface UpgradesWindow {
@@ -59,7 +61,7 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
       row.className = 'shop-item';
       row.dataset.upgrade = item.id;
       row.innerHTML =
-        `<span class="shop-icon shop-icon-${u.effect.type}" aria-hidden="true"></span>` +
+        `<span class="shop-icon-box"><span class="shop-icon shop-icon-${u.effect.type}" aria-hidden="true"></span><i class="tier-dash" data-tier></i></span>` +
         '<span class="shop-text"><b data-name></b><small data-effect></small><small class="shop-joke" data-joke></small><small data-level></small></span><span class="shop-new" data-new hidden></span>' +
         `<button type="button" class="btn btn-primary btn-buy" data-action="buy-upgrade" data-id="${item.id}"><span class="${u.currency === 'crystals' ? 'gem' : 'coin coin-sm'}" aria-hidden="true"></span><span data-price></span></button>`;
       (row.querySelector('[data-name]') as HTMLElement).textContent = u.name[look.lang() === 'en' ? 'en' : 'ru'];
@@ -99,6 +101,12 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
         // One-off things say «Bought» once bought; levelled ones count levels.
         levelText.textContent = item.levels > 1 ? look.t('upgrades.level', { n: item.level, max: item.levels }) : item.maxed ? look.t('upgrades.bought') : '';
         levelText.hidden = !levelText.textContent;
+        // The tier (M3-17): the share of levels bought, on the grey-to-red scale; a dash, the text stays plain.
+        const colors = look.tierColors ?? [];
+        const tier = item.level <= 0 || !colors.length ? -1 : Math.min(colors.length - 1, Math.floor(((item.level - 1) / Math.max(1, item.levels - 1)) * (colors.length - 1)));
+        const dash = row.querySelector('[data-tier]') as HTMLElement;
+        dash.style.background = tier >= 0 ? (colors[tier] ?? '') : 'transparent';
+        dash.dataset.tier = String(tier);
         const buy = row.querySelector('button') as HTMLButtonElement;
         const price = row.querySelector('[data-price]') as HTMLElement;
         price.textContent = item.maxed ? look.t('upgrades.max') : fmt.format(item.price);

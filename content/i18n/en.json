@@ -258,5 +258,6 @@
   "code.apply": "Apply",
   "code.ok": "Done! The gift is yours",
   "code.used": "This code has already worked",
-  "code.unknown": "No such code, check the letters"
+  "code.unknown": "No such code, check the letters",
+  "fx.upgrade": "Upgrade: level {n}"
 }

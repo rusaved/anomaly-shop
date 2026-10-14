@@ -42,6 +42,8 @@ export interface ShopView {
   /** One ticker tick: animations, then a render request only when something moved. */
   frame(dt: number, view: GameView): void;
   onEvent(e: GameEvent): void;
+  /** The last text that flew up in the scene for a purchase (test API, M3-17). */
+  lastUpgradeText(): string;
   relabel(): void;
   /** Stage coordinates of the tappable pieces (hints, test API); null before the first layout. */
   anchors(): ShopAnchors | null;
@@ -244,6 +246,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
+  let upgradeText = '';
   let hud = 0;
   let current: ShopLayout | null = null;
   let incubatorCount = 1;
@@ -379,6 +382,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     const pillH = size * 1.35;
     const py = r * 1.12;
     node.tag.clear();
+    // Color discipline (Q-022, M3-17): the rarity is a short dash under the creature, above its price tag.
+    node.tag.roundRect(-r * 0.32, py - pillH / 2 - r * 0.2, r * 0.64, Math.max(3, r * 0.09), r * 0.05).fill(rarityColor(style.rarity, cv.rarity));
     node.tag.roundRect(-pillW / 2, py - pillH / 2, pillW, pillH, pillH / 2).fill(picked ? c.uiAccent : decorItems.tags ? c.rarityCommon : c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
     node.tag.circle(-pillW / 2 + size * 0.4 + coinR, py, coinR).fill(c.uiAccent).stroke({ width: Math.max(1, l.outline * 0.4), color: c.outline });
     node.price.position.set(coinR + size * 0.2, py);
@@ -979,9 +984,19 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       } else if (e.type === 'eggBought' || e.type === 'rescueEgg') {
         const spot = current.incubators[e.incubator];
         if (spot) fx.burst(spot.x, spot.y, 8, [c.incubator, c.incubatorGlass, c.uiAccent], spot.r * 3.5, current.outline * 1.2);
+      } else if (e.type === 'upgradeBought') {
+        // M3-17: the shop changed — it shines where the shop is and says so in the scene (the panel stays aside).
+        const area = stageRect ?? current.stage;
+        const x = area.x + area.w / 2;
+        const y = area.y + area.h * 0.42;
+        const size = Math.max(16, current.unit * 1.4);
+        fx.burst(x, y, 18, [c.uiAccent, c.rarityLegendary, c.eyeWhite], current.unit * 6, current.outline * 1.4);
+        upgradeText = t('fx.upgrade', { n: e.level });
+        fx.float(x, y, upgradeText, c.uiAccent, size, current.unit * 1.4);
       }
       invalidate();
     },
+    lastUpgradeText: () => upgradeText,
     relabel() {
       texts.showcase.text = t('shop.showcase');
       texts.queue.text = t('shop.queue');

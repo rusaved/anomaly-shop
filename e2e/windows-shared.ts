@@ -29,6 +29,8 @@ export async function windowsByImportance(page: Page): Promise<void> {
   await page.locator('[data-sheet=market] .card-lot:not(.sold)').first().click();
   await expect(page.locator('[data-overlay=lot]')).toBeVisible();
   const lot = (await page.locator('[data-overlay=lot] .card').boundingBox())!;
+  // The opening tap itself never closes a window (UB-10: 0.4 s guard against the touch ghost click); a player's next tap does.
+  await page.waitForTimeout(450);
   // Outside the card: above it in portrait, left of it in landscape.
   if (vp.width > vp.height) await page.mouse.click(lot.x / 2, lot.y + lot.height / 2);
   else await page.mouse.click(vp.width / 2, Math.max(70, lot.y / 2));
@@ -41,6 +43,7 @@ export async function windowsByImportance(page: Page): Promise<void> {
   await expect(page.locator('[data-overlay=gifts]')).toBeHidden();
   await expect(page.locator('[data-sheet=eggs]')).toBeVisible();
   await page.locator('[data-action=gifts]').click();
+  await page.waitForTimeout(450);
   await page.mouse.click(8, vp.height / 2);
   await expect(page.locator('[data-overlay=gifts]')).toBeHidden();
   // The pause: a tab closes it and the game runs again.

@@ -1,0 +1,38 @@
+verify (milestone): 13 stages, full log /home/user/anomaly-shop/.cache/verify.log
+ok   typecheck 1.2 s
+ok   test 18.4 s
+ok   validate:content 0.3 s
+ok   sim:balance 75.2 s
+ok   build:e2e 1.2 s
+FAIL e2e [e2e: end of milestone only] after 325.3 s (exit 1)
+last 40 lines:
+
+    Call log:
+      - Expect "toBeHidden" locator('[data-overlay=lot]') with timeout 15000ms
+      - waiting for locator('[data-overlay=lot]')
+        34 × locator resolved to <div class="overlay" data-kind="panel" data-overlay="lot">…</div>
+           - unexpected value "visible"
+
+
+       at windows-shared.ts:35
+
+      33 |   if (vp.width > vp.height) await page.mouse.click(lot.x / 2, lot.y + lot.height / 2);
+      34 |   else await page.mouse.click(vp.width / 2, Math.max(70, lot.y / 2));
+    > 35 |   await expect(page.locator('[data-overlay=lot]')).toBeHidden();
+         |                                                    ^
+      36 |   // A popup (a gift) — a tab works from it too, and a tap outside closes it.
+      37 |   await page.locator('[data-action=gifts]').click();
+      38 |   await expect(page.locator('[data-overlay=gifts]')).toBeVisible();
+        at windowsByImportance (/home/user/anomaly-shop/e2e/windows-shared.ts:35:52)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/layout-windows-ub-UB-02-ph-1ecb0-dow-a
+…
+
+  3 failed
+    [desktop] › e2e/windows-ub.spec.ts:4:1 › UB-02 PC: one window at a time, a tab works from any window, a tap outside closes it 
+    [phone] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it 
+    [phone-landscape] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it 
+  76 passed (5.4m)
+
+EXIT=1

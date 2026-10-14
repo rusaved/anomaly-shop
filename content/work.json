@@ -1,0 +1,9 @@
+{
+  "$schema": "work.schema.json",
+  "note": "Подработка из docs/01 §3 п. 15: тап по миске кормит соседских питомцев, +coinsPerTap × incomeGrowth^(уровень−1) монет за тап; «Прокачать» стоит price1 × priceGrowth^(уровень−1) (лесенка ×2,3), уровней levels.",
+  "coinsPerTap": 1,
+  "incomeGrowth": 1.8,
+  "price1": 40,
+  "priceGrowth": 2.3,
+  "levels": 25
+}

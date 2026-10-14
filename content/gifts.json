@@ -1,0 +1,15 @@
+{
+  "$schema": "gifts.schema.json",
+  "note": "Подарки из docs/01 §3 п. 15: яйцо за подписку на сообщество (адреса — game.json community; награда один раз по возвращении в игру; в youtube-профиле карточек нет), яйцо за отзыв (отзыв платформы; в null — мок), календарь 7 дней: счётчик идёт только вперёд, пропуск дня не сбрасывает, после 7-го — по кругу. Награды щедрее стандарта жанра (правило продюсера 14.10).",
+  "subscribe": [{"id": "vk", "reward": {"egg": "egg_warm"}}, {"id": "telegram", "reward": {"egg": "egg_warm"}}],
+  "review": {"reward": {"egg": "egg_gold"}},
+  "daily": [
+    {"day": 1, "reward": {"coins": 50}},
+    {"day": 2, "reward": {"egg": "egg_warm"}},
+    {"day": 3, "reward": {"coins": 300}},
+    {"day": 4, "reward": {"crystals": 3}},
+    {"day": 5, "reward": {"egg": "egg_autumn"}},
+    {"day": 6, "reward": {"coins": 2000}},
+    {"day": 7, "reward": {"egg": "egg_gold"}}
+  ]
+}

@@ -32,7 +32,7 @@ describe('M1-10 warm egg', () => {
     expect(seen.at(-1)).toMatchObject({ type: 'denied', reason: 'locked' });
   });
 
-  it('the 5th deal opens it (event, «new» mark), it costs 60 and hatches in 10 s', () => {
+  it('the 5th deal opens it (event, «new» mark), it costs its price and hatches in 10 s', () => {
     const { game, seen } = setup(4);
     for (let t = 0; t < 6.1; t += STEP_SEC) game.tick(STEP_SEC);
     expect(game.accept()).toBe(true);
@@ -49,9 +49,9 @@ describe('M1-10 warm egg', () => {
     expect(Math.abs(t - warm.hatchSec)).toBeLessThan(3 * STEP_SEC);
   });
 
-  it('odd and glowing eggs wait for their districts (M2-05), the daily egg for M3', () => {
-    expect(setup(19).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm']);
-    expect(setup(500).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm', 'egg_odd', 'egg_glow']);
+  it('odd and glowing eggs wait for their districts (M2-05), the ladder top for deals (M3), the daily egg for M4', () => {
+    expect(setup(19).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm', 'egg_autumn']);
+    expect(setup(500).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm', 'egg_autumn', 'egg_odd', 'egg_glow', 'egg_star']);
   });
 });
 

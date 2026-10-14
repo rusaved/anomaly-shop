@@ -13,11 +13,14 @@ const Share = v.pipe(v.number(), v.minValue(0), v.maxValue(1));
 const Pct = v.pipe(v.number(), v.minValue(0), v.maxValue(100));
 const Range = v.object({ min: Share, max: Share });
 const Color = v.pipe(v.string(), v.regex(/^(#[0-9a-fA-F]{6}|rgba?\([0-9., ]+\))$/, 'color: #rrggbb or rgb()/rgba()'));
-const Reward = v.object({ coins: v.optional(Money), crystals: v.optional(Money) });
+/** A reward: coins, crystals and an egg into «my eggs» (gifts, codes, tasks). */
+const Reward = v.object({ coins: v.optional(Money), crystals: v.optional(Money), egg: v.optional(Id) });
 
-export const RARITIES = ['common', 'rare', 'epic', 'legendary'] as const;
+/** Six rarities from grey to red (Q-022 A): one color scale for creatures, upgrade tiers and the price slider. */
+export const RARITIES = ['common', 'good', 'valuable', 'premium', 'vip', 'exclusive'] as const;
 export const Rarity = v.picklist(RARITIES);
 export const LANGS = ['ru', 'en'] as const;
+export const EGG_SECTIONS = ['ladder', 'free', 'seasonal', 'reward'] as const;
 
 export const Unlock = v.variant('type', [
   v.object({ type: v.literal('start') }),
@@ -33,13 +36,30 @@ export const Egg = v.object({
   name: Text,
   price: v.object({ coins: Money }),
   hatchSec: Money,
-  chances: v.object({ common: Pct, rare: Pct, epic: Pct, legendary: Pct }),
+  chances: v.object(Object.fromEntries(RARITIES.map((r) => [r, Pct])) as Record<(typeof RARITIES)[number], typeof Pct>),
   unlock: Unlock,
   special: v.optional(v.picklist(['daily'])),
+  /** The egg screen section (docs/01 §3 p. 12): the price ladder, free by timer, seasonal, or a reward only (gifts, codes). */
+  section: v.picklist(EGG_SECTIONS),
+  /** Creatures from this egg are worth this many times more (the ×10 price ladder keeps eggs worth their price). */
+  valueMult: v.optional(v.pipe(v.number(), v.minValue(1))),
+  /** A free egg comes back after this many seconds (section free; with M5 also for an ad). */
+  freeEverySec: v.optional(v.pipe(v.number(), v.minValue(1))),
   /** The first egg of this kind gives at least this rarity (a good first impression of a dearer egg). */
   firstRarity: v.optional(Rarity),
 });
-export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, rescueEgg: Id, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
+/**
+ * Egg care in the incubator (docs/01 §3 p. 12, our improvement 1): warmth from taps, food for coins, ripening past ready.
+ * Each part adds a bonus b; b moves that share of every rarity one step up. The shell takes the color of the care level.
+ */
+export const Care = v.object({
+  warm: v.object({ tapsPerStep: Count, steps: Count, bonus: Share }),
+  feed: v.object({ steps: Count, bonus: Share, priceShare: Share }),
+  ripe: v.object({ afterSec: Money, bonus: Share }),
+  maxBonus: Share,
+  shell: v.pipe(v.array(Color), v.minLength(2)),
+});
+export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, rescueEgg: Id, care: Care, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
 
 export const Species = v.object({
   id: Id,
@@ -52,7 +72,7 @@ export const Species = v.object({
 });
 /** Showcase growth (docs/01, section 3.5): a creature gains growthPerMin of its price per minute on the shelf, up to maxBonus. */
 export const Shelf = v.object({ growthPerMin: v.pipe(v.number(), v.minValue(0)), maxBonus: v.pipe(v.number(), v.minValue(0)) });
-const PerRarity = v.object({ common: Money, rare: Money, epic: Money, legendary: Money });
+const PerRarity = v.object(Object.fromEntries(RARITIES.map((r) => [r, Money])) as Record<(typeof RARITIES)[number], typeof Money>);
 export const SpeciesFile = v.object({ tapsPerLevelBase: Count, tapGrowth: v.pipe(v.number(), v.minValue(1)), shelf: Shelf, crystalsPerSale: PerRarity, species: v.pipe(v.array(Species), v.minLength(1)) });
 
 export const Customer = v.object({
@@ -77,9 +97,18 @@ export const People = v.object({
 });
 /** Collector orders (docs/01b, section 5.3; M2-19). */
 export const Orders = v.object({ minutes: v.pipe(v.number(), v.minValue(0.5)), rewardMult: v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(v.number(), v.minValue(1)) }), level: v.object({ min: Count, max: Count }) });
+/**
+ * Characters (docs/01 §3 p. 13): how a person writes in the chats and on the market.
+ * offer — the first offer as a share of the asking price; give — how far below their price (or above their offer) they still agree.
+ */
+export const Character = v.object({ id: Id, name: Text, weight: v.pipe(v.number(), v.minValue(0)), offer: v.object({ min: Money, max: Money }), give: Share });
+/** Hobbies: «How are you?» with a seller who shares it gives a discount (M3-10). */
+export const Hobby = v.object({ id: Id, name: Text, line: Text });
 export const CustomersFile = v.object({
   queueSize: Count,
   people: People,
+  characters: v.pipe(v.array(Character), v.minLength(1)),
+  hobbies: v.pipe(v.array(Hobby), v.minLength(2)),
   orders: Orders,
   spawnEverySec: v.pipe(v.number(), v.minValue(0.1)),
   waitNextSec: Money,
@@ -172,7 +201,6 @@ export const CalendarFile = v.object({
     perDay: Count,
     pool: v.pipe(v.array(v.object({ id: Id, type: v.picklist(['deals', 'hatch', 'feed', 'earn', 'haggle']), count: Count, name: Text, reward: Reward })), v.minLength(1)),
   }),
-  login: v.pipe(v.array(v.object({ day: Count, reward: Reward })), v.minLength(1)),
   events: v.array(v.object({ id: Id, theme: Id, name: Text, from: IsoDate, to: IsoDate, multiplier: v.pipe(v.number(), v.minValue(1)), reward: Reward })),
 });
 
@@ -192,6 +220,35 @@ export const StyleFile = v.object({
   creatures: v.record(Id, CreatureLook),
   customers: v.record(Id, v.object({ body: Color, accent: Color })),
   eggs: v.record(Id, v.object({ shell: Color, spots: Color })),
+  /** Rarity colors from grey to red (Q-022): a dash or a dot under a creature or an upgrade, never a fill or colored text. */
+  rarity: v.object(Object.fromEntries(RARITIES.map((r) => [r, Color])) as Record<(typeof RARITIES)[number], typeof Color>),
+});
+
+/** The market (docs/01 §3 p. 14): lots from sellers, refreshed by a timer; price — a share of the market value. */
+export const MarketFile = v.object({
+  refreshSec: v.object({ min: Money, max: Money }),
+  lots: Count,
+  price: v.object({ min: Money, max: Money }),
+  /** Share of lots priced below the market (a deal to find). */
+  goodShare: Share,
+  level: v.object({ min: Count, max: Count }),
+  hobbyDiscount: v.object({ min: Share, max: Share }),
+  /** The lowest «Discount? I'll take it for…» on the slider, as a share of the asking price. */
+  bargainFloor: Share,
+});
+/** Gifts (docs/01 §3 p. 15): an egg for following a community (once each), for a review, and seven days of growing rewards. */
+export const GiftsFile = v.object({
+  subscribe: v.pipe(v.array(v.object({ id: v.picklist(['vk', 'telegram']), reward: Reward })), v.minLength(1)),
+  review: v.object({ reward: Reward }),
+  daily: v.pipe(v.array(v.object({ day: Count, reward: Reward })), v.length(7)),
+});
+/** Side job (docs/01 §3 p. 15): tapping the bowl feeds the neighbours' pets for coins; the job levels up on a ×growth ladder. */
+export const WorkFile = v.object({
+  coinsPerTap: v.pipe(v.number(), v.minValue(1)),
+  incomeGrowth: v.pipe(v.number(), v.minValue(1)),
+  price1: v.pipe(v.number(), v.minValue(1)),
+  priceGrowth: v.pipe(v.number(), v.minValue(1)),
+  levels: Count,
 });
 
 /** Random events (docs/01b, section 3; M2-15): one at a time, only a plus; the kind picks the behaviour in src/sim/game.ts. */
@@ -295,6 +352,14 @@ export type DistrictData = v.InferOutput<typeof District>;
 export type UpgradesData = v.InferOutput<typeof UpgradesFile>;
 export type UpgradeData = v.InferOutput<typeof Upgrade>;
 export type CalendarData = v.InferOutput<typeof CalendarFile>;
+export type CareData = v.InferOutput<typeof Care>;
+export type EggSection = (typeof EGG_SECTIONS)[number];
+export type CharacterData = v.InferOutput<typeof Character>;
+export type HobbyData = v.InferOutput<typeof Hobby>;
+export type MarketData = v.InferOutput<typeof MarketFile>;
+export type GiftsData = v.InferOutput<typeof GiftsFile>;
+export type WorkData = v.InferOutput<typeof WorkFile>;
+export type RewardData = v.InferOutput<typeof Reward>;
 export type FtueData = v.InferOutput<typeof FtueFile>;
 export type FeelData = v.InferOutput<typeof FeelFile>;
 export type AudioData = v.InferOutput<typeof AudioFile>;

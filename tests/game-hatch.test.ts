@@ -9,7 +9,7 @@ import { loadGameContent } from '../scripts/load-game-content.ts';
 
 /** M1-02: the species comes from the egg's rarity table (docs/01a, section 2); 1 000 hatches within ±3 points. */
 const content = loadGameContent();
-const RUNS = 1000;
+const RUNS = 3000;
 
 function hatchMany(eggId: string, seed: number): Record<string, number> {
   const save = newSave(0);
@@ -41,26 +41,26 @@ describe('M1-02 hatch', () => {
   }
 
   it('pickRarity follows the table edges; a zero chance never comes up', () => {
-    const chances = { common: 85, rare: 13, epic: 2, legendary: 0 };
+    const chances = { common: 85, good: 13, valuable: 2, premium: 0, vip: 0, exclusive: 0 };
     expect(pickRarity(chances, 0)).toBe('common');
     expect(pickRarity(chances, 0.8499)).toBe('common');
-    expect(pickRarity(chances, 0.85)).toBe('rare');
-    expect(pickRarity(chances, 0.9799)).toBe('rare');
-    expect(pickRarity(chances, 0.98)).toBe('epic');
-    expect(pickRarity(chances, 0.999999)).toBe('epic');
+    expect(pickRarity(chances, 0.85)).toBe('good');
+    expect(pickRarity(chances, 0.9799)).toBe('good');
+    expect(pickRarity(chances, 0.98)).toBe('valuable');
+    expect(pickRarity(chances, 0.999999)).toBe('valuable');
     const rng = createRng(5);
-    for (let i = 0; i < 2000; i++) expect(pickRarity(chances, rng.next())).not.toBe('legendary');
+    for (let i = 0; i < 2000; i++) expect(pickRarity(chances, rng.next())).not.toBe('exclusive');
   });
 
   it('pickSpecies gives every species of the rarity a turn and only that rarity', () => {
     const seen = new Set<string>();
     const rng = createRng(9);
     for (let i = 0; i < 200; i++) {
-      const s = pickSpecies(content.species, 'rare', rng.next());
-      expect(s.rarity).toBe('rare');
+      const s = pickSpecies(content.species, 'valuable', rng.next());
+      expect(s.rarity).toBe('valuable');
       seen.add(s.id);
     }
-    expect(seen.size).toBe(content.species.species.filter((s) => s.rarity === 'rare').length);
+    expect(seen.size).toBe(content.species.species.filter((s) => s.rarity === 'valuable').length);
   });
 
   it('a hatch writes the collection (seen, hatched) and gives every creature its own uid', () => {

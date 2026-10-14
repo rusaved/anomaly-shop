@@ -10,9 +10,9 @@ const content = loadGameContent();
 const style = JSON.parse(readFileSync(resolve(import.meta.dirname, '../content/style.json'), 'utf8')) as { creatures: Record<string, { shape: string }> };
 
 describe('M2-06 species and eggs', () => {
-  it('12 species, three of each rarity, each with a look', () => {
+  it('12 species, two of each of the six rarities (Q-022), each with a look', () => {
     expect(content.species.species).toHaveLength(12);
-    for (const r of RARITIES) expect(content.species.species.filter((s) => s.rarity === r)).toHaveLength(3);
+    for (const r of RARITIES) expect(content.species.species.filter((s) => s.rarity === r)).toHaveLength(2);
     for (const s of content.species.species) expect(CREATURE_SHAPES).toContain(style.creatures[s.id]?.shape);
     expect(new Set(content.species.species.map((s) => style.creatures[s.id]!.shape)).size).toBe(12);
   });

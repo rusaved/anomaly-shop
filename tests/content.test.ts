@@ -40,8 +40,8 @@ describe('validate:content', () => {
     courier.effect.egg = 'egg_none';
     expect(validateContent(b3, game).errors).toContainEqual(expect.stringContaining('unknown egg "egg_none"'));
     const b4 = clone(files);
-    b4['species.json']!.species = (b4['species.json']!.species as Array<{ rarity: string }>).filter((s) => s.rarity !== 'legendary');
-    expect(validateContent(b4, game).errors).toContainEqual(expect.stringContaining('no species of rarity "legendary"'));
+    b4['species.json']!.species = (b4['species.json']!.species as Array<{ rarity: string }>).filter((s) => s.rarity !== 'exclusive');
+    expect(validateContent(b4, game).errors).toContainEqual(expect.stringContaining('no species of rarity "exclusive"'));
   });
 
   it('LOC-01 i18n: key parity, placeholders, no Cyrillic in en, no empty strings', () => {

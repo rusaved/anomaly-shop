@@ -682,8 +682,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         if (!node.landed) {
           node.landed = true;
           say(cv.species, at, l);
-          fx.burst(at.x, at.y, Math.round(feel.hatchBurst), [rarityColor(c, cv.rarity), c.uiAccent, c.showcaseSlot], at.r * 5, l.outline * 1.3);
-          fx.float(at.x, at.y - at.r * 1.4, t(`rarity.${cv.rarity}`), rarityColor(c, cv.rarity), Math.max(14, at.r * 0.7), l.unit * 0.9);
+          fx.burst(at.x, at.y, Math.round(feel.hatchBurst), [rarityColor(style.rarity, cv.rarity), c.uiAccent, c.showcaseSlot], at.r * 5, l.outline * 1.3);
+          fx.float(at.x, at.y - at.r * 1.4, t(`rarity.${cv.rarity}`), rarityColor(style.rarity, cv.rarity), Math.max(14, at.r * 0.7), l.unit * 0.9);
           moving = true;
         }
       }
@@ -888,7 +888,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         const spot = current.incubators[e.incubator];
         if (spot) {
           spawnFrom.set(e.uid, { x: spot.x, y: spot.y });
-          fx.burst(spot.x, spot.y, Math.round(feel.hatchBurst * 0.75), [c.egg, c.eggSpots, rarityColor(c, e.rarity)], spot.r * 4, current.outline * 1.4);
+          fx.burst(spot.x, spot.y, Math.round(feel.hatchBurst * 0.75), [c.egg, c.eggSpots, rarityColor(style.rarity, e.rarity)], spot.r * 4, current.outline * 1.4);
         }
       } else if (e.type === 'fed') {
         const node = creatures.get(e.uid);

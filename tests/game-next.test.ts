@@ -46,7 +46,7 @@ describe('M2-13 next goal', () => {
 
   it('always exactly one goal: everything bought → the new town (rebirth threshold)', () => {
     const all = Object.fromEntries(content.upgrades.upgrades.map((u) => [u.id, u.levels]));
-    const game = setup(500, 10, all);
+    const game = setup(6000, 10, all);
     expect(game.nextGoal()).toMatchObject({ kind: 'rebirth', unit: 'coins', need: content.upgrades.prestige.thresholdCoinsEarned });
     for (let coins = 0; coins < 20000; coins += 997) {
       const g = setup(30, coins).nextGoal();

@@ -3,6 +3,7 @@
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
 import type { CustomersData, DistrictData, EggsData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type Creature, type Order, type SaveData } from './state.ts';
@@ -25,9 +26,9 @@ const OFFLINE_STEP_SEC = 0.5;
 /** Customer type id of the golden event customer (style.json → customers.golden, i18n customer.golden). */
 export const GOLDEN = 'golden';
 
-const RARITIES_ALL = ['common', 'rare', 'epic', 'legendary'] as const;
+const RARITIES_ALL = RARITIES;
 
-const RARITY_RANK: Record<RarityName, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
+const RARITY_RANK = Object.fromEntries(RARITIES.map((r, i) => [r, i])) as Record<RarityName, number>;
 
 export type EventKind = EventsData['events'][number]['kind'];
 
@@ -294,7 +295,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const effectSum = (type: string): number =>
     content.upgrades.upgrades.reduce((sum, u) => (u.effect.type === type && 'perLevel' in u.effect ? sum + upgradeLevel(u.id) * u.effect.perLevel : sum), 0);
   /** Price-tag multiplier of a creature: shelf growth (radio speeds it up) and price tags (docs/01, section 3.5; docs/01b, section 5.1). */
-  const valueMult = (cr: Creature): number => (1 + shelfBonus(cr.age ?? 0, species.shelf, 1 + effectSum('shelfGrowth'))) * (1 + effectSum('appraisal'));
+  const valueMult = (cr: Creature): number => (cr.mult ?? 1) * (1 + shelfBonus(cr.age ?? 0, species.shelf, 1 + effectSum('shelfGrowth'))) * (1 + effectSum('appraisal'));
   /** The price tag in whole coins: level price × valueMult. */
   const appraisal = (cr: Creature): number => {
     const spec = speciesData(cr.species);
@@ -307,7 +308,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   /** Districts open by deals (docs/01a, section 4); a district never waits for another district (validate:content). */
   const openDistricts = (): DistrictData[] => content.customers.districts.filter((d) => unlockMet(d.unlock, baseFacts()));
   const facts = (): UnlockFacts => ({ ...baseFacts(), districts: openDistricts().map((d) => d.id) });
-  const eggOpen = (e: EggsData['eggs'][number]): boolean => eggUnlocked(e, facts());
+  /** Eggs for sale for coins (the ladder and seasonal ones); free and reward eggs come by timer or as gifts (docs/01 §3 p. 12). */
+  const forSale = (e: EggsData['eggs'][number]): boolean => !e.special && (e.section === 'ladder' || e.section === 'seasonal');
+  const eggOpen = (e: EggsData['eggs'][number]): boolean => forSale(e) && eggUnlocked(e, facts());
   /** Does this customer type like the creature (docs/01, section 3.5: the showcase attracts its customers). */
   const likes = (c: DistrictData['customer'], cr: Creature): boolean => {
     const spec = speciesData(cr.species);
@@ -785,7 +788,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const kind = pickSpecies(species, rarity, rng.next());
     st.stats.hatched += 1;
     const uid = `c${st.stats.hatched.toString(36)}${rng.int(1296).toString(36)}`;
-    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0 });
+    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: egg.valueMult ?? 1 });
     const entry = (st.collection[kind.id] ??= { seen: 0, hatched: 0, sold: 0 });
     entry.seen += 1;
     entry.hatched += 1;
@@ -1115,7 +1118,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         if (d.unlock.type === 'deals' && st.stats.deals < d.unlock.count) goals.push({ kind: 'district', id: d.id, have: st.stats.deals, need: d.unlock.count, unit: 'deals' });
       }
       for (const e of eggs.eggs) {
-        if (!e.special && e.unlock.type === 'deals' && st.stats.deals < e.unlock.count) goals.push({ kind: 'egg', id: e.id, have: st.stats.deals, need: e.unlock.count, unit: 'deals' });
+        if (forSale(e) && e.unlock.type === 'deals' && st.stats.deals < e.unlock.count) goals.push({ kind: 'egg', id: e.id, have: st.stats.deals, need: e.unlock.count, unit: 'deals' });
       }
       const share = (g: GoalView): number => (g.need > 0 ? g.have / g.need : 1);
       const best = goals.reduce<GoalView | null>((a, g) => (!a || share(g) > share(a) + 1e-9 ? g : a), null);

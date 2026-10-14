@@ -17,6 +17,8 @@ export interface Creature {
   hatchedAt: number;
   /** Game seconds on the showcase: the price grows with it (docs/01, section 3.5). */
   age: number;
+  /** Price multiplier from the egg it hatched from (eggs.json valueMult: the ×10 egg ladder). */
+  mult?: number;
 }
 
 export interface Incubator {
@@ -141,7 +143,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     creatures: arr(r.creatures)
       .map((c) => rec(c))
       .filter((o) => typeof o.uid === 'string' && typeof o.species === 'string')
-      .map((o) => ({ uid: o.uid as string, species: o.species as string, level: Math.max(1, num(o.level, 1)), fed: Math.max(0, num(o.fed, 0)), hatchedAt: num(o.hatchedAt, 0), age: Math.max(0, num(o.age, 0)) })),
+      .map((o) => ({ uid: o.uid as string, species: o.species as string, level: Math.max(1, num(o.level, 1)), fed: Math.max(0, num(o.fed, 0)), hatchedAt: num(o.hatchedAt, 0), age: Math.max(0, num(o.age, 0)), mult: Math.max(1, num(o.mult, 1)) })),
     showcase: arr(r.showcase).filter((x): x is string => typeof x === 'string'),
     upgrades: numberMap(r.upgrades),
     helpers: numberMap(r.helpers),

@@ -137,15 +137,15 @@ describe('M2-15 random events', () => {
   });
 
   it('merchant: the best open egg at half price or the mystery egg at the basic price', () => {
-    const { game, seen } = setup(only('merchant'), { coins: 100, deals: 10 });
+    const { game, seen } = setup(only('merchant'), { coins: 100, deals: 9 });
     untilEvent(game);
     game.tapEvent();
     expect(seen.some((e) => e.type === 'merchantOpen')).toBe(true);
     const offer = game.merchantOffer()!;
-    expect(offer.discount).toMatchObject({ egg: 'egg_warm', price: 30 });
+    expect(offer.discount).toMatchObject({ egg: 'egg_warm', price: 50 });
     expect(offer.mystery).toMatchObject({ egg: 'egg_warm', price: 10 });
     expect(game.merchantBuy('discount')).toBe(true);
-    expect(game.state.coins).toBe(70);
+    expect(game.state.coins).toBe(50);
     expect(game.merchantOffer()).toBeNull();
   });
 });

@@ -16,12 +16,18 @@ import {
   EventsFile,
   SecretsFile,
   LinesFile,
+  MarketFile,
+  GiftsFile,
+  WorkFile,
   RARITIES,
   SpeciesFile,
   StyleFile,
   UpgradesFile,
   type CalendarData,
   type CustomersData,
+  type GiftsData,
+  type MarketData,
+  type RewardData,
   type EggsData,
   type FtueData,
   type GameData,
@@ -35,7 +41,10 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json'] as const;
+/** The egg price ladder (docs/01 §3 p. 12): eight steps, each ×10 the one before. */
+const LADDER_STEPS = 8;
+const LADDER_STEP = 10;
 /** Lines players read in the scene and the panel (news, creature and customer lines): no full stop at the end (docs/01a, section 8). */
 const TRAILING_STOP = /[.。]$/;
 /** Long dashes stay out of player texts (producer's style rule). */
@@ -78,6 +87,45 @@ function checkEggs(eggs: EggsData, customers: CustomersData | null, errors: stri
     if (!egg.special && Math.abs(sum - 100) > 1e-9) errors.push(`eggs.json: eggs.${i}.chances — sum is ${sum}, expected 100`);
     if (egg.unlock.type === 'district' && customers && !districts.has(egg.unlock.id)) errors.push(`eggs.json: eggs.${i}.unlock.id — unknown district "${egg.unlock.id}"`);
     if (egg.hatchSec < eggs.minHatchSec && !egg.special) errors.push(`eggs.json: eggs.${i}.hatchSec — below minHatchSec ${eggs.minHatchSec}`);
+    if (egg.section === 'free' && !egg.freeEverySec) errors.push(`eggs.json: eggs.${i}.freeEverySec — a free egg needs its timer`);
+    if (egg.section !== 'free' && egg.freeEverySec) errors.push(`eggs.json: eggs.${i}.freeEverySec — only free eggs have a timer`);
+  });
+  const ladder = eggs.eggs.filter((e) => e.section === 'ladder');
+  if (ladder.length !== LADDER_STEPS) errors.push(`eggs.json: eggs — ${ladder.length} eggs on the ladder, expected ${LADDER_STEPS}`);
+  ladder.forEach((e, i) => {
+    const prev = ladder[i - 1];
+    if (prev && Math.abs(e.price.coins / prev.price.coins - LADDER_STEP) > 1e-9) errors.push(`eggs.json: ${e.id}.price — expected ×${LADDER_STEP} the price of ${prev.id}`);
+  });
+  const care = eggs.care;
+  if (care.warm.steps * care.warm.bonus + care.feed.steps * care.feed.bonus + care.ripe.bonus < care.maxBonus - 1e-9) errors.push('eggs.json: care.maxBonus — above what warmth, food and ripening can give');
+}
+
+/** Rewards point at real eggs (gifts, codes). */
+function checkReward(file: string, path: string, reward: RewardData, eggs: EggsData | null, errors: string[]): void {
+  if (reward.egg && eggs && !eggs.eggs.some((e) => e.id === reward.egg && !e.special)) errors.push(`${file}: ${path}.egg — unknown egg "${reward.egg}"`);
+  if (!reward.egg && !reward.coins && !reward.crystals) errors.push(`${file}: ${path} — an empty reward`);
+}
+
+function playerLine(file: string, path: string, text: { ru: string; en: string }, errors: string[]): void {
+  for (const lang of ['ru', 'en'] as const) {
+    if (TRAILING_STOP.test(text[lang])) errors.push(`${file}: ${path}.${lang} — no full stop at the end`);
+    if (LONG_DASH.test(text[lang])) errors.push(`${file}: ${path}.${lang} — no long dash in player texts`);
+  }
+  if (CYRILLIC.test(text.en)) errors.push(`${file}: ${path}.en — Cyrillic in the English text`);
+}
+
+function checkMarket(market: MarketData, errors: string[]): void {
+  for (const k of ['refreshSec', 'price', 'level', 'hobbyDiscount'] as const) if (market[k].min > market[k].max) errors.push(`market.json: ${k} — min above max`);
+  if (market.price.min >= 1) errors.push('market.json: price.min — no lot would be below the market');
+}
+
+function checkGifts(gifts: GiftsData, eggs: EggsData | null, errors: string[]): void {
+  gifts.subscribe.forEach((s, i) => checkReward('gifts.json', `subscribe.${i}.reward`, s.reward, eggs, errors));
+  duplicates('gifts.json', 'subscribe', gifts.subscribe.map((s) => s.id), errors);
+  checkReward('gifts.json', 'review.reward', gifts.review.reward, eggs, errors);
+  gifts.daily.forEach((d, i) => {
+    if (d.day !== i + 1) errors.push(`gifts.json: daily.${i}.day — expected ${i + 1}`);
+    checkReward('gifts.json', `daily.${i}.reward`, d.reward, eggs, errors);
   });
 }
 
@@ -102,6 +150,13 @@ function checkCustomers(customers: CustomersData, errors: string[]): void {
   if (!customers.districts.some((d) => d.unlock.type === 'start')) errors.push('customers.json: districts — no district is open at start');
   if (customers.people.names.length < 20) errors.push(`customers.json: people.names — ${customers.people.names.length} names, 20 at least (M2-18)`);
   duplicates('customers.json', 'people.names', customers.people.names.map((n) => n.ru), errors);
+  duplicates('customers.json', 'characters', customers.characters.map((c) => c.id), errors);
+  duplicates('customers.json', 'hobbies', customers.hobbies.map((h) => h.id), errors);
+  customers.characters.forEach((c, i) => {
+    if (c.offer.min > c.offer.max) errors.push(`customers.json: characters.${i}.offer — min above max`);
+  });
+  if (!customers.characters.some((c) => c.weight > 0)) errors.push('customers.json: characters — every weight is 0');
+  customers.hobbies.forEach((h, i) => playerLine('customers.json', `hobbies.${i}.line`, h.line, errors));
   customers.people.names.forEach((n, i) => {
     if (CYRILLIC.test(n.en)) errors.push(`customers.json: people.names.${i}.en — Cyrillic in the English text`);
   });
@@ -125,9 +180,6 @@ function checkCalendar(calendar: CalendarData, eggs: EggsData | null, errors: st
   if (eggs && !eggs.eggs.some((e) => e.id === calendar.daily.eggId)) errors.push(`calendar.json: daily.eggId — unknown egg "${calendar.daily.eggId}"`);
   duplicates('calendar.json', 'tasks.pool', calendar.tasks.pool.map((t) => t.id), errors);
   if (calendar.tasks.pool.length < calendar.tasks.perDay) errors.push(`calendar.json: tasks.pool — fewer tasks than perDay ${calendar.tasks.perDay}`);
-  calendar.login.forEach((entry, i) => {
-    if (entry.day !== i + 1) errors.push(`calendar.json: login.${i}.day — expected ${i + 1}`);
-  });
   duplicates('calendar.json', 'events', calendar.events.map((e) => e.id), errors);
   calendar.events.forEach((e, i) => {
     if (e.from > e.to) errors.push(`calendar.json: events.${i} — from is after to`);
@@ -225,6 +277,11 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   const events = parseFile('events.json', EventsFile, data(files['events.json']), errors);
   const secrets = parseFile('secrets.json', SecretsFile, data(files['secrets.json']), errors);
   const lines = parseFile('lines.json', LinesFile, data(files['lines.json']), errors);
+  const market = parseFile('market.json', MarketFile, data(files['market.json']), errors);
+  const gifts = parseFile('gifts.json', GiftsFile, data(files['gifts.json']), errors);
+  parseFile('work.json', WorkFile, data(files['work.json']), errors);
+  if (market) checkMarket(market, errors);
+  if (gifts) checkGifts(gifts, eggs, errors);
   if (lines) {
     // Every species and every customer type speaks; lines are short, end without a full stop, ru and en side by side (parity by design).
     if (species) for (const s of species.species) if (!lines.creatures[s.id]) errors.push(`lines.json: creatures.${s.id} — no lines for this species`);

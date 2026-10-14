@@ -28,19 +28,19 @@ function sellOne(species: string, crystalSeen = false) {
 
 describe('M2-08 crystals', () => {
   it('a sale brings crystals by rarity (species.json → crystalsPerSale)', () => {
-    for (const [species, rarity] of [['kettle', 'common'], ['cloudcat', 'rare'], ['mirrorfrog', 'epic'], ['teacup_dragon', 'legendary']] as const) {
+    for (const [species, rarity] of [['kettle', 'common'], ['cloudcat', 'good'], ['cactus', 'valuable'], ['mirrorfrog', 'premium'], ['teacup_dragon', 'vip'], ['moon_donut', 'exclusive']] as const) {
       const { game, seen } = sellOne(species);
       const n = content.species.crystalsPerSale[rarity];
       expect(game.state.crystals).toBe(n);
       expect(seen.find((e) => e.type === 'sold')).toMatchObject({ crystals: n });
     }
     expect(content.species.crystalsPerSale.common).toBe(0);
-    expect(content.species.crystalsPerSale.rare).toBeGreaterThan(0);
+    expect(content.species.crystalsPerSale.valuable).toBeGreaterThan(0);
   });
 
   it('the first crystal is announced once', () => {
-    expect(sellOne('cloudcat').seen.filter((e) => e.type === 'firstCrystal')).toHaveLength(1);
-    expect(sellOne('cloudcat', true).seen.filter((e) => e.type === 'firstCrystal')).toHaveLength(0);
+    expect(sellOne('cactus').seen.filter((e) => e.type === 'firstCrystal')).toHaveLength(1);
+    expect(sellOne('cactus', true).seen.filter((e) => e.type === 'firstCrystal')).toHaveLength(0);
     expect(sellOne('kettle').seen.filter((e) => e.type === 'firstCrystal')).toHaveLength(0);
   });
 

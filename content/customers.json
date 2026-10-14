@@ -1,6 +1,6 @@
 {
   "$schema": "customers.schema.json",
-  "note": "Районы и типы покупателей из docs/01a-content.md §4. offer — доля от оценки существа (min..max). bargain — успех +10..30% к предложению, провал — покупатель уходит с шансом leaveOnBargain. bargainMax — сколько раз можно торговаться с одним покупателем (дальше «последняя цена»). waitNextSec — «подождать»: следующий подходит через столько секунд. weight — доля прихода среди открытых районов; attract — +доля за каждое существо на витрине, которое этот тип любит (likes: cheap — обычные, rare — редкие и выше, level — уровень 3+). people (M2-18): у каждого покупателя имя из names (f — женское, тогда тип пишется nameF), цвет одежды из outfits, аксессуар из accessories; в очереди имена не повторяются. orders (M2-19, доска заказов): один заказ — вид из доступных игроку (редкость, которая выпадает из открытых яиц) и уровень level, награда rewardMult × оценки на этом уровне; срок minutes, потом новый, без наказания; выполняется продажей подходящего существа (вид, уровень не ниже) — платится наибольшее из предложения и награды.",
+  "note": "Районы и типы покупателей из docs/01a-content.md §4. offer — доля от оценки существа (min..max). bargain — успех +10..30% к предложению, провал — покупатель уходит с шансом leaveOnBargain. bargainMax — сколько раз можно торговаться с одним покупателем (дальше «последняя цена»). waitNextSec — «подождать»: следующий подходит через столько секунд. weight — доля прихода среди открытых районов; attract — +доля за каждое существо на витрине, которое этот тип любит (likes: cheap — обычные, rare — редкие и выше, level — уровень 3+). people (M2-18): у каждого покупателя имя из names (f — женское, тогда тип пишется nameF), цвет одежды из outfits, аксессуар из accessories; в очереди имена не повторяются. orders (M2-19, доска заказов): один заказ — вид из доступных игроку (редкость, которая выпадает из открытых яиц) и уровень level, награда rewardMult × оценки на этом уровне; срок minutes, потом новый, без наказания; выполняется продажей подходящего существа (вид, уровень не ниже) — платится наибольшее из предложения и награды. characters (M3, docs/01 §3 п. 13): характер человека в переписках и на рынке — weight доля среди людей, offer — первое предложение как доля цены продавца, give — насколько ниже своей цены (или выше своего предложения) он ещё соглашается. hobbies — увлечения: «Как дела?» продавцу с тем же увлечением даёт скидку (market.json hobbyDiscount).",
   "queueSize": 3,
   "spawnEverySec": 6,
   "waitNextSec": 2,
@@ -37,5 +37,23 @@
     "outfits": ["#f4a261", "#90be6d", "#e5989b", "#8ecae6", "#cdb4db", "#ffd166", "#b5838d", "#a3c4bc"],
     "accessories": ["none", "glasses", "scarf", "backpack", "umbrella", "flower"]
   },
-  "orders": {"minutes": 5, "rewardMult": {"min": 2, "max": 3}, "level": {"min": 2, "max": 5}}
+  "orders": {"minutes": 5, "rewardMult": {"min": 2, "max": 3}, "level": {"min": 2, "max": 5}},
+  "characters": [
+    {"id": "chatty", "name": {"ru": "Болтун", "en": "Chatterbox"}, "weight": 0.22, "offer": {"min": 0.85, "max": 0.95}, "give": 0.1},
+    {"id": "greedy", "name": {"ru": "Жадина", "en": "Penny-pincher"}, "weight": 0.2, "offer": {"min": 0.6, "max": 0.75}, "give": 0.04},
+    {"id": "hasty", "name": {"ru": "Торопыга", "en": "Rusher"}, "weight": 0.18, "offer": {"min": 0.9, "max": 1.0}, "give": 0.12},
+    {"id": "collector", "name": {"ru": "Коллекционер", "en": "Collector"}, "weight": 0.16, "offer": {"min": 0.9, "max": 1.05}, "give": 0.08},
+    {"id": "rich", "name": {"ru": "Богач", "en": "Big Spender"}, "weight": 0.12, "offer": {"min": 1.0, "max": 1.15}, "give": 0.15},
+    {"id": "troll", "name": {"ru": "Тролль", "en": "Prankster"}, "weight": 0.12, "offer": {"min": 0.3, "max": 0.5}, "give": 0.2}
+  ],
+  "hobbies": [
+    {"id": "fishing", "name": {"ru": "Рыбалка", "en": "Fishing"}, "line": {"ru": "Вчера поймал карася с ладошку", "en": "Caught a fish the size of my palm"}},
+    {"id": "chess", "name": {"ru": "Шахматы", "en": "Chess"}, "line": {"ru": "Сыграл вничью сам с собой", "en": "Played myself to a draw"}},
+    {"id": "baking", "name": {"ru": "Выпечка", "en": "Baking"}, "line": {"ru": "Пеку пирог с вишней", "en": "Baking a cherry pie"}},
+    {"id": "garden", "name": {"ru": "Огород", "en": "Gardening"}, "line": {"ru": "Кабачок вырос с кота", "en": "My zucchini is cat sized"}},
+    {"id": "music", "name": {"ru": "Музыка", "en": "Music"}, "line": {"ru": "Учу третий аккорд", "en": "Learning my third chord"}},
+    {"id": "stars", "name": {"ru": "Звёзды", "en": "Stargazing"}, "line": {"ru": "Ночью видел падающую звезду", "en": "Saw a shooting star last night"}},
+    {"id": "football", "name": {"ru": "Футбол", "en": "Football"}, "line": {"ru": "Наши вчера выиграли", "en": "Our team won yesterday"}},
+    {"id": "puzzles", "name": {"ru": "Пазлы", "en": "Puzzles"}, "line": {"ru": "Собрал пазл на тысячу деталей", "en": "Finished a thousand piece puzzle"}}
+  ]
 }

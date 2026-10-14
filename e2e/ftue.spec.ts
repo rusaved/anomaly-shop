@@ -47,7 +47,7 @@ test('M1-09 first minute: hints up to 6 words lead from the starter egg to a rar
   expect(end.ftue).toBeNull();
   expect(seenSteps.filter((x) => x !== 'waitCustomer')).toEqual(['tapEgg', 'feed', 'sell', 'buyEgg', 'hatchRare']);
   expect(end.stats.deals).toBe(1);
-  expect(end.rarities).toContain('rare');
+  expect(end.rarities).toContain('valuable');
   for (const h of hints) expect(h.split(/\s+/).length, h).toBeLessThanOrEqual(6);
   expect(hints.length).toBeGreaterThanOrEqual(5);
   // The closing words of the first minute and the funnel events in order (docs/06, section 1).

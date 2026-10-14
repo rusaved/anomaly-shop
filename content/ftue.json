@@ -4,7 +4,7 @@
   "starterEgg": "egg_basic",
   "starterWaitsForTap": true,
   "firstRarity": "common",
-  "secondRarity": "rare",
+  "secondRarity": "valuable",
   "firstCustomerSec": 3,
   "firstOfferShare": 0.85,
   "maxHintWords": 6

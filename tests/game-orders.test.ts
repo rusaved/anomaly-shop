@@ -48,7 +48,7 @@ describe('M2-19 order board', () => {
       const o = game.state.order!;
       const spec = base.species.species.find((s) => s.id === o.species)!;
       // At 6 deals the basic and warm eggs are open: common … legendary (the warm egg has 1% legendary).
-      expect(['common', 'rare', 'epic', 'legendary']).toContain(spec.rarity);
+      expect(['common', 'good', 'valuable', 'premium', 'vip', 'exclusive']).toContain(spec.rarity);
       expect(o.level).toBeGreaterThanOrEqual(2);
       expect(o.level).toBeLessThanOrEqual(5);
       const value = creatureValue(spec, o.level);
@@ -59,7 +59,7 @@ describe('M2-19 order board', () => {
   });
 
   it('only the basic egg open: only common species are ordered', () => {
-    const only = { ...calm, eggs: { ...calm.eggs, eggs: calm.eggs.eggs.map((e) => (e.id === 'egg_basic' ? { ...e, chances: { common: 100, rare: 0, epic: 0, legendary: 0 } } : e)) } };
+    const only = { ...calm, eggs: { ...calm.eggs, eggs: calm.eggs.eggs.map((e) => (e.id === 'egg_basic' ? { ...e, chances: { common: 100, good: 0, valuable: 0, premium: 0, vip: 0, exclusive: 0 } } : e)) } };
     for (let seed = 1; seed < 20; seed++) {
       const save = newSave(0);
       save.flags.ftue_starter = true;

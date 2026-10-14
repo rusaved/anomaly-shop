@@ -49,7 +49,7 @@ describe('M1-09 first minute', () => {
       const { game, seen, steps, t } = playFirstMinute(seed);
       expect(steps.filter((s) => s !== 'waitCustomer')).toEqual(['tapEgg', 'feed', 'sell', 'buyEgg', 'hatchRare']);
       const hatched = seen.filter((e) => e.type === 'hatched');
-      expect(hatched.map((e) => (e.type === 'hatched' ? e.rarity : ''))).toEqual(['common', 'rare']);
+      expect(hatched.map((e) => (e.type === 'hatched' ? e.rarity : ''))).toEqual(['common', 'valuable']);
       expect(seen.some((e) => e.type === 'ftueDone')).toBe(true);
       const sale = seen.find((e) => e.type === 'sold');
       expect(sale && sale.type === 'sold' ? sale.price : 0).toBeGreaterThanOrEqual(content.eggs.eggs[0]!.price.coins);

@@ -1,6 +1,6 @@
 {
   "$schema": "style.schema.json",
-  "note": "Стиль по Q-001, вариант A: плоский милый вектор с толстым контуром. Цвета сцены (PixiJS) и интерфейса (CSS-переменные --c-*). Размеры сцены в условных единицах, масштабируются раскладкой. creatures — облик каждого вида: форма из набора сцены (shape) и два цвета; новый вид = новая запись (форму можно переиспользовать с другими цветами). customers — облик типа покупателя: тело и шапка. eggs — скорлупа и пятна каждого яйца (нет записи — цвета egg/eggSpots).",
+  "note": "Стиль по Q-001, вариант A: плоский милый вектор с толстым контуром. Цвета сцены (PixiJS) и интерфейса (CSS-переменные --c-*). Размеры сцены в условных единицах, масштабируются раскладкой. creatures — облик каждого вида: форма из набора сцены (shape) и два цвета; новый вид = новая запись (форму можно переиспользовать с другими цветами). customers — облик типа покупателя: тело и шапка. eggs — скорлупа и пятна каждого яйца (нет записи — цвета egg/eggSpots). rarity — шесть цветов редкости от серого до красного (Q-022): чёрточка или точка под существом и улучшением, не заливка и не цвет текста; rarityCommon…rarityLegendary в colors — просто цвета сцены.",
   "art": "flat_outline",
   "colors": {
     "sky": "#3a2d5c",
@@ -36,107 +36,46 @@
     "blush": "#ff9eb5",
     "eyeWhite": "#ffffff"
   },
-  "scene": {
-    "outlineWidth": 4,
-    "cornerRadius": 18,
-    "floorShare": 0.34
-  },
+  "scene": {"outlineWidth": 4, "cornerRadius": 18, "floorShare": 0.34},
   "creatures": {
-    "kettle": {
-      "shape": "kettle",
-      "body": "#7fc8f8",
-      "accent": "#e8f6ff"
-    },
-    "sockfish": {
-      "shape": "sock",
-      "body": "#8fa3c8",
-      "accent": "#ff7a7a"
-    },
-    "cloudcat": {
-      "shape": "cloudcat",
-      "body": "#eef2ff",
-      "accent": "#6cb6ff"
-    },
-    "lampbug": {
-      "shape": "lampbug",
-      "body": "#ffe36e",
-      "accent": "#a0a8b8"
-    },
-    "jellytoast": {
-      "shape": "toast",
-      "body": "#e9b36c",
-      "accent": "#d94f8a"
-    },
-    "mirrorfrog": {
-      "shape": "frog",
-      "body": "#7ed6a5",
-      "accent": "#e6f7ff"
-    },
-    "teacup_dragon": {
-      "shape": "teacup",
-      "body": "#f7f1e8",
-      "accent": "#5ccf7a"
-    },
-    "sockfish_gold": {
-      "shape": "goldsock",
-      "body": "#ffcc3d",
-      "accent": "#fff6c2"
-    },
-    "pillow": {
-      "shape": "pillow",
-      "body": "#c9b8f0",
-      "accent": "#ffffff"
-    },
-    "cactus": {
-      "shape": "cactus",
-      "body": "#6cc58a",
-      "accent": "#ff8fb8"
-    },
-    "shroom": {
-      "shape": "shroom",
-      "body": "#ff6b6b",
-      "accent": "#fff1d6"
-    },
-    "moon_donut": {
-      "shape": "donut",
-      "body": "#b9a7ff",
-      "accent": "#ffe36e"
-    }
+    "kettle": {"shape": "kettle", "body": "#7fc8f8", "accent": "#e8f6ff"},
+    "sockfish": {"shape": "sock", "body": "#8fa3c8", "accent": "#ff7a7a"},
+    "cloudcat": {"shape": "cloudcat", "body": "#eef2ff", "accent": "#6cb6ff"},
+    "lampbug": {"shape": "lampbug", "body": "#ffe36e", "accent": "#a0a8b8"},
+    "jellytoast": {"shape": "toast", "body": "#e9b36c", "accent": "#d94f8a"},
+    "mirrorfrog": {"shape": "frog", "body": "#7ed6a5", "accent": "#e6f7ff"},
+    "teacup_dragon": {"shape": "teacup", "body": "#f7f1e8", "accent": "#5ccf7a"},
+    "sockfish_gold": {"shape": "goldsock", "body": "#ffcc3d", "accent": "#fff6c2"},
+    "pillow": {"shape": "pillow", "body": "#c9b8f0", "accent": "#ffffff"},
+    "cactus": {"shape": "cactus", "body": "#6cc58a", "accent": "#ff8fb8"},
+    "shroom": {"shape": "shroom", "body": "#ff6b6b", "accent": "#fff1d6"},
+    "moon_donut": {"shape": "donut", "body": "#b9a7ff", "accent": "#ffe36e"}
   },
   "customers": {
-    "thrifty": {
-      "body": "#f4a261",
-      "accent": "#6d597a"
-    },
-    "collector": {
-      "body": "#90be6d",
-      "accent": "#3d405b"
-    },
-    "rich": {
-      "body": "#e5989b",
-      "accent": "#ffc533"
-    },
-    "golden": {
-      "body": "#ffd34d",
-      "accent": "#fff4b0"
-    }
+    "thrifty": {"body": "#f4a261", "accent": "#6d597a"},
+    "collector": {"body": "#90be6d", "accent": "#3d405b"},
+    "rich": {"body": "#e5989b", "accent": "#ffc533"},
+    "golden": {"body": "#ffd34d", "accent": "#fff4b0"}
   },
   "eggs": {
-    "egg_basic": {
-      "shell": "#fff3d6",
-      "spots": "#f0b67f"
-    },
-    "egg_warm": {
-      "shell": "#ffc9a3",
-      "spots": "#e8603c"
-    },
-    "egg_odd": {
-      "shell": "#cdb8ff",
-      "spots": "#7a5cd6"
-    },
-    "egg_glow": {
-      "shell": "#c4f6ff",
-      "spots": "#3aa8ff"
-    }
+    "egg_basic": {"shell": "#fff3d6", "spots": "#f0b67f"},
+    "egg_warm": {"shell": "#ffc9a3", "spots": "#e8603c"},
+    "egg_odd": {"shell": "#cdb8ff", "spots": "#7a5cd6"},
+    "egg_glow": {"shell": "#c4f6ff", "spots": "#3aa8ff"},
+    "egg_star": {"shell": "#fff0a8", "spots": "#f2b400"},
+    "egg_crystal": {"shell": "#e3f7ff", "spots": "#7fd3f0"},
+    "egg_rainbow": {"shell": "#ffe0f0", "spots": "#6fc3ff"},
+    "egg_royal": {"shell": "#ffd7d7", "spots": "#c9302c"},
+    "egg_gift": {"shell": "#e6ffe0", "spots": "#ff6f91"},
+    "egg_autumn": {"shell": "#ffd9a8", "spots": "#c4572a"},
+    "egg_gold": {"shell": "#ffe066", "spots": "#e0a100"}
+  },
+  "rarity": {
+    "common": "#a9abb8",
+    "good": "#6fd27a",
+    "valuable": "#4ea8ff",
+    "premium": "#b77cff",
+    "vip": "#ff9a3c",
+    "exclusive": "#ff4f5e"
   }
 }

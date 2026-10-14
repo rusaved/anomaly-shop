@@ -1,14 +1,28 @@
 {
   "$schema": "eggs.schema.json",
-  "note": "Стартовые значения из docs/01a-content.md §2. Шансы в процентах, сумма 100. Время в секундах. rescueEgg — подарок, когда лавка пуста (ни существ, ни яиц) и монет не хватает на самое дешёвое яйцо: тупика не бывает. firstRarity — первое яйцо этого вида гарантирует редкость не ниже указанной (итог M2: «шесть тёплых — одни обычные» обижает).",
+  "note": "Яйца из docs/01a-content.md §2 и docs/01 §3 п. 12. Шансы — проценты по шести редкостям (Q-022), сумма 100; внутри редкости виды выпадают поровну. section: ladder — лестница цен ×10 на 8 ступеней, free — бесплатное по таймеру freeEverySec (с M5 ещё и за рекламу), seasonal — сезонное, reward — только наградой (подарки, коды). valueMult — существо из этого яйца стоит во столько раз дороже (лестница ×10 держит яйцо в цене). rescueEgg — подарок, когда лавка пуста и монет не хватает. firstRarity — первое яйцо вида гарантирует редкость не ниже. care — уход в инкубаторе (наше улучшение 1): тапы греют (warm: шаг за tapsPerStep тапов), корм за долю цены яйца (feed), дозревание после готовности (ripe); сумма бонусов b (не больше maxBonus) поднимает долю b каждой редкости на ступень выше; shell — цвет скорлупы по уровню ухода (0 — свой цвет яйца).",
   "tapSpeedupSec": 0.5,
   "minHatchSec": 1,
   "rescueEgg": "egg_basic",
   "eggs": [
-    {"id": "egg_basic", "name": {"ru": "Обычное яйцо", "en": "Basic Egg"}, "price": {"coins": 10}, "hatchSec": 3, "chances": {"common": 85, "rare": 13, "epic": 2, "legendary": 0}, "unlock": {"type": "start"}},
-    {"id": "egg_warm", "name": {"ru": "Тёплое яйцо", "en": "Warm Egg"}, "price": {"coins": 60}, "hatchSec": 10, "chances": {"common": 60, "rare": 30, "epic": 9, "legendary": 1}, "unlock": {"type": "deals", "count": 5}, "firstRarity": "rare"},
-    {"id": "egg_odd", "name": {"ru": "Странное яйцо", "en": "Odd Egg"}, "price": {"coins": 300}, "hatchSec": 30, "chances": {"common": 35, "rare": 40, "epic": 20, "legendary": 5}, "unlock": {"type": "district", "id": "street"}, "firstRarity": "epic"},
-    {"id": "egg_glow", "name": {"ru": "Светящееся яйцо", "en": "Glowing Egg"}, "price": {"coins": 1500}, "hatchSec": 90, "chances": {"common": 10, "rare": 40, "epic": 35, "legendary": 15}, "unlock": {"type": "district", "id": "square"}, "firstRarity": "epic"},
-    {"id": "egg_daily", "name": {"ru": "Аномалий дня", "en": "Daily Anomaly"}, "price": {"coins": 0}, "hatchSec": 5, "chances": {"common": 0, "rare": 0, "epic": 0, "legendary": 0}, "special": "daily", "unlock": {"type": "milestone", "id": "M3"}}
-  ]
+    {"id": "egg_basic", "name": {"ru": "Обычное яйцо", "en": "Basic Egg"}, "section": "ladder", "price": {"coins": 10}, "hatchSec": 3, "chances": {"common": 72, "good": 17, "valuable": 8.5, "premium": 2.2, "vip": 0.27, "exclusive": 0.03}, "unlock": {"type": "start"}},
+    {"id": "egg_warm", "name": {"ru": "Тёплое яйцо", "en": "Warm Egg"}, "section": "ladder", "price": {"coins": 100}, "hatchSec": 10, "chances": {"common": 35, "good": 30, "valuable": 20, "premium": 11, "vip": 3.5, "exclusive": 0.5}, "unlock": {"type": "deals", "count": 5}, "firstRarity": "valuable"},
+    {"id": "egg_odd", "name": {"ru": "Странное яйцо", "en": "Odd Egg"}, "section": "ladder", "price": {"coins": 1000}, "hatchSec": 30, "chances": {"common": 20, "good": 30, "valuable": 28, "premium": 15, "vip": 6, "exclusive": 1}, "valueMult": 5, "unlock": {"type": "district", "id": "street"}, "firstRarity": "premium"},
+    {"id": "egg_glow", "name": {"ru": "Светящееся яйцо", "en": "Glowing Egg"}, "section": "ladder", "price": {"coins": 10000}, "hatchSec": 90, "chances": {"common": 5, "good": 20, "valuable": 30, "premium": 28, "vip": 13, "exclusive": 4}, "valueMult": 30, "unlock": {"type": "district", "id": "square"}, "firstRarity": "premium"},
+    {"id": "egg_star", "name": {"ru": "Звёздное яйцо", "en": "Star Egg"}, "section": "ladder", "price": {"coins": 100000}, "hatchSec": 180, "chances": {"common": 0, "good": 10, "valuable": 25, "premium": 35, "vip": 22, "exclusive": 8}, "valueMult": 200, "unlock": {"type": "deals", "count": 300}},
+    {"id": "egg_crystal", "name": {"ru": "Хрустальное яйцо", "en": "Crystal Egg"}, "section": "ladder", "price": {"coins": 1000000}, "hatchSec": 300, "chances": {"common": 0, "good": 0, "valuable": 20, "premium": 38, "vip": 30, "exclusive": 12}, "valueMult": 1500, "unlock": {"type": "deals", "count": 800}},
+    {"id": "egg_rainbow", "name": {"ru": "Радужное яйцо", "en": "Rainbow Egg"}, "section": "ladder", "price": {"coins": 10000000}, "hatchSec": 480, "chances": {"common": 0, "good": 0, "valuable": 5, "premium": 35, "vip": 40, "exclusive": 20}, "valueMult": 12000, "unlock": {"type": "deals", "count": 2000}},
+    {"id": "egg_royal", "name": {"ru": "Королевское яйцо", "en": "Royal Egg"}, "section": "ladder", "price": {"coins": 100000000}, "hatchSec": 600, "chances": {"common": 0, "good": 0, "valuable": 0, "premium": 20, "vip": 45, "exclusive": 35}, "valueMult": 90000, "unlock": {"type": "deals", "count": 5000}},
+    {"id": "egg_gift", "name": {"ru": "Подарочное яйцо", "en": "Gift Egg"}, "section": "free", "price": {"coins": 0}, "hatchSec": 5, "chances": {"common": 60, "good": 25, "valuable": 11, "premium": 3.5, "vip": 0.45, "exclusive": 0.05}, "freeEverySec": 300, "unlock": {"type": "start"}},
+    {"id": "egg_autumn", "name": {"ru": "Осеннее яйцо", "en": "Autumn Egg"}, "section": "seasonal", "price": {"coins": 500}, "hatchSec": 20, "chances": {"common": 30, "good": 30, "valuable": 22, "premium": 12, "vip": 5, "exclusive": 1}, "unlock": {"type": "deals", "count": 10}},
+    {"id": "egg_gold", "name": {"ru": "Золотое яйцо", "en": "Golden Egg"}, "section": "reward", "price": {"coins": 0}, "hatchSec": 10, "chances": {"common": 0, "good": 15, "valuable": 35, "premium": 30, "vip": 15, "exclusive": 5}, "unlock": {"type": "start"}, "firstRarity": "premium"},
+    {"id": "egg_daily", "name": {"ru": "Аномалий дня", "en": "Daily Anomaly"}, "section": "reward", "price": {"coins": 0}, "hatchSec": 5, "chances": {"common": 0, "good": 0, "valuable": 0, "premium": 0, "vip": 0, "exclusive": 0}, "special": "daily", "unlock": {"type": "milestone", "id": "M3"}}
+  ],
+  "care": {
+    "warm": {"tapsPerStep": 4, "steps": 3, "bonus": 0.05},
+    "feed": {"steps": 2, "bonus": 0.05, "priceShare": 0.2},
+    "ripe": {"afterSec": 20, "bonus": 0.05},
+    "maxBonus": 0.3,
+    "shell": ["#ffffff", "#9be7a4", "#8fc8ff", "#d4a8ff"]
+  }
 }

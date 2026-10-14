@@ -7,8 +7,9 @@ import type { CreatureLookData, RarityName, StyleData } from '../content/schemas
 
 type Colors = StyleData['colors'];
 
-export function rarityColor(c: Colors, rarity: RarityName): string {
-  return rarity === 'legendary' ? c.rarityLegendary : rarity === 'epic' ? c.rarityEpic : rarity === 'rare' ? c.rarityRare : c.rarityCommon;
+/** The rarity color (Q-022: grey to red) from style.json → rarity. */
+export function rarityColor(palette: StyleData['rarity'], rarity: RarityName): string {
+  return palette[rarity];
 }
 
 type PathFn = (g: Graphics) => Graphics;
@@ -75,7 +76,8 @@ function sockBody(g: Graphics, r: number, look: CreatureLookData, c: Colors, w: 
 export function drawCreature(g: Graphics, look: CreatureLookData, rarity: RarityName, r: number, c: Colors, outline: number): void {
   const w = outline;
   g.clear();
-  if (rarity !== 'common') g.circle(0, 0, r * 1.15).fill({ color: rarityColor(c, rarity), alpha: rarity === 'rare' ? 0.25 : 0.38 });
+  // Color discipline (M3-17): the rarity is a dash under the creature (the scene), not a halo around it.
+  void rarity;
   switch (look.shape) {
     case 'kettle': {
       g.moveTo(-r * 0.6, -r * 0.25).bezierCurveTo(-r * 1.02, -r * 0.3, -r * 1.02, r * 0.5, -r * 0.58, r * 0.42).stroke({ width: w * 3, color: c.outline, cap: 'round' });

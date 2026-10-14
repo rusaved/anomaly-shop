@@ -65,17 +65,19 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       let x = 0;
       let y = 0;
       let r = 0;
+      let bottom = 0;
       let button: HTMLElement | null = null;
       const a = deps.anchors();
       const target = hint.target;
       const win = deps.window();
-      if (target.kind === 'button') {
-        // «a|b»: the first of the hooks that is on screen now (UB-01: a card button, else the tile that opens it).
+      if (target.kind === 'button' || target.kind === 'el') {
+        // «a|b»: the first of the hooks that is on screen now (UB-01: a card button, else the tile that opens it);
+        // never a closed thing (UB-06: a locked card, a button you cannot press yet) and never outside the open window (UB-02).
+        const selectors = target.kind === 'button' ? target.action.split('|').map((action) => `[data-action="${action}"]`) : target.selectors;
         button =
-          target.action
-            .split('|')
-            .map((action) => deps.panel.querySelector<HTMLElement>(`[data-action="${action}"]`))
-            .find((el) => el !== null && el.offsetParent !== null && (!win || win.contains(el))) ?? null;
+          selectors
+            .map((sel) => [...deps.panel.querySelectorAll<HTMLElement>(sel)].find((el) => el.offsetParent !== null && !el.closest('.locked') && el.getAttribute('aria-disabled') !== 'true' && (!win || win.contains(el))) ?? null)
+            .find((el) => el !== null) ?? null;
         if (!button) {
           hide();
           return;
@@ -83,6 +85,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         const b = button.getBoundingClientRect();
         x = b.left + b.width / 2 - base.left;
         y = b.top - base.top;
+        bottom = b.bottom - base.top;
       } else if (a && !win) {
         if (target.kind === 'incubator') {
           const s = a.incubators[target.index];
@@ -109,10 +112,11 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         hide();
         return;
       }
-      const text = deps.t(`ftue.${hint.step}`);
+      const text = deps.t(hint.key ?? `ftue.${hint.step}`);
       // Above the target; below it when the HUD is in the way.
-      const above = button !== null || y - r - 56 > deps.topInset();
-      const key = `${hint.step}:${Math.round(x)}:${Math.round(y)}:${Math.round(r)}:${above}:${text}`;
+      // A button under the HUD (a tab title, UB-06) gets its bubble below.
+      const above = y - r - 56 > deps.topInset() || (button !== null && button.closest('#nav') !== null);
+      const key = `${hint.key ?? hint.step}:${Math.round(x)}:${Math.round(y)}:${Math.round(r)}:${above}:${text}`;
       if (key === lastKey) return;
       lastKey = key;
       label.textContent = text;
@@ -123,7 +127,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       const left = Math.max(8, Math.min(base.width - w - 8, x - w / 2));
       root.style.left = `${left}px`;
       root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, x - left))}px`);
-      root.style.top = above ? `${y - r - 12 - root.offsetHeight}px` : `${y + r + 12}px`;
+      root.style.top = above ? `${y - r - 12 - root.offsetHeight}px` : `${(button ? bottom : y + r) + 12}px`;
       ring.hidden = r === 0;
       if (r > 0) {
         ring.style.left = `${x - r}px`;

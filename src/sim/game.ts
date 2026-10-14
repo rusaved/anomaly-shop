@@ -318,6 +318,8 @@ export interface Game {
   buyUpgrade(id: string): boolean;
   /** The player looked at the shop: «New!» marks go out. */
   seenShop(): void;
+  /** UB-06: the player opened a tab; true on the very first visit (its one hint shows then). */
+  seenTab(tab: string): boolean;
   /** Open district ids (yard first). */
   districts(): string[];
   /** Tap on the event thing at the door: the door egg is taken, the merchant opens his cart (merchantOpen). */
@@ -1657,6 +1659,13 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     reputation() {
       const xp = repXp();
       return { xp, ...repLevel(xp, content.reputation.levels) };
+    },
+    seenTab(tab) {
+      const key = `tab_${tab}`;
+      if (s().flags[key]) return false;
+      s().flags[key] = true;
+      commit();
+      return true;
     },
     seenShop() {
       const st = s();

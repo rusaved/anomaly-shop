@@ -25,7 +25,7 @@ import { createMerchantWindow } from './ui/merchant.ts';
 import { createChatter } from './ui/chatter.ts';
 import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { ftueHint } from './sim/ftue.ts';
+import { ftueHint, tabHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { createNav, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
@@ -181,7 +181,17 @@ async function boot(): Promise<void> {
     }
     if (tab === 'shop') upgradesWindow.open();
     renderTabs();
+    // UB-06: the first visit of a tab — its one hint, until the next tap.
+    intro = play.seenTab(tab) ? { tab, at: performance.now() } : null;
   };
+  let intro: { tab: TabId; at: number } | null = null;
+  document.addEventListener(
+    'pointerdown',
+    () => {
+      if (intro && performance.now() - intro.at > 300) intro = null;
+    },
+    true,
+  );
   const selectTab = (tab: TabId): void => {
     nav.mark(tab);
     showTab(tab);
@@ -621,8 +631,9 @@ async function boot(): Promise<void> {
     shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, view);
     // UB-01, UB-02: a hint at the shop shows on the home screen only, and never over a window.
     const hint = controllable ? ftueHint(store.state, view) : null;
-    const sceneHint = hint !== null && hint.target.kind !== 'button';
-    hints.update(hint && !(sceneHint && nav.active() !== 'eggs') ? hint : null);
+    const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';
+    const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
+    hints.update(tabIntro ?? (hint && !(sceneHint && nav.active() !== 'eggs') ? hint : null));
     newsTicker.tick(runtime.pause.isPaused() ? 0 : ticker.deltaMS / 1000, controllable && Boolean(store.state.flags.ftue_done));
     if (!runtime.pause.isPaused() && store.state.flags.ftue_done) chatter.tick(ticker.deltaMS / 1000);
     funnel.tick(runtime.elapsed());

@@ -4,7 +4,8 @@ import { resolve } from 'node:path';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
-import { ftueHint, type FtueStep } from '../src/sim/ftue.ts';
+import { ftueHint, tabHint, type FtueStep } from '../src/sim/ftue.ts';
+import { TABS } from '../src/ui/nav.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
@@ -70,6 +71,19 @@ describe('M1-09 first minute', () => {
         expect(text!.trim().split(/\s+/).length).toBeLessThanOrEqual(content.ftue.maxHintWords);
       }
     }
+  });
+
+  it('UB-06 every tab but the home one has its one hint (6 words at most), shown on the very first visit only', () => {
+    for (const tab of TABS.filter((x) => x !== 'eggs')) {
+      const hint = tabHint(tab)!;
+      expect(hint.target.kind).toBe('el');
+      for (const lang of ['ru', 'en']) expect(dict(lang)[hint.key!]!.trim().split(/\s+/).length, `${lang} ${hint.key}`).toBeLessThanOrEqual(content.ftue.maxHintWords);
+    }
+    expect(tabHint('eggs')).toBeNull();
+    const game = createGame(createStore(newSave(0), () => 0), content, createRng(1));
+    expect(game.seenTab('market')).toBe(true);
+    expect(game.seenTab('market')).toBe(false);
+    expect(game.state.flags.tab_market).toBe(true);
   });
 
   it('a returning player (tutorial done) sees no hints and gets the normal odds', () => {

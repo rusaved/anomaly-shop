@@ -62,7 +62,10 @@ export async function hintsNotOverWindows(page: Page): Promise<void> {
   await expect(page.locator('[data-overlay=gifts]')).toBeVisible();
   await expect(page.locator('.hint')).toBeHidden();
   await page.locator('[data-tab=market]').click();
-  // The hint at the shop does not show over another screen either.
+  // The hint at the shop does not show over another screen either: only the market's own one (UB-06), at a thing on that screen.
+  await expect(page.locator('.hint')).toHaveAttribute('data-hint', 'tab');
+  await page.waitForTimeout(350);
+  await page.locator('[data-tab=market]').click();
   await expect(page.locator('.hint')).toBeHidden();
   await page.locator('[data-tab=eggs]').click();
   await expect(page.locator('.hint [data-hint-text]')).toBeVisible();

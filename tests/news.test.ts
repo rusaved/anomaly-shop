@@ -14,7 +14,7 @@ describe('M2-14 news ticker', () => {
     expect(data.lines.length).toBeGreaterThanOrEqual(40);
     const kinds = new Set(data.lines.map((l) => l.when.type));
     for (const k of ['always', 'deals', 'species', 'upgrade', 'hours', 'coins', 'idle', 'event']) expect(kinds).toContain(k);
-    expect(data.everySec).toEqual({ min: 10, max: 15 });
+    expect(data.everySec).toEqual({ min: 25, max: 40 });
   });
 
   it('conditions: deals, showcase species, time of day across midnight, idle', () => {

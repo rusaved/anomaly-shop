@@ -31,6 +31,8 @@ export interface TestHooks {
   anchors(): ShopAnchors | null;
   /** e2e only: coins for flows that are not under test (shop purchases). */
   grant(coins: number): void;
+  /** e2e only: a toast through the same queue as the game's (M3-18). */
+  toast?(text: string): void;
 }
 
 export function installTestApi(hooks: TestHooks): void {
@@ -76,6 +78,9 @@ export function installTestApi(hooks: TestHooks): void {
     },
     grant(coins: number): void {
       hooks.grant(coins);
+    },
+    toast(text: string): void {
+      hooks.toast?.(text);
     },
     /** Reads a translated string (to compare UI texts in e2e without hard-coding them). */
     t(key: string): string {

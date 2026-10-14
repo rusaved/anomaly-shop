@@ -417,6 +417,8 @@ async function boot(): Promise<void> {
   const chatter = createChatter({ lines, lang: () => i18n.lang(), speak: (who, text) => shop.speak(who, text), view: () => play.view() });
   play.events.on((e) => {
     shop.onEvent(e);
+    // M3-18: «Lv N!» flies in the scene — the toasts wait for it.
+    if (e.type === 'fed' && e.levelUp) toasts.hold(1200);
     chatter.onEvent(e);
     if (e.type === 'change') renderUi();
     else if (e.type === 'denied') {
@@ -580,6 +582,7 @@ async function boot(): Promise<void> {
         store.state.coins += coins;
         store.commit();
       },
+      toast: (text) => toasts.show(text, 'info'),
     });
   }
 

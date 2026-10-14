@@ -330,6 +330,8 @@ export const NewsWhen = v.variant('type', [
   v.object({ type: v.literal('event'), id: Id }),
 ]);
 export const NewsFile = v.object({
+  /** Seconds a line stays before the ticker hides again (M3-18). */
+  showSec: v.optional(v.pipe(v.number(), v.minValue(1))),
   everySec: v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(v.number(), v.minValue(1)) }),
   noRepeat: v.pipe(v.number(), v.integer(), v.minValue(0)),
   specificWeight: v.pipe(v.number(), v.minValue(1)),

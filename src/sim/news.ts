@@ -44,9 +44,13 @@ export function newsFits(w: NewsWhenData, c: NewsContext): boolean {
 }
 
 /** Index of the next line: fitting ones, not among the last noRepeat shown, weighted (lines with a condition win specificWeight×). */
-export function pickNews(data: NewsData, c: NewsContext, recent: number[], roll: number): number {
+export function pickNews(data: NewsData, c: NewsContext, recent: number[], roll: number, specificOnly = false): number {
   const avoid = new Set(recent.slice(-data.noRepeat));
-  let pool = data.lines.map((l, i) => ({ i, w: l.when.type === 'always' ? 1 : data.specificWeight, ok: newsFits(l.when, c) })).filter((x) => x.ok);
+  // M3-18: the ticker speaks only with a reason — then only lines about the shop (no filler, no clock lines).
+  let pool = data.lines
+    .map((l, i) => ({ i, w: l.when.type === 'always' ? 1 : data.specificWeight, ok: newsFits(l.when, c) && (!specificOnly || (l.when.type !== 'always' && l.when.type !== 'hours')) }))
+    .filter((x) => x.ok);
+  if (!pool.length) return -1;
   const fresh = pool.filter((x) => !avoid.has(x.i));
   if (fresh.length) pool = fresh;
   const total = pool.reduce((s, x) => s + x.w, 0);

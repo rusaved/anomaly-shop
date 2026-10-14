@@ -999,7 +999,7 @@
   align-items: center;
   gap: 8px;
   min-height: 18px;
-  font-size: 13px;
+  font-size: 11px;
   line-height: 1.2;
   color: var(--c-uiMuted);
 }

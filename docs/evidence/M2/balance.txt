@@ -1,11 +1,11 @@
 sim:balance — 4 bots × 24 seeds × 10 min; p50 / p90 of game seconds (limit in brackets)
-casual  F1 8/8 (40) ok · F2 26/26 (120) ok · F3 15/15 (180) ok · F4 12/12 (300) ok · F5 ×2.5 ok · F10 ok · F11 3/24 miss (from M2-12) · 5 min: 58 deals, 2167 coins; 10 min: 5822 coins (p50)
-rusher  F1 10/10 (40) ok · F2 32/38 (120) ok · F3 15/15 (180) ok · F4 14/14 (300) ok · F5 ×1.6 ok · F10 ok · F11 0/24 ok · 5 min: 56 deals, 1588 coins; 10 min: 3947 coins (p50)
-tapper  F1 7/7 (40) ok · F2 13/19 (120) ok · F3 13/19 (180) ok · F4 10/10 (300) ok · F5 ×3.0 ok · F10 ok · F11 2/24 ok · 5 min: 48 deals, 5026 coins; 10 min: 14723 coins (p50)
-slow    F1 16/16 (40) ok · F2 38/45 (120) ok · F3 28/28 (180) ok · F4 23/23 (300) ok · F5 ×2.4 ok · F10 ok · F11 0/24 ok · 5 min: 51 deals, 1285 coins; 10 min: 4008 coins (p50)
+casual  F1 8/8 (40) ok · F2 26/26 (120) ok · F3 15/15 (180) ok · F4 12/12 (300) ok · F5 ×2.3 ok · F10 ok · F11 0/24 ok · 5 min: 57 deals, 2061 coins; 10 min: 6182 coins (p50)
+rusher  F1 10/10 (40) ok · F2 32/38 (120) ok · F3 15/15 (180) ok · F4 14/14 (300) ok · F5 ×1.7 ok · F10 ok · F11 0/24 ok · 5 min: 55 deals, 1471 coins; 10 min: 4161 coins (p50)
+tapper  F1 7/7 (40) ok · F2 13/19 (120) ok · F3 13/19 (180) ok · F4 10/10 (300) ok · F5 ×4.0 ok · F10 ok · F11 0/24 ok · 5 min: 50 deals, 5839 coins; 10 min: 21275 coins (p50)
+slow    F1 16/16 (40) ok · F2 38/45 (120) ok · F3 28/28 (180) ok · F4 23/23 (300) ok · F5 ×3.1 ok · F10 ok · F11 1/24 ok · 5 min: 52 deals, 1313 coins; 10 min: 4980 coins (p50)
 long run — casual and slow × 8 seeds: 3 days of 30 active minutes + 8 h away
-casual  F6 8 h away = 40 min of play (30–60) ok · F7 rebirth threshold on day 2.3 (2–3) ok · F8 street 114 s, square 486 s p90 (600 / 2400) ok
-slow    F6 8 h away = 48 min of play (30–60) ok · F7 rebirth threshold on day 2.6 (2–3) ok · F8 street 135 s, square 540 s p90 (600 / 2400) ok
+casual  F6 8 h away = 49 min of play (30–60) ok · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 114 s, square 495 s p90 (600 / 2400) ok
+slow    F6 8 h away = 73 min of play (30–60) info · F7 rebirth threshold on day 2.3 (2–3) ok · F8 street 134 s, square 522 s p90 (600 / 2400) ok
 F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)
-F1–F8, F10: all green
-(22.2 s)
+F1–F8, F10, F11: all green
+(25.1 s)

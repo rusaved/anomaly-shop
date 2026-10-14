@@ -51,6 +51,8 @@ export type GameEvent =
   | { type: 'eggUnlocked'; egg: string }
   | { type: 'districtOpened'; district: string; customer: string }
   | { type: 'firstCrystal' }
+  | { type: 'cuckoo' }
+  | { type: 'upgradeUnlocked'; id: string }
   | { type: 'rescueEgg'; incubator: number }
   | { type: 'sold'; uid: string; species: string; price: number; crystals: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper' }
   | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
@@ -124,6 +126,8 @@ export interface UpgradeView {
   price: number;
   affordable: boolean;
   maxed: boolean;
+  /** Opened since the player last looked at the shop («New!»). */
+  fresh: boolean;
 }
 
 export type BuyCheck = { ok: true; incubator: number; price: number } | { ok: false; reason: DenyReason; price: number };
@@ -154,6 +158,8 @@ export interface Game {
   /** The shop positions of upgrades.json (shop list) with their next price. */
   upgradeList(): UpgradeView[];
   buyUpgrade(id: string): boolean;
+  /** The player looked at the shop: «New!» marks go out. */
+  seenShop(): void;
   /** Free showcase places (creatures and eggs both take one). */
   freeSlots(): number;
   showcaseSlots(): number;
@@ -282,7 +288,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       offer,
       bargains: v.bargains,
       canHaggle: v.bargains < content.customers.bargainMax,
-      leaveChance: c.leaveOnBargain,
+      leaveChance: Math.max(0, c.leaveOnBargain + effectSum('leaveChance')),
       share: cr && spec ? offer / appraisal(cr) : v.share * v.mult,
     };
   }
@@ -344,6 +350,40 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   let courierIn = 0;
   /** Seconds the front customer has stood at the counter with a creature to offer (the seller waits for the player first). */
   let counterSec = 0;
+  let cuckooIn = 0;
+  /** Shop positions open so far: a new one is announced once (docs/01b, section 1.7: mechanics as a reward). */
+  let openShop = new Set<string>();
+  let shopCheckIn = 0;
+  const openShopIds = (): string[] => {
+    const f = facts();
+    return content.upgrades.shop.filter((id) => unlockMet(content.upgrades.upgrades.find((u) => u.id === id)?.unlock, f));
+  };
+
+  /** The cuckoo clock (docs/01b, section 5.1): every everySec all creatures get food. */
+  function runClock(dt: number): void {
+    const clock = owned('cuckoo');
+    if (!clock) return;
+    cuckooIn += dt;
+    if (cuckooIn < clock.everySec) return;
+    cuckooIn = 0;
+    emit({ type: 'cuckoo' });
+    for (const cr of [...s().creatures]) feed(cr, clock.fed, 'cuckoo');
+  }
+
+  /** Announces shop positions that opened since the last look (flag up_new_<id> until the shop is opened). */
+  function checkShop(dt: number): void {
+    shopCheckIn -= dt;
+    if (shopCheckIn > 0) return;
+    shopCheckIn = 0.5;
+    const now = openShopIds();
+    const fresh = now.filter((id) => !openShop.has(id));
+    openShop = new Set(now);
+    for (const id of fresh) {
+      s().flags[`up_new_${id}`] = true;
+      emit({ type: 'upgradeUnlocked', id });
+    }
+    if (fresh.length) emit({ type: 'change' });
+  }
 
   /** Helpers (docs/01, section 3.6): the feeder feeds the hungriest, the seller sells to a customer kept waiting, the courier brings eggs. */
   function runHelpers(dt: number): void {
@@ -518,7 +558,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const maxed = level >= u.levels;
     const price = maxed ? 0 : upgradePrice(u, level);
     const wallet = u.currency === 'crystals' ? s().crystals : s().coins;
-    return { id, level, levels: u.levels, price, affordable: !maxed && wallet + 1e-9 >= price, maxed };
+    return { id, level, levels: u.levels, price, affordable: !maxed && wallet + 1e-9 >= price, maxed, fresh: Boolean(s().flags[`up_new_${id}`]) };
   }
 
   // The starter egg (docs/01, section 4): already in the incubator on the very first visit, waiting for a tap.
@@ -530,6 +570,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       commit({ flush: true });
     }
   }
+
+  openShop = new Set(openShopIds());
 
   const game: Game = {
     store,
@@ -665,6 +707,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         if (isHatched(inc.progress, inc.elapsed, needFor(inc.egg), eggs)) hatch(i);
       }
       runHelpers(dt);
+      runClock(dt);
+      if (!quiet) checkShop(dt);
     },
     view() {
       return {
@@ -719,6 +763,19 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       emit({ type: 'upgradeBought', id, level: view.level + 1, price: view.price });
       emit({ type: 'change' });
       return true;
+    },
+    seenShop() {
+      const st = s();
+      let changed = false;
+      for (const key of Object.keys(st.flags)) {
+        if (!key.startsWith('up_new_')) continue;
+        delete st.flags[key];
+        changed = true;
+      }
+      if (changed) {
+        commit();
+        emit({ type: 'change' });
+      }
     },
     freeSlots,
     showcaseSlots,

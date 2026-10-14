@@ -4,7 +4,7 @@
   "offlineMaxHours": 8,
   "offlineRate": 0.5,
   "prestige": {"thresholdCoinsEarned": 500000, "incomeBonusPerPrestige": 0.25},
-  "shop": ["incubator", "incubator_speed", "showcase", "sign", "cash", "helper_feed", "helper_sell", "helper_courier"],
+  "shop": ["incubator", "incubator_speed", "showcase", "bowl", "bell", "sign", "mat", "tags", "cash", "radio", "board", "stool", "cuckoo", "helper_feed", "helper_sell", "helper_courier"],
   "upgrades": [
     {"id": "incubator", "name": {"ru": "Инкубаторы", "en": "Incubators"}, "levels": 3, "price1": 50, "priceMax": 5000, "effect": {"type": "slots", "perLevel": 1}},
     {"id": "incubator_speed", "name": {"ru": "Скорость вылупления", "en": "Hatch Speed"}, "levels": 5, "price1": 40, "priceMax": 3000, "effect": {"type": "hatchTime", "perLevel": -0.1}},
@@ -20,7 +20,7 @@
     {"id": "stool", "name": {"ru": "Табурет", "en": "Stool"}, "levels": 1, "price1": 1400, "priceMax": 1400, "effect": {"type": "showcaseSlots", "perLevel": 1}, "unlock": {"type": "deals", "count": 40}, "decor": "stool", "joke": {"ru": "Ещё одно место для красоты", "en": "One more seat for cuties"}},
     {"id": "cuckoo", "name": {"ru": "Часы с кукушкой", "en": "Cuckoo Clock"}, "levels": 1, "price1": 2000, "priceMax": 2000, "effect": {"type": "cuckoo", "everySec": 60, "fed": 1}, "unlock": {"type": "deals", "count": 55}, "decor": "clock", "joke": {"ru": "Ку-ку! Время обеда", "en": "Cuckoo! Lunch time"}},
     {"id": "helper_feed", "name": {"ru": "Помощник-кормилец", "en": "Feeder"}, "levels": 1, "price1": 500, "priceMax": 500, "effect": {"type": "autoFeed", "creatures": 1, "offline": true, "tapsPerSec": 1}, "unlock": {"type": "deals", "count": 10}, "decor": "feeder"},
-    {"id": "helper_sell", "name": {"ru": "Помощник-продавец", "en": "Seller"}, "levels": 1, "price1": 1200, "priceMax": 1200, "effect": {"type": "autoSell", "priceShare": 1.0, "offline": true, "delaySec": 4}, "unlock": {"type": "deals", "count": 20}, "decor": "seller"},
+    {"id": "helper_sell", "name": {"ru": "Помощник-продавец", "en": "Seller"}, "levels": 1, "price1": 1200, "priceMax": 1200, "effect": {"type": "autoSell", "priceShare": 1.0, "offline": true, "delaySec": 6}, "unlock": {"type": "deals", "count": 20}, "decor": "seller"},
     {"id": "helper_courier", "name": {"ru": "Курьер яиц", "en": "Egg Courier"}, "levels": 1, "price1": 25, "priceMax": 25, "currency": "crystals", "effect": {"type": "autoBuyEgg", "egg": "egg_basic", "offline": true, "everySec": 2}, "unlock": {"type": "deals", "count": 30}, "decor": "courier"}
   ]
 }

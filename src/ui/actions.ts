@@ -76,7 +76,7 @@ export function createActions(parent: HTMLElement, game: Game, lang: string, loo
         why.textContent = reason ? look.t(`reason.${reason}`) : '';
       });
       root.dataset.eggs = String(list.length);
-      dot.hidden = !game.upgradeList().some((u) => u.affordable);
+      dot.hidden = !game.upgradeList().some((u) => u.affordable || u.fresh);
     },
     setLanguage(next) {
       format = new Intl.NumberFormat(next);

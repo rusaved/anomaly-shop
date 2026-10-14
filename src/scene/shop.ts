@@ -676,6 +676,10 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           fx.burst(node.box.x, node.box.y - current.unit, 8, [c.uiMuted, c.outline], current.unit * 2.5, current.outline);
           fx.float(node.box.x, node.box.y - current.unit * 2.6, t('fx.huff'), c.eyeWhite, Math.max(15, current.unit * 0.55), current.unit * 0.8);
         }
+      } else if (e.type === 'cuckoo') {
+        const k = current.decor.clock;
+        fx.float(k.x, k.y - k.r * 1.2, t('fx.cuckoo'), c.uiAccent, Math.max(14, current.unit * 0.5), current.unit * 0.8);
+        fx.burst(k.x, k.y - k.r * 0.7, 6, [c.uiAccent, c.eyeWhite], current.unit * 1.5, current.outline);
       } else if (e.type === 'customerArrived') {
         if (decorItems.bell) bellSwing = 0.8;
       } else if (e.type === 'eggBought' || e.type === 'rescueEgg') {

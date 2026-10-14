@@ -94,5 +94,9 @@
   "egg.short.egg_odd": "Odd",
   "egg.short.egg_glow": "Glowing",
   "hud.crystals": "Crystals",
-  "toast.crystal": "A crystal! Rare ones bring them"
+  "toast.crystal": "A crystal! Rare ones bring them",
+  "upgrades.new": "New!",
+  "toast.upgradeUnlocked": "New in the shop: {name}",
+  "fx.cuckoo": "Cuckoo!",
+  "upgrades.bought": "Bought"
 }

@@ -43,7 +43,8 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
 
   function build(): void {
     list.replaceChildren();
-    for (const item of game.upgradeList()) {
+    // Positions still to buy on top, maxed ones at the bottom (the nearest goals are what the player looks for).
+    for (const item of [...game.upgradeList()].sort((a, b) => Number(a.maxed) - Number(b.maxed))) {
       const u = look.upgrade(item.id);
       if (!u) continue;
       const row = document.createElement('div');
@@ -51,10 +52,14 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
       row.dataset.upgrade = item.id;
       row.innerHTML =
         `<span class="shop-icon shop-icon-${u.effect.type}" aria-hidden="true"></span>` +
-        '<span class="shop-text"><b data-name></b><small data-effect></small><small data-level></small></span>' +
+        '<span class="shop-text"><b data-name></b><small data-effect></small><small class="shop-joke" data-joke></small><small data-level></small></span><span class="shop-new" data-new hidden></span>' +
         `<button type="button" class="btn btn-primary btn-buy" data-action="buy-upgrade" data-id="${item.id}"><span class="${u.currency === 'crystals' ? 'gem' : 'coin coin-sm'}" aria-hidden="true"></span><span data-price></span></button>`;
       (row.querySelector('[data-name]') as HTMLElement).textContent = u.name[look.lang() === 'en' ? 'en' : 'ru'];
       (row.querySelector('[data-effect]') as HTMLElement).textContent = effectText(u, look);
+      const joke = row.querySelector('[data-joke]') as HTMLElement;
+      joke.textContent = u.joke ? u.joke[look.lang() === 'en' ? 'en' : 'ru'] : '';
+      joke.hidden = !u.joke;
+      (row.querySelector('[data-new]') as HTMLElement).textContent = look.t('upgrades.new');
       row.querySelector('button')?.addEventListener('click', () => game.buyUpgrade(item.id));
       list.appendChild(row);
     }
@@ -63,31 +68,33 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
   const win: UpgradesWindow = {
     overlay,
     open() {
-      if (built !== look.lang()) {
-        built = look.lang();
-        build();
-      }
       overlay.show();
       win.render();
     },
     close() {
       overlay.hide();
+      game.seenShop();
     },
     render() {
       if (!overlay.isOpen() && built) return;
-      if (built !== look.lang()) {
-        built = look.lang();
+      const key = `${look.lang()}|${game.upgradeList().map((u) => `${u.id}:${u.maxed}`).join(',')}`;
+      if (built !== key) {
+        built = key;
         build();
       }
       const fmt = new Intl.NumberFormat(look.lang());
       for (const item of game.upgradeList()) {
         const row = list.querySelector(`[data-upgrade="${item.id}"]`);
         if (!row) continue;
-        (row.querySelector('[data-level]') as HTMLElement).textContent = look.t('upgrades.level', { n: item.level, max: item.levels });
+        const levelText = row.querySelector('[data-level]') as HTMLElement;
+        // One-off things say «Bought» once bought; levelled ones count levels.
+        levelText.textContent = item.levels > 1 ? look.t('upgrades.level', { n: item.level, max: item.levels }) : item.maxed ? look.t('upgrades.bought') : '';
+        levelText.hidden = !levelText.textContent;
         const buy = row.querySelector('button') as HTMLButtonElement;
         const price = row.querySelector('[data-price]') as HTMLElement;
         price.textContent = item.maxed ? look.t('upgrades.max') : fmt.format(item.price);
         buy.classList.toggle('is-max', item.maxed);
+        (row.querySelector('[data-new]') as HTMLElement).hidden = !item.fresh;
         buy.setAttribute('aria-disabled', String(!item.affordable));
       }
     },

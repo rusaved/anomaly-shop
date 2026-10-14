@@ -62,8 +62,11 @@ describe('M2-03 helpers', () => {
     const { game, seen } = setup({ creatures: [cr('a', 'cloudcat', 2)], helpers: ['helper_sell'] });
     run(game, 6.5);
     const offer = game.deal()!.offer;
+    const delay = content.upgrades.upgrades.find((u) => u.id === 'helper_sell')!.effect;
+    expect(delay.type === 'autoSell' && delay.delaySec).toBeGreaterThan(1);
+    run(game, (delay.type === 'autoSell' ? delay.delaySec : 0) - 0.6);
     expect(seen.some((e) => e.type === 'sold')).toBe(false);
-    run(game, 4.1);
+    run(game, 0.2);
     const sold = seen.find((e) => e.type === 'sold');
     expect(sold).toMatchObject({ by: 'helper', uid: 'a', price: offer });
     expect(game.state.coins).toBe(offer);
@@ -72,9 +75,9 @@ describe('M2-03 helpers', () => {
   it('a haggle restarts the seller wait: the player keeps the deal in hand', () => {
     const { game, seen } = setup({ creatures: [cr('a', 'cloudcat', 2)], helpers: ['helper_sell'], seed: 11 });
     run(game, 6.5);
-    run(game, 3);
+    run(game, 4);
     game.haggle();
-    run(game, 3);
+    run(game, 4);
     expect(seen.some((e) => e.type === 'sold' && e.by === 'helper')).toBe(false);
   });
 

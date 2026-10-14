@@ -184,6 +184,11 @@ async function boot(): Promise<void> {
       sfx.play('buy');
     }
     else if (e.type === 'firstCrystal') toasts.show(i18n.t('toast.crystal'), 'rare', 2800);
+    else if (e.type === 'upgradeUnlocked') {
+      const name = upgrades.upgrades.find((u) => u.id === e.id)?.name[i18n.lang()] ?? e.id;
+      toasts.show(i18n.t('toast.upgradeUnlocked', { name }), 'good', 2400);
+    }
+    else if (e.type === 'cuckoo') sfx.play('levelUp');
     else if (e.type === 'districtOpened') {
       const d = customers.districts.find((x) => x.id === e.district);
       if (d) toasts.show(i18n.t('toast.district', { name: d.name[i18n.lang()], who: d.customer.name[i18n.lang()] }), 'rare', 3000);

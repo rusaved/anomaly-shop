@@ -94,5 +94,9 @@
   "egg.short.egg_odd": "Странное",
   "egg.short.egg_glow": "Светящееся",
   "hud.crystals": "Кристаллы",
-  "toast.crystal": "Кристалл! Их дают за редких"
+  "toast.crystal": "Кристалл! Их дают за редких",
+  "upgrades.new": "Новое!",
+  "toast.upgradeUnlocked": "Новое в магазине: {name}",
+  "fx.cuckoo": "Ку-ку!",
+  "upgrades.bought": "Куплено"
 }

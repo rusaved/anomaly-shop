@@ -797,3 +797,38 @@
   width: 14px;
   height: 16px;
 }
+
+/* M2-12: the ladder in the shop — «New!» badge, a joke line, an icon color per effect */
+.shop-item {
+  position: relative;
+}
+.shop-joke {
+  font-style: italic;
+}
+.shop-new {
+  position: absolute;
+  top: -6px;
+  left: 10px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--c-uiGood);
+  color: var(--c-outline);
+  font-size: 12px;
+  font-weight: 700;
+}
+.shop-new[hidden] {
+  display: none;
+}
+.shop-icon-showcaseSlots { background: var(--c-showcase); box-shadow: inset 0 0 0 6px var(--c-showcaseSlot), 0 0 0 3px var(--c-outline); }
+.shop-icon-spawnRate { background: var(--c-counterTop); box-shadow: 0 0 0 3px var(--c-outline); border-radius: 10px; }
+.shop-icon-bargain { background: var(--c-incubator); box-shadow: inset 0 12px 0 var(--c-incubatorGlass), 0 0 0 3px var(--c-outline); border-radius: 10px; }
+.shop-icon-feedPerTap { background: var(--c-rarityRare); box-shadow: inset 0 12px 0 var(--c-eggSpots), 0 0 0 3px var(--c-outline); }
+.shop-icon-queueSize { background: var(--c-rarityLegendary); box-shadow: 0 0 0 3px var(--c-outline); border-radius: 50% 50% 20% 20%; }
+.shop-icon-leaveChance { background: var(--c-blush); box-shadow: 0 0 0 3px var(--c-outline); border-radius: 12px; height: 24px; }
+.shop-icon-appraisal { background: var(--c-rarityCommon); box-shadow: 0 0 0 3px var(--c-outline); border-radius: 12px 50% 50% 12px; }
+.shop-icon-shelfGrowth { background: var(--c-rarityEpic); box-shadow: inset 10px 0 0 var(--c-uiPanelAlt), 0 0 0 3px var(--c-outline); border-radius: 10px; }
+.shop-icon-orders { background: var(--c-counter); box-shadow: inset 0 0 0 8px var(--c-counter), inset 0 0 0 40px var(--c-eyeWhite), 0 0 0 3px var(--c-outline); border-radius: 8px; }
+.shop-icon-cuckoo { background: var(--c-counter); box-shadow: inset 0 0 0 9px var(--c-counter), inset 0 0 0 40px var(--c-eyeWhite), 0 0 0 3px var(--c-outline); }
+.shop-icon-autoFeed { background: var(--c-uiGood); box-shadow: 0 0 0 3px var(--c-outline); }
+.shop-icon-autoSell { background: var(--c-rarityRare); box-shadow: 0 0 0 3px var(--c-outline); }
+.shop-icon-autoBuyEgg { background: var(--c-uiAccent); box-shadow: 0 0 0 3px var(--c-outline); }

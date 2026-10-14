@@ -832,3 +832,161 @@
 .shop-icon-autoFeed { background: var(--c-uiGood); box-shadow: 0 0 0 3px var(--c-outline); }
 .shop-icon-autoSell { background: var(--c-rarityRare); box-shadow: 0 0 0 3px var(--c-outline); }
 .shop-icon-autoBuyEgg { background: var(--c-uiAccent); box-shadow: 0 0 0 3px var(--c-outline); }
+
+/* M2-13: two action rows — eggs; Upgrades + the «Next» card (the nearest goal, a bar, «N more») */
+.actions {
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
+.actions .actions-eggs,
+.actions:not([data-eggs='1']) .actions-eggs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+}
+.actions-more {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.actions .actions-more .btn-upgrades,
+.actions:not([data-eggs='1']) .actions-more .btn-upgrades {
+  flex: 0 0 auto;
+  padding: 0 14px;
+}
+.actions-more:has(.next[hidden]) .btn-upgrades {
+  flex: 1 1 auto;
+}
+.next {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 8px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--c-uiPanelAlt);
+  color: var(--c-uiText);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+.next[hidden] {
+  display: none;
+}
+.next-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--c-uiAccent);
+  box-shadow: inset 0 0 0 4px var(--c-counterTop), 0 0 0 2px var(--c-outline);
+}
+.next[data-unit='deals'] .next-icon {
+  border-radius: 50% 50% 40% 40%;
+  background: var(--c-rarityCommon);
+  box-shadow: 0 0 0 2px var(--c-outline);
+}
+.next[data-unit='crystals'] .next-icon {
+  border-radius: 0;
+  background: var(--c-rarityRare);
+  box-shadow: none;
+  clip-path: polygon(50% 0, 100% 35%, 50% 100%, 0 35%);
+}
+.next-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  line-height: 1.1;
+}
+.next-text small {
+  font-size: 11px;
+  color: var(--c-uiMuted);
+}
+.next-text b {
+  font-size: 14px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.next-left {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-uiAccent);
+  white-space: nowrap;
+}
+.next-bar {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c-uiPanel);
+  overflow: hidden;
+}
+.next-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--c-uiGood);
+  transition: width 0.3s;
+}
+.next.flash {
+  animation: next-flash 0.7s ease-out;
+}
+@keyframes next-flash {
+  0% {
+    box-shadow: inset 0 0 0 0 var(--c-uiGood);
+    background: var(--c-uiPanelAlt);
+  }
+  30% {
+    box-shadow: inset 0 0 0 3px var(--c-uiGood);
+    background: var(--c-uiGood);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+    background: var(--c-uiPanelAlt);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .next.flash {
+    animation: none;
+  }
+}
+.next-left {
+  font-size: 11px;
+}
+.panel-short .panel-title,
+.panel-short .panel-side {
+  display: none;
+}
+/* Four eggs in a narrow row (landscape phones, SE): tighter buttons */
+.actions[data-eggs='4'] .actions-eggs {
+  gap: 6px;
+}
+.actions[data-eggs='4'] .btn-egg {
+  padding: 0 4px;
+  font-size: 14px;
+}
+.actions[data-eggs='4'] .btn-egg .egg-icon {
+  width: 13px;
+  height: 17px;
+}
+.panel-body > * {
+  flex-shrink: 0;
+}
+.actions-more {
+  width: 100%;
+}
+.next-text small {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

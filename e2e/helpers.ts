@@ -76,3 +76,32 @@ export async function expectNoPageScroll(page: Page): Promise<void> {
   expect(s.w).toBeLessThanOrEqual(s.iw);
   expect(s.h).toBeLessThanOrEqual(s.ih);
 }
+
+/** A save past the first minute (M2 e2e): written to the local mirror and the mock cloud before the page loads. */
+export async function seedSave(page: Page, patch: Record<string, unknown> = {}): Promise<void> {
+  const save = {
+    v: 1,
+    rev: 999,
+    savedAt: Date.now(),
+    createdAt: 0,
+    lastSeenAt: 0,
+    coins: 30,
+    crystals: 0,
+    incubators: [{ egg: null }],
+    creatures: [
+      { uid: 'e2e1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 },
+      { uid: 'e2e2', species: 'cloudcat', level: 1, fed: 0, hatchedAt: 0, age: 0 },
+    ],
+    upgrades: {},
+    stats: { deals: 8, coinsEarned: 300, hatched: 10, taps: 100, levelUps: 3, haggles: 1 },
+    flags: { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true },
+    settings: { sound: false, lang: null },
+    ...patch,
+  };
+  await page.addInitScript((text: string) => {
+    if (sessionStorage.getItem('e2e-seeded')) return;
+    localStorage.setItem('anomaly-shop:save', text);
+    localStorage.setItem('__yasdk_mock_player__', JSON.stringify({ save: text }));
+    sessionStorage.setItem('e2e-seeded', '1');
+  }, JSON.stringify(save));
+}

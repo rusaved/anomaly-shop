@@ -22,6 +22,7 @@ import { createDealCard } from './ui/deal.ts';
 import { createCoinFlight } from './ui/coin-flight.ts';
 import { createUpgradesWindow } from './ui/upgrades.ts';
 import { createHints } from './ui/hints.ts';
+import { createNextCard } from './ui/next.ts';
 import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
 import { ftueHint } from './sim/ftue.ts';
@@ -141,10 +142,27 @@ async function boot(): Promise<void> {
     { t: i18n.t, eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg },
     () => upgradesWindow.open(),
   );
+  const nextCard = createNextCard(
+    actions.more,
+    play,
+    {
+      t: i18n.t,
+      lang: i18n.lang,
+      name: (g) => {
+        const lang = i18n.lang();
+        if (g.kind === 'upgrade') return upgrades.upgrades.find((u) => u.id === g.id)?.name[lang] ?? g.id;
+        if (g.kind === 'egg') return eggs.eggs.find((e) => e.id === g.id)?.name[lang] ?? g.id;
+        if (g.kind === 'district') return i18n.t('next.district', { name: customers.districts.find((d) => d.id === g.id)?.name[lang] ?? g.id });
+        return i18n.t('next.rebirth');
+      },
+    },
+    () => upgradesWindow.open(),
+  );
   const toasts = createToasts(uiRoot);
   const renderUi = (): void => {
     dealCard.render();
     actions.render();
+    nextCard.render();
     upgradesWindow.render();
   };
   renderUi();

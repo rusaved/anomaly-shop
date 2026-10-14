@@ -1,4 +1,4 @@
-// What: the action row of the panel: buy an egg (price on the button) and open the upgrade shop (dot when one is affordable).
+// What: the action rows of the panel: buy an egg (price on the button); the upgrade shop (dot when one is affordable or new) with the «Next» card beside it.
 // Called by: src/main.ts (create once, render on every commit and game change).
 // Keep: commands only; unaffordable stays tappable (aria-disabled) to explain why; basic egg = buy-egg, later eggs = buy-<id>.
 
@@ -12,6 +12,8 @@ export interface ActionLookups {
 
 export interface Actions {
   root: HTMLElement;
+  /** The second row next to the Upgrades button: the «Next» card lives here (M2-13). */
+  more: HTMLElement;
   render(): void;
   setLanguage(lang: string): void;
 }
@@ -22,7 +24,10 @@ export function createActions(parent: HTMLElement, game: Game, lang: string, loo
   const eggsBox = document.createElement('div');
   eggsBox.className = 'actions-eggs';
   root.appendChild(eggsBox);
-  root.insertAdjacentHTML(
+  const more = document.createElement('div');
+  more.className = 'actions-more';
+  root.appendChild(more);
+  more.insertAdjacentHTML(
     'beforeend',
     '<button type="button" class="btn btn-upgrades" data-action="upgrades"><span class="up-icon" aria-hidden="true"></span><span data-i18n="upgrades.open"></span><span class="dot" data-dot hidden></span></button>',
   );
@@ -54,6 +59,7 @@ export function createActions(parent: HTMLElement, game: Game, lang: string, loo
 
   const actions: Actions = {
     root,
+    more,
     render() {
       const list = game.eggList();
       const ids = list.map((e) => e.id).join(',');

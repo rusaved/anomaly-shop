@@ -98,5 +98,17 @@
   "upgrades.new": "New!",
   "toast.upgradeUnlocked": "New in the shop: {name}",
   "fx.cuckoo": "Cuckoo!",
-  "upgrades.bought": "Bought"
+  "upgrades.bought": "Bought",
+  "next.label": "Next",
+  "next.district": "{name} district",
+  "next.rebirth": "A new town",
+  "next.left.coins.one": "{n} more coin",
+  "next.left.coins.few": "{n} more coins",
+  "next.left.coins.many": "{n} more coins",
+  "next.left.crystals.one": "{n} more crystal",
+  "next.left.crystals.few": "{n} more crystals",
+  "next.left.crystals.many": "{n} more crystals",
+  "next.left.deals.one": "{n} more deal",
+  "next.left.deals.few": "{n} more deals",
+  "next.left.deals.many": "{n} more deals"
 }

@@ -98,5 +98,17 @@
   "upgrades.new": "Новое!",
   "toast.upgradeUnlocked": "Новое в магазине: {name}",
   "fx.cuckoo": "Ку-ку!",
-  "upgrades.bought": "Куплено"
+  "upgrades.bought": "Куплено",
+  "next.label": "Дальше",
+  "next.district": "Район «{name}»",
+  "next.rebirth": "Новый город",
+  "next.left.coins.one": "ещё {n} монета",
+  "next.left.coins.few": "ещё {n} монеты",
+  "next.left.coins.many": "ещё {n} монет",
+  "next.left.crystals.one": "ещё {n} кристалл",
+  "next.left.crystals.few": "ещё {n} кристалла",
+  "next.left.crystals.many": "ещё {n} кристаллов",
+  "next.left.deals.one": "ещё {n} сделка",
+  "next.left.deals.few": "ещё {n} сделки",
+  "next.left.deals.many": "ещё {n} сделок"
 }

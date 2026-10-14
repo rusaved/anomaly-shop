@@ -130,6 +130,16 @@ export interface UpgradeView {
   fresh: boolean;
 }
 
+/** The nearest goal not reached yet (docs/01b, section 5.2): the «Next» card shows exactly one. */
+export interface GoalView {
+  kind: 'upgrade' | 'district' | 'egg' | 'rebirth';
+  id: string;
+  /** Progress: have of need, in coins, crystals or deals. */
+  have: number;
+  need: number;
+  unit: 'coins' | 'crystals' | 'deals';
+}
+
 export type BuyCheck = { ok: true; incubator: number; price: number } | { ok: false; reason: DenyReason; price: number };
 
 export interface Game {
@@ -160,6 +170,8 @@ export interface Game {
   buyUpgrade(id: string): boolean;
   /** The player looked at the shop: «New!» marks go out. */
   seenShop(): void;
+  /** The nearest goal not reached yet: the one with the largest share done (shop positions, districts, eggs; rebirth when all is bought). */
+  nextGoal(): GoalView;
   /** Free showcase places (creatures and eggs both take one). */
   freeSlots(): number;
   showcaseSlots(): number;
@@ -763,6 +775,24 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       emit({ type: 'upgradeBought', id, level: view.level + 1, price: view.price });
       emit({ type: 'change' });
       return true;
+    },
+    nextGoal() {
+      const st = s();
+      const goals: GoalView[] = [];
+      for (const u of game.upgradeList()) {
+        if (u.maxed || u.affordable) continue;
+        const crystals = content.upgrades.upgrades.find((x) => x.id === u.id)?.currency === 'crystals';
+        goals.push({ kind: 'upgrade', id: u.id, have: crystals ? st.crystals : st.coins, need: u.price, unit: crystals ? 'crystals' : 'coins' });
+      }
+      for (const d of content.customers.districts) {
+        if (d.unlock.type === 'deals' && st.stats.deals < d.unlock.count) goals.push({ kind: 'district', id: d.id, have: st.stats.deals, need: d.unlock.count, unit: 'deals' });
+      }
+      for (const e of eggs.eggs) {
+        if (!e.special && e.unlock.type === 'deals' && st.stats.deals < e.unlock.count) goals.push({ kind: 'egg', id: e.id, have: st.stats.deals, need: e.unlock.count, unit: 'deals' });
+      }
+      const share = (g: GoalView): number => (g.need > 0 ? g.have / g.need : 1);
+      const best = goals.reduce<GoalView | null>((a, g) => (!a || share(g) > share(a) + 1e-9 ? g : a), null);
+      return best ?? { kind: 'rebirth', id: 'rebirth', have: st.stats.coinsEarned, need: content.upgrades.prestige.thresholdCoinsEarned, unit: 'coins' };
     },
     seenShop() {
       const st = s();

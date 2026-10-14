@@ -36,6 +36,8 @@ export const PANEL = {
   landscapeMax: 420,
   /** A landscape panel narrower than this stacks the deal buttons in two rows. */
   narrowPanel: 300,
+  /** A portrait panel lower than this hides its title and side community buttons (they stay in pause). */
+  shortPanel: 280,
   hudHeight: 60,
 };
 
@@ -85,6 +87,8 @@ export function applyLayout(appRoot: HTMLElement, layout: Layout): void {
   appRoot.classList.toggle('portrait', layout.orientation === 'portrait');
   appRoot.classList.toggle('landscape', layout.orientation === 'landscape');
   appRoot.classList.toggle('panel-narrow', layout.orientation === 'landscape' && layout.panel.w < PANEL.narrowPanel);
+  // A short portrait panel (iPhone SE) keeps the deal and the actions; the title and the side community buttons step aside (pause has them).
+  appRoot.classList.toggle('panel-short', layout.orientation === 'portrait' && layout.panel.h < PANEL.shortPanel);
   const size = layout.orientation === 'portrait' ? layout.panel.h : layout.panel.w;
   appRoot.style.setProperty('--panel-size', `${size}px`);
   appRoot.style.setProperty('--hud-height', `${layout.hudHeight}px`);

@@ -13,8 +13,8 @@ describe('balance model', () => {
     // The long runs (three days with nights away) take most of it.
   }, 60_000);
 
-  it('the checks are the ones of docs/01a: 40 s, 2 min, 3 min, 5 min; ×1.5; 30–60 min; day 2–3; 10 and 40 min', () => {
-    expect(CHECKS.map((c) => [c.id, c.limitSec])).toEqual([['F1', 40], ['F2', 120], ['F3', 180], ['F4', 300]]);
+  it('the checks are the ones of docs/01a: 40 s, 2 min, 3 min, 5 min; F13–F15 60 s, 5 min, 10 min; ×1.5; 30–60 min; day 2–3; 10 and 40 min', () => {
+    expect(CHECKS.map((c) => [c.id, c.limitSec])).toEqual([['F1', 40], ['F2', 120], ['F3', 180], ['F4', 300], ['F13', 60], ['F14', 300], ['F15', 600]]);
     expect(LIMITS).toMatchObject({ F5growth: 1.5, F6minutes: [30, 60], F7days: [2, 3], F8street: 600, F8square: 2400, F11goalMinutes: 2 });
   });
 

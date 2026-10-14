@@ -3,6 +3,7 @@
 //   Short run (10 min, every bot): F1 first deal ≤ 40 s · F2 100 coins earned ≤ 2 min · F3 first upgrade ≤ 3 min · F4 first rare ≤ 5 min
 //     · F5 income per minute at 8–10 min ≥ 1.5 × at 1–3 min · F10 no stall (a deal every minute after the first) without ads
 //     · F11 (M2-12) in minutes 3–10 a shop goal (an upgrade or, from M3, a new egg) within 2 minutes of current income at every check
+//     · F13–F15 (M3-14): a chat deal within 60 s after the first minute, a market buy resold at a profit by 5 min, the second ladder egg by 10 min
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
 //     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
 //   Keeper (feeds every creature to the top before selling): F12 earns at most ×2 of the casual player in 10 min and
@@ -53,6 +54,10 @@ export const CHECKS: Check[] = [
   { id: 'F2', title: '100 coins earned', limitSec: 120 },
   { id: 'F3', title: 'first upgrade', limitSec: 180 },
   { id: 'F4', title: 'first rare', limitSec: 300 },
+  // M3 (docs/01 §3 p. 13–14): the genre-standard frame pays early.
+  { id: 'F13', title: 'first deal through a chat, after the first minute', limitSec: 60 },
+  { id: 'F14', title: 'a market buy resold at a profit', limitSec: 300 },
+  { id: 'F15', title: 'an egg of the second ladder step', limitSec: 600 },
 ];
 
 /** Pace and long-run limits of docs/01a, section 9 (F11 from docs/01b, section 5.1). */
@@ -105,6 +110,26 @@ function botPlayer(bot: Bot, game: Game): () => number {
       else if (hint.step === 'sell') game.accept();
       else if (hint.step === 'buyEgg') game.buyEgg();
       return tap;
+    }
+    // M3: a buyer wrote — answer (a counter once when the offer is below the asking price, then sell); a bargain on the market.
+    // Only about a creature the bot would sell anyway (its sell level): the rest it keeps feeding, the buyer waits.
+    const chat = game.chats().find((c) => c.state === 'open' && view.creatures.some((x) => x.uid === c.uid && x.level >= Math.min(bot.sellLevel, x.maxLevel)));
+    if (chat) {
+      const ask = view.creatures.find((c) => c.uid === chat.uid)?.ask ?? 0;
+      if (!chat.countered && bot.haggleRisk > 0 && chat.offer < ask) game.chatCounter(chat.id);
+      else game.chatSell(chat.id);
+      return tap + bot.reactSec;
+    }
+    const lot = game.market().lots.find((l) => !l.sold && l.verdict === 'below' && st.coins >= l.price * 3);
+    if (lot && game.freeSlots() > 0) {
+      game.buyLot(lot.id);
+      return tap + bot.reactSec;
+    }
+    // A new egg with the «New!» badge: tried once as soon as it is affordable (players react to the badge like to the upgrade dot).
+    const freshEgg = game.eggList().find((e) => e.fresh && e.check.ok && st.coins >= e.check.price * 1.5);
+    if (freshEgg) {
+      game.buyEgg(freshEgg.id);
+      return tap + bot.reactSec;
     }
     // Upgrades as soon as the dot shows (cheapest first).
     const upgrade = game.upgradeList().filter((u) => u.affordable).sort((a, b) => a.price - b.price)[0];
@@ -181,7 +206,15 @@ export function playOnce(bot: Bot, seed: number, content: GameContent = loadGame
   const times: Record<string, number> = {};
   let t = 0;
   let busyUntil = 1.5; // looks at the screen first
+  const paid = new Map<string, number>();
+  let ftueAt = -1;
+  const secondEgg = content.eggs.eggs.filter((e) => e.section === 'ladder')[1]?.id;
   game.events.on((e: GameEvent) => {
+    if (e.type === 'ftueDone') ftueAt = t;
+    if (e.type === 'chatSold' && times.F13 === undefined && ftueAt >= 0) times.F13 = t - ftueAt;
+    if (e.type === 'lotBought') paid.set(e.uid, e.price);
+    if ((e.type === 'sold' || e.type === 'chatSold' || e.type === 'soldNow') && times.F14 === undefined && (paid.get(e.uid) ?? Infinity) < e.price) times.F14 = t;
+    if (e.type === 'eggBought' && e.egg === secondEgg && times.F15 === undefined) times.F15 = t;
     if (e.type === 'sold' && times.F1 === undefined) times.F1 = t;
     if (e.type === 'upgradeBought' && times.F3 === undefined) times.F3 = t;
     if (e.type === 'hatched' && e.rarity !== 'common' && times.F4 === undefined) times.F4 = t;
@@ -345,7 +378,7 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     lines.push(`keeper  F12 10 min = ×${ratio.toFixed(2)} of casual (≤ ×${LIMITS.F12keeperMax}) · rebirth threshold on day ${fmt(day, 1)} (≥ 1.0) ${f12 ? 'ok' : 'FAIL'}`);
   }
   lines.push('F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)');
-  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12: all green`);
+  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F15: all green`);
   return { ok: failures.length === 0, lines, failures };
 }
 

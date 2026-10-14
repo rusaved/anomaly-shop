@@ -131,7 +131,9 @@ describe('M2-04 offline pace', () => {
       b.game.state.coins = 100;
       away += b.game.offline(1200).coins;
     }
-    expect(away / live).toBeGreaterThan(0.8);
-    expect(away / live).toBeLessThan(1.25);
+    // 20 minutes away at offlineRate of the live pace ≈ 20 × rate minutes of helpers alone (rate 0.5 → 10 min).
+    const want = 2 * content.upgrades.offlineRate;
+    expect(away / live).toBeGreaterThan(want * 0.8);
+    expect(away / live).toBeLessThan(want * 1.25);
   });
 });

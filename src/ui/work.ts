@@ -20,7 +20,7 @@ const BOWL =
   '<path d="M10 30 Q60 100 110 30" fill="var(--c-rarityRare)" stroke="var(--c-outline)" stroke-width="5"/><circle cx="45" cy="26" r="6" fill="var(--c-uiAccent)"/><circle cx="62" cy="24" r="6" fill="var(--c-uiAccent)"/><circle cx="76" cy="27" r="5" fill="var(--c-uiAccent)"/></svg>';
 
 export function createWorkWindow(parent: HTMLElement, game: Game, look: WorkLookups): WorkWindow {
-  const overlay = createOverlay(parent, 'work', () => overlay.hide());
+  const overlay = createOverlay(parent, 'work', () => overlay.hide(), { kind: 'panel' });
   overlay.card.classList.add('card-work');
   overlay.card.innerHTML =
     '<h2 data-i18n="work.title"></h2><p class="card-sub" data-i18n="work.hint"></p>' +

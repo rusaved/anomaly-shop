@@ -32,7 +32,8 @@ const TARGET = 30;
 const ITEM = 76;
 
 export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLookups): HatchShow {
-  const overlay = createOverlay(parent, 'hatch', () => skip());
+  // UB-02: a tap outside skips the run; after the result it keeps the creature («Take»); a tab tap does the same.
+  const overlay = createOverlay(parent, 'hatch', () => (done ? keepIt() : skip()), { dismiss: () => keepIt() });
   overlay.card.classList.add('card-hatch');
   overlay.card.innerHTML =
     '<h2 data-hatch-title></h2><div class="hatch-window" data-action="hatch-skip"><div class="hatch-strip" data-hatch-strip></div><i class="hatch-marker" aria-hidden="true"></i></div>' +
@@ -58,10 +59,9 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     overlay.hide();
     look.onResult?.();
   };
-  keep.addEventListener('click', () => {
-    game.unlist(uid);
-    close();
-  });
+  // UB-03: the creature already waits in the inventory: «Take» just closes.
+  const keepIt = (): void => close();
+  keep.addEventListener('click', keepIt);
   toShop.addEventListener('click', () => {
     game.list(uid);
     close();

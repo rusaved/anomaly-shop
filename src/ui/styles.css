@@ -121,7 +121,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));
+  /* A popup stays above the tab bar: the bar works from any window (UB-02). */
+  padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--nav-size, 62px)) calc(16px + var(--safe-left));
   background: var(--c-uiOverlay);
   pointer-events: auto;
 }
@@ -389,7 +390,8 @@
 /* M1-09: first-minute hints */
 .hint {
   position: absolute;
-  z-index: 22;
+  /* Over a window only when it points inside it (src/ui/hints.ts hides it otherwise). */
+  z-index: 35;
   max-width: min(260px, calc(100% - 16px));
   padding: 8px 14px;
   border-radius: 16px;
@@ -1667,30 +1669,38 @@
 .landscape [data-overlay='settings'] .card h2 {
   margin: 0;
 }
-/* M3-17, UB-04: the upgrade shop is a panel from the right over the home panel — the shop stays in view (portrait: above it;
-   landscape and desktop: to the left). */
-.overlay[data-overlay='upgrades'] {
-  inset: auto;
+/* UB-02, UB-04: a panel (upgrades, details) comes from the right over the home panel area — the shop stays in view (portrait: above
+   it; landscape and desktop: to the left); the rest of the screen is a clear backdrop: a tap there closes the panel. */
+.overlay[data-kind='panel'] {
+  display: block;
+  padding: 0;
+  background: transparent;
+}
+.overlay[data-kind='panel'][hidden] {
+  display: none;
+}
+.overlay[data-kind='panel'] > .card {
+  position: absolute;
   left: var(--panel-x, 0px);
   top: var(--panel-y, 50%);
   width: var(--panel-w, 100%);
   height: var(--panel-h, 50%);
-  padding: 0;
-  background: transparent;
-  z-index: 7;
-  align-items: stretch;
+  max-height: none;
+  border-radius: 22px 22px 0 0;
+  /* A layer of its own over the screen under it: an outline and a deep shadow. */
+  box-shadow: 0 -3px 0 var(--c-uiAccent), 0 -14px 28px var(--c-uiOverlay);
   animation: panel-in 0.22s ease-out;
 }
-.overlay[data-overlay='upgrades'] .card {
-  width: 100%;
-  max-height: none;
-  height: 100%;
-  border-radius: 22px 22px 0 0;
-  box-shadow: 0 -2px 0 var(--c-outline);
-}
-.landscape .overlay[data-overlay='upgrades'] .card {
+.landscape .overlay[data-kind='panel'] > .card {
   border-radius: 22px 0 0 0;
-  box-shadow: -2px -2px 0 var(--c-outline);
+  box-shadow: -3px -3px 0 var(--c-uiAccent), -14px 0 28px var(--c-uiOverlay);
+}
+.card-detail .eggs-back {
+  align-self: flex-start;
+}
+/* Settings open over the pause: the pause stays open underneath, out of sight. */
+.overlay.under {
+  visibility: hidden;
 }
 @keyframes panel-in {
   from {

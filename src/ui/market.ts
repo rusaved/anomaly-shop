@@ -4,6 +4,7 @@
 
 import type { RarityName } from '../content/schemas.ts';
 import type { Game, LotView } from '../sim/game.ts';
+import { createOverlay } from './overlay.ts';
 import type { Sheet } from './sheet.ts';
 
 export interface MarketLookups {
@@ -14,7 +15,7 @@ export interface MarketLookups {
   rarityColor(r: RarityName): string;
   /** The price range of the market as shares of the value (market.json price). */
   range: { min: number; max: number };
-  /** Opens the seller chat for a lot (M3-10) inside the body. */
+  /** Opens the seller chat for a lot (M3-10) inside the body (UB-02: the lot panel). */
   openLot(body: HTMLElement, lot: LotView, back: () => void): void;
 }
 
@@ -28,8 +29,15 @@ export function createMarketTab(sheet: Sheet, game: Game, look: MarketLookups): 
   const refresh = sheet.head.querySelector('[data-action="market-refresh"]') as HTMLButtonElement;
   refresh.addEventListener('click', () => game.refreshMarket());
   const root = document.createElement('div');
-  root.className = 'market';
+  root.className = 'market cards';
   sheet.body.appendChild(root);
+  // UB-02: a lot is a detail — a panel from the right with the seller chat; the lots stay in view.
+  const close = (): void => {
+    open = null;
+    panel.hide();
+  };
+  const panel = createOverlay(sheet.root.parentElement as HTMLElement, 'lot', close, { kind: 'panel', dismiss: close });
+  panel.card.classList.add('card-detail');
   let open: number | null = null;
   let key = '';
 
@@ -62,13 +70,12 @@ export function createMarketTab(sheet: Sheet, game: Game, look: MarketLookups): 
         if (!l.sold)
           b.addEventListener('click', () => {
             open = l.id;
-            key = '';
-            tab.render();
+            panel.show();
+            look.openLot(panel.card, l, close);
           });
         return b;
       }),
     );
-    root.className = 'market cards';
   }
 
   const tab: MarketTab = {
@@ -78,23 +85,8 @@ export function createMarketTab(sheet: Sheet, game: Game, look: MarketLookups): 
       const s = Math.ceil(mk.refreshIn);
       timer.textContent = look.t('market.next', { t: `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` });
       refresh.textContent = look.t('market.now');
-      if (open !== null) {
-        const lot = mk.lots.find((l) => l.id === open);
-        if (lot && !lot.sold) {
-          if (key !== `lot:${open}`) {
-            key = `lot:${open}`;
-            root.className = 'market';
-            look.openLot(root, lot, () => {
-              open = null;
-              key = '';
-              tab.render();
-            });
-          }
-          return;
-        }
-        open = null;
-        key = '';
-      }
+      // A lot gone with the refresh: its panel closes (a bought one stays to say so).
+      if (open !== null && !mk.lots.some((l) => l.id === open) && panel.isOpen()) close();
       renderList();
     },
   };

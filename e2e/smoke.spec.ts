@@ -97,14 +97,14 @@ test('SAV-05 a corrupted save gives a fresh profile, no crash', async ({ page })
 test('SDK-05 LOC-03 language from the SDK: en → English UI, uk → Russian', async ({ page }) => {
   await open(page, '?mock_lang=en');
   expect(await page.evaluate(() => document.documentElement.lang)).toBe('en');
-  await expect(page.locator('[data-panel=title]')).toHaveText(game.title.en);
+  await expect(page.locator('[data-sheet=eggs] .sheet-title')).toHaveText('Eggs');
   await page.locator('[data-action=pause]').click();
   await expect(page.locator('[data-overlay=pause] h2')).toHaveText(await translated(page, 'pause.title'));
   const text = await page.locator('[data-overlay=pause]').innerText();
   expect(text.replace(/ВКонтакте/g, '')).not.toMatch(/[Ѐ-ӿ]/);
   await open(page, '?mock_lang=uk');
   expect(await page.evaluate(() => document.documentElement.lang)).toBe('ru');
-  await expect(page.locator('[data-panel=title]')).toHaveText(game.title.ru);
+  await expect(page.locator('[data-sheet=eggs] .sheet-title')).toHaveText('Яйца');
 });
 
 test('LOC-05 manual language choice wins over the platform language and survives F5', async ({ page }) => {
@@ -112,7 +112,7 @@ test('LOC-05 manual language choice wins over the platform language and survives
   await page.locator('[data-action=pause]').click();
   await page.locator('[data-overlay=pause] [data-action=settings]').click();
   await page.locator('[data-overlay=settings] [data-action=lang-en]').click();
-  await expect(page.locator('[data-panel=title]')).toHaveText(game.title.en);
+  await expect(page.locator('[data-sheet=eggs] .sheet-title')).toHaveText('Eggs');
   await page.waitForTimeout(500);
   await page.reload();
   await open(page, '?mock_lang=ru');
@@ -137,10 +137,11 @@ test('CNT-08 community buttons open the game.json addresses in a new tab, no rew
   expect(await page.locator('a[href]').count()).toBe(0);
 });
 
-test('SCR-01 1280×720: HUD, panel, side buttons, pause and settings windows fit the screen', async ({ page }) => {
+test('SCR-01 1280×720: HUD, home panel, community buttons, pause and settings windows fit the screen', async ({ page }) => {
   await open(page);
   await expectNoPageScroll(page);
-  await expectInsideViewport(page, ['[data-hud=coins]', '[data-action=pause]', '#panel', '[data-community=side] [data-action=community-telegram]']);
+  await page.locator('[data-community=side] [data-action=community-telegram]').scrollIntoViewIfNeeded();
+  await expectInsideViewport(page, ['[data-hud=coins]', '[data-action=pause]', '[data-sheet=eggs]', '#nav', '[data-community=side] [data-action=community-telegram]']);
   await page.locator('[data-action=pause]').click();
   await expectInsideViewport(page, ['[data-overlay=pause] .card', '[data-overlay=pause] [data-action=resume]', '[data-overlay=pause] [data-action=community-vk]']);
   await page.locator('[data-overlay=pause] [data-action=settings]').click();

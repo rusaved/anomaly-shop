@@ -13,6 +13,8 @@ export interface HintDeps {
   panel: HTMLElement;
   /** Top of the free stage area (below the HUD). */
   topInset(): number;
+  /** The card of the window open now (UB-02: a hint never lies over a window, only inside it when its target is there). */
+  window(): HTMLElement | null;
 }
 
 export interface Hints {
@@ -42,17 +44,20 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
     glow?.classList.add('is-hinted');
   };
 
+  const hide = (): void => {
+    if (lastKey === '') return;
+    lastKey = '';
+    root.hidden = true;
+    ring.hidden = true;
+    setGlow(null);
+  };
+
   return {
     root,
     text: () => (root.hidden ? '' : label.textContent ?? ''),
     update(hint) {
       if (!hint) {
-        if (lastKey !== '') {
-          lastKey = '';
-          root.hidden = true;
-          ring.hidden = true;
-          setGlow(null);
-        }
+        hide();
         return;
       }
       const base = parent.getBoundingClientRect();
@@ -63,18 +68,22 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       let button: HTMLElement | null = null;
       const a = deps.anchors();
       const target = hint.target;
+      const win = deps.window();
       if (target.kind === 'button') {
         // «a|b»: the first of the hooks that is on screen now (UB-01: a card button, else the tile that opens it).
         button =
           target.action
             .split('|')
             .map((action) => deps.panel.querySelector<HTMLElement>(`[data-action="${action}"]`))
-            .find((el) => el !== null && el.offsetParent !== null) ?? null;
-        if (!button) return;
+            .find((el) => el !== null && el.offsetParent !== null && (!win || win.contains(el))) ?? null;
+        if (!button) {
+          hide();
+          return;
+        }
         const b = button.getBoundingClientRect();
         x = b.left + b.width / 2 - base.left;
         y = b.top - base.top;
-      } else if (a) {
+      } else if (a && !win) {
         if (target.kind === 'incubator') {
           const s = a.incubators[target.index];
           if (!s) return;
@@ -96,7 +105,10 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         }
         x += canvas.left - base.left;
         y += canvas.top - base.top;
-      } else return;
+      } else {
+        hide();
+        return;
+      }
       const text = deps.t(`ftue.${hint.step}`);
       // Above the target; below it when the HUD is in the way.
       const above = button !== null || y - r - 56 > deps.topInset();

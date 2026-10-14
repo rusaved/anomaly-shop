@@ -1,10 +1,11 @@
-// What: the Eggs tab (docs/01 §3 p. 12, §6; M3-04): incubating eggs with care, my eggs, free, seasonal, the ×10 ladder; a card shows the odds, buys ×1/×3/×5.
+// What: the Eggs tab, the home panel (docs/01 §3 p. 12, §6; M3-04, UB-01): incubating eggs, my eggs, free, seasonal, the ×10 ladder; a card panel shows the odds, buys ×1/×3/×5.
 // Called by: src/main.ts (create once into its sheet; render on every commit while the sheet is open, and each second for timers).
 // Keep: commands only through the game (buyEggs, claimFree, feedEgg); odds come from rules.eggOdds over eggs.json, so the card matches the data.
 
 import type { EggData, RarityName, SpeciesData, UnlockData } from '../content/schemas.ts';
 import type { EggCardView, Game } from '../sim/game.ts';
 import { eggOdds } from '../sim/rules.ts';
+import { createOverlay } from './overlay.ts';
 import type { Sheet } from './sheet.ts';
 
 export interface EggsLookups {
@@ -34,8 +35,12 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
   const root = document.createElement('div');
   root.className = 'eggs';
   sheet.body.appendChild(root);
+  // UB-02: the egg card is a detail — a panel from the right; the list stays in view (landscape) or above it (portrait).
+  const panel = createOverlay(sheet.root.parentElement as HTMLElement, 'egg-card', () => tab.show(null), { kind: 'panel', dismiss: () => tab.show(null) });
+  panel.card.classList.add('card-detail');
   let card: string | null = null;
   let key = '';
+  let cardKey = '';
 
   const fmtTime = (sec: number): string => {
     const s = Math.ceil(sec);
@@ -140,14 +145,15 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
     const v = game.eggShop().eggs.find((e) => e.id === id);
     if (!egg || !v) {
       card = null;
-      renderList();
+      panel.hide();
       return;
     }
     const fmt = new Intl.NumberFormat(look.lang());
     const coins = game.state.coins;
     const next = `c:${id}:${look.lang()}:${v.open}:${v.freeIn === null ? '' : Math.ceil(v.freeIn)}:${MULTI.map((n) => coins + 1e-9 >= v.price * n).join('')}`;
-    if (next === key) return;
-    key = next;
+    if (next === cardKey) return;
+    cardKey = next;
+    const root = panel.card;
     const odds = eggOdds(egg.chances, look.species);
     let buttons: string;
     if (v.freeIn !== null)
@@ -183,14 +189,16 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
   const tab: EggsTab = {
     render() {
       sheet.setTitle(look.t('eggs.title'));
-      if (card) renderCard(card);
-      else renderList();
+      renderList();
+      if (card && panel.isOpen()) renderCard(card);
     },
     show(eggId) {
       card = eggId;
-      key = '';
-      root.scrollTop = 0;
-      sheet.body.scrollTop = 0;
+      cardKey = '';
+      if (eggId) {
+        panel.show();
+        panel.card.scrollTop = 0;
+      } else panel.hide();
       tab.render();
     },
   };

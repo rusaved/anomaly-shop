@@ -41,7 +41,7 @@ export async function everyTabOpens(page: Page): Promise<void> {
   await page.locator('[data-tab=shop]').click();
   await expect(page.locator('[data-overlay=upgrades]')).toBeVisible();
   await expect(page.locator('[data-sheet=eggs]')).toBeVisible();
-  const panel = (await page.locator('[data-overlay=upgrades]').boundingBox())!;
+  const panel = (await page.locator('[data-overlay=upgrades] .card').boundingBox())!;
   expect(vp.width > vp.height ? panel.x : panel.y).toBeGreaterThan(100);
   await page.locator('[data-tab=eggs]').click();
   await expect(page.locator('[data-overlay=upgrades]')).toBeHidden();

@@ -4,6 +4,7 @@
 
 import type { RarityName } from '../content/schemas.ts';
 import type { CreatureView, Game } from '../sim/game.ts';
+import { createOverlay } from './overlay.ts';
 import { createPriceSlider, type SliderData } from './price-slider.ts';
 import type { Sheet } from './sheet.ts';
 
@@ -31,8 +32,12 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
   const root = document.createElement('div');
   root.className = 'sales';
   sheet.body.appendChild(root);
+  // UB-02: a creature's card (the price slider) and the pick for a free place are details — a panel from the right.
+  const panel = createOverlay(sheet.root.parentElement as HTMLElement, 'sale', () => tab.show(null), { kind: 'panel', dismiss: () => tab.show(null) });
+  panel.card.classList.add('card-detail');
   let open: string | null = null;
   let key = '';
+  let panelKey = '';
   let slider: ReturnType<typeof createPriceSlider> | null = null;
 
   const slotCard = (c: CreatureView, fmt: Intl.NumberFormat): HTMLElement => {
@@ -56,7 +61,6 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     const next = `l:${look.lang()}:${view.slots}:${view.creatures.map((c) => `${c.uid}.${c.ask}.${c.zone}`).join(',')}:${view.inventory.length}:${view.talking.map((c) => c.uid).join(',')}`;
     if (next === key) return;
     key = next;
-    slider = null;
     const cards: HTMLElement[] = view.creatures.map((c) => slotCard(c, fmt));
     for (let i = view.creatures.length; i < view.slots; i++) {
       const el = document.createElement('button');
@@ -97,8 +101,9 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     const view = game.view();
     const fmt = new Intl.NumberFormat(look.lang());
     const next = `p:${look.lang()}:${view.inventory.map((c) => c.uid).join(',')}:${view.creatures.length}`;
-    if (next === key) return;
-    key = next;
+    if (next === panelKey) return;
+    panelKey = next;
+    const root = panel.card;
     root.innerHTML = `<button type="button" class="eggs-back" data-action="sale-back">‹ ${look.t('eggs.back')}</button><h3 class="eggs-title">${look.t('sales.pick')}</h3>`;
     root.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => tab.show(null));
     const grid = document.createElement('div');
@@ -119,18 +124,17 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
   function renderCard(uid: string): void {
     const c = game.view().creatures.find((x) => x.uid === uid);
     if (!c) {
-      open = null;
-      key = '';
-      renderList();
+      tab.show(null);
       return;
     }
     const fmt = new Intl.NumberFormat(look.lang());
     const next = `c:${uid}:${look.lang()}:${c.price}:${c.level}`;
-    if (next === key) {
+    if (next === panelKey) {
       slider?.set(c.askShare, c.price);
       return;
     }
-    key = next;
+    panelKey = next;
+    const root = panel.card;
     root.innerHTML =
       `<button type="button" class="eggs-back" data-action="sale-back">‹ ${look.t('eggs.back')}</button>` +
       `<div class="egg-hero"><img alt="" src="${look.portrait(c.species, c.rarity)}"><div><h3 class="egg-name"></h3>` +
@@ -151,13 +155,17 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
   const tab: SalesTab = {
     render() {
       sheet.setTitle(look.t('sales.title'));
+      renderList();
+      if (!panel.isOpen()) return;
       if (open === PICK) renderPick();
       else if (open) renderCard(open);
-      else renderList();
     },
     show(uid) {
       open = uid;
-      key = '';
+      panelKey = '';
+      slider = null;
+      if (uid) panel.show();
+      else panel.hide();
       tab.render();
     },
   };

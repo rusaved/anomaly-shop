@@ -13,15 +13,16 @@ test('UB-05 one path: listed with the slider, a buyer writes, the creature is of
   await page.locator('[data-tab=sales]').click();
   await expect(page.locator('[data-sheet=sales] .card-empty')).toHaveCount(1);
   await page.locator('[data-sheet=sales] [data-action=sale-add]').click();
-  await page.locator('[data-sheet=sales] [data-action=sale-list-e2e1]').click();
+  // UB-02: the pick and the card are details — a panel from the right.
+  await page.locator('[data-overlay=sale] [data-action=sale-list-e2e1]').click();
   // The card with the price slider: a tap at the left end makes the price below the market (a buyer comes sooner).
   await page.locator('[data-sheet=sales] [data-action=sale-e2e1]').click();
-  const range = page.locator('[data-sheet=sales] input[type=range]');
+  const range = page.locator('[data-overlay=sale] input[type=range]');
   await expect(range).toBeVisible();
   const box = (await range.boundingBox())!;
   await page.mouse.click(box.x + 4, box.y + box.height / 2);
-  await expect(page.locator('[data-sheet=sales] [data-price-zone]')).not.toHaveText('');
-  expect(Number(await page.locator('[data-sheet=sales] [data-zone]').first().getAttribute('data-zone'))).toBeLessThan(2);
+  await expect(page.locator('[data-overlay=sale] [data-price-zone]')).not.toHaveText('');
+  expect(Number(await page.locator('[data-overlay=sale] [data-zone]').first().getAttribute('data-zone'))).toBeLessThan(2);
   // Game time runs: a buyer writes (the tab badge counts it); the creature leaves the shelf (Q-025).
   await runSim(page, 20);
   await expect(page.locator('[data-tab=chats] [data-badge]')).toBeVisible();

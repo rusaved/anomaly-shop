@@ -34,7 +34,8 @@ function effectText(u: UpgradeData, look: UpgradeLookups): string {
 }
 
 export function createUpgradesWindow(parent: HTMLElement, game: Game, look: UpgradeLookups): UpgradesWindow {
-  const overlay = createOverlay(parent, 'upgrades', () => win.close());
+  // UB-04: a panel from the right, the shop stays in view; a tap outside or a tab tap closes it.
+  const overlay = createOverlay(parent, 'upgrades', () => win.close(), { kind: 'panel', dismiss: () => win.close() });
   overlay.card.classList.add('card-shop');
   const head = document.createElement('div');
   head.className = 'shop-head';

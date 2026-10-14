@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { collectErrors, expectInsideViewport, expectNoPageScroll, open, state } from './helpers.ts';
 
 /** SCR-01 on the phone projects (375×812 portrait and 812×375 landscape, touch): nothing clipped, nothing scrolls. */
-test('SCR-01 phone: HUD, panel and side buttons inside the viewport, no scroll', async ({ page }) => {
+test('SCR-01 phone: HUD, home panel, tab bar and community buttons inside the viewport, no scroll', async ({ page }) => {
   const errors = collectErrors(page);
   await open(page, '?mock_device=mobile');
   expect((await state(page)).device).toBe('mobile');
@@ -10,21 +10,19 @@ test('SCR-01 phone: HUD, panel and side buttons inside the viewport, no scroll',
   await expectInsideViewport(page, [
     '[data-hud=coins]',
     '[data-action=pause]',
-    '#panel',
-    '[data-panel=title]',
-    '[data-action=sell]',
-    '[data-action=haggle]',
-    '[data-action=wait]',
-    '[data-action=buy-egg]',
-    '[data-action=upgrades]',
+    '[data-sheet=eggs]',
+    '[data-sheet=eggs] .sheet-title',
     ...['market', 'inventory', 'sales', 'eggs', 'chats', 'shop', 'season'].map((tab) => `[data-tab=${tab}]`),
   ]);
   const vp = page.viewportSize()!;
-  // M3-03: the side community buttons stay in landscape; in portrait they live in pause and settings (the panel gave room to the tabs).
-  if (vp.width > vp.height) await expectInsideViewport(page, ['[data-community=side] [data-action=community-telegram]', '[data-community=side] [data-action=community-vk]']);
-  const panel = (await page.locator('#panel').boundingBox())!;
-  if (vp.height >= vp.width) expect(panel.width).toBeCloseTo(vp.width, 0);
-  else expect(panel.height + (await page.locator('#nav').boundingBox())!.height).toBeCloseTo(vp.height, 0);
+  // UB-01: the community buttons (Q-007) at the end of the home panel: scrolled to, they fit.
+  const tg = page.locator('[data-community=side] [data-action=community-telegram]');
+  await tg.scrollIntoViewIfNeeded();
+  await expectInsideViewport(page, ['[data-community=side] [data-action=community-telegram]', '[data-community=side] [data-action=community-vk]']);
+  const home = (await page.locator('[data-sheet=eggs]').boundingBox())!;
+  const bar = (await page.locator('#nav').boundingBox())!;
+  if (vp.height >= vp.width) expect(home.width).toBeCloseTo(vp.width, 0);
+  expect(home.y + home.height).toBeCloseTo(bar.y, 0);
   expect(errors).toEqual([]);
 });
 
@@ -52,7 +50,7 @@ test('SAV-03 rotation keeps the state and the layout follows', async ({ page }) 
   expect(s.coins).toBe(100);
   expect(s.controllable).toBe(true);
   await expectNoPageScroll(page);
-  await expectInsideViewport(page, ['[data-hud=coins]', '[data-action=pause]', '#panel']);
+  await expectInsideViewport(page, ['[data-hud=coins]', '[data-action=pause]', '[data-sheet=eggs]', '#nav']);
   const cls = await page.locator('#app').getAttribute('class');
   expect(cls).toContain(vp.height >= vp.width ? 'landscape' : 'portrait');
 });

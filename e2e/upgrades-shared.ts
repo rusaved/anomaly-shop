@@ -9,7 +9,8 @@ export async function upgradesPanel(page: Page, shots?: string): Promise<void> {
   await page.locator('[data-tab=shop]').click();
   const panel = page.locator('[data-overlay=upgrades]');
   await expect(panel).toBeVisible();
-  const box = (await panel.boundingBox())!;
+  // UB-02: a panel is a card from the right over a clear backdrop.
+  const box = (await panel.locator('.card').boundingBox())!;
   const vp = page.viewportSize()!;
   // The scene stays in view: above the panel in portrait, to the left of it in landscape.
   if (vp.height >= vp.width) expect(box.y).toBeGreaterThan(vp.height * 0.2);

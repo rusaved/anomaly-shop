@@ -7,7 +7,7 @@ test('M2-13 the Next card: inside the viewport, one goal, a flash and the next o
   await seedSave(page);
   await open(page, '?mock_device=mobile');
   await expectNoPageScroll(page);
-  await expectInsideViewport(page, ['[data-action=next]', '[data-action=upgrades]', '[data-action=sell]', '[data-action=buy-egg]']);
+  await expectInsideViewport(page, ['[data-action=next]', '[data-tab=shop]', '[data-tab=eggs]']);
   const card = page.locator('[data-action=next]');
   await expect(card).toHaveCount(1);
   const before = await card.locator('b').textContent();

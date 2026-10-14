@@ -15,7 +15,7 @@ export interface SettingsWindow {
 }
 
 export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n: I18n, links: CommunityLinks | null, onBack: () => void, redeem?: (code: string) => 'ok' | 'used' | 'unknown'): SettingsWindow {
-  const overlay = createOverlay(parent, 'settings', () => win.close());
+  const overlay = createOverlay(parent, 'settings', () => win.close(), { over: ['pause'], dismiss: () => overlay.hide() });
   const title = document.createElement('h2');
   title.dataset.i18n = 'settings.title';
 

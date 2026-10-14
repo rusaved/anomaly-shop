@@ -136,6 +136,6 @@ export async function buyEggAtHome(page: Page, egg = 'egg_basic'): Promise<void>
 export async function listFromInventory(page: Page): Promise<void> {
   await page.locator('[data-tab=sales]').click();
   await page.locator('[data-sheet=sales] [data-action=sale-add]').first().click();
-  await page.locator('[data-sheet=sales] [data-action^=sale-list-]').first().click();
+  await page.locator('[data-overlay=sale] [data-action^=sale-list-]').first().click();
 }
 

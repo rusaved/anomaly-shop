@@ -28,6 +28,7 @@ import { bindFunnel } from './analytics/funnel.ts';
 import { ftueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { createNav, type TabId } from './ui/nav.ts';
+import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
 import { createSheet, type Sheet } from './ui/sheet.ts';
 import { createInventoryTab } from './ui/inventory.ts';
 import { createEggsTab } from './ui/eggs.ts';
@@ -169,6 +170,8 @@ async function boot(): Promise<void> {
   const portraits = createPortraits(scene.app, styleData);
   const sheets = new Map<TabId, Sheet>();
   const showTab = (tab: TabId): void => {
+    // UB-02: a tab works from any window — whatever is open closes its own way first.
+    dismissAll();
     // Q-021 B: until M5 the Shop tab is the shop upgrades — over the home screen, the shop stays in view (UB-04).
     const screen: TabId = tab === 'shop' ? 'eggs' : tab;
     for (const [id, sh] of sheets) {
@@ -176,7 +179,6 @@ async function boot(): Promise<void> {
       else sh.hide();
     }
     if (tab === 'shop') upgradesWindow.open();
-    else if (upgradesWindow.overlay.isOpen()) upgradesWindow.close();
     renderTabs();
   };
   const selectTab = (tab: TabId): void => {
@@ -501,15 +503,13 @@ async function boot(): Promise<void> {
 
   });
   const pauseWindow = createPauseWindow(uiRoot, runtime.pause, links, () => settingsWindow.open());
-  const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.show(), (code) => play.redeemCode(code));
+  const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.root.classList.remove('under'), (code) => play.redeemCode(code));
   hud.pauseButton.addEventListener('click', () => pauseWindow.open());
   document.addEventListener('keydown', (e) => {
     if (e.code !== 'Escape' || !controllable) return;
-    if (awayWindow.overlay.isOpen()) awayWindow.close();
-    else if (merchantWindow.overlay.isOpen()) merchantWindow.close();
-    else if (upgradesWindow.overlay.isOpen()) upgradesWindow.close();
-    else if (settingsWindow.overlay.isOpen()) settingsWindow.close();
-    else pauseWindow.toggle();
+    // The window on top closes its own way (settings back to the pause); with none open Escape pauses.
+    if (settingsWindow.overlay.isOpen()) settingsWindow.close();
+    else if (!dismissTop()) pauseWindow.toggle();
   });
   const hints = createHints(uiRoot, {
     t: i18n.t,
@@ -517,6 +517,7 @@ async function boot(): Promise<void> {
     canvas,
     panel: uiRoot,
     topInset: () => hud.root.getBoundingClientRect().bottom,
+    window: () => topWindow()?.card ?? null,
   });
   renderBuildLabel(uiRoot, __BUILD_LABEL__);
   i18n.apply(uiRoot);
@@ -557,6 +558,8 @@ async function boot(): Promise<void> {
         rarities: store.state.creatures.map((c) => speciesById(c.species)?.rarity ?? ''),
         event: play.view().event?.kind ?? null,
         tab: nav.active(),
+        shelf: play.view().creatures.map((c) => c.uid),
+        windows: [...uiRoot.querySelectorAll<HTMLElement>('.overlay:not([hidden]):not(.under)')].map((el) => el.dataset.overlay ?? ''),
         upgradeFx: shop.lastUpgradeText(),
         hatchTiming: hatchShow.timing(),
         newest: (() => {
@@ -583,7 +586,7 @@ async function boot(): Promise<void> {
     // UB-01, UB-02: a hint at the shop shows on the home screen only, and never over a window.
     const hint = controllable ? ftueHint(store.state, view) : null;
     const sceneHint = hint !== null && hint.target.kind !== 'button';
-    hints.update(hint && !(sceneHint && nav.active() !== 'eggs') && !upgradesWindow.overlay.isOpen() && !hatchShow.isOpen() ? hint : null);
+    hints.update(hint && !(sceneHint && nav.active() !== 'eggs') ? hint : null);
     newsTicker.tick(runtime.pause.isPaused() ? 0 : ticker.deltaMS / 1000, controllable && Boolean(store.state.flags.ftue_done));
     if (!runtime.pause.isPaused() && store.state.flags.ftue_done) chatter.tick(ticker.deltaMS / 1000);
     funnel.tick(runtime.elapsed());

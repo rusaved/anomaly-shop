@@ -14,7 +14,8 @@ export interface PauseWindow {
 }
 
 export function createPauseWindow(parent: HTMLElement, pause: PauseManager, links: CommunityLinks | null, onSettings: () => void): PauseWindow {
-  const overlay = createOverlay(parent, 'pause');
+  // UB-02: a popup; a tap outside or a tab tap resumes the game (the pause reason is always released).
+  const overlay = createOverlay(parent, 'pause', () => win.close(), { dismiss: () => win.close() });
   const title = document.createElement('h2');
   title.dataset.i18n = 'pause.title';
   const resume = button('resume', 'pause.resume', 'btn-primary');
@@ -30,6 +31,7 @@ export function createPauseWindow(parent: HTMLElement, pause: PauseManager, link
       overlay.show();
     },
     close() {
+      overlay.root.classList.remove('under');
       overlay.hide();
       pause.resume('menu');
     },
@@ -39,8 +41,9 @@ export function createPauseWindow(parent: HTMLElement, pause: PauseManager, link
     },
   };
   resume.addEventListener('click', win.close);
+  // Settings open over the pause (it stays open underneath, hidden, holding the game).
   settings.addEventListener('click', () => {
-    overlay.hide();
+    overlay.root.classList.add('under');
     onSettings();
   });
   return win;

@@ -21,7 +21,7 @@ export interface AwayWindow {
 export const AWAY_MIN_SEC = 60;
 
 export function createAwayWindow(parent: HTMLElement, look: AwayLookups): AwayWindow {
-  const overlay = createOverlay(parent, 'away', () => win.close());
+  const overlay = createOverlay(parent, 'away', () => win.close(), { dismiss: () => win.close() });
   overlay.card.classList.add('card-away');
   const title = document.createElement('h2');
   title.dataset.i18n = 'away.title';

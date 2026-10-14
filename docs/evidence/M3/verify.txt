@@ -1,0 +1,20 @@
+
+> anomaly-shop@0.1.0 verify
+> node scripts/verify.mjs
+
+verify (milestone): 13 stages, full log /home/user/anomaly-shop/.cache/verify.log
+ok   typecheck 1.6 s
+ok   test 21.0 s
+ok   validate:content 0.4 s
+ok   sim:balance 78.2 s
+ok   build:e2e 2.1 s
+ok   e2e [e2e: end of milestone only] 198.5 s
+ok   build 1.5 s
+ok   size 0.3 s
+ok   pack 0.4 s
+ok   check-release 0.7 s
+ok   e2e:release [e2e: end of milestone only] 7.7 s
+ok   build:youtube 2.0 s
+ok   check:youtube 0.3 s
+verify (milestone): all 13 stages green in 315 s
+EXIT=0

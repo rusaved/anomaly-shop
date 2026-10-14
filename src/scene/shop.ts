@@ -986,10 +986,11 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         if (spot) fx.burst(spot.x, spot.y, 8, [c.incubator, c.incubatorGlass, c.uiAccent], spot.r * 3.5, current.outline * 1.2);
       } else if (e.type === 'upgradeBought') {
         // M3-17: the shop changed — it shines where the shop is and says so in the scene (the panel stays aside).
+        // In the upper part of the shop: it stays in view above a portrait panel.
         const area = stageRect ?? current.stage;
         const x = area.x + area.w / 2;
-        const y = area.y + area.h * 0.42;
-        const size = Math.max(16, current.unit * 1.4);
+        const y = area.y + Math.max(hud, area.h * 0.22);
+        const size = Math.max(14, Math.min(26, current.unit * 0.75));
         fx.burst(x, y, 18, [c.uiAccent, c.rarityLegendary, c.eyeWhite], current.unit * 6, current.outline * 1.4);
         upgradeText = t('fx.upgrade', { n: e.level });
         fx.float(x, y, upgradeText, c.uiAccent, size, current.unit * 1.4);

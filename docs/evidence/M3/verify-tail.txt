@@ -1,0 +1,7 @@
+build EXIT=0
+size EXIT=0
+pack EXIT=0
+check-release EXIT=0
+e2e:release EXIT=0
+build:youtube EXIT=0
+check:youtube EXIT=0

@@ -1,0 +1,53 @@
+
+> anomaly-shop@0.1.0 verify
+> node scripts/verify.mjs
+
+verify (milestone): 13 stages, full log /home/user/anomaly-shop/.cache/verify.log
+ok   typecheck 1.7 s
+ok   test 25.9 s
+ok   validate:content 0.4 s
+ok   sim:balance 77.8 s
+ok   build:e2e 1.7 s
+FAIL e2e [e2e: end of milestone only] after 235.4 s (exit 1)
+last 40 lines:
+
+
+
+
+
+  1) [desktop] › e2e/smoke.spec.ts:150:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU 
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 5000
+    Received:   5054
+
+      160 |   const ready = (await events(page)).find((e) => e.name === 'gameReady')!;
+      161 |   await page.waitForTimeout(300);
+    > 162 |   expect(ready.t).toBeLessThan(5000);
+          |                   ^
+      163 |   expect(bytes).toBeLessThan(5 * 1024 * 1024);
+      164 |   await session.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+      165 | });
+        at /home/user/anomaly-shop/e2e/smoke.spec.ts:162:19
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/smoke-perf-ready-within-5--e3510-wnloaded-on-a-4×-slower-CPU-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/smoke-perf-ready-within-5--e3510-wnloaded-on-a-4×-slower-CPU-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/smoke-perf-ready-within-5--e3510-wnloaded-on-a-4×-slower-CPU-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/smoke-perf-ready-within-5--e3510-wnloaded-on-a-4×-slower-CPU-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [desktop] › e2e/smoke.spec.ts:150:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU 
+  42 passed (3.9m)
+
+EXIT=1

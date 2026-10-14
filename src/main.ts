@@ -309,6 +309,7 @@ async function boot(): Promise<void> {
     links,
     today,
     rewardText,
+    rewardShort: (r) => (r.egg ? i18n.t(`egg.short.${r.egg}`) : new Intl.NumberFormat(i18n.lang()).format(r.coins ?? r.crystals ?? 0)),
     eggPicture: (id) => portraits.egg(id),
     review: () => platform.requestReview(),
   });
@@ -480,9 +481,8 @@ async function boot(): Promise<void> {
       sfx.play('rare');
     }
     else if (e.type === 'upgradeBought') {
+      // M3-17, M3-18: the shop itself says «Upgrade: level N» (the scene); no second text in a toast.
       sfx.play('levelUp');
-      const name = upgrades.upgrades.find((u) => u.id === e.id)?.name[i18n.lang()] ?? e.id;
-      toasts.show(i18n.t('toast.upgrade', { name, n: e.level }), 'good');
     }
     else if (e.type === 'eggBought') sfx.play('buy');
     else if (e.type === 'eggsStored') toasts.show(i18n.t('eggs.stored', { n: e.count }), 'good', 1800);

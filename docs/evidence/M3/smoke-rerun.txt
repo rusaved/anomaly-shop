@@ -1,0 +1,17 @@
+
+Running 12 tests using 2 workers
+
+[1/12] [desktop] › e2e/smoke.spec.ts:19:1 › SDK-02 ready() once, after the shop is drawn, within 4 s; the loading screen is gone
+[2/12] [desktop] › e2e/smoke.spec.ts:9:1 › environment: the game boots on the mock, WebGL renders, the test API answers
+[3/12] [desktop] › e2e/smoke.spec.ts:31:1 › SCR-09 zero console errors, page errors and dialogs through pause, settings and a reload
+[4/12] [desktop] › e2e/smoke.spec.ts:43:1 › SDK-03 startup ad: pause before ready, gameplay starts only after the resume
+[5/12] [desktop] › e2e/smoke.spec.ts:56:1 › SDK-04 GameplayAPI stop on pause and start on resume, only on transitions
+[6/12] [desktop] › e2e/smoke.spec.ts:67:1 › SAV-01 coins and a creature survive F5 (debug panel actions)
+[7/12] [desktop] › e2e/smoke.spec.ts:83:1 › SAV-05 a corrupted save gives a fresh profile, no crash
+[8/12] [desktop] › e2e/smoke.spec.ts:97:1 › SDK-05 LOC-03 language from the SDK: en → English UI, uk → Russian
+[9/12] [desktop] › e2e/smoke.spec.ts:110:1 › LOC-05 manual language choice wins over the platform language and survives F5
+[10/12] [desktop] › e2e/smoke.spec.ts:122:1 › CNT-08 community buttons open the game.json addresses in a new tab, no reward, game paused
+[11/12] [desktop] › e2e/smoke.spec.ts:140:1 › SCR-01 1280×720: HUD, panel, side buttons, pause and settings windows fit the screen
+[12/12] [desktop] › e2e/smoke.spec.ts:150:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU
+  12 passed (52.8s)
+EXIT=0

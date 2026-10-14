@@ -173,8 +173,11 @@ const ALLOWED_URL = (u) => u === '/sdk.js' || /^(https?:)?\/\/mc\.yandex\.ru(\/|
       else if (v && typeof v === 'object') Object.values(v).forEach(collect);
     };
     collect(parsed);
+    // Q-018 (producer, 14.10.2026): «кейсы» is allowed in the game title and the store card only, never inside the game.
+    const allowed = name === 'game.json (title)' ? new Set(['кейс', 'кейсы']) : new Set();
     for (const value of values) {
       for (const w of words) {
+        if (allowed.has(w)) continue;
         const re = new RegExp(`(^|[^\\p{L}\\p{N}_])${esc(w)}(?=$|[^\\p{L}\\p{N}_])`, 'iu');
         if (re.test(value)) problems.push(`${name}: "${value.slice(0, 60)}" contains "${w}"`);
       }

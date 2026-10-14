@@ -15,6 +15,8 @@ export interface GiftsLookups {
   /** The player's local date, YYYY-MM-DD (platform time). */
   today(): string;
   rewardText(r: RewardData): string;
+  /** A short label for a day cell: a number or the short egg name. */
+  rewardShort(r: RewardData): string;
   eggPicture(id: string): string;
   review(): Promise<{ available: boolean; sent: boolean }>;
 }
@@ -70,7 +72,7 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
       look.gifts.daily.forEach((d, i) => {
         const state = i < v.day || (i === v.day && !v.dailyReady) ? 'taken' : i === v.day ? 'today' : 'later';
         const pic = d.reward.egg ? `<img alt="" src="${look.eggPicture(d.reward.egg)}">` : `<span class="${d.reward.crystals ? 'gem' : 'coin'}" aria-hidden="true"></span>`;
-        parts.push(`<div class="day day-${state}" data-day="${i + 1}"><small>${look.t('gifts.day', { n: d.day })}</small>${pic}<b>${look.rewardText(d.reward)}</b></div>`);
+        parts.push(`<div class="day day-${state}" data-day="${i + 1}"><small>${look.t('gifts.day', { n: d.day })}</small>${pic}<b>${look.rewardShort(d.reward)}</b></div>`);
       });
       parts.push('</div>');
       parts.push(v.dailyReady ? `<button type="button" class="btn btn-primary" data-action="gift-daily">${look.t('gifts.take')}</button>` : `<p class="card-sub">${look.t('gifts.tomorrow')}</p>`);

@@ -1740,3 +1740,36 @@
 .home-foot:empty {
   display: none;
 }
+
+/* UB-04: «Upgrades» on the shop itself — bottom right of the scene; the tab screens and windows cover it. */
+.stage-btn {
+  position: absolute;
+  z-index: 4;
+  left: calc(var(--stage-w, 100%) - 10px);
+  top: calc(var(--stage-h, 50%) - 10px);
+  transform: translate(-100%, -100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border-radius: 22px;
+  background: var(--c-uiPanel);
+  color: var(--c-uiText);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 0 var(--c-outline);
+  pointer-events: auto;
+}
+.portrait .stage-btn {
+  /* Above the home panel's rounded top. */
+  top: calc(var(--stage-h, 50%) - 16px);
+}
+.stage-btn svg {
+  width: 22px;
+  height: 22px;
+}
+.stage-btn .nav-badge {
+  top: -2px;
+  right: -2px;
+}

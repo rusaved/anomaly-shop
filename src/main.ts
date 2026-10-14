@@ -185,6 +185,13 @@ async function boot(): Promise<void> {
     nav.mark(tab);
     showTab(tab);
   };
+  // UB-04: a button on the shop itself opens its upgrades — a panel from the right, the shop stays in view (the Shop tab does the same).
+  uiRoot.insertAdjacentHTML(
+    'beforeend',
+    '<button type="button" class="stage-btn" data-action="open-upgrades"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4l6 6-3 3-6-6z"/><path d="M11 7L4 14l3 3 7-7"/><path d="M6 19l-2 1 1-2"/></svg><span data-i18n="upgrades.open"></span><span class="nav-badge nav-dot" data-upgrades-dot hidden></span></button>',
+  );
+  const stageButton = uiRoot.querySelector('[data-action="open-upgrades"]') as HTMLElement;
+  stageButton.addEventListener('click', () => selectTab('shop'));
   for (const id of ['market', 'inventory', 'sales', 'eggs', 'chats', 'season'] as const) sheets.set(id, createSheet(uiRoot, id, id === 'eggs' ? 'home' : 'screen'));
   const nav = createNav(uiRoot, showTab);
   hud.balance.addEventListener('click', () => selectTab('shop'));
@@ -329,7 +336,9 @@ async function boot(): Promise<void> {
     if (tab === 'sales') salesTab.render();
     sheets.get('season')?.setTitle(i18n.t('nav.season'));
     nav.badge('chats', play.chats().filter((c) => c.unread).length);
-    nav.badge('shop', play.upgradeList().some((u) => u.affordable || u.fresh));
+    const upgradeReady = play.upgradeList().some((u) => u.affordable || u.fresh);
+    nav.badge('shop', upgradeReady);
+    (stageButton.querySelector('[data-upgrades-dot]') as HTMLElement).hidden = !upgradeReady;
     const shopEggs = play.eggShop();
     nav.badge('eggs', shopEggs.eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open)));
   }

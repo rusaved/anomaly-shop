@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { tickTapping } from './hatch-helper.ts';
 import { createRng } from '../src/core/rng.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
 import { newSave } from '../src/sim/state.ts';
@@ -22,7 +23,7 @@ function setup(coins = 0) {
 /** Steps the sim until a hatch; returns the game seconds it took (null if none within limit). */
 function secondsToHatch(game: ReturnType<typeof setup>['game'], seen: GameEvent[], limit = 10): number | null {
   for (let t = 0; t < limit; t += STEP_SEC) {
-    game.tick(STEP_SEC);
+    tickTapping(game, STEP_SEC);
     if (seen.some((e) => e.type === 'hatched')) return t + STEP_SEC;
   }
   return null;

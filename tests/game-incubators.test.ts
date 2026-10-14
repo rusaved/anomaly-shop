@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { tickTapping } from './hatch-helper.ts';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
@@ -52,7 +53,7 @@ describe('M2-01 incubators and hatch speed', () => {
     game.buyEgg();
     let t = 0;
     while (!seen.some((e) => e.type === 'hatched') && t < 5) {
-      game.tick(STEP_SEC);
+      tickTapping(game, STEP_SEC);
       t += STEP_SEC;
     }
     const egg = content.eggs.eggs.find((e) => e.id === 'egg_basic')!;

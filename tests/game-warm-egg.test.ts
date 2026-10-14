@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { tickTapping } from './hatch-helper.ts';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
@@ -34,7 +35,7 @@ describe('M1-10 warm egg', () => {
 
   it('the 5th deal opens it (event, «new» mark), it costs its price and hatches in 10 s', () => {
     const { game, seen } = setup(4);
-    for (let t = 0; t < 6.1; t += STEP_SEC) game.tick(STEP_SEC);
+    for (let t = 0; t < 6.1; t += STEP_SEC) tickTapping(game, STEP_SEC);
     expect(game.accept()).toBe(true);
     expect(seen.some((e) => e.type === 'eggUnlocked' && e.egg === 'egg_warm')).toBe(true);
     expect(game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm']);
@@ -45,7 +46,7 @@ describe('M1-10 warm egg', () => {
     expect(game.eggList()[1]!.fresh).toBe(false);
     const start = seen.length;
     let t = 0;
-    for (; t < 15 && !seen.slice(start).some((e) => e.type === 'hatched'); t += STEP_SEC) game.tick(STEP_SEC);
+    for (; t < 15 && !seen.slice(start).some((e) => e.type === 'hatched'); t += STEP_SEC) tickTapping(game, STEP_SEC);
     expect(Math.abs(t - warm.hatchSec)).toBeLessThan(3 * STEP_SEC);
   });
 
@@ -68,7 +69,7 @@ describe('M2 playtest: the first dearer egg is a good surprise', () => {
       const seen: GameEvent[] = [];
       game.events.on((e) => seen.push(e));
       game.buyEgg('egg_warm');
-      for (let t = 0; t < 11; t += STEP_SEC) game.tick(STEP_SEC);
+      for (let t = 0; t < 11; t += STEP_SEC) tickTapping(game, STEP_SEC);
       const first = seen.find((e) => e.type === 'hatched');
       expect(first && first.type === 'hatched' ? first.rarity : 'none').not.toBe('common');
       expect(game.state.flags.first_egg_warm).toBe(true);

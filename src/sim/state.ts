@@ -30,6 +30,10 @@ export interface Incubator {
   elapsed: number;
   /** The starter egg waits for the first tap before its timer runs (docs/01, section 4). */
   waiting: boolean;
+  /** Egg care (docs/01 §3 p. 12): warming taps while hatching, portions of food, seconds ready and waiting for a tap. */
+  careTaps?: number;
+  careFed?: number;
+  ripeSec?: number;
 }
 
 export interface CollectionEntry {
@@ -75,7 +79,7 @@ export interface Order {
 }
 
 export function emptyIncubator(): Incubator {
-  return { egg: null, startedAt: 0, progress: 0, elapsed: 0, waiting: false };
+  return { egg: null, startedAt: 0, progress: 0, elapsed: 0, waiting: false, careTaps: 0, careFed: 0, ripeSec: 0 };
 }
 
 export function newSave(now: number): SaveData {
@@ -137,7 +141,16 @@ export function normalize(raw: unknown, now: number): SaveData {
       ? arr(r.incubators).map((i) => {
           const o = rec(i);
           const egg = typeof o.egg === 'string' ? o.egg : null;
-          return { egg, startedAt: num(o.startedAt, 0), progress: Math.max(0, num(o.progress, 0)), elapsed: Math.max(0, num(o.elapsed, 0)), waiting: egg !== null && bool(o.waiting, false) };
+          return {
+            egg,
+            startedAt: num(o.startedAt, 0),
+            progress: Math.max(0, num(o.progress, 0)),
+            elapsed: Math.max(0, num(o.elapsed, 0)),
+            waiting: egg !== null && bool(o.waiting, false),
+            careTaps: Math.max(0, num(o.careTaps, 0)),
+            careFed: Math.max(0, num(o.careFed, 0)),
+            ripeSec: Math.max(0, num(o.ripeSec, 0)),
+          };
         })
       : d.incubators,
     creatures: arr(r.creatures)

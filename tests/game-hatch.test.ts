@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { tickTapping } from './hatch-helper.ts';
 import { createRng } from '../src/core/rng.ts';
 import { RARITIES } from '../src/content/schemas.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
@@ -23,7 +24,7 @@ function hatchMany(eggId: string, seed: number): Record<string, number> {
   for (let i = 0; i < RUNS; i++) {
     game.state.creatures = [];
     Object.assign(game.state.incubators[0]!, { egg: eggId, waiting: false, progress: 100, elapsed: 100 });
-    game.tick(1 / 60);
+    tickTapping(game, 1 / 60);
   }
   return counts;
 }
@@ -69,7 +70,7 @@ describe('M1-02 hatch', () => {
     const game = createGame(store, content, createRng(3));
     for (let i = 0; i < 3; i++) {
       Object.assign(game.state.incubators[0]!, { egg: 'egg_basic', waiting: false, progress: 100, elapsed: 100 });
-      game.tick(1 / 60);
+      tickTapping(game, 1 / 60);
     }
     const uids = game.state.creatures.map((c) => c.uid);
     expect(new Set(uids).size).toBe(3);

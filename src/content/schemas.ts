@@ -55,7 +55,8 @@ export const Egg = v.object({
 export const Care = v.object({
   warm: v.object({ tapsPerStep: Count, steps: Count, bonus: Share }),
   feed: v.object({ steps: Count, bonus: Share, priceShare: Share }),
-  ripe: v.object({ afterSec: Money, bonus: Share }),
+  /** Ripening: a ready egg left afterSec gives its bonus; after selfSec it hatches by itself (an idle shop keeps going). */
+  ripe: v.object({ afterSec: Money, bonus: Share, selfSec: v.pipe(v.number(), v.minValue(1)) }),
   maxBonus: Share,
   shell: v.pipe(v.array(Color), v.minLength(2)),
 });

@@ -128,6 +128,12 @@ function botPlayer(bot: Bot, game: Game): () => number {
       game.accept();
       return tap;
     }
+    // A ready egg waits for a tap (M3-02): a player opens it at once.
+    const readyEgg = view.incubators.findIndex((i) => i.ready);
+    if (readyEgg >= 0) {
+      game.tapIncubator(readyEgg);
+      return tap;
+    }
     // Keep the incubators busy: the dearest egg affordable twice over, else a basic one.
     const eggs = game.eggList().filter((e) => e.check.ok);
     const best = bot.bestEggs ? eggs.filter((e) => st.coins >= e.check.price * 2).sort((a, b) => b.check.price - a.check.price)[0] : undefined;

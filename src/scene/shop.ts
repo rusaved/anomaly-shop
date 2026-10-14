@@ -95,6 +95,8 @@ export interface ShopDeps {
   t: Translate;
   /** The creature's line in the current language. */
   line(species: string): string;
+  /** Egg shell tints by care level (eggs.json → care.shell; 0 is the egg's own color). */
+  careShell: readonly string[];
   invalidate(): void;
   handlers: ShopHandlers;
 }
@@ -808,16 +810,19 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       if (!iv.egg) return;
       moving = true;
       const stage = iv.share > 0.75 ? 2 : iv.share > 0.45 ? 1 : 0;
-      const key = `${iv.egg}:${stage}:${spot.r.toFixed(1)}`;
+      const key = `${iv.egg}:${stage}:${iv.careLevel}:${spot.r.toFixed(1)}`;
       if (node.key !== key) {
         node.key = key;
-        drawEgg(node.egg, spot.r, c, l.outline * 0.8, iv.share, style.eggs[iv.egg]);
+        // Care shows on the shell (M3-02): the egg takes the tint of its care level.
+        const look = style.eggs[iv.egg];
+        const tint = iv.careLevel > 0 ? deps.careShell[iv.careLevel] : undefined;
+        drawEgg(node.egg, spot.r, c, l.outline * 0.8, iv.share, tint ? { shell: tint, spots: look?.spots ?? c.eggSpots } : look);
       }
       node.squash = Math.max(0, node.squash - dt);
       const k = feel.bounceSec > 0 ? node.squash / feel.bounceSec : 0;
       const sq = feel.eggTapSquash * Math.sin(k * Math.PI) * (k > 0 ? 1 : 0);
-      if (iv.waiting) {
-        // The starter egg invites a tap: a soft hop and pulse.
+      if (iv.waiting || iv.ready) {
+        // The starter egg and a ready egg invite a tap: a soft hop and pulse.
         const hop = Math.abs(Math.sin(time * 3.2));
         node.box.rotation = Math.sin(time * 6.4) * 0.06;
         node.box.y = spot.y + spot.r * 0.12 - hop * spot.r * 0.12;

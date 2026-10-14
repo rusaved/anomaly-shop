@@ -6,9 +6,9 @@ import type { CustomersData, DistrictData, EggsData, EventsData, FtueData, Rarit
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
-import { emptyIncubator, type Creature, type Order, type SaveData } from './state.ts';
+import { emptyIncubator, type Creature, type Incubator, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { coins, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, coins, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -70,6 +70,8 @@ export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noDeal' | 'noCr
 export type GameEvent =
   | { type: 'eggBought'; incubator: number; egg: string; price: number; by: 'player' | 'helper' | 'gift' | 'merchant' }
   | { type: 'eggTap'; incubator: number; started: boolean }
+  | { type: 'eggReady'; incubator: number }
+  | { type: 'eggFed'; incubator: number; price: number; level: number }
   | { type: 'hatched'; incubator: number; uid: string; species: string; rarity: RarityName }
   | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number; by: FeedBy }
   | { type: 'customerArrived'; id: number; customer: string }
@@ -103,6 +105,13 @@ export interface IncubatorView {
   waiting: boolean;
   /** 0..1 of hatching done. */
   share: number;
+  /** Hatched and waiting for a tap (ripening, docs/01 §3 p. 12). */
+  ready: boolean;
+  /** Care bonus b and its shell color step (0 — the egg's own color). */
+  care: number;
+  careLevel: number;
+  /** The next portion of food: its price, or null when the egg has had all its food. */
+  feedPrice: number | null;
 }
 
 export interface CreatureView {
@@ -204,6 +213,8 @@ export interface Game {
   eggList(): Array<{ id: string; check: BuyCheck; fresh: boolean }>;
   buyEgg(eggId?: string): boolean;
   tapIncubator(index: number): void;
+  /** Egg care: one portion of food for coins (docs/01 §3 p. 12). */
+  feedEgg(index: number): boolean;
   /** Feeds the creature (+1 toward its next level) and selects it. */
   tapCreature(uid: string): void;
   /** The selected creature, falling back to the first one. */
@@ -269,6 +280,15 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const needFor = (eggId: string): number => {
     const egg = eggData(eggId);
     return egg ? hatchNeedSec(egg, speedEffect()) : 0;
+  };
+  /** Hatched and waiting for a tap (the egg ripens meanwhile). */
+  const eggReady = (inc: Incubator): boolean => !!inc.egg && !inc.waiting && isHatched(inc.progress, inc.elapsed, needFor(inc.egg), eggs);
+  const careOf = (inc: Incubator): number => careBonus({ taps: inc.careTaps ?? 0, fed: inc.careFed ?? 0, ripeSec: inc.ripeSec ?? 0 }, eggs.care);
+  /** One portion of egg food: a share of the egg price (at least a coin); null when fed in full or no egg. */
+  const feedPrice = (inc: Incubator): number | null => {
+    const egg = inc.egg ? eggData(inc.egg) : undefined;
+    if (!egg || (inc.careFed ?? 0) >= eggs.care.feed.steps) return null;
+    return Math.max(1, coins(egg.price.coins * eggs.care.feed.priceShare));
   };
 
   // Customers live only in the session (docs/01, section 3.4): the queue refills after a reload.
@@ -783,7 +803,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     // The first egg of a dearer kind gives at least its firstRarity (once per kind, flag first_<egg>).
     const firstOf = egg.firstRarity && !st.flags[`first_${egg.id}`] ? egg.firstRarity : null;
     if (egg.firstRarity) st.flags[`first_${egg.id}`] = true;
-    let rarity = forced ?? pickRarity(egg.chances, rng.next());
+    let rarity = forced ?? pickRarity(careChances(egg.chances, careOf(inc)), rng.next());
     if (!forced && firstOf && RARITY_RANK[rarity] < RARITY_RANK[firstOf]) rarity = firstOf;
     const kind = pickSpecies(species, rarity, rng.next());
     st.stats.hatched += 1;
@@ -856,12 +876,29 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         game.buyEgg();
         return;
       }
+      s().stats.taps += 1;
+      if (eggReady(inc)) {
+        hatch(index);
+        return;
+      }
       const started = inc.waiting;
       inc.waiting = false;
       inc.progress += eggs.tapSpeedupSec;
-      s().stats.taps += 1;
+      // Warmth (care): taps while the egg is still hatching.
+      inc.careTaps = (inc.careTaps ?? 0) + 1;
       commit();
       emit({ type: 'eggTap', incubator: index, started });
+    },
+    feedEgg(index) {
+      const inc = s().incubators[index];
+      const price = inc ? feedPrice(inc) : null;
+      if (!inc || price === null || s().coins < price) return false;
+      s().coins -= price;
+      inc.careFed = (inc.careFed ?? 0) + 1;
+      commit({ flush: true });
+      emit({ type: 'eggFed', incubator: index, price, level: careLevel(careOf(inc), eggs.care) });
+      emit({ type: 'change' });
+      return true;
     },
     tapCreature(uid) {
       const st = s();
@@ -957,14 +994,25 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       for (let i = 0; i < st.incubators.length; i++) {
         const inc = st.incubators[i]!;
         if (!inc.egg || inc.waiting) continue;
-        inc.elapsed += dt;
-        inc.progress += dt;
         const egg = eggData(inc.egg);
         if (!egg) {
           Object.assign(inc, emptyIncubator());
           continue;
         }
-        if (isHatched(inc.progress, inc.elapsed, needFor(inc.egg), eggs)) hatch(i);
+        if (eggReady(inc)) {
+          // Ready: it ripens while it waits for a tap. Away and with the courier (a helper does the routine) it hatches at once,
+          // as in M2; an idle shop without one hatches it after selfSec.
+          inc.ripeSec = (inc.ripeSec ?? 0) + dt;
+          if (quiet || owned('autoBuyEgg') || inc.ripeSec >= eggs.care.ripe.selfSec) hatch(i);
+          continue;
+        }
+        inc.elapsed += dt;
+        inc.progress += dt;
+        if (eggReady(inc)) {
+          inc.ripeSec = 0;
+          if (quiet) hatch(i);
+          else emit({ type: 'eggReady', incubator: i });
+        }
       }
       runHelpers(dt);
       runClock(dt);
@@ -977,7 +1025,18 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     },
     view() {
       return {
-        incubators: s().incubators.map((inc) => ({ egg: inc.egg, waiting: inc.waiting, share: inc.egg ? hatchShare(inc.progress, needFor(inc.egg)) : 0 })),
+        incubators: s().incubators.map((inc) => {
+          const care = careOf(inc);
+          return {
+            egg: inc.egg,
+            waiting: inc.waiting,
+            share: inc.egg ? hatchShare(inc.progress, needFor(inc.egg)) : 0,
+            ready: eggReady(inc),
+            care,
+            careLevel: careLevel(care, eggs.care),
+            feedPrice: feedPrice(inc),
+          };
+        }),
         creatures: s().creatures.map((x) => {
           const spec = speciesData(x.species);
           return {

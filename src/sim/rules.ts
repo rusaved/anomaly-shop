@@ -3,7 +3,7 @@
 // Keep: no state and no randomness of its own (a roll in [0, 1) comes in as an argument); every number comes from content.
 
 import type { EggData, EggsData, RarityName, ShelfData, SpeciesData, SpeciesEntry, UnlockData, UpgradeData } from '../content/schemas.ts';
-import { RARITIES } from '../content/schemas.ts';
+import { RARITIES, type CareData } from '../content/schemas.ts';
 
 const EPS = 1e-6;
 
@@ -23,6 +23,38 @@ export function hatchShare(progress: number, need: number): number {
 }
 
 /** Rarity by the egg's percent table; roll is uniform in [0, 1). */
+/** Egg care so far (docs/01 §3 p. 12): taps of warmth, portions of food, seconds ready and waiting. */
+export interface CareState {
+  taps: number;
+  fed: number;
+  ripeSec: number;
+}
+
+/** The care bonus b: warmth steps, food portions and ripening, capped at maxBonus. */
+export function careBonus(c: CareState, data: CareData): number {
+  const warm = Math.min(data.warm.steps, Math.floor(c.taps / data.warm.tapsPerStep)) * data.warm.bonus;
+  const food = Math.min(data.feed.steps, c.fed) * data.feed.bonus;
+  const ripe = c.ripeSec >= data.ripe.afterSec ? data.ripe.bonus : 0;
+  return Math.min(data.maxBonus, warm + food + ripe);
+}
+
+/** Care shifts the odds: share b of every rarity moves one step up (the top keeps its own), so they still sum to 100. */
+export function careChances(chances: EggData['chances'], b: number): EggData['chances'] {
+  const out = { ...chances };
+  RARITIES.forEach((r, i) => {
+    const below = i > 0 ? chances[RARITIES[i - 1]!] * b : 0;
+    out[r] = (i === RARITIES.length - 1 ? chances[r] : chances[r] * (1 - b)) + below;
+  });
+  return out;
+}
+
+/** The shell color step for the care bonus: 0 — the egg's own color, then one step per share of maxBonus. */
+export function careLevel(b: number, data: CareData): number {
+  const top = data.shell.length - 1;
+  if (b <= 1e-9 || data.maxBonus <= 0) return 0;
+  return Math.min(top, Math.max(1, Math.round((b / data.maxBonus) * top)));
+}
+
 export function pickRarity(chances: EggData['chances'], roll: number): RarityName {
   const total = RARITIES.reduce((s, r) => s + chances[r], 0);
   let x = roll * total;

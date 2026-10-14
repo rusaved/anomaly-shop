@@ -117,6 +117,7 @@ async function boot(): Promise<void> {
     feel,
     t: i18n.t,
     line: (id) => speciesById(id)?.line[i18n.lang()] ?? '',
+    careShell: eggs.care.shell,
     invalidate: scene.invalidate,
     handlers: {
       tapIncubator: (i) => play.tapIncubator(i),

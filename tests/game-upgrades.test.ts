@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { tickTapping } from './hatch-helper.ts';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type Game, type GameEvent } from '../src/sim/game.ts';
@@ -25,7 +26,7 @@ function setup(save?: SaveData) {
 function hatchTime(game: Game, seen: GameEvent[]): number {
   const start = seen.length;
   for (let t = 0; t < 10; t += STEP_SEC) {
-    game.tick(STEP_SEC);
+    tickTapping(game, STEP_SEC);
     if (seen.slice(start).some((e) => e.type === 'hatched')) return t + STEP_SEC;
   }
   return Infinity;
@@ -54,7 +55,7 @@ describe('M1-08 upgrades', () => {
     expect(game.buyEgg()).toBe(true);
     expect(game.buyEgg()).toBe(true);
     expect(game.state.incubators.every((i) => i.egg === 'egg_basic')).toBe(true);
-    for (let t = 0; t < 3.1; t += STEP_SEC) game.tick(STEP_SEC);
+    for (let t = 0; t < 3.1; t += STEP_SEC) tickTapping(game, STEP_SEC);
     expect(seen.filter((e) => e.type === 'hatched')).toHaveLength(2);
   });
 

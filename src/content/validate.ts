@@ -147,7 +147,6 @@ function checkSpecies(species: SpeciesData, eggs: EggsData | null, errors: strin
 function checkCustomers(customers: CustomersData, errors: string[]): void {
   duplicates('customers.json', 'districts', customers.districts.map((d) => d.id), errors);
   duplicates('customers.json', 'districts.customer', customers.districts.map((d) => d.customer.id), errors);
-  if (customers.bargainBonus.min > customers.bargainBonus.max) errors.push('customers.json: bargainBonus — min above max');
   customers.districts.forEach((d, i) => {
     if (d.customer.offer.min > d.customer.offer.max) errors.push(`customers.json: districts.${i}.customer.offer — min above max`);
     if (d.unlock.type === 'district') errors.push(`customers.json: districts.${i}.unlock — a district cannot unlock by district`);

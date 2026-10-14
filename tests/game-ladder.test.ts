@@ -6,9 +6,11 @@ import { coins, creatureValue } from '../src/sim/rules.ts';
 import { newSave, type Creature } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
+import { waitChat } from './chat-helper.ts';
 
 /** M2-12: the ladder of 8 things (docs/01b, section 5.1): prices 120…2 000, each seen in the shop, opened as rewards, each changes play. */
 const content = loadGameContent();
+const reply = { ...content.market.replySec };
 const LADDER = ['bowl', 'bell', 'mat', 'tags', 'radio', 'board', 'stool', 'cuckoo'];
 const up = (id: string) => content.upgrades.upgrades.find((u) => u.id === id)!;
 const cr = (uid: string, species = 'kettle', level = 1): Creature => ({ uid, species, level, fed: 0, hatchedAt: 0, age: 0 });
@@ -74,29 +76,52 @@ describe('M2-12 ladder of 8 things', () => {
     expect(game.state.creatures[0]!.fed).toBe(2);
   });
 
-  it('bell: the queue holds 4', () => {
-    const { game } = setup({ owned: ['bell'], creatures: [cr('a')] });
-    run(game, 40);
-    expect(game.view().queue).toHaveLength(4);
-    expect(game.view().queueSize).toBe(4);
+  it('bell: one more buyer writes at once (UB-05: the chats are the queue)', () => {
+    const five = ['a', 'b', 'c', 'd', 'e'].map((u) => cr(u));
+    const plain = setup({ creatures: five, owned: ['stool'] });
+    const bell = setup({ creatures: five, owned: ['bell', 'stool'] });
+    for (const g of [plain.game, bell.game]) {
+      g.state.upgrades.showcase = 4;
+      g.state.showcase = five.map((c) => c.uid);
+    }
+    run(plain.game, 60);
+    run(bell.game, 60);
+    expect(plain.game.view().queue).toHaveLength(content.customers.queueSize);
+    expect(bell.game.view().queue).toHaveLength(content.customers.queueSize + 1);
+    expect(bell.game.view().queueSize).toBe(content.customers.queueSize + 1);
   });
 
-  it('mat: haggle risk −5 points', () => {
-    const a = setup({ creatures: [cr('a')], deals: 1 });
-    const b = setup({ creatures: [cr('a')], deals: 1, owned: ['mat'] });
-    run(a.game, 7);
-    run(b.game, 7);
-    expect(b.game.deal()!.leaveChance).toBeCloseTo(a.game.deal()!.leaveChance - 0.05, 9);
+  it('mat: buyers give 5 points more to a counter price', () => {
+    const counter = (owned: string[]) => {
+      // A dear creature: whole coins do not blur 3 points.
+      const { game } = setup({ creatures: [cr('a', 'teacup_dragon', 3)], deals: 1, owned });
+      const chat = waitChat(game)!;
+      const ch = content.customers.characters.find((c) => c.id === 'greedy')!;
+      chat.character = ch.id;
+      const ask = game.view().talking[0]!.ask;
+      // The asking price sits 3 points above what the buyer gives without the mat.
+      chat.offer = Math.floor(ask / (1 + ch.give + 0.03));
+      game.chatCounter(chat.id);
+      return chat.lines.at(-1)!.ctx;
+    };
+    expect(counter([])).toBe('last');
+    expect(counter(['mat'])).toBe('accept');
   });
 
   it('tags: price tags +5%; radio: shelf growth ×1.5; stool: +1 showcase place', () => {
-    const spec = content.species.species.find((s) => s.id === 'cloudcat')!;
-    const tags = setup({ owned: ['tags'], creatures: [cr('a', 'cloudcat', 3)] });
-    expect(tags.game.view().creatures[0]!.price).toBe(coins(creatureValue(spec, 3) * 1.05));
-    const radio = setup({ owned: ['radio'], creatures: [cr('a', 'cloudcat', 3)] });
-    run(radio.game, 60);
-    expect(radio.game.view().creatures[0]!.price).toBe(coins(creatureValue(spec, 3) * (1 + content.species.shelf.growthPerMin * 1.5)));
-    expect(setup({ owned: ['stool'] }).game.showcaseSlots()).toBe(4);
+    // Nobody writes for a while: the creatures stay on the shelf (UB-05).
+    content.market.replySec = { min: 1e6, max: 1e6 };
+    try {
+      const spec = content.species.species.find((s) => s.id === 'cloudcat')!;
+      const tags = setup({ owned: ['tags'], creatures: [cr('a', 'cloudcat', 3)] });
+      expect(tags.game.view().creatures[0]!.price).toBe(coins(creatureValue(spec, 3) * 1.05));
+      const radio = setup({ owned: ['radio'], creatures: [cr('a', 'cloudcat', 3)] });
+      run(radio.game, 60);
+      expect(radio.game.view().creatures[0]!.price).toBe(coins(creatureValue(spec, 3) * (1 + content.species.shelf.growthPerMin * 1.5)));
+      expect(setup({ owned: ['stool'] }).game.showcaseSlots()).toBe(2);
+    } finally {
+      content.market.replySec = reply;
+    }
   });
 
   it('cuckoo clock: once a minute every creature gets food', () => {

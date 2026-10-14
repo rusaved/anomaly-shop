@@ -13,6 +13,8 @@ function setup(seed = 1, askShare?: number) {
   const save = newSave(0);
   save.flags = { ftue_starter: true, ftue_done: true, showcase_m3: true };
   save.stats.hatched = 5;
+  // Past the first deal: no first-minute buyer, the counter price is open (UB-05, UB-06).
+  save.stats.deals = 1;
   save.creatures = [{ uid: 'a', species: 'cloudcat', level: 3, fed: 0, hatchedAt: 0, age: 0, ...(askShare ? { askShare } : {}) }];
   save.showcase = ['a'];
   save.incubators = [{ egg: null, startedAt: 0, progress: 0, elapsed: 0, waiting: false }];
@@ -35,7 +37,7 @@ function chatWith(character: string, seed = 1) {
   const chat = game.state.chats[0]!;
   const ch = content.customers.characters.find((c) => c.id === character)!;
   chat.character = character;
-  const ask = game.view().creatures[0]!.ask;
+  const ask = game.view().talking[0]!.ask;
   chat.offer = Math.max(1, Math.round(ask * ch.offer.min));
   return { game, seen, chat, ch, ask };
 }
@@ -64,7 +66,7 @@ describe('M3-08 chats', () => {
     expect(game.chatSell(chat.id)).toBe(true);
     expect(game.state.coins).toBe(coins + chat.offer);
     expect(game.state.creatures).toHaveLength(0);
-    expect(game.state.stats.deals).toBe(1);
+    expect(game.state.stats.deals).toBe(2);
     expect(game.chats()[0]!.state).toBe('sold');
     expect(game.chats()[0]!.lines.at(-1)!.ctx).toBe('thanks');
     expect(game.chatSell(chat.id)).toBe(false);
@@ -87,7 +89,7 @@ describe('M3-08 chats', () => {
     }
   });
 
-  it('«No, thanks»: the buyer leaves, another writes later; taking the creature off closes its chat; chats survive a reload', () => {
+  it('«No, thanks»: the buyer leaves, the creature is back on the shelf, another writes later; chats survive a reload', () => {
     const { game, seen } = setup(3);
     until(game, seen, 40);
     const first = game.chats()[0]!;
@@ -96,9 +98,9 @@ describe('M3-08 chats', () => {
     expect(until(game, seen, 60)).not.toBeNull();
     const second = game.chats()[0]!;
     expect(second.id).not.toBe(first.id);
-    game.unlist('a');
-    game.tick(STEP_SEC);
-    expect(game.chats().find((c) => c.id === second.id)!.state).toBe('gone');
+    expect(second.state).toBe('open');
+    // Q-025: the creature of an open chat is off the shelf, so it cannot be taken off twice.
+    expect(game.unlist('a')).toBe(false);
     const back = normalize(parseSave(serialize(game.state)), 0);
     expect(back.chats.map((c) => c.id)).toEqual(game.state.chats.map((c) => c.id));
   });

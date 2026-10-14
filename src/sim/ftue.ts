@@ -5,7 +5,7 @@
 import type { SaveData } from './state.ts';
 import { FLAGS, type GameView } from './game.ts';
 
-export type FtueStep = 'tapEgg' | 'feed' | 'waitCustomer' | 'sell' | 'buyEgg' | 'hatchRare';
+export type FtueStep = 'tapEgg' | 'list' | 'feed' | 'waitCustomer' | 'sell' | 'buyEgg' | 'hatchRare';
 
 export type FtueTarget = { kind: 'incubator'; index: number } | { kind: 'slot'; index: number } | { kind: 'queue' } | { kind: 'button'; action: string };
 
@@ -18,13 +18,15 @@ export function ftueHint(state: SaveData, view: GameView): FtueHint | null {
   if (state.flags[FLAGS.done]) return null;
   const eggAt = view.incubators.findIndex((i) => i.egg);
   if (state.stats.hatched === 0) return eggAt >= 0 ? { step: 'tapEgg', target: { kind: 'incubator', index: eggAt } } : null;
-  if (!state.flags[FLAGS.fed] && view.creatures.length > 0) {
-    const index = Math.max(0, view.creatures.findIndex((c) => c.uid === view.selected));
-    return { step: 'feed', target: { kind: 'slot', index } };
-  }
   if (state.stats.deals === 0) {
-    if (view.deal?.uid) return { step: 'sell', target: { kind: 'button', action: 'sell' } };
-    return view.creatures.length > 0 ? { step: 'waitCustomer', target: { kind: 'queue' } } : null;
+    // UB-05: a buyer wrote — the only way to sell is the chat (no feeding hint over an offer, UB-06).
+    if (view.queue.length > 0) return { step: 'sell', target: { kind: 'button', action: 'tab-chats' } };
+    if (!state.flags[FLAGS.fed] && view.creatures.length > 0) {
+      const index = Math.max(0, view.creatures.findIndex((c) => c.uid === view.selected));
+      return { step: 'feed', target: { kind: 'slot', index } };
+    }
+    if (view.creatures.length > 0) return { step: 'waitCustomer', target: { kind: 'queue' } };
+    return view.inventory.length > 0 ? { step: 'list', target: { kind: 'button', action: 'tab-sales' } } : null;
   }
   if (!state.flags[FLAGS.bought]) return { step: 'buyEgg', target: { kind: 'button', action: 'buy-egg' } };
   if (state.stats.hatched < 2 && eggAt >= 0) return { step: 'hatchRare', target: { kind: 'incubator', index: eggAt } };

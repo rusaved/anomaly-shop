@@ -29,8 +29,6 @@ export function createChatter(deps: ChatterDeps): Chatter {
   let lastTap = -Infinity;
   let lastHungry = 0;
   const fedAt = new Map<string, number>();
-  /** The creature each customer was last offered (an «offer» line when the player shows another one). */
-  const offered = new Map<number, string | null>();
 
   function line(pool: Array<{ ru: string; en: string }> | undefined, key: string): string {
     if (!pool?.length) return '';
@@ -66,20 +64,11 @@ export function createChatter(deps: ChatterDeps): Chatter {
         creature(e.uid, e.species, 'sold');
         if (!e.liked) customer(e.customerId, e.customer, 'notTheirs');
         else if (e.rarity !== 'common') customer(e.customerId, e.customer, 'rare');
-        offered.delete(e.customerId);
-      } else if (e.type === 'customerUp') {
-        customer(e.id, e.customer, 'arrive');
-        offered.set(e.id, deps.view().deal?.uid ?? null);
-      } else if (e.type === 'haggled') {
-        const type = deps.view().queue.find((q) => q.id === e.customerId)?.customer ?? deps.view().deal?.customer;
-        if (type) customer(e.customerId, type, e.result === 'up' ? 'haggleUp' : 'leave');
-      } else if (e.type === 'change') {
-        // The player picked another creature for the customer at the counter.
-        const deal = deps.view().deal;
-        if (!deal?.uid || !offered.has(deal.id)) return;
-        const before = offered.get(deal.id);
-        offered.set(deal.id, deal.uid);
-        if (before && before !== deal.uid) customer(deal.id, deal.customer, 'offer');
+      } else if (e.type === 'customerArrived') customer(e.id, e.customer, 'arrive');
+      else if (e.type === 'chatReply') {
+        // UB-05: the buyer answered in the chat — the same person says it at the door.
+        const type = deps.view().queue.find((q) => q.id === e.id)?.customer;
+        if (type && (e.ctx === 'accept' || e.ctx === 'last')) customer(e.id, type, e.ctx === 'accept' ? 'haggleUp' : 'offer');
       }
     },
     tick(dt) {

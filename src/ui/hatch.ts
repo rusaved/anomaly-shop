@@ -78,7 +78,9 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     cancelAnimationFrame(raf);
     strip.style.transform = `translateX(${endX}px)`;
     resultAt = performance.now();
-    const cr: CreatureView | undefined = game.view().creatures.find((c) => c.uid === uid);
+    // UB-05: a tapped egg's creature waits in the inventory for the player's choice.
+    const view = game.view();
+    const cr: CreatureView | undefined = [...view.inventory, ...view.creatures].find((c) => c.uid === uid);
     title.textContent = look.t('hatch.done');
     result.hidden = false;
     overlay.card.classList.add('shown');

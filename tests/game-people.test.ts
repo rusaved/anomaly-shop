@@ -25,10 +25,12 @@ describe('M2-18 different customers', () => {
       const save = newSave(0);
       save.flags.ftue_starter = true;
       save.flags.ftue_done = true;
-      save.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }];
+      save.flags.showcase_m3 = true;
+      save.creatures = ['a', 'b', 'c', 'd'].map((uid) => ({ uid, species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }));
+      save.showcase = ['a', 'b', 'c', 'd'];
       save.stats.hatched = 2;
       save.stats.deals = 150;
-      save.upgrades = { bell: 1 };
+      save.upgrades = { bell: 1, showcase: 3 };
       const game = createGame(createStore(save, () => 0), content, createRng(seed));
       const faces = new Set<string>();
       for (let i = 0; i < 80; i++) {
@@ -36,10 +38,10 @@ describe('M2-18 different customers', () => {
         const q = game.view().queue.filter((x) => x.person >= 0);
         expect(new Set(q.map((x) => x.person)).size).toBe(q.length);
         for (const x of q) faces.add(`${x.person}:${x.outfit}:${x.accessory}`);
-        const d = game.deal();
-        if (d) {
-          expect(d.person).toBe(game.view().queue[0]!.person);
-          game.wait();
+        // UB-05: the buyer at the door is the person of the chat; «No, thanks» lets them go.
+        for (const c of game.chats().filter((x) => x.state === 'open')) {
+          if (c.person >= 0) expect(q.find((x) => x.id === c.id)?.person).toBe(c.person);
+          game.chatDecline(c.id);
         }
       }
       expect(faces.size).toBeGreaterThan(15);

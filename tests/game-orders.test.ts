@@ -6,6 +6,7 @@ import { coins, creatureValue } from '../src/sim/rules.ts';
 import { newSave, normalize, parseSave, serialize, type Creature } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
+import { waitChat } from './chat-helper.ts';
 
 /** M2-19: the order board — one collector order (species + level → ×2–3 of the price), 5 minutes, then a new one; no penalty. */
 const base = loadGameContent();
@@ -78,11 +79,10 @@ describe('M2-19 order board', () => {
     const o = game.state.order!;
     game.state.creatures = [cr('fit', o.species, o.level)];
     game.state.showcase = game.state.creatures.map((c) => c.uid);
-    run(game, 7);
-    const deal = game.deal()!;
-    expect(deal.order).toBe(true);
-    expect(deal.offer).toBeGreaterThanOrEqual(o.reward);
-    expect(game.accept()).toBe(true);
+    const chat = waitChat(game)!;
+    expect(chat.order).toBe(true);
+    expect(chat.offer).toBeGreaterThanOrEqual(o.reward);
+    expect(game.chatSell(chat.id)).toBe(true);
     expect(seen).toContainEqual(expect.objectContaining({ type: 'orderDone', species: o.species }));
     run(game, 0.1);
     expect(game.state.order).not.toBeNull();
@@ -94,8 +94,7 @@ describe('M2-19 order board', () => {
     const o = game.state.order!;
     game.state.creatures = [cr('low', o.species, o.level - 1)];
     game.state.showcase = game.state.creatures.map((c) => c.uid);
-    run(game, 7);
-    expect(game.deal()!.order).toBe(false);
+    expect(waitChat(game)!.order).toBe(false);
     const back = normalize(parseSave(serialize(game.state)), 0);
     expect(back.order).toMatchObject({ species: o.species, level: o.level, reward: o.reward });
     const coinsBefore = game.state.coins;

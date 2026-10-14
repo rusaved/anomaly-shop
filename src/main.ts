@@ -18,7 +18,6 @@ import { createSettingsWindow } from './ui/settings.ts';
 import { communityLinks, renderCommunity } from './ui/community.ts';
 import { renderBuildLabel } from './ui/label.ts';
 import { createActions } from './ui/actions.ts';
-import { createDealCard } from './ui/deal.ts';
 import { createCoinFlight } from './ui/coin-flight.ts';
 import { createUpgradesWindow } from './ui/upgrades.ts';
 import { createHints } from './ui/hints.ts';
@@ -160,20 +159,6 @@ async function boot(): Promise<void> {
   const panel = createPanel(uiRoot, __GAME__.title[lang]);
   const links = platform.caps.community ? communityLinks() : null;
   renderCommunity(panel.side, links, 'side', true);
-  const dealCard = createDealCard(panel.body, play, {
-    t: i18n.t,
-    lang: i18n.lang,
-    customerName: (id, person) => {
-      const lang = i18n.lang();
-      const type = customers.districts.find((d) => d.customer.id === id)?.customer;
-      const who = customers.people.names[person];
-      if (!type) return i18n.t(`customer.${id}`);
-      const typeName = (who?.f && type.nameF ? type.nameF : type.name)[lang];
-      return who ? `${who[lang]} · ${typeName}` : typeName;
-    },
-    customerColor: (id) => styleData.customers[id]?.body ?? styleData.colors.queueSpot,
-    speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
-  });
   const upgradesWindow = createUpgradesWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, upgrade: (id) => upgrades.upgrades.find((u) => u.id === id), tierColors: Object.values(styleData.rarity) });
   const actions = createActions(panel.body, play, lang, { t: i18n.t, eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg });
   // The genre-standard frame (docs/01 §6; M3-03): the tab bar, one sheet per tab over the panel; the shop stays in view.
@@ -250,6 +235,11 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     slider: market.slider,
     zoneColors: RARITIES.map((r) => styleData.rarity[r]),
+    openChat: (uid) => {
+      nav.mark('chats');
+      showTab('chats');
+      chatsTab.show(uid);
+    },
   });
   const chatsTab = createChatsTab(sheets.get('chats')!, play, {
     t: i18n.t,
@@ -395,7 +385,6 @@ async function boot(): Promise<void> {
     eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg,
   });
   const renderUi = (): void => {
-    dealCard.render();
     actions.render();
     renderTabs();
     nextCard.render();
@@ -436,7 +425,7 @@ async function boot(): Promise<void> {
         hud.update(store.state.coins, { delaySec: Math.max(0, delay - feel.hudRollSec * 0.5) });
       }
     }
-    else if (e.type === 'haggled') sfx.play(e.result === 'up' ? 'buy' : 'fail');
+    else if (e.type === 'chatReply' && (e.ctx === 'accept' || e.ctx === 'last')) sfx.play(e.ctx === 'accept' ? 'buy' : 'fail');
     else if (e.type === 'ftueDone') toasts.show(i18n.t('ftue.rich'), 'good', 3200);
     else if (e.type === 'rescueEgg') {
       toasts.show(i18n.t('toast.rescueEgg'), 'good', 2400);
@@ -503,13 +492,7 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t('gifts.toast', { what: rewardText(e.reward) }), 'good', 2400);
       sfx.play('rare');
     }
-    else if (e.type === 'chatSold') {
-      sfx.play('coin');
-      hud.pulse();
-    } else if (e.type === 'soldNow') {
-      sfx.play('coin');
-      hud.pulse();
-    }
+
   });
   const pauseWindow = createPauseWindow(uiRoot, runtime.pause, links, () => settingsWindow.open());
   const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.show(), (code) => play.redeemCode(code));
@@ -536,7 +519,6 @@ async function boot(): Promise<void> {
     hud.setLanguage(next);
     hud.update(store.state.coins, { snap: true });
     actions.setLanguage(next);
-    dealCard.render();
     panel.setTitle(__GAME__.title[next]);
     i18n.apply(uiRoot);
     shop.relabel();
@@ -565,7 +547,7 @@ async function boot(): Promise<void> {
         stats: store.state.stats,
         upgrades: store.state.upgrades,
         queue: play.view().queue.length,
-        deal: play.deal(),
+        chats: play.chats().filter((c) => c.state === 'open').map((c) => ({ id: c.id, uid: c.uid, offer: c.offer })),
         hint: hints.text(),
         ftue: ftueHint(store.state, play.view())?.step ?? null,
         rarities: store.state.creatures.map((c) => speciesById(c.species)?.rarity ?? ''),
@@ -574,7 +556,10 @@ async function boot(): Promise<void> {
         upgradeFx: shop.lastUpgradeText(),
         hatchTiming: hatchShow.timing(),
         newest: (() => {
-          const c = play.view().creatures.at(-1);
+          // The newest creature wherever it is (UB-05: a tapped egg's creature waits in the inventory).
+          const v = play.view();
+          const uid = store.state.creatures.at(-1)?.uid;
+          const c = [...v.creatures, ...v.inventory, ...v.talking].find((x) => x.uid === uid);
           return c ? { uid: c.uid, species: c.species, low: c.low, high: c.high, name: speciesById(c.species)?.name[i18n.lang()] ?? c.species } : null;
         })(),
       }),

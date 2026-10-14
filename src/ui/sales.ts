@@ -15,6 +15,8 @@ export interface SalesLookups {
   rarityColor(r: RarityName): string;
   slider: SliderData;
   zoneColors: readonly string[];
+  /** Opens the chat about a creature a buyer is writing about (Q-025: it is off the shelf meanwhile). */
+  openChat(uid: string): void;
 }
 
 export interface SalesTab {
@@ -51,7 +53,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
   function renderList(): void {
     const view = game.view();
     const fmt = new Intl.NumberFormat(look.lang());
-    const next = `l:${look.lang()}:${view.slots}:${view.creatures.map((c) => `${c.uid}.${c.ask}.${c.zone}`).join(',')}:${view.inventory.length}`;
+    const next = `l:${look.lang()}:${view.slots}:${view.creatures.map((c) => `${c.uid}.${c.ask}.${c.zone}`).join(',')}:${view.inventory.length}:${view.talking.map((c) => c.uid).join(',')}`;
     if (next === key) return;
     key = next;
     slider = null;
@@ -72,6 +74,22 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     grid.className = 'cards';
     grid.append(sum, ...cards);
     root.replaceChildren(grid);
+    if (!view.talking.length) return;
+    // Q-025: a buyer is writing about these — they wait in «Chats», not on the shelf.
+    const talk = document.createElement('div');
+    talk.className = 'cards';
+    const head = document.createElement('p');
+    head.className = 'cards-sum';
+    head.textContent = look.t('sales.talking');
+    talk.appendChild(head);
+    for (const c of view.talking) {
+      const card = slotCard(c, fmt).cloneNode(true) as HTMLElement;
+      card.dataset.action = `sale-chat-${c.uid}`;
+      (card.querySelector('.card-price') as HTMLElement).textContent = look.t('sales.talkingSub');
+      card.addEventListener('click', () => look.openChat(c.uid));
+      talk.appendChild(card);
+    }
+    root.appendChild(talk);
   }
 
   /** The inventory to pick from for a free slot. */

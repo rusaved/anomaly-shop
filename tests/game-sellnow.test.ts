@@ -32,7 +32,9 @@ describe('M3-05 hatch result', () => {
     game.tapIncubator(0);
     const h = seen.find((e) => e.type === 'hatched');
     expect(h).toMatchObject({ by: 'tap', egg: 'egg_basic' });
-    const cr = game.view().creatures[0]!;
+    // UB-03: a tapped egg's creature waits for the player's choice in the inventory (keep / sell now / to the shop).
+    expect(game.view().creatures).toHaveLength(0);
+    const cr = game.view().inventory[0]!;
     expect(cr.low).toBeLessThan(cr.price);
     expect(cr.high).toBeGreaterThan(cr.price);
     const coins = game.state.coins;
@@ -40,7 +42,7 @@ describe('M3-05 hatch result', () => {
     expect(game.state.coins).toBe(coins + cr.low);
     expect(game.state.creatures).toHaveLength(0);
     expect(game.state.stats.deals).toBe(1);
-    expect(seen.find((e) => e.type === 'soldNow')).toMatchObject({ price: cr.low });
+    expect(seen.find((e) => e.type === 'sold')).toMatchObject({ price: cr.low, by: 'now' });
     expect(game.sellNow(cr.uid)).toBe(false);
   });
 });

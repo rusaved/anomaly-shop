@@ -15,11 +15,13 @@ function setup(creatures = ['a', 'b'], flags: Record<string, boolean> = {}) {
   save.stats.hatched = 5;
   save.creatures = creatures.map((u) => cr(u));
   save.incubators = [{ egg: null, startedAt: 0, progress: 0, elapsed: 0, waiting: false }];
+  // One showcase level bought: two places (one at the start, Q-024 B).
+  save.upgrades = { showcase: 1 };
   return createGame(createStore(save, () => 0), content, createRng(3));
 }
 
 describe('M3-07 my sales', () => {
-  it('a save from before M3: every creature starts on sale', () => {
+  it('a save from before M3: every creature starts on sale (as many as there are places)', () => {
     const game = setup(['a', 'b']);
     expect(game.state.showcase).toEqual(['a', 'b']);
     expect(game.view().creatures.map((c) => c.uid)).toEqual(['a', 'b']);

@@ -6,6 +6,7 @@ import { createGame, type GameEvent } from '../src/sim/game.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
+import { sellViaChat } from './chat-helper.ts';
 
 /** M1-10: the warm egg opens after 5 deals (docs/01a, section 2); its odds are checked on 1 000 hatches in game-hatch.test.ts. */
 const content = loadGameContent();
@@ -35,8 +36,7 @@ describe('M1-10 warm egg', () => {
 
   it('the 5th deal opens it (event, «new» mark), it costs its price and hatches in 10 s', () => {
     const { game, seen } = setup(4);
-    for (let t = 0; t < 6.1; t += STEP_SEC) tickTapping(game, STEP_SEC);
-    expect(game.accept()).toBe(true);
+    expect(sellViaChat(game)).toBe(true);
     expect(seen.some((e) => e.type === 'eggUnlocked' && e.egg === 'egg_warm')).toBe(true);
     expect(game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm']);
     expect(game.eggList()[1]!.fresh).toBe(true);

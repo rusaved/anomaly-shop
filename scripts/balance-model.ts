@@ -92,9 +92,8 @@ export interface RunResult {
 }
 
 /** One bot plays a game: returns the act function that makes one decision and says how long it took. */
-function botPlayer(bot: Bot, game: Game): () => number {
+export function botPlayer(bot: Bot, game: Game): () => number {
   let lastHint = '';
-  let haggledWith = -1;
   const tap = 1 / bot.tapsPerSec;
   return () => {
     const st = game.state;
@@ -107,26 +106,32 @@ function botPlayer(bot: Bot, game: Game): () => number {
       }
       if (hint.step === 'tapEgg' || hint.step === 'hatchRare') game.tapIncubator(hint.target.kind === 'incubator' ? hint.target.index : 0);
       else if (hint.step === 'feed' && view.creatures[0]) game.tapCreature(view.creatures[0].uid);
-      else if (hint.step === 'sell') game.accept();
+      else if (hint.step === 'list' && view.inventory[0]) game.list(view.inventory[0].uid);
+      else if (hint.step === 'sell') {
+        const open = game.chats().find((c) => c.state === 'open');
+        if (open) game.chatSell(open.id);
+      }
       else if (hint.step === 'buyEgg') game.buyEgg();
       return tap;
     }
-    // M3: a buyer wrote — answer (a counter once when the offer is below the asking price, then sell); a bargain on the market.
+    // UB-05: buyers only write — answer (a counter once when the offer is below the asking price, then sell).
     // Only about a creature the bot would sell anyway (its sell level): the rest it keeps feeding, the buyer waits.
-    const chat = game.chats().find((c) => c.state === 'open' && view.creatures.some((x) => x.uid === c.uid && x.level >= Math.min(bot.sellLevel, x.maxLevel)));
+    const chat = game.chats().find((c) => c.state === 'open' && view.talking.some((x) => x.uid === c.uid && x.level >= Math.min(bot.sellLevel, x.maxLevel)));
     if (chat) {
-      const ask = view.creatures.find((c) => c.uid === chat.uid)?.ask ?? 0;
-      if (!chat.countered && bot.haggleRisk > 0 && chat.offer < ask) game.chatCounter(chat.id);
+      const ask = view.talking.find((c) => c.uid === chat.uid)?.ask ?? 0;
+      if (bot.haggleRisk > 0 && chat.offer < ask && game.canCounter(chat.id)) game.chatCounter(chat.id);
       else game.chatSell(chat.id);
-      return tap + bot.reactSec;
+      // Two taps: the chat, then «Sell» (the Chats tab carries the count, nothing to notice).
+      return tap * 2;
     }
     const lot = game.market().lots.find((l) => !l.sold && l.verdict === 'below' && st.coins >= l.price * 3);
     if (lot && game.freeSlots() > 0) {
       game.buyLot(lot.id);
       return tap + bot.reactSec;
     }
-    // A new egg with the «New!» badge: tried once as soon as it is affordable (players react to the badge like to the upgrade dot).
-    const freshEgg = game.eggList().find((e) => e.fresh && e.check.ok && st.coins >= e.check.price * 1.5);
+    // A new egg with the «New!» badge: tried once as soon as it is affordable (players react to the badge like to the upgrade dot;
+    // UB-01: the egg screen is the home screen, the badge is in view all the time).
+    const freshEgg = game.eggList().find((e) => e.fresh && e.check.ok && st.coins >= e.check.price * 1.25);
     if (freshEgg) {
       game.buyEgg(freshEgg.id);
       return tap + bot.reactSec;
@@ -137,30 +142,20 @@ function botPlayer(bot: Bot, game: Game): () => number {
       game.buyUpgrade(upgrade.id);
       return tap + bot.reactSec;
     }
-    // A creature ready for sale: select it (a tap), then sell or haggle.
-    const ready = view.creatures.filter((c) => c.level >= Math.min(bot.sellLevel, c.maxLevel)).sort((a, b) => b.price - a.price)[0];
-    const deal = view.deal;
-    if (deal && ready) {
-      if (deal.uid !== ready.uid) {
-        game.tapCreature(ready.uid);
-        return tap;
-      }
-      if (bot.haggleRisk > 0 && deal.canHaggle && deal.bargains === 0 && deal.leaveChance <= bot.haggleRisk && haggledWith !== deal.id) {
-        haggledWith = deal.id;
-        game.haggle();
-        return tap;
-      }
-      game.accept();
-      return tap;
-    }
     // A ready egg waits for a tap (M3-02): a player opens it at once.
     const readyEgg = view.incubators.findIndex((i) => i.ready);
     if (readyEgg >= 0) {
       game.tapIncubator(readyEgg);
       return tap;
     }
-    // Keep the incubators busy: the dearest egg affordable twice over, else a basic one.
-    const eggs = game.eggList().filter((e) => e.check.ok);
+    // A hatched creature waits in the inventory: on the shelf it goes while there is room (UB-03: the result's «To the shop»).
+    if (view.inventory[0] && game.freeSlots() > 0) {
+      game.list(view.inventory[0].uid);
+      return tap;
+    }
+    // Keep the incubators busy: the dearest egg affordable twice over, else a basic one; a player with a pile to sell
+    // sells first (UB-05: eggs take no shelf place, so nothing else stops the pile).
+    const eggs = view.inventory.length < 2 + view.slots ? game.eggList().filter((e) => e.check.ok) : [];
     const best = bot.bestEggs ? eggs.filter((e) => st.coins >= e.check.price * 2).sort((a, b) => b.check.price - a.check.price)[0] : undefined;
     const pick = best ?? eggs.find((e) => e.id === eggs[0]?.id);
     if (pick && (best || game.canBuyEgg().ok)) {
@@ -168,7 +163,7 @@ function botPlayer(bot: Bot, game: Game): () => number {
       return tap;
     }
     // Feed the cheapest creature still below the sale level, else speed up an egg.
-    const hungry = view.creatures.filter((c) => c.level < Math.min(bot.sellLevel, c.maxLevel)).sort((a, b) => a.price - b.price)[0];
+    const hungry = [...view.talking, ...view.creatures].filter((c) => c.level < Math.min(bot.sellLevel, c.maxLevel)).sort((a, b) => a.price - b.price)[0];
     if (hungry) {
       game.tapCreature(hungry.uid);
       return tap;
@@ -211,9 +206,9 @@ export function playOnce(bot: Bot, seed: number, content: GameContent = loadGame
   const secondEgg = content.eggs.eggs.filter((e) => e.section === 'ladder')[1]?.id;
   game.events.on((e: GameEvent) => {
     if (e.type === 'ftueDone') ftueAt = t;
-    if (e.type === 'chatSold' && times.F13 === undefined && ftueAt >= 0) times.F13 = t - ftueAt;
+    if (e.type === 'sold' && e.customerId > 0 && times.F13 === undefined && ftueAt >= 0) times.F13 = t - ftueAt;
     if (e.type === 'lotBought') paid.set(e.uid, e.price);
-    if ((e.type === 'sold' || e.type === 'chatSold' || e.type === 'soldNow') && times.F14 === undefined && (paid.get(e.uid) ?? Infinity) < e.price) times.F14 = t;
+    if (e.type === 'sold' && times.F14 === undefined && (paid.get(e.uid) ?? Infinity) < e.price) times.F14 = t;
     if (e.type === 'eggBought' && e.egg === secondEgg && times.F15 === undefined) times.F15 = t;
     if (e.type === 'sold' && times.F1 === undefined) times.F1 = t;
     if (e.type === 'upgradeBought' && times.F3 === undefined) times.F3 = t;

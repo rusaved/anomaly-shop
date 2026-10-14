@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../src/core/rng.ts';
-import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
 import { newSave, normalize, parseSave, serialize, type Creature } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
+import { sellViaChat } from './chat-helper.ts';
 
 /** M2-08: crystals — the second currency: rare sales bring them, the courier is bought with them, they are saved. */
 const content = loadGameContent();
@@ -21,8 +21,7 @@ function sellOne(species: string, crystalSeen = false) {
   const game = createGame(createStore(save, () => 0), content, createRng(3));
   const seen: GameEvent[] = [];
   game.events.on((e) => seen.push(e));
-  for (let t = 0; t < 7; t += STEP_SEC) game.tick(STEP_SEC);
-  expect(game.accept()).toBe(true);
+  expect(sellViaChat(game)).toBe(true);
   return { game, seen };
 }
 

@@ -5,6 +5,7 @@ import { createGame, type Game, type GameEvent } from '../src/sim/game.ts';
 import { newSave, type Creature } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
+import { waitChat } from './chat-helper.ts';
 
 /** M2-03: helpers work without taps (feeder, seller, courier); the shop works on while the player is away. */
 const content = loadGameContent();
@@ -61,30 +62,30 @@ describe('M2-03 helpers', () => {
     expect(game.state.flags.ftue_fed).toBeUndefined();
   });
 
-  it('the seller sells to a customer kept waiting at the counter (after delaySec), at the offer', () => {
+  it('the seller answers a buyer who waited delaySec in the chat (UB-05), at the offer', () => {
     const { game, seen } = setup({ creatures: [cr('a', 'cloudcat', 2)], helpers: ['helper_sell'] });
-    run(game, 6.5);
-    const offer = game.deal()!.offer;
-    const delay = content.upgrades.upgrades.find((u) => u.id === 'helper_sell')!.effect;
-    expect(delay.type === 'autoSell' && delay.delaySec).toBeGreaterThan(1);
-    run(game, (delay.type === 'autoSell' ? delay.delaySec : 0) - 0.6);
+    const chat = waitChat(game)!;
+    const effect = content.upgrades.upgrades.find((u) => u.id === 'helper_sell')!.effect;
+    const delay = effect.type === 'autoSell' ? effect.delaySec : 0;
+    expect(delay).toBeGreaterThan(1);
+    run(game, delay - 0.2);
     expect(seen.some((e) => e.type === 'sold')).toBe(false);
-    run(game, 0.2);
-    const sold = seen.find((e) => e.type === 'sold');
-    expect(sold).toMatchObject({ by: 'helper', uid: 'a', price: offer });
-    expect(game.state.coins).toBe(offer);
+    run(game, 0.4);
+    expect(seen.find((e) => e.type === 'sold')).toMatchObject({ by: 'helper', uid: 'a', price: chat.offer, customerId: chat.id });
+    expect(game.state.coins).toBe(chat.offer);
   });
 
-  it('a haggle restarts the seller wait: the player keeps the deal in hand', () => {
-    const { game, seen } = setup({ creatures: [cr('a', 'cloudcat', 2)], helpers: ['helper_sell'], seed: 11 });
-    run(game, 6.5);
-    run(game, 4);
-    game.haggle();
-    run(game, 4);
+  it('a playing player keeps the chats in hand: the seller waits while the player taps', () => {
+    const { game, seen } = setup({ creatures: [cr('a', 'cloudcat', 2), cr('b')], helpers: ['helper_sell'], seed: 11 });
+    waitChat(game);
+    for (let i = 0; i < 10; i++) {
+      game.tapCreature('b');
+      run(game, 2);
+    }
     expect(seen.some((e) => e.type === 'sold' && e.by === 'helper')).toBe(false);
   });
 
-  it('the courier buys a basic egg into a free incubator and showcase place', () => {
+  it('the courier buys a basic egg into a free incubator while the shelf has room for what it hatches', () => {
     const { game, seen } = setup({ helpers: ['helper_courier'] });
     game.state.coins = 50;
     run(game, 0.1);

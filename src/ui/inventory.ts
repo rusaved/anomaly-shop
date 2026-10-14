@@ -46,7 +46,8 @@ export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveDat
       const fmt = new Intl.NumberFormat(look.lang());
       if (mode === 'items') {
         const view = game.view();
-        const all = [...view.creatures.map((c) => ({ c, on: true })), ...view.inventory.map((c) => ({ c, on: false }))];
+        // On sale counts the ones a buyer is writing about too (Q-025: off the shelf, still being sold).
+        const all = [...view.creatures.map((c) => ({ c, on: true })), ...view.talking.map((c) => ({ c, on: true })), ...view.inventory.map((c) => ({ c, on: false }))];
         const next = `i:${look.lang()}:${all.map(({ c, on }) => `${c.uid}.${c.level}.${c.price}.${on}`).join(',')}`;
         if (next === key) return;
         key = next;

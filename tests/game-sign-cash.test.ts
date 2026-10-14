@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
-import { createGame, type Game, type GameEvent } from '../src/sim/game.ts';
+import { createGame, type GameEvent } from '../src/sim/game.ts';
 import { upgradePrice } from '../src/sim/rules.ts';
 import { newSave, type Creature } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
+import { waitChat } from './chat-helper.ts';
 
-/** M2-07: the sign brings customers sooner, the register adds to every deal; both open by deals and show in the shop scene. */
+/** M2-07: the sign brings buyers sooner (UB-05: they write), the register adds to every deal; both open by deals and show in the shop scene. */
 const content = loadGameContent();
 const up = (id: string) => content.upgrades.upgrades.find((u) => u.id === id)!;
 const cr = (uid: string): Creature => ({ uid, species: 'cloudcat', level: 2, fed: 0, hatchedAt: 0, age: 0 });
@@ -26,9 +27,6 @@ function setup(deals: number, levels: Record<string, number> = {}, seed = 5) {
   game.events.on((e) => seen.push(e));
   return { game, seen };
 }
-const run = (game: Game, sec: number): void => {
-  for (let t = 0; t < sec - 1e-9; t += STEP_SEC) game.tick(STEP_SEC);
-};
 
 describe('M2-07 sign and register', () => {
   it('open by deals: the sign after 6, the register after 12; 5 levels each, prices from upgrades.json', () => {
@@ -45,31 +43,24 @@ describe('M2-07 sign and register', () => {
     }
   });
 
-  it('the sign: customers come −12% sooner per level (time from the 1st to the 3rd customer)', () => {
-    const fill = (levels: Record<string, number>) => {
+  it('the sign: buyers write −12% sooner per level (UB-05: the time to the first chat)', () => {
+    const firstChat = (levels: Record<string, number>) => {
       const { game, seen } = setup(30, levels);
       let t = 0;
-      const at: number[] = [];
-      while (at.length < 3 && t < 60) {
+      while (!seen.some((e) => e.type === 'chatNew') && t < 60) {
         game.tick(STEP_SEC);
         t += STEP_SEC;
-        if (seen.filter((e) => e.type === 'customerArrived').length > at.length) at.push(t);
       }
-      return at[2]! - at[0]!;
+      return t;
     };
-    const plain = fill({});
-    expect(Math.abs(plain - content.customers.spawnEverySec * 2)).toBeLessThan(0.1);
-    expect(Math.abs(fill({ sign: 1 }) - plain * 0.88)).toBeLessThan(0.1);
-    expect(Math.abs(fill({ sign: 5 }) - plain * 0.4)).toBeLessThan(0.1);
+    const plain = firstChat({});
+    expect(Math.abs(firstChat({ sign: 1 }) - plain * 0.88)).toBeLessThan(0.1);
+    expect(Math.abs(firstChat({ sign: 5 }) - plain * 0.4)).toBeLessThan(0.1);
   });
 
   it('the register: +3% to every deal per level', () => {
-    const plain = setup(30, {}, 9);
-    const rich = setup(30, { cash: 3 }, 9);
-    run(plain.game, 7);
-    run(rich.game, 7);
-    const a = plain.game.deal()!;
-    const b = rich.game.deal()!;
+    const a = waitChat(setup(30, {}, 9).game)!;
+    const b = waitChat(setup(30, { cash: 3 }, 9).game)!;
     expect(b.customer).toBe(a.customer);
     expect(Math.abs(b.offer / a.offer - 1.09)).toBeLessThan(0.02);
   });

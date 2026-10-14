@@ -35,8 +35,9 @@ function playFirstMinute(seed: number) {
       wait(0.8); // notices the new hint
     }
     if (hint.step === 'tapEgg' || hint.step === 'hatchRare') game.tapIncubator(hint.target.kind === 'incubator' ? hint.target.index : 0);
+    else if (hint.step === 'list') game.list(game.view().inventory[0]!.uid);
     else if (hint.step === 'feed') game.tapCreature(game.view().creatures[0]!.uid);
-    else if (hint.step === 'sell') game.accept();
+    else if (hint.step === 'sell') game.chatSell(game.chats().find((c) => c.state === 'open')!.id);
     else if (hint.step === 'buyEgg') game.buyEgg();
     wait(0.25); // about 4 taps a second
   }
@@ -44,10 +45,10 @@ function playFirstMinute(seed: number) {
 }
 
 describe('M1-09 first minute', () => {
-  it('the hints go tap egg → feed → (customer) → sell → buy egg → rare, and end with «that is how fortunes are made»', () => {
+  it('the hints go tap egg → put on sale → feed → (a buyer writes) → sell in the chat → buy egg → rare, and end with «that is how fortunes are made»', () => {
     for (const seed of [1, 2, 3, 42, 777, 2026]) {
       const { game, seen, steps, t } = playFirstMinute(seed);
-      expect(steps.filter((s) => s !== 'waitCustomer')).toEqual(['tapEgg', 'feed', 'sell', 'buyEgg', 'hatchRare']);
+      expect(steps.filter((s) => s !== 'waitCustomer')).toEqual(['tapEgg', 'list', 'feed', 'sell', 'buyEgg', 'hatchRare']);
       const hatched = seen.filter((e) => e.type === 'hatched');
       expect(hatched.map((e) => (e.type === 'hatched' ? e.rarity : ''))).toEqual(['common', 'valuable']);
       expect(seen.some((e) => e.type === 'ftueDone')).toBe(true);
@@ -63,7 +64,7 @@ describe('M1-09 first minute', () => {
   it('every first-minute hint has at most 6 words in ru and en', () => {
     for (const lang of ['ru', 'en']) {
       const d = dict(lang);
-      for (const step of ['tapEgg', 'feed', 'waitCustomer', 'sell', 'buyEgg', 'hatchRare', 'rich']) {
+      for (const step of ['tapEgg', 'list', 'feed', 'waitCustomer', 'sell', 'buyEgg', 'hatchRare', 'rich']) {
         const text = d[`ftue.${step}`];
         expect(text, `${lang} ftue.${step}`).toBeDefined();
         expect(text!.trim().split(/\s+/).length).toBeLessThanOrEqual(content.ftue.maxHintWords);

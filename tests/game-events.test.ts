@@ -33,9 +33,16 @@ const run = (game: Game, sec: number, each?: () => void): void => {
   }
 };
 const started = (seen: GameEvent[]) => seen.filter((e) => e.type === 'eventStarted');
+/** UB-05: buyers are let go (the creature goes back on the shelf), so the shelf events (golden, sneeze) stay possible. */
+const letGo = (game: Game): void => {
+  for (const c of game.chats()) if (c.state === 'open' && c.customer !== GOLDEN) game.chatDecline(c.id);
+};
 /** Runs until an event is on (at most 130 s: the first comes 60–120 s after the first minute). */
 const untilEvent = (game: Game): void => {
-  for (let t = 0; t < 130 && !game.view().event; t += STEP_SEC) game.tick(STEP_SEC);
+  for (let t = 0; t < 130 && !game.view().event; t += STEP_SEC) {
+    game.tick(STEP_SEC);
+    letGo(game);
+  }
   expect(game.view().event).not.toBeNull();
 };
 
@@ -56,6 +63,7 @@ describe('M2-15 random events', () => {
       let lastEnd = 0;
       run(game, 30 * 60, () => {
         t += STEP_SEC;
+        letGo(game);
         const ev = game.view().event;
         if (ev && onAt < 0) {
           onAt = t;
@@ -83,28 +91,29 @@ describe('M2-15 random events', () => {
       const { game, seen } = setup(only(kind), { coins: 77 });
       const before = JSON.stringify({ c: game.state.coins, cr: game.state.creatures.map((c) => c.uid), inc: game.state.incubators });
       run(game, 140, () => {
-        // Waiting customers are let go: only the event is under test.
-        const d = game.deal();
-        if (d && d.customer !== GOLDEN) game.wait();
+        // Ordinary buyers are let go (the creature goes back on the shelf): only the event is under test.
+        for (const c of game.chats()) if (c.state === 'open' && c.customer !== GOLDEN) game.chatDecline(c.id);
       });
       expect(seen.some((e) => e.type === 'eventEnded' && e.outcome === 'missed')).toBe(true);
       expect(JSON.stringify({ c: game.state.coins, cr: game.state.creatures.map((c) => c.uid), inc: game.state.incubators })).toBe(before);
     }
   });
 
-  it('golden customer: steps in front, pays ×2 of the tag for any creature, haggle without risk', () => {
+  it('golden buyer (UB-05: writes like everyone): about the dearest creature on the shelf, ×2 of the tag, no counter price; the deal ends the event', () => {
     const { game, seen } = setup(only('golden'), { creatures: [cr('a', 'cloudcat', 2)] });
-    untilEvent(game);
-    const deal = game.deal()!;
-    expect(deal.customer).toBe(GOLDEN);
-    expect(deal.leaveChance).toBe(0);
-    // The tag includes shelf growth since the start; the golden customer pays twice the tag.
-    const tag = game.view().creatures[0]!.price;
+    for (let t = 0; t < 130 && !game.view().event; t += STEP_SEC) {
+      game.tick(STEP_SEC);
+      for (const c of game.chats()) if (c.state === 'open' && c.customer !== GOLDEN) game.chatDecline(c.id);
+    }
+    const chat = game.chats().find((c) => c.state === 'open' && c.customer === GOLDEN)!;
+    expect(chat.uid).toBe('a');
+    expect(game.view().queue[0]).toMatchObject({ id: chat.id, customer: GOLDEN });
+    // The tag includes shelf growth since the start; the golden buyer pays twice the tag.
+    const tag = game.view().talking[0]!.price;
     expect(tag).toBeGreaterThanOrEqual(coins(creatureValue(base.species.species.find((s) => s.id === 'cloudcat')!, 2)));
-    expect(Math.abs(deal.offer - tag * 2)).toBeLessThanOrEqual(1);
-    expect(game.haggle()).toBe(true);
-    expect(game.deal()!.offer).toBeGreaterThan(deal.offer);
-    expect(game.accept()).toBe(true);
+    expect(Math.abs(chat.offer - tag * 2)).toBeLessThanOrEqual(1);
+    expect(game.canCounter(chat.id)).toBe(false);
+    expect(game.chatSell(chat.id)).toBe(true);
     expect(seen).toContainEqual(expect.objectContaining({ type: 'eventEnded', kind: 'golden', outcome: 'done' }));
   });
 
@@ -123,7 +132,7 @@ describe('M2-15 random events', () => {
     expect(game.view().event).toBeNull();
   });
 
-  it('egg at the door: a free egg in a free incubator; no room — the egg price in coins', () => {
+  it('egg at the door: a free egg in a free incubator; no free incubator — the egg price in coins', () => {
     const a = setup(only('doorEgg'));
     untilEvent(a.game);
     a.game.tapEvent();
@@ -131,6 +140,8 @@ describe('M2-15 random events', () => {
     expect(a.seen).toContainEqual(expect.objectContaining({ type: 'eggBought', price: 0, by: 'gift' }));
     const b = setup(only('doorEgg'), { creatures: [cr('a'), cr('b'), cr('c')] });
     untilEvent(b.game);
+    // UB-05: eggs take no shelf place, only an incubator.
+    b.game.state.incubators[0]!.egg = 'egg_basic';
     b.game.tapEvent();
     expect(b.game.state.coins).toBeGreaterThan(0);
     expect(b.seen.some((e) => e.type === 'eventGift')).toBe(true);

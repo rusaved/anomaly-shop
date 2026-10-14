@@ -568,8 +568,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     }
     // Front customer's offer bubble.
     const front = view.queue[0] ? visitors.get(view.queue[0].id) : undefined;
-    const deal = view.deal;
-    const text = deal ? (deal.uid ? fmt(deal.offer) : '…') : '';
+    // UB-05: the front buyer is the oldest open chat; the bubble shows its offer.
+    const text = view.queue[0] ? fmt(view.queue[0].offer) : '';
     if (front && text) {
       if (text !== offerKey) {
         offerKey = text;
@@ -663,7 +663,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         node.shown = '';
         drawCreature(node.art, style.creatures[cv.species] ?? FALLBACK_LOOK, cv.rarity, at.r, c, l.outline * 0.8);
       }
-      const picked = cv.uid === view.selected && view.deal?.uid === cv.uid;
+      const picked = false;
       const order = view.order && view.order.species === cv.species ? (cv.level >= view.order.level ? 'ready' : 'wanted') : 'none';
       const shown = `${cv.price}:${cv.level}:${cv.maxLevel}:${cv.fed}:${cv.need}:${picked}:${order}`;
       if (node.shown !== shown) {
@@ -924,17 +924,12 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           fx.float(buyer.box.x, buyer.box.y - current.unit * 3, `+${fmt(e.price)}`, c.uiAccent, Math.max(18, current.unit * 0.7), current.unit * 1.1);
           if (e.crystals > 0) fx.float(buyer.box.x + current.unit * 0.9, buyer.box.y - current.unit * 2.2, `+${e.crystals}◆`, c.rarityRare, Math.max(16, current.unit * 0.55), current.unit * 1.0);
         }
-      } else if (e.type === 'haggled' && e.result === 'up') {
-        const buyer = visitors.get(e.customerId);
+      } else if (e.type === 'chatReply' && e.ctx === 'accept') {
+        // The buyer took the counter price (UB-05): the offer bubble pulses.
         offerPulse = 0.3;
-        if (buyer) fx.float(buyer.box.x, buyer.box.y - current.unit * 3.2, `+${Math.round(e.bonus * 100)}%`, c.uiGood, Math.max(15, current.unit * 0.55), current.unit * 0.9);
       } else if (e.type === 'customerLeft') {
         const node = visitors.get(e.id);
         if (node) node.mood = e.reason;
-        if (node && e.reason === 'haggle') {
-          fx.burst(node.box.x, node.box.y - current.unit, 8, [c.uiMuted, c.outline], current.unit * 2.5, current.outline);
-          fx.float(node.box.x, node.box.y - current.unit * 2.6, t('fx.huff'), c.eyeWhite, Math.max(15, current.unit * 0.55), current.unit * 0.8);
-        }
       } else if (e.type === 'thingTapped') {
         if (e.target === 'sign') signSwing = 0.9;
         else if (e.target === 'door') {

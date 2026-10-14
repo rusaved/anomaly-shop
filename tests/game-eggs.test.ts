@@ -60,7 +60,7 @@ describe('M1-01 egg', () => {
     }
   });
 
-  it('buying needs coins, a free incubator and a free showcase place; the reason is reported', () => {
+  it('buying needs coins and a free incubator (UB-05: a full shelf does not matter); the reason is reported', () => {
     const { game, seen } = setup(5);
     expect(game.canBuyEgg()).toMatchObject({ ok: false, reason: 'busy' });
     game.state.incubators[0] = { egg: null, startedAt: 0, progress: 0, elapsed: 0, waiting: false };
@@ -68,9 +68,9 @@ describe('M1-01 egg', () => {
     game.state.coins = 100;
     game.state.creatures = [1, 2, 3].map((n) => ({ uid: `x${n}`, species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }));
     game.state.showcase = game.state.creatures.map((c) => c.uid);
-    expect(game.buyEgg()).toBe(false);
-    expect(seen.at(-1)).toMatchObject({ type: 'denied', reason: 'full' });
-    expect(game.state.coins).toBe(100);
+    expect(seen.filter((e) => e.type === 'denied').map((e) => (e.type === 'denied' ? e.reason : ''))).toEqual([]);
+    expect(game.buyEgg()).toBe(true);
+    expect(game.state.coins).toBe(90);
   });
 
   it('tapping an empty incubator buys a basic egg; the hatch adds a creature and flushes the save', () => {

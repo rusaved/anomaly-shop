@@ -34,33 +34,46 @@ const run = (game: Game, sec: number): void => {
 };
 
 describe('M2-02 showcase', () => {
-  it('opens after 3 deals; 5 levels take it from 3 to 8 places', () => {
+  it('opens after 3 deals; 5 levels take it from 1 (Q-024 B) to 6 places', () => {
     const early = setup([], base, 1, 2);
     expect(early.game.upgradeList().map((u) => u.id)).not.toContain('showcase');
     expect(early.game.buyUpgrade('showcase')).toBe(false);
     const { game } = setup([]);
     expect(game.upgradeList().map((u) => u.id)).toContain('showcase');
-    expect(game.showcaseSlots()).toBe(3);
+    expect(game.showcaseSlots()).toBe(1);
     game.state.coins = 1e7;
     for (let i = 0; i < 5; i++) expect(game.buyUpgrade('showcase')).toBe(true);
     expect(game.buyUpgrade('showcase')).toBe(false);
-    expect(game.showcaseSlots()).toBe(8);
-    expect(game.view().slots).toBe(8);
-    expect(game.freeSlots()).toBe(8);
+    expect(game.showcaseSlots()).toBe(6);
+    expect(game.view().slots).toBe(6);
+    expect(game.freeSlots()).toBe(6);
   });
 
   it('the price grows on the shelf: +5% a minute, at most +50%; the offer follows the tag', () => {
-    const { game } = setup([cr('a', 'cloudcat', 2)]);
+    // Nobody writes for a while: the creature stays on the shelf and its tag grows; one character, one type, fixed shares.
+    const quiet: GameContent = {
+      ...base,
+      market: { ...base.market, replySec: { min: 1e6, max: 1e6 } },
+      customers: {
+        ...base.customers,
+        characters: base.customers.characters.slice(0, 1).map((c) => ({ ...c, offer: { min: 1, max: 1 } })),
+        districts: base.customers.districts.slice(0, 1).map((d) => ({ ...d, customer: { ...d.customer, offer: { min: 0.8, max: 0.8 } } })),
+      },
+    };
+    const { game } = setup([cr('a', 'cloudcat', 2)], quiet);
     const level = coins(creatureValue(spec('cloudcat'), 2));
     expect(game.view().creatures[0]!.price).toBe(level);
     run(game, 60);
     expect(game.view().creatures[0]!.price).toBe(coins(creatureValue(spec('cloudcat'), 2) * 1.05));
     run(game, 60 * 12);
     expect(game.view().creatures[0]!.price).toBe(coins(creatureValue(spec('cloudcat'), 2) * 1.5));
-    const deal = game.deal()!;
-    expect(deal.uid).toBe('a');
-    expect(Math.abs(deal.share - deal.offer / game.view().creatures[0]!.price)).toBeLessThan(1e-9);
-    expect(deal.offer).toBeGreaterThan(level * 0.7);
+    const tag = game.view().creatures[0]!.price;
+    game.state.chatIn.a = 0;
+    run(game, 0.1);
+    const chat = game.chats()[0]!;
+    expect(chat.uid).toBe('a');
+    expect(Math.abs(chat.offer - tag * 0.8)).toBeLessThanOrEqual(1);
+    expect(chat.offer).toBeGreaterThan(level);
   });
 
   it('a creature on the showcase draws its customers: rare ones bring more collectors', () => {
@@ -68,9 +81,11 @@ describe('M2-02 showcase', () => {
       let collectors = 0;
       for (let seed = 1; seed <= 30; seed++) {
         const { game, seen } = setup(creatures.map((c) => ({ ...c })), allOpen, seed);
+        game.state.upgrades.showcase = 2;
+        game.state.showcase = game.state.creatures.map((c) => c.uid);
         for (let i = 0; i < 20; i++) {
           run(game, 6.5);
-          if (game.deal()) game.wait();
+          for (const c of game.chats()) if (c.state === 'open') game.chatDecline(c.id);
         }
         collectors += seen.filter((e) => e.type === 'customerArrived' && e.customer === 'collector').length;
       }
@@ -79,28 +94,6 @@ describe('M2-02 showcase', () => {
     const plain = count([cr('a', 'kettle'), cr('b', 'sockfish')]);
     const rare = count([cr('a', 'cloudcat'), cr('b', 'lampbug'), cr('c', 'mirrorfrog')]);
     expect(rare).toBeGreaterThan(plain * 1.3);
-  });
-
-  it('customers pick by type: thrifty the cheapest, collector the rarest, rich the highest level', () => {
-    const shelf = () => [cr('cheap', 'kettle', 1), cr('rare', 'cloudcat', 1), cr('old', 'sockfish', 6)];
-    const pickOf = (type: string) => {
-      const content: GameContent = { ...base, customers: { ...base.customers, districts: base.customers.districts.filter((d) => d.customer.id === type).map((d) => ({ ...d, unlock: { type: 'start' as const } })) } };
-      const { game } = setup(shelf(), content);
-      run(game, 7);
-      return game.deal()?.uid;
-    };
-    expect(pickOf('thrifty')).toBe('cheap');
-    expect(pickOf('collector')).toBe('rare');
-    expect(pickOf('rich')).toBe('old');
-  });
-
-  it('a tap picks another creature for the same customer', () => {
-    const { game } = setup([cr('cheap', 'kettle', 1), cr('rare', 'cloudcat', 1)]);
-    run(game, 7);
-    expect(game.deal()?.uid).toBe('cheap');
-    game.tapCreature('rare');
-    run(game, 1);
-    expect(game.deal()?.uid).toBe('rare');
   });
 
   it('8 and 9 places fit the wall on phones and PC; the tap zone (place + gap) is 44 px, 40 on a 320 px phone', () => {

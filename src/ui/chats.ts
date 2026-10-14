@@ -22,6 +22,8 @@ export interface ChatsLookups {
 
 export interface ChatsTab {
   render(): void;
+  /** Opens one chat (by the creature it is about), or the list with null. */
+  show(uid: string | null): void;
 }
 
 export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): ChatsTab {
@@ -33,6 +35,8 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
 
   const fmt = (): Intl.NumberFormat => new Intl.NumberFormat(look.lang());
   const who = (c: Chat): string => {
+    // The golden buyer of the event has no name of their own (UB-05: they write like everyone else).
+    if (c.person < 0) return look.t('customer.golden');
     const p = look.person(c.person);
     const ch = look.character(c.character);
     const type = ch ? (p.f && ch.nameF ? ch.nameF : ch.name)[look.lang()] : '';
@@ -44,7 +48,7 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     const pool = (look.character(c.character)?.lines as Record<string, Array<Record<'ru' | 'en', string>>> | undefined)?.[l.ctx];
     return (pool?.[l.i] ?? pool?.[0])?.[look.lang()]?.replace('{n}', n) ?? '';
   };
-  const avatar = (c: Chat): string => `<span class="chat-avatar" style="background:${look.avatarColor(c.person)}">${look.person(c.person).name.slice(0, 1)}</span>`;
+  const avatar = (c: Chat): string => `<span class="chat-avatar" style="background:${look.avatarColor(Math.max(0, c.person))}">${who(c).slice(0, 1)}</span>`;
 
   function renderList(): void {
     const chats = game.chats();
@@ -84,7 +88,9 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
       renderList();
       return;
     }
-    const cr = game.view().creatures.find((x) => x.uid === c.uid);
+    // Q-025: the creature of an open chat is off the shelf («talking»); a closed one may be back on the shelf or in the inventory.
+    const view = game.view();
+    const cr = [...view.talking, ...view.creatures, ...view.inventory].find((x) => x.uid === c.uid);
     const next = `d:${id}:${look.lang()}:${c.state}:${c.lines.length}:${c.offer}:${cr?.ask ?? ''}`;
     if (next === key) return;
     key = next;
@@ -122,7 +128,8 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
       buttons.appendChild(b);
     };
     add('chat-sell', look.t('chats.sell', { n: f.format(c.offer) }), 'btn-primary', () => game.chatSell(c.id));
-    if (!c.countered && cr && cr.ask > c.offer) add('chat-counter', look.t('chats.counter', { n: f.format(cr.ask) }), 'btn-alt', () => game.chatCounter(c.id));
+    // UB-06: no counter price in the first deal (customers.json chat.firstCounter) nor with the golden buyer.
+    if (game.canCounter(c.id) && cr && cr.ask > c.offer) add('chat-counter', look.t('chats.counter', { n: f.format(cr.ask) }), 'btn-alt', () => game.chatCounter(c.id));
     add('chat-decline', look.t('chats.decline'), 'btn-alt', () => game.chatDecline(c.id));
   }
 
@@ -133,6 +140,11 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
         game.chatRead(open);
         renderDialog(open);
       } else renderList();
+    },
+    show(uid) {
+      open = uid ? (game.chats().find((c) => c.uid === uid && c.state === 'open')?.id ?? null) : null;
+      key = '';
+      tab.render();
     },
   };
   return tab;

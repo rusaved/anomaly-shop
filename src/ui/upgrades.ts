@@ -27,7 +27,7 @@ function effectText(u: UpgradeData, look: UpgradeLookups): string {
   const pct = (x: number): number => Math.round(Math.abs(x) * 100);
   const key = `upgrade.effect.${e.type}`;
   if (e.type === 'slots' || e.type === 'showcaseSlots' || e.type === 'feedPerTap' || e.type === 'queueSize') return look.t(key, { n: e.perLevel });
-  if (e.type === 'hatchTime' || e.type === 'spawnRate' || e.type === 'bargain' || e.type === 'leaveChance' || e.type === 'appraisal') return look.t(key, { n: pct(e.perLevel) });
+  if (e.type === 'hatchTime' || e.type === 'spawnRate' || e.type === 'bargain' || e.type === 'give' || e.type === 'appraisal') return look.t(key, { n: pct(e.perLevel) });
   return look.t(key);
 }
 

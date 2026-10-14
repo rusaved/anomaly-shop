@@ -115,6 +115,12 @@ export interface Chat {
   state: 'open' | 'sold' | 'gone';
   unread: boolean;
   lines: ChatLine[];
+  /** The buyer's type (UB-05): a district customer id of customers.json, 'golden' for the event buyer; '' in chats saved before UB. */
+  customer?: string;
+  /** The chat is about the collector's order on the board: the offer is at least the reward. */
+  order?: boolean;
+  /** Game seconds the chat has been open (the seller helper answers after delaySec). */
+  age?: number;
 }
 
 /** A lot on the market (M3-09): a creature from a seller-character; price in coins; sold lots stay greyed until the refresh. */
@@ -296,6 +302,9 @@ function normalizeChat(v: unknown): Chat | null {
     countered: bool(o.countered, false),
     state,
     unread: bool(o.unread, false),
+    customer: str(o.customer, ''),
+    order: bool(o.order, false),
+    age: Math.max(0, num(o.age, 0)),
     lines: arr(o.lines)
       .map((l) => rec(l))
       .filter((l) => (l.from === 'them' || l.from === 'me') && typeof l.ctx === 'string')

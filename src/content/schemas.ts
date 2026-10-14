@@ -79,9 +79,9 @@ export const SpeciesFile = v.object({ tapsPerLevelBase: Count, tapGrowth: v.pipe
 export const Customer = v.object({
   id: Id,
   name: Text,
+  /** Share of the appraisal this type pays on average (the chat offer, UB-05). */
   offer: v.object({ min: v.pipe(v.number(), v.minValue(0)), max: v.pipe(v.number(), v.minValue(0)) }),
   likes: v.picklist(['cheap', 'rare', 'level']),
-  leaveOnBargain: Share,
   rarityBonus: v.optional(Share),
   levelBonusPerLevel: v.optional(Share),
   /** The type name next to a woman's name (ru: «Марфа · Бережливая»). */
@@ -100,7 +100,8 @@ export const People = v.object({
 export const Orders = v.object({ minutes: v.pipe(v.number(), v.minValue(0.5)), rewardMult: v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(v.number(), v.minValue(1)) }), level: v.object({ min: Count, max: Count }) });
 /**
  * Characters (docs/01 §3 p. 13): how a person writes in the chats and on the market.
- * offer — the first offer as a share of the asking price; give — how far below their price (or above their offer) they still agree.
+ * offer — the character's bargaining: its share against the weighted mean of all characters (a troll lowballs, a rich one pays more);
+ * give — how far below their price (or above their offer) they still agree.
  */
 export const CHAT_CONTEXTS = ['greet', 'offer', 'accept', 'refuse', 'last', 'thanks', 'bye'] as const;
 const Lines = v.pipe(v.array(Text), v.minLength(1));
@@ -117,17 +118,14 @@ export const Character = v.object({
 /** Hobbies: «How are you?» with a seller who shares it gives a discount (M3-10). */
 export const Hobby = v.object({ id: Id, name: Text, line: Text });
 export const CustomersFile = v.object({
+  /** Buyers writing at once (UB-05: they are the chats and the queue of the scene); the bell adds one. */
   queueSize: Count,
   people: People,
   characters: v.pipe(v.array(Character), v.minLength(1)),
-  /** «Chats» (M3-08): how many open chats at once and how many closed ones stay in the list. */
-  chat: v.object({ maxOpen: Count, keep: Count }),
+  /** «Chats» (M3-08, UB-05): closed chats kept in the list; holdOnShelf — a creature in a chat leaves its slot (Q-025); firstCounter — the counter price in the first deal. */
+  chat: v.object({ keep: Count, holdOnShelf: v.boolean(), firstCounter: v.boolean() }),
   hobbies: v.pipe(v.array(Hobby), v.minLength(2)),
   orders: Orders,
-  spawnEverySec: v.pipe(v.number(), v.minValue(0.1)),
-  waitNextSec: Money,
-  bargainBonus: Range,
-  bargainMax: Count,
   districts: v.pipe(v.array(District), v.minLength(1)),
 });
 
@@ -145,7 +143,7 @@ export const Effect = v.variant('type', [
   v.object({ type: v.literal('autoBuyEgg'), egg: Id, everySec: v.pipe(v.number(), v.minValue(0)), offline: v.boolean() }),
   v.object({ type: v.literal('feedPerTap'), perLevel: Count }),
   v.object({ type: v.literal('queueSize'), perLevel: Count }),
-  v.object({ type: v.literal('leaveChance'), perLevel: v.pipe(v.number(), v.minValue(-1), v.maxValue(0)) }),
+  v.object({ type: v.literal('give'), perLevel: Share }),
   v.object({ type: v.literal('appraisal'), perLevel: Share }),
   v.object({ type: v.literal('shelfGrowth'), perLevel: v.pipe(v.number(), v.minValue(0)) }),
   v.object({ type: v.literal('orders') }),

@@ -69,6 +69,7 @@ export function installTestApi(hooks: TestHooks): void {
         queue: a.queue.map((s) => pt(s.x, s.y)),
         eventCoins: a.eventCoins.map((c) => ({ id: c.id, ...pt(c.x, c.y) })),
         eventThing: a.eventThing ? pt(a.eventThing.x, a.eventThing.y) : null,
+        caption: a.caption,
         things: {
           sign: pt(a.things.sign.x + a.things.sign.w / 2, a.things.sign.y + a.things.sign.h / 2),
           door: pt(a.things.door.x + a.things.door.w / 2, a.things.door.y + a.things.door.h / 2),

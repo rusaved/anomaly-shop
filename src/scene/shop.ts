@@ -34,6 +34,8 @@ export interface ShopAnchors {
   eventThing: Spot | null;
   /** Easter egg things: sign, door, lamp. */
   things: { sign: Rect; door: Rect; lamp: Spot };
+  /** UB-09: the caption on the counter that signs the scene's tap gestures ('' when none). */
+  caption: string;
 }
 
 export interface ShopView {
@@ -272,6 +274,12 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     tx.alpha = 0.75;
     labels.addChild(tx);
   }
+  // UB-09: the hidden gestures of the scene are signed on the counter front — a tap opens or hurries the egg, a tap on a pet feeds it.
+  const caption = new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontSize: 13, fontWeight: '700', fill: c.outline, align: 'center', wordWrap: true, wordWrapWidth: 200 } });
+  caption.anchor.set(0.5, 0.5);
+  caption.alpha = 0.9;
+  labels.addChild(caption);
+  let captionKey = '';
 
   function drawBack(l: ShopLayout): void {
     back.clear();
@@ -356,13 +364,18 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   }
 
   function placeLabels(l: ShopLayout): void {
-    const size = Math.max(11, Math.min(16, l.unit * 0.42));
+    const size = Math.max(12, Math.min(16, l.unit * 0.42));
     for (const tx of Object.values(texts)) tx.style.fontSize = size;
+    caption.style.fontSize = size;
+    caption.style.wordWrapWidth = l.counter.w * 0.72;
+    caption.position.set(l.counter.x + l.counter.w * 0.45, l.counter.y + l.counter.h * 0.58);
     texts.showcase.position.set(l.showcase.x + l.showcase.w / 2, l.showcase.y + l.showcase.h + l.outline);
     // The label gives way to the incubators when the wall is short (landscape phones).
     const domeTop = Math.min(...l.incubators.map((i) => i.y - i.r - l.outline));
     texts.showcase.visible = texts.showcase.y + size * 1.2 < domeTop;
     texts.queue.position.set(l.door.x + l.door.w / 2, l.door.y - size - l.outline * 2);
+    // UB-07: the hanging sign covers this label; the door with its buyers speaks for itself.
+    texts.queue.visible = false;
   }
 
   const slotCenter = (slot: Rect) => ({ x: slot.x + slot.w / 2, y: slot.y + slot.h * 0.56, r: slot.w * 0.36 });
@@ -373,7 +386,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   /** Price pill under the portrait and a level badge at its top right (local to the creature box). */
   /** picked: the customer at the counter bids for this one — its pill takes the offer bubble's accent color. */
   function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout, picked: boolean, order: 'none' | 'wanted' | 'ready'): void {
-    const size = Math.max(11, r * 0.42);
+    const size = Math.max(12, r * 0.42);
     node.price.text = fmt(cv.price);
     node.price.style.fontSize = size;
     const coinR = size * 0.42;
@@ -852,6 +865,11 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     },
     frame(dt, view) {
       time += dt;
+      const sign = view.incubators.some((i) => i.egg && (i.ready || i.waiting)) ? 'shop.tapHatch' : view.creatures.length ? 'shop.tapFeed' : view.incubators.some((i) => i.egg) ? 'shop.tapWarm' : '';
+      if (sign !== captionKey) {
+        captionKey = sign;
+        caption.text = sign ? t(sign) : '';
+      }
       if (view.incubators.length !== incubatorCount || view.slots !== slotCount || view.queueSize !== queueCount) {
         incubatorCount = Math.max(1, view.incubators.length);
         slotCount = Math.max(1, view.slots);
@@ -994,6 +1012,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     },
     lastUpgradeText: () => upgradeText,
     relabel() {
+      caption.text = captionKey ? t(captionKey) : '';
       texts.showcase.text = t('shop.showcase');
       texts.queue.text = t('shop.queue');
       invalidate();
@@ -1017,7 +1036,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     anchors() {
       if (!current) return null;
       const coinsAt = [...eventCoins.entries()].map(([id, box]) => ({ id, x: box.x, y: box.y }));
-      return { incubators: current.incubators, slots: current.slots, queue: current.queue, counter: current.counter, eventCoins: coinsAt, eventThing: eventSpot, things: { sign: current.decor.sign, door: current.door, lamp: current.decor.lamp } };
+      return { incubators: current.incubators, slots: current.slots, queue: current.queue, counter: current.counter, eventCoins: coinsAt, eventThing: eventSpot, things: { sign: current.decor.sign, door: current.door, lamp: current.decor.lamp }, caption: caption.text };
     },
   };
 }

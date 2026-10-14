@@ -14,11 +14,11 @@ export async function everyScreenReadable(page: Page): Promise<void> {
   await seedSave(page, { coins: 5000, showcase: [], stats: { deals: 8, coinsEarned: 300, hatched: 10, taps: 100, levelUps: 3, haggles: 1, xp: 8 } });
   await open(page);
   await expect(page.locator('[data-build-label]')).toHaveCount(0);
-  const found: Record<string, { small: string[]; tiny: string[] }> = {};
+  const found: Record<string, { small: string[]; tiny: string[]; covered: string[] }> = {};
   const look = async (where: string) => {
     await page.waitForTimeout(250);
     const r = await readability(page);
-    if (r.small.length || r.tiny.length) found[where] = r;
+    if (r.small.length || r.tiny.length || r.covered.length) found[where] = r;
   };
   const tab = async (id: string) => {
     await page.locator(`[data-tab=${id}]`).click();
@@ -38,7 +38,9 @@ export async function everyScreenReadable(page: Page): Promise<void> {
   }
   await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
   await look('hatch strip');
-  await page.locator('[data-overlay=hatch] [data-action=hatch-skip]').click();
+  // A tap that landed outside the card already skipped the run (UB-02): then the result is on screen.
+  const skip = page.locator('[data-overlay=hatch] [data-action=hatch-skip]');
+  if (await skip.isVisible()) await skip.click();
   await look('hatch result');
   await closeHatch(page);
   await tab('market');
@@ -51,8 +53,9 @@ export async function everyScreenReadable(page: Page): Promise<void> {
   await tab('sales');
   await page.locator('[data-sheet=sales] [data-action=sale-add]').first().click();
   await look('sale pick');
+  // UB-10: listed — the price slider opens at once.
   await page.locator('[data-overlay=sale] [data-action^=sale-list-]').first().click();
-  await page.locator('[data-sheet=sales] [data-action^=sale-]:not([data-action=sale-add])').first().click();
+  await expect(page.locator('[data-overlay=sale] .price-range')).toBeVisible();
   await look('sale card');
   await runSim(page, 25);
   await tab('chats');

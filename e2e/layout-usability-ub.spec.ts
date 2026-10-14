@@ -2,8 +2,8 @@ import { test } from '@playwright/test';
 import { everyScreenReadable } from './read-shared.ts';
 import { gesturesSigned, hintsNeverOverWindows, noServiceMarks, oneWindowAtATime, rewardAfterAnimation, tabLabels, windowClosesByTab } from './usability-shared.ts';
 
-/** UB-09 at 375×812 (phone, portrait); the same checks at 1280×720 — usability-ub.spec.ts. */
-test.beforeEach(({ page }) => test.skip(page.viewportSize()!.width > page.viewportSize()!.height, 'UB-09 sizes: 375×812 and 1280×720'));
+/** UB-09 at 375×812 and 812×375 (phone); the same checks at 1280×720 — usability-ub.spec.ts. */
+// UB-10: the phone on its side too (812×375) — the playtest found the tab bar over the chat answers there.
 test('UB-09 phone: a tab tap closes any window', async ({ page }) => windowClosesByTab(page));
 test('UB-09 phone: one window at a time', async ({ page }) => oneWindowAtATime(page));
 test('UB-09 phone: hints never lie over a window', async ({ page }) => hintsNeverOverWindows(page));

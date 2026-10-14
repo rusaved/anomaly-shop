@@ -19,7 +19,8 @@ test('UB-03 the first egg opens with one tap; the creature is nowhere until the 
   const mid = await st(page);
   expect(mid.creatures).toHaveLength(1);
   expect(mid.shelf).toEqual([]);
-  // A tap on the strip shows the result at once.
+  // A tap on the strip shows the result at once (a tap, not the one that cracked the egg: UB-10).
+  await page.waitForTimeout(450);
   await page.locator('[data-action=hatch-skip]').click();
   await expect(page.locator('[data-hatch-result]')).toBeVisible();
   await expect(page.locator('[data-hatch-skip]')).toBeHidden();

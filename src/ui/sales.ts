@@ -114,7 +114,8 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
       const fresh = slotCard(c, fmt).cloneNode(true) as HTMLElement;
       fresh.dataset.action = `sale-list-${c.uid}`;
       fresh.addEventListener('click', () => {
-        if (game.list(c.uid)) tab.show(null);
+        // UB-10: listed — its card with the price slider opens at once (one path: place → price → chats).
+        if (game.list(c.uid)) tab.show(c.uid);
       });
       grid.appendChild(fresh);
     }

@@ -15,8 +15,7 @@ test('UB-05 one path: listed with the slider, a buyer writes, the creature is of
   await page.locator('[data-sheet=sales] [data-action=sale-add]').click();
   // UB-02: the pick and the card are details — a panel from the right.
   await page.locator('[data-overlay=sale] [data-action=sale-list-e2e1]').click();
-  // The card with the price slider: a tap at the left end makes the price below the market (a buyer comes sooner).
-  await page.locator('[data-sheet=sales] [data-action=sale-e2e1]').click();
+  // UB-10: listed — the card with the price slider opens at once; a tap at the left end makes the price below the market (a buyer comes sooner).
   const range = page.locator('[data-overlay=sale] input[type=range]');
   await expect(range).toBeVisible();
   const box = (await range.boundingBox())!;

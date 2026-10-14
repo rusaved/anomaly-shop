@@ -46,7 +46,7 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     const n = l.n !== undefined ? fmt().format(l.n) : '';
     if (l.from === 'me') return look.t(`chats.me.${l.ctx}`, { n });
     const pool = (look.character(c.character)?.lines as Record<string, Array<Record<'ru' | 'en', string>>> | undefined)?.[l.ctx];
-    return (pool?.[l.i] ?? pool?.[0])?.[look.lang()]?.replace('{n}', n) ?? '';
+    return (pool?.[l.i] ?? pool?.[0])?.[look.lang()]?.replaceAll('{n}', n) ?? '';
   };
   const avatar = (c: Chat): string => `<span class="chat-avatar" style="background:${look.avatarColor(Math.max(0, c.person))}">${who(c).slice(0, 1)}</span>`;
 
@@ -102,7 +102,7 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
       `<div class="chat-item"><span class="card-pic"><img alt="" src="${look.portrait(c.species, rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(rarity)}"></i></span>` +
       `<span><b class="chat-item-name"></b><br><span class="card-sub">${cr ? look.t('chats.ask', { n: f.format(cr.ask) }) : ''}</span></span></div>` +
       `<div class="chat-lines">${c.lines.map((l) => `<p class="bubble ${l.from === 'me' ? 'me' : 'them'}"></p>`).join('')}</div>` +
-      '<div class="chat-buttons"></div>';
+      '<div class="chat-buttons" data-hint-glow></div>';
     (root.querySelector('.chat-who') as HTMLElement).textContent = who(c);
     (root.querySelector('.chat-item-name') as HTMLElement).textContent = look.speciesName(c.species);
     root.querySelectorAll<HTMLElement>('.bubble').forEach((el, i) => {

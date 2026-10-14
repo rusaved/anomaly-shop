@@ -102,20 +102,29 @@ export async function rewardAfterAnimation(page: Page): Promise<void> {
 
 export async function gesturesSigned(page: Page): Promise<void> {
   const errors = collectErrors(page);
+  // Past the first minute (its hints teach the taps, the counter is quiet then): an empty shelf, coins for an egg.
+  await seedSave(page, { coins: 500, showcase: [], flags: { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true, showcase_m3: true } });
   await open(page);
-  // The egg on the counter: a caption says what a tap does.
-  expect((await targets(page)).caption).toBe(await translated(page, 'shop.tapHatch'));
-  await tap(page, (await targets(page)).incubators[0]!);
+  expect((await targets(page)).caption).toBe('');
+  await page.locator('[data-action=egg-card-egg_basic]').click();
+  await page.locator('[data-action=egg-buy-1]').click();
+  await page.locator('[data-tab=eggs]').click();
+  // An egg on the counter: a caption says what a tap does.
+  await expect.poll(async () => (await targets(page)).caption).toMatch(new RegExp(`^(${await translated(page, 'shop.tapWarm')}|${await translated(page, 'shop.tapHatch')})$`));
+  const egg = (await targets(page)).incubators[0]!;
+  for (let i = 0; i < 30 && !(await page.locator('[data-overlay=hatch]').isVisible()); i++) {
+    await tap(page, egg);
+    await page.waitForTimeout(120);
+  }
   // The strip: «tap — skip».
   await expect(page.locator('[data-overlay=hatch] .hatch-skip')).toHaveText(await translated(page, 'hatch.skip'));
   await page.locator('[data-overlay=hatch] [data-action=hatch-shop]').click({ timeout: 8000 });
-  // A pet on the shelf: a tap feeds it, the counter says so.
-  await expect.poll(async () => (await targets(page)).caption).toBe(await translated(page, 'shop.tapFeed'));
-  // The price slider has its scale signed.
-  await page.locator('[data-tab=sales]').click();
-  await page.locator('[data-sheet=sales] [data-action^=sale-]:not([data-action=sale-add]):not([data-action^=sale-chat-])').first().click();
+  // «To the shop» opens the price slider (UB-10) — its scale is signed.
   await expect(page.locator('[data-overlay=sale] .price-scale')).toBeVisible();
   expect((await page.locator('[data-overlay=sale] .price-scale').innerText()).trim().length).toBeGreaterThan(0);
+  // A pet on the shelf: a tap feeds it, the counter says so.
+  await page.locator('[data-tab=eggs]').click();
+  await expect.poll(async () => (await targets(page)).caption).toBe(await translated(page, 'shop.tapFeed'));
   expect(errors).toEqual([]);
 }
 

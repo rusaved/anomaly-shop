@@ -144,10 +144,21 @@ export async function listFromInventory(page: Page): Promise<void> {
  * UB-07: what on screen now is too small to read or to tap — visible text under 12 px, buttons under 44 px on the short side.
  * The debug panel (only with ?debug=1) is not part of the game.
  */
-export function readability(page: Page): Promise<{ small: string[]; tiny: string[] }> {
+export function readability(page: Page): Promise<{ small: string[]; tiny: string[]; covered: string[] }> {
   return page.evaluate(() => {
     const small: string[] = [];
     const tiny: string[] = [];
+    // UB-10: a button in sight (inside every scrolling box around it) that something else lies on — the tab bar over a panel.
+    const covered: string[] = [];
+    const inClip = (el: Element, x: number, y: number): boolean => {
+      for (let e = el.parentElement; e; e = e.parentElement) {
+        const o = getComputedStyle(e).overflowY;
+        if (o === 'visible') continue;
+        const r = e.getBoundingClientRect();
+        if (x < r.left || x > r.right || y < r.top || y > r.bottom) return false;
+      }
+      return true;
+    };
     const name = (el: Element): string => {
       const h = el as HTMLElement;
       const hook = h.dataset.action ?? h.dataset.tab ?? h.className.toString().split(' ')[0] ?? el.tagName;
@@ -172,8 +183,17 @@ export function readability(page: Page): Promise<{ small: string[]; tiny: string
       if (tap) {
         const r = el.getBoundingClientRect();
         if (Math.min(r.width, r.height) < 43.5) tiny.push(`${name(el)} ${Math.round(r.width)}×${Math.round(r.height)}`);
+        const x = Math.min(innerWidth - 1, Math.max(0, r.left + r.width / 2));
+        const y = Math.min(innerHeight - 1, Math.max(0, r.top + r.height / 2));
+        const hit = document.elementFromPoint(x, y);
+        const under = el.closest('.overlay.under, .overlay[hidden]');
+        if (!under && inClip(el, x, y) && hit && !el.contains(hit)) {
+          // Something else answers a tap at its centre: fine when it is a window over a screen (UB-02), a problem otherwise.
+          const overWindow = hit.closest('.overlay') !== null && el.closest('.overlay') === null;
+          if (!overWindow) covered.push(`${name(el)} under ${name(hit)}`);
+        }
       }
     }
-    return { small: [...new Set(small)], tiny: [...new Set(tiny)] };
+    return { small: [...new Set(small)], tiny: [...new Set(tiny)], covered: [...new Set(covered)] };
   });
 }

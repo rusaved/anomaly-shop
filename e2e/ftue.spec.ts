@@ -15,6 +15,8 @@ type S = Awaited<ReturnType<typeof state>> & { ftue: string | null; rarities: st
 const st = (page: Page) => state(page) as Promise<S>;
 
 test('M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature', async ({ page }) => {
+  // The first buyer writes 12 s after the listing (UB-10): the scripted loop needs room on a loaded machine.
+  test.setTimeout(180_000);
   const errors = collectErrors(page);
   await open(page, '?mock_device=mobile');
   const hints: string[] = [];
@@ -32,7 +34,7 @@ test('M1-09 first minute: hints up to 6 words lead from the starter egg to a rar
   };
 
   await expect(page.locator('.hint [data-hint-text]')).toBeVisible();
-  const deadline = Date.now() + 90_000;
+  const deadline = Date.now() + 150_000;
   while (Date.now() < deadline) {
     if (await closeHatch(page)) continue;
     const s = await note();

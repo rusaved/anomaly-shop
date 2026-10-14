@@ -28,7 +28,7 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
   const say = (ctx: keyof CharacterData['lines'], n?: number): string => {
     const pool = ch?.lines[ctx] ?? [];
     const line = pool[Math.floor(Math.random() * pool.length)]?.[look.lang()] ?? '';
-    return n === undefined ? line : line.replace('{n}', new Intl.NumberFormat(look.lang()).format(n));
+    return n === undefined ? line : line.replaceAll('{n}', new Intl.NumberFormat(look.lang()).format(n));
   };
   let asked = false;
   let bargaining = false;

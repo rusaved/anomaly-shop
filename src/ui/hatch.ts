@@ -19,6 +19,8 @@ export interface HatchLookups {
   onResult?(): void;
   /** The result shows (UB-03: the rare sound plays here, not when the egg cracks — no spoiler). */
   onReveal?(rarity: RarityName): void;
+  /** UB-10: «To the shop» put it on sale (the price slider may open). */
+  onListed?(uid: string): void;
 }
 
 export interface HatchShow {
@@ -67,14 +69,18 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   const keepIt = (): void => close();
   keep.addEventListener('click', keepIt);
   toShop.addEventListener('click', () => {
-    game.list(uid);
+    const listed = game.list(uid);
     close();
+    if (listed) look.onListed?.(uid);
   });
   sell.addEventListener('click', () => {
     game.sellNow(uid);
     close();
   });
-  q('[data-action="hatch-skip"]').addEventListener('click', () => skip());
+  // UB-10: the tap that cracked the egg is not a skip (touch: its click lands on the strip that just opened under the finger).
+  q('[data-action="hatch-skip"]').addEventListener('click', () => {
+    if (performance.now() - start >= 400) skip();
+  });
 
   function showResult(): void {
     if (done) return;

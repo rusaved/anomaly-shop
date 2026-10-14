@@ -180,6 +180,10 @@ async function boot(): Promise<void> {
       else sh.hide();
     }
     if (tab === 'shop') upgradesWindow.open();
+    // UB-10: the Chats tab opens on its list (new buyers on top), never on an old closed chat.
+    if (tab === 'chats') chatsTab.show(null);
+    // The shop's own button lives on the home screen only (it would lie under another tab's screen).
+    stageButton.hidden = screen !== 'eggs';
     renderTabs();
     // UB-06: the first visit of a tab — its one hint, until the next tap.
     intro = play.seenTab(tab) ? { tab, at: performance.now() } : null;
@@ -219,6 +223,11 @@ async function boot(): Promise<void> {
     portrait: (id, r) => portraits.creature(id, r),
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     pick: (uid) => play.tapCreature(uid),
+    list: (uid) => {
+      if (!play.list(uid)) return;
+      selectTab('sales');
+      salesTab.show(uid);
+    },
   });
   const eggsTab = createEggsTab(sheets.get('eggs')!, play, {
     t: i18n.t,
@@ -245,6 +254,10 @@ async function boot(): Promise<void> {
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
     spinSec: () => feel.hatchShowSec,
     onReveal: (rarity) => sfx.play(rarity === 'common' ? 'hatch' : 'rare'),
+    // UB-10: past the first minute «To the shop» opens the price slider (the first minute stays one tap: FTUE, UB-06).
+    onListed: (uid) => {
+      if (store.state.flags.ftue_done) salesTab.show(uid);
+    },
   });
   // Timers on the egg screen (free egg, hatching) tick each second while it is open.
   window.setInterval(() => {
@@ -629,6 +642,7 @@ async function boot(): Promise<void> {
   scene.app.ticker.add((ticker) => {
     runtime.frame(ticker.deltaMS / 1000);
     const view = play.view();
+    shop.signGestures(Boolean(store.state.flags.ftue_done));
     shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, view);
     // UB-01, UB-02: a hint at the shop shows on the home screen only, and never over a window.
     const hint = controllable ? ftueHint(store.state, view) : null;

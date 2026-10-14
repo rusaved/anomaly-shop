@@ -113,9 +113,22 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         return;
       }
       const text = deps.t(hint.key ?? `ftue.${hint.step}`);
-      // Above the target; below it when the HUD is in the way.
-      // A button under the HUD (a tab title, UB-06) gets its bubble below.
-      const above = y - r - 56 > deps.topInset() || (button !== null && button.closest('#nav') !== null);
+      // UB-10: inside an open window (or the answers of a chat, under the offer line) a bubble would cover the text — the target only glows.
+      if (button && (win || button.closest('[data-hint-glow]'))) {
+        const glowKey = `glow:${hint.key ?? hint.step}`;
+        if (glowKey === lastKey) return;
+        lastKey = glowKey;
+        root.hidden = true;
+        ring.hidden = true;
+        root.dataset.hint = hint.step;
+        label.textContent = text;
+        setGlow(button);
+        return;
+      }
+      // Above the target; below it when the HUD is in the way. A button in the upper half of a screen (the first card under
+      // a tab title, UB-06) gets its bubble below, so the title stays readable; a tab of the bar — above.
+      const inBar = button !== null && button.closest('#nav') !== null;
+      const above = inBar || (y - r - 56 > deps.topInset() && (button === null || y > base.height * 0.45));
       const key = `${hint.key ?? hint.step}:${Math.round(x)}:${Math.round(y)}:${Math.round(r)}:${above}:${text}`;
       if (key === lastKey) return;
       lastKey = key;

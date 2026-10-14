@@ -17,6 +17,8 @@ export interface InventoryLookups {
   rarityColor(r: RarityName): string;
   /** Taps a creature in the shop (selects it for the customer at the counter). */
   pick(uid: string): void;
+  /** UB-10: list a creature for sale — its price slider opens. */
+  list(uid: string): void;
 }
 
 export interface InventoryTab {
@@ -73,7 +75,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveDat
             chip.textContent = look.t(on ? 'inventory.onSale' : 'inventory.list');
             b.appendChild(chip);
             b.dataset.on = String(on);
-            b.addEventListener('click', () => (on ? look.pick(c.uid) : game.list(c.uid)));
+            b.addEventListener('click', () => (on ? look.pick(c.uid) : look.list(c.uid)));
             return b;
           }),
         );

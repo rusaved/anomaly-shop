@@ -49,6 +49,8 @@ export interface ShopView {
   relabel(): void;
   /** Stage coordinates of the tappable pieces (hints, test API); null before the first layout. */
   anchors(): ShopAnchors | null;
+  /** UB-10: the counter caption of the tap gestures — off while the first minute's hints teach them. */
+  signGestures(on: boolean): void;
   /** Stage point above a customer (coin flights start there). */
   customerPoint(id: number): { x: number; y: number } | null;
   /** A line over a creature (by uid) or a customer (by id), M2-17; nothing when it is not on the scene. */
@@ -280,6 +282,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   caption.alpha = 0.9;
   labels.addChild(caption);
   let captionKey = '';
+  let captionsOn = true;
 
   function drawBack(l: ShopLayout): void {
     back.clear();
@@ -865,7 +868,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     },
     frame(dt, view) {
       time += dt;
-      const sign = view.incubators.some((i) => i.egg && (i.ready || i.waiting)) ? 'shop.tapHatch' : view.creatures.length ? 'shop.tapFeed' : view.incubators.some((i) => i.egg) ? 'shop.tapWarm' : '';
+      const sign = !captionsOn ? '' : view.incubators.some((i) => i.egg && (i.ready || i.waiting)) ? 'shop.tapHatch' : view.creatures.length ? 'shop.tapFeed' : view.incubators.some((i) => i.egg) ? 'shop.tapWarm' : '';
       if (sign !== captionKey) {
         captionKey = sign;
         caption.text = sign ? t(sign) : '';
@@ -1032,6 +1035,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     customerPoint(id) {
       const node = visitors.get(id);
       return node && current ? { x: node.box.x, y: node.box.y - current.unit * 1.4 } : null;
+    },
+    signGestures(on) {
+      captionsOn = on;
     },
     anchors() {
       if (!current) return null;

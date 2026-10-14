@@ -22,6 +22,9 @@ export interface OverlayOptions {
   over?: string[];
 }
 
+/** A click this soon after a window opens is the opening tap itself (touch: pointerdown opens, the click follows). */
+const GHOST_MS = 400;
+
 /** The windows open now, oldest first (normally one; settings over pause makes two). */
 const open: Array<{ name: string; overlay: Overlay; dismiss: () => void }> = [];
 
@@ -55,8 +58,11 @@ export function createOverlay(parent: HTMLElement, name: string, onBackdrop?: ()
   root.appendChild(card);
   parent.appendChild(root);
   // A tap outside the card closes the window (UB-02); a window without its own rule just hides.
+  // UB-10: not the very tap that opened it — on a touch screen its click lands on the fresh backdrop (the egg tap skipped the hatch run).
+  let shownAt = 0;
   root.addEventListener('click', (e) => {
     if (e.target !== root) return;
+    if (performance.now() - shownAt < GHOST_MS) return;
     if (onBackdrop) onBackdrop();
     else overlay.hide();
   });
@@ -69,6 +75,7 @@ export function createOverlay(parent: HTMLElement, name: string, onBackdrop?: ()
       // One window at a time: the others close their own way first (settings may stay over pause).
       for (const w of [...open].reverse()) if (!opts.over?.includes(w.name)) w.dismiss();
       root.hidden = false;
+      shownAt = performance.now();
       open.push({ name, overlay, dismiss: () => (opts.dismiss ?? overlay.hide)() });
     },
     hide() {

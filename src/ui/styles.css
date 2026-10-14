@@ -1056,8 +1056,13 @@
   font-size: 13px;
   max-width: 100%;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  /* UB-10: a long name takes two lines instead of an ellipsis. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 .card-sub {
   font-size: 12px;
@@ -1297,6 +1302,30 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  /* UB-10: the three choices never hide below the card edge. */
+  position: sticky;
+  bottom: 0;
+  background: var(--c-uiPanel);
+}
+/* UB-10: a short screen (a landscape phone) — the hatch card fits above the tab bar. */
+@media (max-height: 520px) {
+  .card-hatch {
+    gap: 4px;
+    padding: 12px 16px;
+  }
+  .card-hatch h2 {
+    font-size: 20px;
+  }
+  .hatch-result img {
+    width: 56px;
+    height: 56px;
+  }
+  .hatch-result h3 {
+    font-size: 18px;
+  }
+  .hatch-range {
+    margin: 2px 0 4px;
+  }
 }
 .hatch-buttons .btn {
   flex: 1 1 30%;
@@ -1495,6 +1524,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  /* UB-10: the answers stay on screen above the tab bar (a short landscape phone): the lines scroll above them. */
+  position: sticky;
+  bottom: 0;
+  padding: 6px 0 2px;
+  background: var(--c-uiPanel);
 }
 .chat-buttons .btn {
   flex: 1 1 40%;
@@ -1725,6 +1759,15 @@
   box-shadow: 0 -3px 0 var(--c-uiAccent), 0 -14px 28px var(--c-uiOverlay);
   animation: panel-in 0.22s ease-out;
 }
+/* UB-10: on a portrait phone a detail panel stands on the tab bar and grows up to fit its buttons (up to the top bar);
+   the upgrades keep the home panel height so the shop stays in view (UB-04), their list scrolls. */
+.portrait .overlay[data-kind='panel']:not([data-overlay='upgrades']) > .card {
+  top: auto;
+  bottom: var(--nav-size, 62px);
+  height: auto;
+  min-height: var(--panel-h, 50%);
+  max-height: calc(100% - var(--nav-size, 62px) - var(--hud-height, 64px));
+}
 .landscape .overlay[data-kind='panel'] > .card {
   border-radius: 22px 0 0 0;
   box-shadow: -3px -3px 0 var(--c-uiAccent), -14px 0 28px var(--c-uiOverlay);
@@ -1784,6 +1827,9 @@
   font-size: 14px;
   box-shadow: 0 2px 0 var(--c-outline);
   pointer-events: auto;
+}
+.stage-btn[hidden] {
+  display: none;
 }
 .portrait .stage-btn {
   /* Above the home panel's rounded top. */

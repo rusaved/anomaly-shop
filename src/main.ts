@@ -24,11 +24,12 @@ import { createUpgradesWindow } from './ui/upgrades.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
 import { createNewsTicker } from './ui/news.ts';
+import { createMerchantWindow } from './ui/merchant.ts';
 import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
 import { ftueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
-import { audio, customers, dictionaries, eggs, feel, ftue, news, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, news, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -96,7 +97,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -116,7 +117,12 @@ async function boot(): Promise<void> {
     t: i18n.t,
     line: (id) => speciesById(id)?.line[i18n.lang()] ?? '',
     invalidate: scene.invalidate,
-    handlers: { tapIncubator: (i) => play.tapIncubator(i), tapCreature: (uid) => play.tapCreature(uid) },
+    handlers: {
+      tapIncubator: (i) => play.tapIncubator(i),
+      tapCreature: (uid) => play.tapCreature(uid),
+      tapEvent: () => play.tapEvent(),
+      tapEventCoin: (id) => play.tapEventCoin(id),
+    },
   });
   const hud = createHud(uiRoot, lang, () => feel.hudRollSec);
   hud.update(store.state.coins, { snap: true });
@@ -131,7 +137,7 @@ async function boot(): Promise<void> {
   const dealCard = createDealCard(panel.body, play, {
     t: i18n.t,
     lang: i18n.lang,
-    customerName: (id) => customers.districts.find((d) => d.customer.id === id)?.customer.name[i18n.lang()] ?? id,
+    customerName: (id) => customers.districts.find((d) => d.customer.id === id)?.customer.name[i18n.lang()] ?? i18n.t(`customer.${id}`),
     customerColor: (id) => styleData.customers[id]?.body ?? styleData.colors.queueSpot,
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
   });
@@ -184,11 +190,18 @@ async function boot(): Promise<void> {
     () => i18n.lang(),
   );
   const toasts = createToasts(uiRoot);
+  const merchantWindow = createMerchantWindow(uiRoot, play, {
+    t: i18n.t,
+    lang: i18n.lang,
+    eggName: (id) => eggs.eggs.find((e) => e.id === id)?.name[i18n.lang()] ?? id,
+    eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg,
+  });
   const renderUi = (): void => {
     dealCard.render();
     actions.render();
     nextCard.render();
     upgradesWindow.render();
+    merchantWindow.render();
   };
   renderUi();
   store.onCommit(renderUi);
@@ -232,6 +245,18 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t('toast.upgradeUnlocked', { name }), 'good', 2400);
     }
     else if (e.type === 'cuckoo') sfx.play('levelUp');
+    else if (e.type === 'eventStarted') {
+      recentEvents.push({ id: e.id, at: runtime.elapsed() });
+      toasts.show(i18n.t(`event.${e.kind}`), 'rare', 2600);
+      sfx.play('rare');
+    }
+    else if (e.type === 'eventEnded' && e.kind === 'merchant') merchantWindow.close();
+    else if (e.type === 'merchantOpen') merchantWindow.open();
+    else if (e.type === 'eventCoin') sfx.play('coin');
+    else if (e.type === 'eventGift') {
+      toasts.show(i18n.t('toast.gift', { n: e.coins }), 'good', 2200);
+      sfx.play('coin');
+    }
     else if (e.type === 'districtOpened') {
       const d = customers.districts.find((x) => x.id === e.district);
       if (d) toasts.show(i18n.t('toast.district', { name: d.name[i18n.lang()], who: d.customer.name[i18n.lang()] }), 'rare', 3000);
@@ -260,6 +285,7 @@ async function boot(): Promise<void> {
   document.addEventListener('keydown', (e) => {
     if (e.code !== 'Escape' || !controllable) return;
     if (awayWindow.overlay.isOpen()) awayWindow.close();
+    else if (merchantWindow.overlay.isOpen()) merchantWindow.close();
     else if (upgradesWindow.overlay.isOpen()) upgradesWindow.close();
     else if (settingsWindow.overlay.isOpen()) settingsWindow.close();
     else pauseWindow.toggle();

@@ -110,5 +110,17 @@
   "next.left.crystals.many": "{n} more crystals",
   "next.left.deals.one": "{n} more deal",
   "next.left.deals.few": "{n} more deals",
-  "next.left.deals.many": "{n} more deals"
+  "next.left.deals.many": "{n} more deals",
+  "event.golden": "A golden customer! Pays double",
+  "event.sneeze": "Achoo! Grab the coins",
+  "event.doorEgg": "An egg at the door, with a note",
+  "event.merchant": "A traveling merchant at the door",
+  "fx.sneeze": "Achoo!",
+  "customer.golden": "Golden Customer",
+  "merchant.title": "Traveling Merchant",
+  "merchant.discount": "{name} at half price",
+  "merchant.mystery": "Mystery Egg",
+  "merchant.mysteryNote": "Basic price, warm egg odds",
+  "merchant.close": "Not now",
+  "toast.gift": "A gift in coins: {n}"
 }

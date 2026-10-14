@@ -1,0 +1,12 @@
+{
+  "$schema": "events.schema.json",
+  "note": "Случайные события (docs/01b §3, M2-15): одно за раз, первое через firstAfterSec после первой минуты (FTUE), дальше раз в everySec (min..max); fromMin — с какой минуты сессии событие может выпасть; weight — вес выбора; durationSec — сколько ждёт игрока. Только в плюс: пропуск ничего не отнимает. golden — покупатель вне очереди, платит priceMult × цены, торг без риска; sneeze — существо чихает монетами: coins (min..max) монет, каждая coinValue (min..max) или saleShare средней сделки, что больше; door_egg — бесплатное яйцо (тёплое, если открыто; нет места — монетами); merchant — тележка: лучшее открытое яйцо со скидкой discount или «яйцо-незнакомка» по цене mysteryPriceOf с шансами mysteryEgg.",
+  "firstAfterSec": {"min": 60, "max": 120},
+  "everySec": {"min": 60, "max": 120},
+  "events": [
+    {"id": "golden", "kind": "golden", "weight": 3, "fromMin": 1, "durationSec": 12, "priceMult": 2},
+    {"id": "sneeze", "kind": "sneeze", "weight": 3, "fromMin": 1, "durationSec": 8, "coins": {"min": 5, "max": 8}, "coinValue": {"min": 1, "max": 3}, "saleShare": 0.08},
+    {"id": "door_egg", "kind": "doorEgg", "weight": 2, "fromMin": 2, "durationSec": 15},
+    {"id": "merchant", "kind": "merchant", "weight": 2, "fromMin": 3, "durationSec": 20, "discount": 0.5, "mysteryPriceOf": "egg_basic", "mysteryEgg": "egg_warm"}
+  ]
+}

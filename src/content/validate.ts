@@ -13,6 +13,7 @@ import {
   GameFile,
   I18nFile,
   NewsFile,
+  EventsFile,
   RARITIES,
   SpeciesFile,
   StyleFile,
@@ -32,7 +33,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json'] as const;
 /** Lines players read in the scene and the panel (news, creature and customer lines): no full stop at the end (docs/01a, section 8). */
 const TRAILING_STOP = /[.。]$/;
 /** Long dashes stay out of player texts (producer's style rule). */
@@ -214,6 +215,16 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   parseFile('feel.json', FeelFile, data(files['feel.json']), errors);
   parseFile('audio.json', AudioFile, data(files['audio.json']), errors);
   const news = parseFile('news.json', NewsFile, data(files['news.json']), errors);
+  const events = parseFile('events.json', EventsFile, data(files['events.json']), errors);
+  if (events) {
+    duplicates('events.json', 'events', events.events.map((e) => e.id), errors);
+    for (const r of ['firstAfterSec', 'everySec'] as const) if (events[r].min > events[r].max) errors.push(`events.json: ${r} — min above max`);
+    events.events.forEach((e, i) => {
+      if (e.kind === 'sneeze' && e.coins.min > e.coins.max) errors.push(`events.json: events.${i}.coins — min above max`);
+      if (e.kind === 'merchant' && eggs)
+        for (const id of [e.mysteryPriceOf, e.mysteryEgg]) if (!eggs.eggs.some((x) => x.id === id)) errors.push(`events.json: events.${i} — unknown egg "${id}"`);
+    });
+  }
 
   if (eggs) checkEggs(eggs, customers, errors);
   if (species) checkSpecies(species, eggs, errors);

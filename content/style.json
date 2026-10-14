@@ -115,6 +115,10 @@
     "rich": {
       "body": "#e5989b",
       "accent": "#ffc533"
+    },
+    "golden": {
+      "body": "#ffd34d",
+      "accent": "#fff4b0"
     }
   },
   "eggs": {

@@ -1062,3 +1062,11 @@
 .landscape .next .next-sep {
   display: none;
 }
+/* M2-15: merchant offers show the egg itself */
+.egg-big {
+  width: 30px;
+  height: 38px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow: inset -5px -5px 0 rgba(0, 0, 0, 0.12), 0 0 0 3px var(--c-outline);
+  margin: 0 5px;
+}

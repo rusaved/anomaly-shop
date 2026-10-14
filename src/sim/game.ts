@@ -2,7 +2,7 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CustomersData, DistrictData, EggsData, FtueData, RarityName, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { CustomersData, DistrictData, EggsData, EventsData, FtueData, RarityName, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type Creature, type SaveData } from './state.ts';
@@ -15,12 +15,37 @@ export interface GameContent {
   customers: CustomersData;
   upgrades: UpgradesData;
   ftue: FtueData;
+  events: EventsData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
 const OFFLINE_STEP_SEC = 0.5;
 
+/** Customer type id of the golden event customer (style.json → customers.golden, i18n customer.golden). */
+export const GOLDEN = 'golden';
+
 const RARITY_RANK: Record<RarityName, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
+
+export type EventKind = EventsData['events'][number]['kind'];
+
+/** The random event on now (docs/01b, section 3): what the scene shows and what a tap does. */
+export interface EventView {
+  id: string;
+  kind: EventKind;
+  /** Seconds left before it goes (nothing is lost). */
+  left: number;
+  /** Sneeze: coins to tap, positions 0..1 inside the free floor. */
+  coins: Array<{ id: number; x: number; y: number }>;
+  /** Sneeze: who sneezed. */
+  uid: string | null;
+  /** Door egg: the egg in the basket. */
+  egg: string | null;
+}
+
+export interface MerchantOffer {
+  discount: { egg: string; price: number; check: BuyCheck };
+  mystery: { egg: string; price: number; check: BuyCheck };
+}
 
 /** Who fed a creature: the player's tap, the feeder helper, the cuckoo clock. */
 export type FeedBy = 'tap' | 'helper' | 'cuckoo';
@@ -39,7 +64,7 @@ export interface OfflineReport {
 export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noDeal' | 'noCreature' | 'lastPrice' | 'max';
 
 export type GameEvent =
-  | { type: 'eggBought'; incubator: number; egg: string; price: number; by: 'player' | 'helper' }
+  | { type: 'eggBought'; incubator: number; egg: string; price: number; by: 'player' | 'helper' | 'gift' | 'merchant' }
   | { type: 'eggTap'; incubator: number; started: boolean }
   | { type: 'hatched'; incubator: number; uid: string; species: string; rarity: RarityName }
   | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number; by: FeedBy }
@@ -52,6 +77,11 @@ export type GameEvent =
   | { type: 'districtOpened'; district: string; customer: string }
   | { type: 'firstCrystal' }
   | { type: 'cuckoo' }
+  | { type: 'eventStarted'; id: string; kind: EventKind; uid?: string | undefined }
+  | { type: 'eventEnded'; id: string; kind: EventKind; outcome: 'done' | 'missed' }
+  | { type: 'eventCoin'; id: number; value: number }
+  | { type: 'eventGift'; coins: number }
+  | { type: 'merchantOpen' }
   | { type: 'upgradeUnlocked'; id: string }
   | { type: 'rescueEgg'; incubator: number }
   | { type: 'sold'; uid: string; species: string; price: number; crystals: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper' }
@@ -113,6 +143,8 @@ export interface GameView {
   slots: number;
   /** Places in the customer queue (the bell adds one). */
   queueSize: number;
+  /** The random event on now, or null. */
+  event: EventView | null;
   /** Bought things the scene draws, by decor item: level bought. */
   decor: Record<string, number>;
 }
@@ -172,6 +204,13 @@ export interface Game {
   seenShop(): void;
   /** Open district ids (yard first). */
   districts(): string[];
+  /** Tap on the event thing at the door: the door egg is taken, the merchant opens his cart (merchantOpen). */
+  tapEvent(): void;
+  /** Tap on a sneeze coin. */
+  tapEventCoin(id: number): void;
+  /** What the merchant sells now; null when he is not here. */
+  merchantOffer(): MerchantOffer | null;
+  merchantBuy(choice: 'discount' | 'mystery'): boolean;
   /** The nearest goal not reached yet: the one with the largest share done (shop positions, districts, eggs; rebirth when all is bought). */
   nextGoal(): GoalView;
   /** Free showcase places (creatures and eggs both take one). */
@@ -217,6 +256,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     share: number;
     mult: number;
     bargains: number;
+    /** The golden customer of an event: pays golden × the price tag, no haggle risk, leaves after ttl seconds. */
+    golden?: number;
+    ttl?: number;
   }
   const queue: Visitor[] = [];
   let nextVisitor = 1;
@@ -249,6 +291,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (c.likes === 'rare') return spec.rarity !== 'common';
     return cr.level >= 3;
   };
+  /** The dearest creature (the golden customer takes it: he pays a multiple of the tag). */
+  const dearest = (): string | null => s().creatures.reduce<Creature | null>((best, cr) => (!best || appraisal(cr) > appraisal(best) ? cr : best), null)?.uid ?? null;
   /** The creature a customer picks from the showcase by type: thrifty the cheapest, collector the rarest, rich the highest level. */
   const favorite = (c: DistrictData['customer']): string | null => {
     const list = s().creatures.map((cr) => ({ cr, spec: speciesData(cr.species), price: appraisal(cr) }));
@@ -289,20 +333,21 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const cr = uid ? s().creatures.find((x) => x.uid === uid) : undefined;
     const spec = cr ? speciesData(cr.species) : undefined;
     const c = v.district.customer;
-    const offer =
-      cr && spec
-        ? offerFor(spec, cr.level, { share: v.share, mult: v.mult, rarityBonus: c.rarityBonus, levelBonusPerLevel: c.levelBonusPerLevel, cashBonus: effectSum('bargain'), valueMult: valueMult(cr) })
-        : 0;
+    const offer = !cr || !spec
+      ? 0
+      : v.golden
+        ? coins(appraisal(cr) * v.golden * v.mult)
+        : offerFor(spec, cr.level, { share: v.share, mult: v.mult, rarityBonus: c.rarityBonus, levelBonusPerLevel: c.levelBonusPerLevel, cashBonus: effectSum('bargain'), valueMult: valueMult(cr) });
     return {
       id: v.id,
-      customer: c.id,
+      customer: v.golden ? GOLDEN : c.id,
       uid: cr?.uid ?? null,
       species: cr?.species ?? null,
       level: cr?.level ?? 0,
       offer,
       bargains: v.bargains,
       canHaggle: v.bargains < content.customers.bargainMax,
-      leaveChance: Math.max(0, c.leaveOnBargain + effectSum('leaveChance')),
+      leaveChance: v.golden ? 0 : Math.max(0, c.leaveOnBargain + effectSum('leaveChance')),
       share: cr && spec ? offer / appraisal(cr) : v.share * v.mult,
     };
   }
@@ -314,6 +359,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     frontIn = queue.length ? delay : 0;
     if (!queue.length && delay > 0) spawnIn = Math.min(spawnIn, delay);
     emit({ type: 'customerLeft', id: v.id, reason });
+    if (v.golden && active?.data.kind === 'golden') endEvent(reason === 'sold' ? 'done' : 'missed');
   }
 
   /** The first customer of a new player comes sooner (ftue.json, firstCustomerSec). */
@@ -382,6 +428,112 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     cuckooIn = 0;
     emit({ type: 'cuckoo' });
     for (const cr of [...s().creatures]) feed(cr, clock.fed, 'cuckoo');
+  }
+
+  // ---- Random events (docs/01b, section 3; M2-15): one at a time, only a plus, never in the first minute, never while away.
+  type EventData = EventsData['events'][number];
+  interface ActiveEvent {
+    data: EventData;
+    left: number;
+    coins: Array<{ id: number; x: number; y: number; value: number }>;
+    uid: string | null;
+    egg: string | null;
+  }
+  let active: ActiveEvent | null = null;
+  let sessionSec = 0;
+  let eventIn = rng.range(content.events.firstAfterSec.min, content.events.firstAfterSec.max);
+  let nextCoinId = 1;
+  const randInt = (r: { min: number; max: number }): number => r.min + rng.int(r.max - r.min + 1);
+  /** The egg a gift brings: the warm one when it is open, else the basic one. */
+  const giftEgg = (): string => (eggs.eggs.find((e) => e.id === 'egg_warm' && eggOpen(e)) ? 'egg_warm' : basicEgg);
+  /** A spot for an egg: a free incubator and a free showcase place. */
+  const eggSpot = (): number => (freeSlots() > 0 ? s().incubators.findIndex((i) => !i.egg) : -1);
+
+  function possible(e: EventData): boolean {
+    if (e.weight <= 0 || sessionSec < e.fromMin * 60) return false;
+    if (e.kind === 'golden' || e.kind === 'sneeze') return s().creatures.length > 0;
+    return true;
+  }
+
+  function startEvent(): void {
+    const pool = content.events.events.filter(possible);
+    const total = pool.reduce((sum, e) => sum + e.weight, 0);
+    if (!pool.length || total <= 0) return;
+    let pick = rng.next() * total;
+    const data = pool.find((e) => (pick -= e.weight) < 0) ?? pool[pool.length - 1]!;
+    const ev: ActiveEvent = { data, left: data.durationSec, coins: [], uid: null, egg: null };
+    if (data.kind === 'golden') {
+      const yard = openDistricts()[0];
+      if (!yard) return;
+      const v: Visitor = { id: nextVisitor++, district: yard, share: 1, mult: 1, bargains: 0, golden: data.priceMult, ttl: data.durationSec };
+      queue.unshift(v);
+      frontIn = 0;
+      emit({ type: 'customerArrived', id: v.id, customer: GOLDEN });
+    } else if (data.kind === 'sneeze') {
+      const list = s().creatures;
+      ev.uid = list[rng.int(list.length)]?.uid ?? null;
+      const st = s().stats;
+      const avgSale = st.deals > 0 ? st.coinsEarned / st.deals : 0;
+      const n = randInt(data.coins);
+      for (let i = 0; i < n; i++) ev.coins.push({ id: nextCoinId++, x: rng.next(), y: rng.next(), value: Math.max(randInt(data.coinValue), Math.round(avgSale * data.saleShare)) });
+    } else if (data.kind === 'doorEgg') ev.egg = giftEgg();
+    active = ev;
+    emit({ type: 'eventStarted', id: data.id, kind: data.kind, uid: ev.uid ?? undefined });
+    emit({ type: 'change' });
+  }
+
+  function endEvent(outcome: 'done' | 'missed'): void {
+    const ev = active;
+    if (!ev) return;
+    active = null;
+    eventIn = rng.range(content.events.everySec.min, content.events.everySec.max);
+    emit({ type: 'eventEnded', id: ev.data.id, kind: ev.data.kind, outcome });
+    emit({ type: 'change' });
+  }
+
+  function runEvents(dt: number): void {
+    if (!s().flags[FLAGS.done]) return;
+    sessionSec += dt;
+    for (const v of [...queue]) {
+      if (v.ttl === undefined) continue;
+      v.ttl -= dt;
+      if (v.ttl > 0) continue;
+      if (queue[0] === v) frontLeaves('wait', 0);
+      else {
+        queue.splice(queue.indexOf(v), 1);
+        emit({ type: 'customerLeft', id: v.id, reason: 'wait' });
+        if (active?.data.kind === 'golden') endEvent('missed');
+      }
+    }
+    if (active) {
+      active.left -= dt;
+      if (active.left <= 0 && active.data.kind !== 'golden') endEvent('missed');
+      return;
+    }
+    eventIn -= dt;
+    if (eventIn <= 0) {
+      eventIn = rng.range(content.events.everySec.min, content.events.everySec.max);
+      startEvent();
+    }
+  }
+
+  function merchantOffer(): MerchantOffer | null {
+    const ev = active;
+    if (!ev || ev.data.kind !== 'merchant') return null;
+    const open = eggs.eggs.filter(eggOpen).sort((a, b) => b.price.coins - a.price.coins);
+    const best = open[0] ?? eggData(basicEgg)!;
+    const check = (price: number): BuyCheck => {
+      const incubator = eggSpot();
+      if (incubator < 0) return { ok: false, reason: s().incubators.some((i) => !i.egg) ? 'full' : 'busy', price };
+      if (s().coins + 1e-9 < price) return { ok: false, reason: 'coins', price };
+      return { ok: true, incubator, price };
+    };
+    const discount = Math.max(1, Math.round(best.price.coins * (1 - ev.data.discount)));
+    const mystery = eggData(ev.data.mysteryPriceOf)?.price.coins ?? 0;
+    return {
+      discount: { egg: best.id, price: discount, check: check(discount) },
+      mystery: { egg: ev.data.mysteryEgg, price: mystery, check: check(mystery) },
+    };
   }
 
   /** Announces shop positions that opened since the last look (flag up_new_<id> until the shop is opened). */
@@ -678,7 +830,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       if (front && front.id !== frontSeen) {
         frontSeen = front.id;
         counterSec = 0;
-        const pick = favorite(front.district.customer);
+        const pick = front.golden ? dearest() : favorite(front.district.customer);
         if (pick && pick !== selectedUid) {
           selectedUid = pick;
           emit({ type: 'change' });
@@ -722,7 +874,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       }
       runHelpers(dt);
       runClock(dt);
-      if (!quiet) checkShop(dt);
+      if (!quiet) {
+        checkShop(dt);
+        runEvents(dt);
+      }
     },
     view() {
       return {
@@ -743,8 +898,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         selected: selected(),
         slots: showcaseSlots(),
         queueSize: queueSize(),
+        event: active ? { id: active.data.id, kind: active.data.kind, left: active.left, coins: active.coins.map(({ id, x, y }) => ({ id, x, y })), uid: active.uid, egg: active.egg } : null,
         decor: decorLevels(),
-        queue: queue.map((v) => ({ id: v.id, customer: v.district.customer.id })),
+        queue: queue.map((v) => ({ id: v.id, customer: v.golden ? GOLDEN : v.district.customer.id })),
         deal: currentDeal(),
       };
     },
@@ -780,6 +936,55 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     },
     districts() {
       return openDistricts().map((d) => d.id);
+    },
+    tapEvent() {
+      const ev = active;
+      if (!ev) return;
+      if (ev.data.kind === 'merchant') {
+        emit({ type: 'merchantOpen' });
+        return;
+      }
+      if (ev.data.kind !== 'doorEgg' || !ev.egg) return;
+      const st = s();
+      const at = eggSpot();
+      if (at >= 0) {
+        placeEgg(at, ev.egg, false);
+        emit({ type: 'eggBought', incubator: at, egg: ev.egg, price: 0, by: 'gift' });
+      } else {
+        // No room: the gift comes as the egg's price (nothing is ever lost).
+        const value = eggData(ev.egg)?.price.coins ?? 0;
+        st.coins += value;
+        st.stats.coinsEarned += value;
+        emit({ type: 'eventGift', coins: value });
+      }
+      commit({ flush: true });
+      endEvent('done');
+    },
+    tapEventCoin(id) {
+      const ev = active;
+      const coin = ev?.coins.find((c) => c.id === id);
+      if (!ev || !coin) return;
+      ev.coins = ev.coins.filter((c) => c.id !== id);
+      s().coins += coin.value;
+      s().stats.coinsEarned += coin.value;
+      commit();
+      emit({ type: 'eventCoin', id, value: coin.value });
+      if (!ev.coins.length) endEvent('done');
+    },
+    merchantOffer,
+    merchantBuy(choice) {
+      const offer = merchantOffer()?.[choice];
+      if (!offer) return false;
+      if (!offer.check.ok) {
+        emit({ type: 'denied', action: 'buyEgg', reason: offer.check.reason });
+        return false;
+      }
+      s().coins -= offer.price;
+      placeEgg(offer.check.incubator, offer.egg, false);
+      commit({ flush: true });
+      emit({ type: 'eggBought', incubator: offer.check.incubator, egg: offer.egg, price: offer.price, by: 'merchant' });
+      endEvent('done');
+      return true;
     },
     nextGoal() {
       const st = s();

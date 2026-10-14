@@ -6,6 +6,7 @@ import { Circle, Container, Graphics, Rectangle, Text, type Application } from '
 import type { FeelData, StyleData } from '../content/schemas.ts';
 import type { GameEvent, GameView } from '../sim/game.ts';
 import { drawCreature, drawCustomer, drawEgg, drawRing, rarityColor } from './art.ts';
+import type { EventView } from '../sim/game.ts';
 import { createFx } from './fx.ts';
 import { drawBell, drawDecor } from './decor.ts';
 import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop-layout.ts';
@@ -13,6 +14,9 @@ import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop
 export interface ShopHandlers {
   tapIncubator(index: number): void;
   tapCreature(uid: string): void;
+  /** The event thing at the door (egg, merchant cart). */
+  tapEvent(): void;
+  tapEventCoin(id: number): void;
 }
 
 export interface ShopAnchors {
@@ -20,6 +24,9 @@ export interface ShopAnchors {
   slots: Rect[];
   queue: Spot[];
   counter: Rect;
+  /** The random event: sneeze coins and the thing at the door (test API, hints). */
+  eventCoins: Array<{ id: number; x: number; y: number }>;
+  eventThing: Spot | null;
 }
 
 export interface ShopView {
@@ -106,7 +113,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   const hits = new Container();
   const labels = new Container();
   const fx = createFx(c.outline);
-  root.addChild(back, furniture, decorG, bellBox, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, fx.layer, hits);
+  // Random events (M2-15): sneeze coins on the floor and the thing at the door, above the other taps.
+  const eventLayer = new Container();
+  let eventKey = '';
+  let eventCoins = new Map<number, Container>();
+  let eventThing: Container | null = null;
+  let eventSpot: Spot | null = null;
+  root.addChild(back, furniture, decorG, bellBox, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, fx.layer, hits, eventLayer);
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
@@ -544,6 +557,88 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     invalidate();
   }
 
+  /** Where an event coin lies: a point of the free floor from its 0..1 position. */
+  function coinPoint(x: number, y: number, l: ShopLayout): { x: number; y: number } {
+    const x0 = l.floor.x + l.unit * 0.5;
+    const x1 = Math.max(x0 + l.unit, l.door.x - l.unit * 0.6);
+    const y0 = l.floor.y + l.unit * 0.35;
+    const y1 = Math.max(y0 + l.unit * 0.5, l.stage.y + l.stage.h - l.unit * 0.45);
+    return { x: x0 + (x1 - x0) * x, y: y0 + (y1 - y0) * y };
+  }
+
+  function buildEvent(ev: EventView | null, l: ShopLayout): void {
+    eventLayer.removeChildren().forEach((ch) => ch.destroy({ children: true }));
+    eventCoins = new Map();
+    eventThing = null;
+    eventSpot = null;
+    if (!ev) return;
+    const tapR = Math.max(22, l.unit * 0.45);
+    if (ev.kind === 'sneeze') {
+      for (const coin of ev.coins) {
+        const p = coinPoint(coin.x, coin.y, l);
+        const box = new Container();
+        const g = new Graphics();
+        const r = Math.max(9, l.unit * 0.24);
+        g.ellipse(0, r * 0.9, r * 0.9, r * 0.3).fill({ color: c.outline, alpha: 0.2 });
+        g.circle(0, 0, r).fill(c.uiAccent).stroke({ width: l.outline * 0.6, color: c.outline });
+        g.circle(0, 0, r * 0.55).stroke({ width: l.outline * 0.5, color: c.counterTop });
+        box.addChild(g);
+        box.position.set(p.x, p.y);
+        box.eventMode = 'static';
+        box.cursor = 'pointer';
+        box.hitArea = new Circle(0, 0, tapR);
+        box.on('pointerdown', () => handlers.tapEventCoin(coin.id));
+        eventLayer.addChild(box);
+        eventCoins.set(coin.id, box);
+      }
+    } else if (ev.kind === 'doorEgg' || ev.kind === 'merchant') {
+      const spot: Spot = { x: Math.max(l.stage.x + l.unit, l.door.x - l.unit * 0.75), y: l.floor.y + l.unit * 0.35, r: l.unit * 0.55 };
+      const box = new Container();
+      const g = new Graphics();
+      const r = spot.r;
+      if (ev.kind === 'doorEgg') {
+        // A basket with the egg and a note.
+        drawEgg(g, r * 0.9, c, l.outline * 0.7, 0, ev.egg ? style.eggs[ev.egg] : undefined);
+        g.roundRect(-r * 0.75, r * 0.1, r * 1.5, r * 0.6, r * 0.2).fill(c.counter).stroke({ width: l.outline * 0.7, color: c.outline });
+        g.roundRect(r * 0.35, -r * 0.65, r * 0.55, r * 0.42, r * 0.06).fill(c.eyeWhite).stroke({ width: l.outline * 0.5, color: c.outline });
+        g.rect(r * 0.43, -r * 0.5, r * 0.38, l.outline * 0.4).fill(c.uiMuted);
+      } else {
+        // The merchant's cart with an awning and two eggs.
+        g.roundRect(-r * 1.0, -r * 0.45, r * 2.0, r * 0.75, r * 0.15).fill(c.counter).stroke({ width: l.outline * 0.7, color: c.outline });
+        g.poly([-r * 1.1, -r * 0.5, -r * 0.9, -r * 1.05, r * 0.9, -r * 1.05, r * 1.1, -r * 0.5]).fill(c.blush).stroke({ width: l.outline * 0.7, color: c.outline, join: 'round' });
+        for (const dx of [-0.5, 0.5]) g.ellipse(r * dx, -r * 0.55, r * 0.22, r * 0.3).fill(dx < 0 ? c.egg : (style.eggs.egg_warm?.shell ?? c.egg)).stroke({ width: l.outline * 0.5, color: c.outline });
+        for (const dx of [-0.65, 0.65]) g.circle(r * dx, r * 0.4, r * 0.22).fill(c.uiPanelAlt).stroke({ width: l.outline * 0.6, color: c.outline });
+      }
+      box.addChild(g);
+      box.position.set(spot.x, spot.y);
+      box.eventMode = 'static';
+      box.cursor = 'pointer';
+      box.hitArea = new Circle(0, 0, Math.max(tapR, r * 1.2));
+      box.on('pointerdown', () => handlers.tapEvent());
+      eventLayer.addChild(box);
+      eventThing = box;
+      eventSpot = spot;
+    }
+  }
+
+  function animateEvent(view: GameView, l: ShopLayout): boolean {
+    const ev = view.event;
+    const key = ev ? `${ev.id}:${ev.coins.map((x) => x.id).join(',')}:${l.unit.toFixed(1)}` : '';
+    if (key !== eventKey) {
+      eventKey = key;
+      buildEvent(ev, l);
+    }
+    if (!ev) return false;
+    let i = 0;
+    for (const box of eventCoins.values()) box.pivot.y = Math.sin(time * 6 + i++) * l.unit * 0.06;
+    if (eventThing && eventSpot) {
+      const k = Math.abs(Math.sin(time * 3));
+      eventThing.scale.set(1 + 0.06 * k, 1 - 0.04 * k);
+      eventThing.y = eventSpot.y - k * l.unit * 0.08;
+    }
+    return true;
+  }
+
   function animateIncubators(dt: number, view: GameView, l: ShopLayout): boolean {
     let moving = false;
     rings.clear();
@@ -621,8 +716,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       drawSelection(view, current);
       const talking = animateBubble(dt);
       const walking = animateCustomers(dt, view, current);
+      const happening = animateEvent(view, current);
       const alive = fx.update(dt);
-      if (moving || flying || alive || talking || walking || before !== selectedKey) invalidate();
+      if (moving || flying || alive || talking || walking || happening || before !== selectedKey) invalidate();
     },
     onEvent(e) {
       if (!current) return;
@@ -676,6 +772,22 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           fx.burst(node.box.x, node.box.y - current.unit, 8, [c.uiMuted, c.outline], current.unit * 2.5, current.outline);
           fx.float(node.box.x, node.box.y - current.unit * 2.6, t('fx.huff'), c.eyeWhite, Math.max(15, current.unit * 0.55), current.unit * 0.8);
         }
+      } else if (e.type === 'eventCoin') {
+        const box = eventCoins.get(e.id);
+        if (box) {
+          fx.float(box.x, box.y - current.unit * 0.4, `+${fmt(e.value)}`, c.uiAccent, Math.max(15, current.unit * 0.5), current.unit * 0.8);
+          fx.burst(box.x, box.y, 6, [c.uiAccent, c.counterTop], current.unit * 1.5, current.outline);
+        }
+      } else if (e.type === 'eventStarted' && e.kind === 'sneeze' && e.uid) {
+        const index = slotUids.indexOf(e.uid);
+        const slot = current.slots[index];
+        const node = creatures.get(e.uid);
+        if (slot) {
+          const at = slotCenter(slot);
+          fx.float(at.x, at.y - at.r * 1.3, t('fx.sneeze'), c.eyeWhite, Math.max(15, at.r * 0.6), current.unit);
+          fx.burst(at.x, at.y, 12, [c.uiAccent, c.counterTop, c.eyeWhite], at.r * 6, current.outline * 1.2);
+        }
+        if (node) node.hop = feel.bounceSec * 2;
       } else if (e.type === 'cuckoo') {
         const k = current.decor.clock;
         fx.float(k.x, k.y - k.r * 1.2, t('fx.cuckoo'), c.uiAccent, Math.max(14, current.unit * 0.5), current.unit * 0.8);
@@ -699,7 +811,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     },
     anchors() {
       if (!current) return null;
-      return { incubators: current.incubators, slots: current.slots, queue: current.queue, counter: current.counter };
+      const coinsAt = [...eventCoins.entries()].map(([id, box]) => ({ id, x: box.x, y: box.y }));
+      return { incubators: current.incubators, slots: current.slots, queue: current.queue, counter: current.counter, eventCoins: coinsAt, eventThing: eventSpot };
     },
   };
 }

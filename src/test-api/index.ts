@@ -65,6 +65,8 @@ export function installTestApi(hooks: TestHooks): void {
         incubators: a.incubators.map((s) => pt(s.x, s.y)),
         slots: a.slots.map((s) => pt(s.x + s.w / 2, s.y + s.h / 2)),
         queue: a.queue.map((s) => pt(s.x, s.y)),
+        eventCoins: a.eventCoins.map((c) => ({ id: c.id, ...pt(c.x, c.y) })),
+        eventThing: a.eventThing ? pt(a.eventThing.x, a.eventThing.y) : null,
       };
     },
     grant(coins: number): void {

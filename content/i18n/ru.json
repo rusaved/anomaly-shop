@@ -110,5 +110,17 @@
   "next.left.crystals.many": "ещё {n} кристаллов",
   "next.left.deals.one": "ещё {n} сделка",
   "next.left.deals.few": "ещё {n} сделки",
-  "next.left.deals.many": "ещё {n} сделок"
+  "next.left.deals.many": "ещё {n} сделок",
+  "event.golden": "Золотой покупатель! Платит вдвое",
+  "event.sneeze": "Апчхи! Собирай монетки",
+  "event.doorEgg": "У двери яйцо с запиской",
+  "event.merchant": "Бродячий торговец у двери",
+  "fx.sneeze": "Апчхи!",
+  "customer.golden": "Золотой покупатель",
+  "merchant.title": "Бродячий торговец",
+  "merchant.discount": "{name} за полцены",
+  "merchant.mystery": "Яйцо-незнакомка",
+  "merchant.mysteryNote": "Цена обычного, шансы тёплого",
+  "merchant.close": "Не сейчас",
+  "toast.gift": "Подарок монетами: {n}"
 }

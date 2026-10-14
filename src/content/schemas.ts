@@ -179,6 +179,18 @@ export const StyleFile = v.object({
   eggs: v.record(Id, v.object({ shell: Color, spots: Color })),
 });
 
+/** Random events (docs/01b, section 3; M2-15): one at a time, only a plus; the kind picks the behaviour in src/sim/game.ts. */
+const EventBase = { id: Id, weight: v.pipe(v.number(), v.minValue(0)), fromMin: v.pipe(v.number(), v.minValue(0)), durationSec: v.pipe(v.number(), v.minValue(1)) };
+const IntRange = v.object({ min: Count, max: Count });
+export const RandomEvent = v.variant('kind', [
+  v.object({ ...EventBase, kind: v.literal('golden'), priceMult: v.pipe(v.number(), v.minValue(1)) }),
+  v.object({ ...EventBase, kind: v.literal('sneeze'), coins: IntRange, coinValue: IntRange, saleShare: Share }),
+  v.object({ ...EventBase, kind: v.literal('doorEgg') }),
+  v.object({ ...EventBase, kind: v.literal('merchant'), discount: Share, mysteryPriceOf: Id, mysteryEgg: Id }),
+]);
+const SecRange = v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(v.number(), v.minValue(1)) });
+export const EventsFile = v.object({ firstAfterSec: SecRange, everySec: SecRange, events: v.pipe(v.array(RandomEvent), v.minLength(1)) });
+
 /** News ticker (docs/01b, section 4.4; M2-14): a line shows when its condition holds. */
 export const NewsWhen = v.variant('type', [
   v.object({ type: v.literal('always') }),
@@ -247,6 +259,8 @@ export type CreatureLookData = v.InferOutput<typeof CreatureLook>;
 export type CreatureShape = (typeof CREATURE_SHAPES)[number];
 export type I18nData = v.InferOutput<typeof I18nFile>;
 export type NewsData = v.InferOutput<typeof NewsFile>;
+export type EventsData = v.InferOutput<typeof EventsFile>;
+export type RandomEventData = v.InferOutput<typeof RandomEvent>;
 export type NewsWhenData = v.InferOutput<typeof NewsWhen>;
 export type GameData = v.InferOutput<typeof GameFile>;
 export type RarityName = (typeof RARITIES)[number];

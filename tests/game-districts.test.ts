@@ -28,12 +28,13 @@ const run = (game: Game, sec: number): void => {
 };
 const arrivals = (deals: number, n = 600) => {
   const { game, seen } = setup(deals);
-  while (seen.filter((e) => e.type === 'customerArrived').length < n) {
+  while (seen.filter((e) => e.type === 'customerArrived' && e.customer !== 'golden').length < n) {
     run(game, 1);
     if (game.deal()) game.wait();
   }
   const counts: Record<string, number> = {};
-  for (const e of seen) if (e.type === 'customerArrived') counts[e.customer] = (counts[e.customer] ?? 0) + 1;
+  // Event customers (the golden one, M2-15) are not district arrivals.
+  for (const e of seen) if (e.type === 'customerArrived' && e.customer !== 'golden') counts[e.customer] = (counts[e.customer] ?? 0) + 1;
   return counts;
 };
 

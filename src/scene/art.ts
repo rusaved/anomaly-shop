@@ -289,7 +289,16 @@ export function drawCustomer(g: Graphics, type: string, look: { body: string; ac
   dotEyes(g, 0, -r * 1.22, r * 0.2, r * 0.08, c);
   blush(g, 0, -r * 1.08, r * 0.34, r * 0.07, c);
   smile(g, 0, -r * 1.06, r * 0.1, r * 0.07, c, w * 0.7);
-  if (type === 'rich') {
+  if (type === 'golden') {
+    // The golden customer of an event: a crown and a big coin over the head.
+    g.poly([-r * 0.45, -r * 1.62, -r * 0.45, -r * 1.98, -r * 0.22, -r * 1.8, 0, -r * 2.05, r * 0.22, -r * 1.8, r * 0.45, -r * 1.98, r * 0.45, -r * 1.62])
+      .fill(look.accent)
+      .stroke({ width: w * 0.8, color: c.outline, join: 'round' });
+    g.circle(0, -r * 2.55, r * 0.32).fill(c.uiAccent).stroke({ width: w * 0.8, color: c.outline });
+    g.circle(0, -r * 2.55, r * 0.18).stroke({ width: w * 0.6, color: c.counterTop });
+    sparkle(g, r * 0.75, -r * 1.5, r * 0.16, look.accent);
+    sparkle(g, -r * 0.8, -r * 0.9, r * 0.12, look.accent);
+  } else if (type === 'rich') {
     g.roundRect(-r * 0.5, -r * 1.86, r * 1.0, r * 0.12, r * 0.05).fill(c.outline);
     g.roundRect(-r * 0.32, -r * 2.36, r * 0.64, r * 0.54, r * 0.08).fill(c.outline);
     g.rect(-r * 0.32, -r * 1.98, r * 0.64, r * 0.1).fill(look.accent);

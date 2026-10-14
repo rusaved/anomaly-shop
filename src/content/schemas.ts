@@ -191,6 +191,23 @@ export const RandomEvent = v.variant('kind', [
 const SecRange = v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(v.number(), v.minValue(1)) });
 export const EventsFile = v.object({ firstAfterSec: SecRange, everySec: SecRange, events: v.pipe(v.array(RandomEvent), v.minLength(1)) });
 
+/** Easter eggs on taps (docs/01b, section 2; M2-16): a reply to every tap, a secret on a counter. */
+export const SECRET_TARGETS = ['sign', 'door', 'lamp'] as const;
+export const SecretsFile = v.object({
+  streakSec: v.pipe(v.number(), v.minValue(0.1)),
+  secrets: v.pipe(
+    v.array(
+      v.object({
+        id: Id,
+        target: v.picklist(SECRET_TARGETS),
+        first: Id,
+        steps: v.pipe(v.array(v.object({ at: Count, streak: v.optional(v.boolean()), show: Id, coins: Money })), v.minLength(1)),
+      }),
+    ),
+    v.minLength(1),
+  ),
+});
+
 /** News ticker (docs/01b, section 4.4; M2-14): a line shows when its condition holds. */
 export const NewsWhen = v.variant('type', [
   v.object({ type: v.literal('always') }),
@@ -260,6 +277,8 @@ export type CreatureShape = (typeof CREATURE_SHAPES)[number];
 export type I18nData = v.InferOutput<typeof I18nFile>;
 export type NewsData = v.InferOutput<typeof NewsFile>;
 export type EventsData = v.InferOutput<typeof EventsFile>;
+export type SecretsData = v.InferOutput<typeof SecretsFile>;
+export type SecretTarget = (typeof SECRET_TARGETS)[number];
 export type RandomEventData = v.InferOutput<typeof RandomEvent>;
 export type NewsWhenData = v.InferOutput<typeof NewsWhen>;
 export type GameData = v.InferOutput<typeof GameFile>;

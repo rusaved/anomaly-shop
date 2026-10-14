@@ -129,6 +129,14 @@ export function computeShopLayout(
   const incubator = incubators[0] as Spot;
 
   const signH = Math.min(u * 0.75, Math.max(u * 0.4, door.y - top - u * 0.7));
+  /** The hanging lamp: between the showcase and the door when there is room, else over the showcase, under the HUD. */
+  const lampSpot = (): Spot => {
+    const r = u * 0.28;
+    const gapL = showcase.x + showcase.w;
+    const gapR = door.x - u * 0.3;
+    if (gapR - gapL >= r * 4) return { x: (gapL + gapR) / 2, y: top + u * 0.45, r };
+    return { x: stage.x + stage.w * 0.45, y: Math.min(top + u * 0.35, showcase.y - r * 1.2), r };
+  };
   const signW = door.w * 1.3;
   const sideX = counter.x + counter.w;
   const decor: Decor = {
@@ -140,7 +148,7 @@ export function computeShopLayout(
     stool: { x: counter.x + counter.w * 0.6, y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.55), r: u * 0.36 },
     radio: { x: showcase.x + showcase.w - u * 1.2, y: showcase.y - u * 0.5, w: u * 0.9, h: u * 0.55 },
     clock: { x: stage.x + stage.w * 0.63, y: stage.y + Math.max(u * 0.75, top * 0.55), r: u * 0.42 },
-    lamp: { x: stage.x + stage.w * 0.4, y: stage.y + Math.max(u * 0.6, top * 0.45), r: u * 0.28 },
+    lamp: lampSpot(),
     board: { x: showcase.x + u * 0.1, y: Math.min(floorY - u * 1.0, showcase.y + showcase.h + u * 0.6), w: u * 1.3, h: u * 0.9 },
     feeder: { x: Math.max(stage.x + u * 0.35, counter.x - u * 0.05), y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.25), r: u * 0.3 },
     seller: { x: Math.min(sideX + u * 0.5, door.x - spotR * 2.2), y: counter.y + counter.h * 0.8, r: u * 0.38 },

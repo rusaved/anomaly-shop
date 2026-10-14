@@ -122,5 +122,12 @@
   "merchant.mystery": "Mystery Egg",
   "merchant.mysteryNote": "Basic price, warm egg odds",
   "merchant.close": "Not now",
-  "toast.gift": "A gift in coins: {n}"
+  "toast.gift": "A gift in coins: {n}",
+  "secret.sign.hop": "The badge hopped off and back",
+  "secret.sign.glow": "The sign glows with pride",
+  "secret.door.knock": "Someone knocked back from outside",
+  "secret.door.stranger": "Someone peeked in: see you soon",
+  "secret.lamp.disco": "Disco time!",
+  "fx.knock": "Knock knock",
+  "fx.ding": "Ding"
 }

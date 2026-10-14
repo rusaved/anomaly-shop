@@ -122,5 +122,12 @@
   "merchant.mystery": "Яйцо-незнакомка",
   "merchant.mysteryNote": "Цена обычного, шансы тёплого",
   "merchant.close": "Не сейчас",
-  "toast.gift": "Подарок монетами: {n}"
+  "toast.gift": "Подарок монетами: {n}",
+  "secret.sign.hop": "Значок спрыгнул и вернулся",
+  "secret.sign.glow": "Вывеска засветилась от гордости",
+  "secret.door.knock": "Снаружи постучали в ответ",
+  "secret.door.stranger": "Кто-то заглянул: «Ещё увидимся»",
+  "secret.lamp.disco": "Дискотека!",
+  "fx.knock": "Тук-тук",
+  "fx.ding": "Дзынь"
 }

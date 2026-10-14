@@ -29,7 +29,7 @@ import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
 import { ftueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
-import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, news, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, news, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -97,7 +97,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -122,6 +122,7 @@ async function boot(): Promise<void> {
       tapCreature: (uid) => play.tapCreature(uid),
       tapEvent: () => play.tapEvent(),
       tapEventCoin: (id) => play.tapEventCoin(id),
+      tapThing: (target) => play.tapThing(target),
     },
   });
   const hud = createHud(uiRoot, lang, () => feel.hudRollSec);
@@ -253,6 +254,11 @@ async function boot(): Promise<void> {
     else if (e.type === 'eventEnded' && e.kind === 'merchant') merchantWindow.close();
     else if (e.type === 'merchantOpen') merchantWindow.open();
     else if (e.type === 'eventCoin') sfx.play('coin');
+    else if (e.type === 'thingTapped') sfx.play('tap');
+    else if (e.type === 'secret') {
+      toasts.show(i18n.t(`secret.${e.id}.${e.show}`), 'rare', 2400);
+      sfx.play('rare');
+    }
     else if (e.type === 'eventGift') {
       toasts.show(i18n.t('toast.gift', { n: e.coins }), 'good', 2200);
       sfx.play('coin');

@@ -36,20 +36,6 @@ export function drawDecor(g: Graphics, items: Record<string, number>, l: ShopLay
     g.roundRect(m.x, m.y, m.w, m.h, m.h / 2).fill(c.blush).stroke(stroke);
     for (let i = 1; i < 4; i++) g.rect(m.x + (m.w * i) / 4 - w * 0.4, m.y + m.h * 0.2, w * 0.8, m.h * 0.6).fill({ color: c.eyeWhite, alpha: 0.6 });
   }
-  if (items.sign) {
-    const s = d.sign;
-    const lvl = items.sign;
-    if (lvl >= 5) g.roundRect(s.x - w * 2, s.y - w * 2, s.w + w * 4, s.h + w * 4, s.h * 0.35).fill({ color: c.counterTop, alpha: 0.45 });
-    g.moveTo(s.x + s.w * 0.2, s.y).lineTo(s.x + s.w * 0.2, s.y - w * 2).stroke(stroke);
-    g.moveTo(s.x + s.w * 0.8, s.y).lineTo(s.x + s.w * 0.8, s.y - w * 2).stroke(stroke);
-    g.roundRect(s.x, s.y, s.w, s.h, s.h * 0.3).fill(c.counterTop).stroke(stroke);
-    // An egg with a spot: the shop's mark, no words on pictures.
-    const er = s.h * 0.32;
-    g.ellipse(s.x + s.w * 0.22, s.y + s.h * 0.5, er * 0.78, er).fill(c.egg).stroke({ width: w * 0.7, color: c.outline });
-    g.circle(s.x + s.w * 0.2, s.y + s.h * 0.44, er * 0.22).fill(c.eggSpots);
-    const n = Math.min(5, lvl);
-    for (let i = 0; i < n; i++) star(g, s.x + s.w * (0.42 + (i * 0.48) / Math.max(1, 4)), s.y + s.h * 0.5, s.h * 0.17, i < lvl ? c.uiAccent : c.uiMuted);
-  }
   if (items.register) {
     const r = d.register;
     g.roundRect(r.x, r.y + r.h * 0.25, r.w, r.h * 0.75, r.h * 0.12).fill(c.incubator).stroke(stroke);
@@ -118,6 +104,34 @@ export function drawDecor(g: Graphics, items: Record<string, number>, l: ShopLay
     g.circle(k.x + k.r * 0.4, k.y - k.r * 0.2, k.r * 0.13).fill(c.outline);
     g.roundRect(k.x - k.r * 0.7, k.y + k.r * 0.2, k.r * 0.8, k.r * 0.6, k.r * 0.15).fill(c.egg).stroke({ width: w * 0.6, color: c.outline });
   }
+}
+
+/** The shop sign around its hook point (0,0 = top middle) so it can swing: a board, stars by level, a glow; the badge egg is apart (it hops). */
+export function drawSign(g: Graphics, badge: Graphics, w: number, h: number, level: number, glow: boolean, c: Colors, outline: number): void {
+  const lw = outline * 0.8;
+  const stroke = { width: lw, color: c.outline };
+  g.clear();
+  badge.clear();
+  if (glow) g.roundRect(-w / 2 - lw * 3, -lw, w + lw * 6, h + lw * 6, h * 0.4).fill({ color: c.counterTop, alpha: 0.55 });
+  g.moveTo(-w * 0.3, lw * 2).lineTo(-w * 0.3, -lw).stroke(stroke);
+  g.moveTo(w * 0.3, lw * 2).lineTo(w * 0.3, -lw).stroke(stroke);
+  g.roundRect(-w / 2, lw * 2, w, h, h * 0.3).fill(level > 0 ? c.counterTop : c.showcaseSlot).stroke(stroke);
+  for (let i = 0; i < Math.min(5, level); i++) star(g, -w / 2 + w * (0.42 + (i * 0.48) / 4), lw * 2 + h * 0.5, h * 0.17, c.uiAccent);
+  // An egg with a spot: the shop's mark, no words on pictures.
+  const er = h * 0.32;
+  badge.ellipse(0, 0, er * 0.78, er).fill(c.egg).stroke({ width: lw * 0.7, color: c.outline });
+  badge.circle(-er * 0.08, -er * 0.18, er * 0.22).fill(c.eggSpots);
+  badge.position.set(-w / 2 + w * (level > 0 ? 0.22 : 0.5), lw * 2 + h * 0.5);
+}
+
+/** The hanging lamp (0,0 = the bulb): a cord up to the ceiling, a shade, the bulb warm or cold. */
+export function drawLamp(g: Graphics, r: number, cord: number, warm: boolean, c: Colors, outline: number): void {
+  const lw = outline * 0.8;
+  g.clear();
+  g.moveTo(0, -r * 0.6).lineTo(0, -r * 0.6 - cord).stroke({ width: lw * 0.7, color: c.outline });
+  g.circle(0, r * 0.15, r * 0.95).fill({ color: warm ? c.counterTop : c.incubatorGlass, alpha: 0.25 });
+  g.circle(0, r * 0.2, r * 0.42).fill(warm ? c.counterTop : c.incubatorGlass).stroke({ width: lw * 0.6, color: c.outline });
+  g.moveTo(-r * 0.75, r * 0.05).quadraticCurveTo(-r * 0.6, -r * 0.7, 0, -r * 0.7).quadraticCurveTo(r * 0.6, -r * 0.7, r * 0.75, r * 0.05).closePath().fill(c.uiAccent).stroke({ width: lw, color: c.outline, join: 'round' });
 }
 
 /** The bell by the door, drawn around its hook (0,0) so it can swing. */

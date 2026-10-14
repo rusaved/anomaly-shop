@@ -58,6 +58,8 @@ export interface SaveData {
   settings: { sound: boolean; lang: Lang | null };
   /** Once-per-player analytics flags and tutorial marks. */
   flags: Record<string, boolean>;
+  /** Taps on shop things for the easter eggs (docs/01b, section 2): sign, door, lamp. */
+  secrets: Record<string, number>;
 }
 
 export function emptyIncubator(): Incubator {
@@ -85,6 +87,7 @@ export function newSave(now: number): SaveData {
     stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0 },
     settings: { sound: true, lang: null },
     flags: {},
+    secrets: {},
   };
 }
 
@@ -149,6 +152,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     },
     settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null },
     flags: Object.fromEntries(Object.entries(rec(r.flags)).filter(([, v]) => v === true).map(([k]) => [k, true])),
+    secrets: numberMap(r.secrets),
   };
 }
 

@@ -2,7 +2,7 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CustomersData, DistrictData, EggsData, EventsData, FtueData, RarityName, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { CustomersData, DistrictData, EggsData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type Creature, type SaveData } from './state.ts';
@@ -16,6 +16,7 @@ export interface GameContent {
   upgrades: UpgradesData;
   ftue: FtueData;
   events: EventsData;
+  secrets: SecretsData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -82,6 +83,8 @@ export type GameEvent =
   | { type: 'eventCoin'; id: number; value: number }
   | { type: 'eventGift'; coins: number }
   | { type: 'merchantOpen' }
+  | { type: 'thingTapped'; target: SecretTarget; first: string; count: number }
+  | { type: 'secret'; id: string; target: SecretTarget; show: string; coins: number; repeat: boolean }
   | { type: 'upgradeUnlocked'; id: string }
   | { type: 'rescueEgg'; incubator: number }
   | { type: 'sold'; uid: string; species: string; price: number; crystals: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper' }
@@ -211,6 +214,8 @@ export interface Game {
   /** What the merchant sells now; null when he is not here. */
   merchantOffer(): MerchantOffer | null;
   merchantBuy(choice: 'discount' | 'mystery'): boolean;
+  /** A tap on a shop thing (sign, door, lamp): a reply always, a secret on the counter (docs/01b, section 2). */
+  tapThing(target: SecretTarget): void;
   /** The nearest goal not reached yet: the one with the largest share done (shop positions, districts, eggs; rebirth when all is bought). */
   nextGoal(): GoalView;
   /** Free showcase places (creatures and eggs both take one). */
@@ -516,6 +521,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       startEvent();
     }
   }
+
+  // ---- Easter eggs (docs/01b, section 2; M2-16): counters in the save, a streak for «in a row».
+  let clock = 0;
+  const streaks: Record<string, { n: number; at: number }> = {};
 
   function merchantOffer(): MerchantOffer | null {
     const ev = active;
@@ -875,6 +884,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       runHelpers(dt);
       runClock(dt);
       if (!quiet) {
+        clock += dt;
         checkShop(dt);
         runEvents(dt);
       }
@@ -970,6 +980,29 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       commit();
       emit({ type: 'eventCoin', id, value: coin.value });
       if (!ev.coins.length) endEvent('done');
+    },
+    tapThing(target) {
+      const st = s();
+      for (const sec of content.secrets.secrets.filter((x) => x.target === target)) {
+        const count = (st.secrets[sec.id] = (st.secrets[sec.id] ?? 0) + 1);
+        const streak = (streaks[sec.id] ??= { n: 0, at: -Infinity });
+        streak.n = clock - streak.at <= content.secrets.streakSec ? streak.n + 1 : 1;
+        streak.at = clock;
+        emit({ type: 'thingTapped', target, first: sec.first, count });
+        sec.steps.forEach((step, i) => {
+          const hit = step.streak ? streak.n === step.at : count === step.at;
+          if (!hit) return;
+          const flag = `secret_${sec.id}_${i}`;
+          const repeat = Boolean(st.flags[flag]);
+          const coinsWon = repeat ? 0 : step.coins;
+          st.flags[flag] = true;
+          st.coins += coinsWon;
+          st.stats.coinsEarned += coinsWon;
+          if (step.streak) streak.n = 0;
+          emit({ type: 'secret', id: sec.id, target, show: step.show, coins: coinsWon, repeat });
+        });
+      }
+      commit();
     },
     merchantOffer,
     merchantBuy(choice) {

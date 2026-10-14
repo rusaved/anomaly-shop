@@ -8,7 +8,8 @@ import type { GameEvent, GameView } from '../sim/game.ts';
 import { drawCreature, drawCustomer, drawEgg, drawRing, rarityColor } from './art.ts';
 import type { EventView } from '../sim/game.ts';
 import { createFx } from './fx.ts';
-import { drawBell, drawDecor } from './decor.ts';
+import { drawBell, drawDecor, drawLamp, drawSign } from './decor.ts';
+import type { SecretTarget } from '../content/schemas.ts';
 import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop-layout.ts';
 
 export interface ShopHandlers {
@@ -17,6 +18,8 @@ export interface ShopHandlers {
   /** The event thing at the door (egg, merchant cart). */
   tapEvent(): void;
   tapEventCoin(id: number): void;
+  /** Sign, door, lamp: easter eggs (M2-16). */
+  tapThing(target: SecretTarget): void;
 }
 
 export interface ShopAnchors {
@@ -27,6 +30,8 @@ export interface ShopAnchors {
   /** The random event: sneeze coins and the thing at the door (test API, hints). */
   eventCoins: Array<{ id: number; x: number; y: number }>;
   eventThing: Spot | null;
+  /** Easter egg things: sign, door, lamp. */
+  things: { sign: Rect; door: Rect; lamp: Spot };
 }
 
 export interface ShopView {
@@ -113,13 +118,115 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   const hits = new Container();
   const labels = new Container();
   const fx = createFx(c.outline);
+  // Easter egg things (M2-16): the sign over the door, a plaque on the door, the hanging lamp; each answers a tap.
+  const signBox = new Container();
+  const signG = new Graphics();
+  const signBadge = new Graphics();
+  signBox.addChild(signG, signBadge);
+  const plaqueBox = new Container();
+  const plaqueG = new Graphics();
+  plaqueBox.addChild(plaqueG);
+  const stranger = new Graphics();
+  stranger.alpha = 0;
+  const lampBox = new Container();
+  const lampG = new Graphics();
+  lampBox.addChild(lampG);
+  const disco = new Graphics();
+  disco.alpha = 0;
+  let thingsKey = '';
+  let signSwing = 0;
+  let badgeHop = 0;
+  let signGlow = false;
+  let plaqueFlip = 0;
+  let doorKnock = 0;
+  let strangerLeft = 0;
+  let lampWarm = true;
+  let discoLeft = 0;
+  const thingHits: Container[] = [];
+
+  function buildThings(l: ShopLayout, level: number): void {
+    const d = l.decor;
+    drawSign(signG, signBadge, d.sign.w, d.sign.h, level, signGlow || level >= 5, c, l.outline);
+    signBox.position.set(d.sign.x + d.sign.w / 2, d.sign.y);
+    const pw = l.door.w * 0.42;
+    const ph = l.door.h * 0.12;
+    plaqueG.clear();
+    plaqueG.roundRect(-pw / 2, -ph / 2, pw, ph, ph * 0.3).fill(c.uiGood).stroke({ width: l.outline * 0.5, color: c.outline });
+    plaqueG.circle(0, -ph * 1.1, ph * 0.12).fill(c.outline);
+    plaqueBox.position.set(l.door.x + l.door.w / 2, l.door.y + l.door.h * 0.52);
+    const win = { x: l.door.x + l.door.w * 0.18, y: l.door.y + l.door.h * 0.12, w: l.door.w * 0.64, h: l.door.h * 0.3 };
+    stranger.clear();
+    stranger.circle(win.x + win.w * 0.5, win.y + win.h * 0.55, win.h * 0.32).fill(c.outline);
+    stranger.roundRect(win.x + win.w * 0.2, win.y + win.h * 0.8, win.w * 0.6, win.h * 0.3, win.h * 0.15).fill(c.outline);
+    stranger.circle(win.x + win.w * 0.42, win.y + win.h * 0.5, win.h * 0.05).fill(c.eyeWhite);
+    stranger.circle(win.x + win.w * 0.58, win.y + win.h * 0.5, win.h * 0.05).fill(c.eyeWhite);
+    drawLamp(lampG, d.lamp.r, d.lamp.y - l.stage.y, lampWarm, c, l.outline);
+    lampBox.position.set(d.lamp.x, d.lamp.y);
+    disco.clear();
+    disco.rect(l.stage.x, l.stage.y, l.stage.w, l.stage.h).fill(c.eyeWhite);
+    for (const h of thingHits) h.destroy();
+    thingHits.length = 0;
+    const hit = (target: SecretTarget, area: Rectangle | Circle): void => {
+      const box = new Container();
+      box.eventMode = 'static';
+      box.cursor = 'pointer';
+      box.hitArea = area;
+      box.on('pointerdown', () => handlers.tapThing(target));
+      hits.addChildAt(box, 0);
+      thingHits.push(box);
+    };
+    hit('sign', new Rectangle(d.sign.x - 4, d.sign.y - 4, d.sign.w + 8, Math.max(44, d.sign.h + 12)));
+    hit('door', new Rectangle(l.door.x, l.door.y, l.door.w, l.door.h));
+    hit('lamp', new Circle(d.lamp.x, d.lamp.y, Math.max(22, d.lamp.r * 1.4)));
+  }
+
+  function animateThings(dt: number, l: ShopLayout): boolean {
+    let moving = false;
+    if (signSwing > 0) {
+      signSwing = Math.max(0, signSwing - dt);
+      signBox.rotation = Math.sin(signSwing * 22) * 0.18 * (signSwing / 0.9);
+      moving = true;
+    }
+    if (badgeHop > 0) {
+      badgeHop = Math.max(0, badgeHop - dt);
+      const k = badgeHop / 0.9;
+      signBadge.pivot.y = Math.sin((1 - k) * Math.PI) * l.unit * 0.9;
+      signBadge.rotation = (1 - k) * Math.PI * 2;
+      moving = true;
+    }
+    if (plaqueFlip > 0) {
+      plaqueFlip = Math.max(0, plaqueFlip - dt);
+      plaqueBox.scale.x = Math.cos((1 - plaqueFlip / 0.5) * Math.PI * 2);
+      moving = true;
+    }
+    if (doorKnock > 0) {
+      doorKnock = Math.max(0, doorKnock - dt);
+      plaqueBox.x = l.door.x + l.door.w / 2 + Math.sin(doorKnock * 40) * l.unit * 0.06;
+      moving = true;
+    }
+    if (strangerLeft > 0) {
+      strangerLeft = Math.max(0, strangerLeft - dt);
+      stranger.alpha = Math.min(1, strangerLeft, (2.2 - strangerLeft) * 3);
+      moving = true;
+    }
+    if (discoLeft > 0) {
+      discoLeft = Math.max(0, discoLeft - dt);
+      const colors = [c.rarityRare, c.rarityEpic, c.uiGood, c.rarityLegendary, c.blush];
+      disco.tint = colors[Math.floor(discoLeft * 6) % colors.length] ?? c.blush;
+      disco.alpha = discoLeft > 0 ? 0.3 : 0;
+      if (Math.floor(discoLeft * 4) !== Math.floor((discoLeft + dt) * 4)) for (const node of creatures.values()) node.hop = feel.bounceSec;
+      moving = true;
+    }
+    return moving;
+  }
+
   // Random events (M2-15): sneeze coins on the floor and the thing at the door, above the other taps.
   const eventLayer = new Container();
   let eventKey = '';
   let eventCoins = new Map<number, Container>();
   let eventThing: Container | null = null;
   let eventSpot: Spot | null = null;
-  root.addChild(back, furniture, decorG, bellBox, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, fx.layer, hits, eventLayer);
+  root.addChild(back, furniture, stranger, plaqueBox, decorG, signBox, lampBox, bellBox, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, disco, fx.layer, hits, eventLayer);
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
@@ -699,6 +806,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         decorKey = key;
         decorItems = view.decor;
         drawDecor(decorG, decorItems, current, c);
+        buildThings(current, decorItems.sign ?? 0);
         bellBox.visible = Boolean(decorItems.bell);
         drawBell(bellG, current.decor.bell.r, c, current.outline);
         bellBox.position.set(current.decor.bell.x, current.decor.bell.y);
@@ -716,7 +824,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       drawSelection(view, current);
       const talking = animateBubble(dt);
       const walking = animateCustomers(dt, view, current);
-      const happening = animateEvent(view, current);
+      const happening = animateEvent(view, current) || animateThings(dt, current);
       const alive = fx.update(dt);
       if (moving || flying || alive || talking || walking || happening || before !== selectedKey) invalidate();
     },
@@ -772,6 +880,27 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           fx.burst(node.box.x, node.box.y - current.unit, 8, [c.uiMuted, c.outline], current.unit * 2.5, current.outline);
           fx.float(node.box.x, node.box.y - current.unit * 2.6, t('fx.huff'), c.eyeWhite, Math.max(15, current.unit * 0.55), current.unit * 0.8);
         }
+      } else if (e.type === 'thingTapped') {
+        if (e.target === 'sign') signSwing = 0.9;
+        else if (e.target === 'door') {
+          plaqueFlip = 0.5;
+          if (decorItems.bell) bellSwing = 0.8;
+          fx.float(current.door.x + current.door.w / 2, current.door.y - current.unit * 0.2, t('fx.ding'), c.eyeWhite, Math.max(14, current.unit * 0.45), current.unit * 0.6);
+        } else if (e.target === 'lamp') {
+          lampWarm = !lampWarm;
+          drawLamp(lampG, current.decor.lamp.r, current.decor.lamp.y - current.stage.y, lampWarm, c, current.outline);
+        }
+      } else if (e.type === 'secret') {
+        if (e.show === 'hop') badgeHop = 0.9;
+        else if (e.show === 'glow') {
+          signGlow = true;
+          buildThings(current, decorItems.sign ?? 0);
+        } else if (e.show === 'knock') {
+          doorKnock = 0.6;
+          fx.float(current.door.x + current.door.w / 2, current.door.y + current.door.h * 0.3, t('fx.knock'), c.eyeWhite, Math.max(15, current.unit * 0.5), current.unit * 0.8);
+        } else if (e.show === 'stranger') strangerLeft = 2.2;
+        else if (e.show === 'disco') discoLeft = 3;
+        if (e.coins > 0) fx.float(current.door.x, current.door.y - current.unit * 0.6, `+${fmt(e.coins)}`, c.uiAccent, Math.max(16, current.unit * 0.55), current.unit);
       } else if (e.type === 'eventCoin') {
         const box = eventCoins.get(e.id);
         if (box) {
@@ -812,7 +941,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     anchors() {
       if (!current) return null;
       const coinsAt = [...eventCoins.entries()].map(([id, box]) => ({ id, x: box.x, y: box.y }));
-      return { incubators: current.incubators, slots: current.slots, queue: current.queue, counter: current.counter, eventCoins: coinsAt, eventThing: eventSpot };
+      return { incubators: current.incubators, slots: current.slots, queue: current.queue, counter: current.counter, eventCoins: coinsAt, eventThing: eventSpot, things: { sign: current.decor.sign, door: current.door, lamp: current.decor.lamp } };
     },
   };
 }

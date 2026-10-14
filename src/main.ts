@@ -10,14 +10,12 @@ import './ui/styles.css';
 import style from '@content/style.json';
 import { applyTheme } from './ui/theme.ts';
 import { createHud } from './ui/hud.ts';
-import { createPanel } from './ui/panel.ts';
 import { watchLayout } from './ui/layout.ts';
 import { createI18n } from './ui/i18n.ts';
 import { createPauseWindow } from './ui/pause.ts';
 import { createSettingsWindow } from './ui/settings.ts';
 import { communityLinks, renderCommunity } from './ui/community.ts';
 import { renderBuildLabel } from './ui/label.ts';
-import { createActions } from './ui/actions.ts';
 import { createCoinFlight } from './ui/coin-flight.ts';
 import { createUpgradesWindow } from './ui/upgrades.ts';
 import { createHints } from './ui/hints.ts';
@@ -156,34 +154,38 @@ async function boot(): Promise<void> {
   store.onCommit((s) => hud.crystals(s.crystals, s.crystals > 0 || Boolean(s.flags.crystal_seen)));
   hud.crystals(store.state.crystals, store.state.crystals > 0 || Boolean(store.state.flags.crystal_seen));
   const flight = createCoinFlight(uiRoot);
-  const panel = createPanel(uiRoot, __GAME__.title[lang]);
   const links = platform.caps.community ? communityLinks() : null;
-  renderCommunity(panel.side, links, 'side', true);
-  const upgradesWindow = createUpgradesWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, upgrade: (id) => upgrades.upgrades.find((u) => u.id === id), tierColors: Object.values(styleData.rarity) });
-  const actions = createActions(panel.body, play, lang, { t: i18n.t, eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg });
-  // The genre-standard frame (docs/01 §6; M3-03): the tab bar, one sheet per tab over the panel; the shop stays in view.
+  const upgradesWindow = createUpgradesWindow(uiRoot, play, {
+    t: i18n.t,
+    lang: i18n.lang,
+    upgrade: (id) => upgrades.upgrades.find((u) => u.id === id),
+    tierColors: Object.values(styleData.rarity),
+    onClose: () => {
+      if (nav.active() === 'shop') nav.mark('eggs');
+    },
+  });
+  // The genre-standard frame (docs/01 §1а, §6; UB-01): one tab bar at the bottom, «Eggs» is home (the shop scene + its panel),
+  // every other tab is a screen of its own; one is always active.
   const portraits = createPortraits(scene.app, styleData);
   const sheets = new Map<TabId, Sheet>();
-  const showTab = (tab: TabId | null): void => {
-    if (tab === 'shop') {
-      // Q-021 B: until M5 the Shop tab is the shop upgrades.
-      nav.mark(null);
-      upgradesWindow.open();
-      tab = null;
+  const showTab = (tab: TabId): void => {
+    // Q-021 B: until M5 the Shop tab is the shop upgrades — over the home screen, the shop stays in view (UB-04).
+    const screen: TabId = tab === 'shop' ? 'eggs' : tab;
+    for (const [id, sh] of sheets) {
+      if (id === screen) sh.show();
+      else sh.hide();
     }
-    for (const [id, s] of sheets) {
-      if (id === tab) s.show();
-      else s.hide();
-    }
+    if (tab === 'shop') upgradesWindow.open();
+    else if (upgradesWindow.overlay.isOpen()) upgradesWindow.close();
     renderTabs();
   };
-  const closeTab = (): void => {
-    nav.mark(null);
-    showTab(null);
+  const selectTab = (tab: TabId): void => {
+    nav.mark(tab);
+    showTab(tab);
   };
-  for (const id of ['market', 'inventory', 'sales', 'eggs', 'chats', 'season'] as const) sheets.set(id, createSheet(uiRoot, id, closeTab));
+  for (const id of ['market', 'inventory', 'sales', 'eggs', 'chats', 'season'] as const) sheets.set(id, createSheet(uiRoot, id, id === 'eggs' ? 'home' : 'screen'));
   const nav = createNav(uiRoot, showTab);
-  hud.balance.addEventListener('click', () => showTab('shop'));
+  hud.balance.addEventListener('click', () => selectTab('shop'));
   for (const [id, key] of [['season', 'season.later']] as const) {
     const s = sheets.get(id)!;
     s.body.innerHTML = `<p class="empty" data-i18n="${key}"></p>`;
@@ -236,8 +238,7 @@ async function boot(): Promise<void> {
     slider: market.slider,
     zoneColors: RARITIES.map((r) => styleData.rarity[r]),
     openChat: (uid) => {
-      nav.mark('chats');
-      showTab('chats');
+      selectTab('chats');
       chatsTab.show(uid);
     },
   });
@@ -329,8 +330,10 @@ async function boot(): Promise<void> {
     const shopEggs = play.eggShop();
     nav.badge('eggs', shopEggs.eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open)));
   }
+  // The home screen (UB-01): the «Next» card on top of the eggs; the news line takes the title row when it speaks; the community buttons at the end.
+  const homeSheet = sheets.get('eggs')!;
   const nextCard = createNextCard(
-    actions.more,
+    homeSheet.head,
     play,
     {
       t: i18n.t,
@@ -347,18 +350,21 @@ async function boot(): Promise<void> {
       // An egg goal opens the Eggs tab, everything else the shop upgrades.
       const goal = play.nextGoal();
       if (goal.kind === 'egg') {
-        nav.mark('eggs');
-        showTab('eggs');
+        selectTab('eggs');
         eggsTab.show(goal.id);
-      } else upgradesWindow.open();
+      } else selectTab('shop');
     },
   );
   /** Game second of the player's last touch (idle news) and the events of the last minute (event news). */
   let lastTouch = 0;
   const recentEvents: Array<{ id: string; at: number }> = [];
   document.addEventListener('pointerdown', () => (lastTouch = runtime.elapsed()), { capture: true });
+  const homeFoot = document.createElement('div');
+  homeFoot.className = 'home-foot';
+  homeSheet.body.appendChild(homeFoot);
+  renderCommunity(homeFoot, links, 'side', true);
   const newsTicker = createNewsTicker(
-    panel.root.querySelector('[data-panel="title"]') as HTMLElement,
+    homeSheet.root.querySelector('.sheet-top') as HTMLElement,
     news,
     () => {
       const st = store.state;
@@ -385,12 +391,12 @@ async function boot(): Promise<void> {
     eggColor: (id) => styleData.eggs[id]?.shell ?? styleData.colors.egg,
   });
   const renderUi = (): void => {
-    actions.render();
     renderTabs();
     nextCard.render();
     upgradesWindow.render();
     merchantWindow.render();
   };
+  showTab('eggs');
   renderUi();
   store.onCommit(renderUi);
   const awayWindow = createAwayWindow(uiRoot, { t: i18n.t, lang: i18n.lang });
@@ -509,7 +515,7 @@ async function boot(): Promise<void> {
     t: i18n.t,
     anchors: () => shop.anchors(),
     canvas,
-    panel: panel.root,
+    panel: uiRoot,
     topInset: () => hud.root.getBoundingClientRect().bottom,
   });
   renderBuildLabel(uiRoot, __BUILD_LABEL__);
@@ -518,8 +524,6 @@ async function boot(): Promise<void> {
     document.documentElement.lang = next;
     hud.setLanguage(next);
     hud.update(store.state.coins, { snap: true });
-    actions.setLanguage(next);
-    panel.setTitle(__GAME__.title[next]);
     i18n.apply(uiRoot);
     shop.relabel();
     newsTicker.refresh();
@@ -576,7 +580,10 @@ async function boot(): Promise<void> {
     runtime.frame(ticker.deltaMS / 1000);
     const view = play.view();
     shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, view);
-    hints.update(controllable ? ftueHint(store.state, view) : null);
+    // UB-01, UB-02: a hint at the shop shows on the home screen only, and never over a window.
+    const hint = controllable ? ftueHint(store.state, view) : null;
+    const sceneHint = hint !== null && hint.target.kind !== 'button';
+    hints.update(hint && !(sceneHint && nav.active() !== 'eggs') && !upgradesWindow.overlay.isOpen() && !hatchShow.isOpen() ? hint : null);
     newsTicker.tick(runtime.pause.isPaused() ? 0 : ticker.deltaMS / 1000, controllable && Boolean(store.state.flags.ftue_done));
     if (!runtime.pause.isPaused() && store.state.flags.ftue_done) chatter.tick(ticker.deltaMS / 1000);
     funnel.tick(runtime.elapsed());

@@ -1,4 +1,4 @@
-// What: screen layout (docs/02-tech.md, 4.4; docs/01 §6): portrait = shop, panel, tab bar top to bottom; landscape = shop left, panel and tab bar right; a tab's sheet covers the panel.
+// What: screen layout (docs/02, 4.4; docs/01 §6; UB-01): top bar, a full-width tab bar at the bottom; between them home «Eggs» (shop + panel) or a tab screen.
 // Called by: src/main.ts (watchLayout once), src/scene (stage rect), tests/layout.test.ts (computeLayout is pure).
 // Keep: computeLayout has no DOM; every size and ratio sits in PANEL; both orientations work at any proportion, never locked.
 
@@ -19,34 +19,38 @@ export interface Layout {
   orientation: Orientation;
   width: number;
   height: number;
-  /** Where the PixiJS shop is drawn (full canvas minus the panel). */
+  /** Where the PixiJS shop is drawn: above the home panel in portrait, left of it in landscape (the top bar lies over it). */
   stage: Rect;
-  /** Where the HTML panel sits. */
+  /** The home panel (the eggs of the «Eggs» screen) and the side panel over it (UB-04: upgrades, details — the shop stays in view). */
   panel: Rect;
-  /** The bottom tab bar (M3-03). */
+  /** The tab bar: the whole width at the bottom in every orientation (UB-01). */
   nav: Rect;
-  /** Where an open tab (a sheet) sits: over the panel, taller in portrait; the shop stays visible above or to the left. */
-  sheet: Rect;
+  /** The screen of a tab other than «Eggs»: everything between the top bar and the tab bar. */
+  screen: Rect;
   hudHeight: number;
   safe: Insets;
 }
 
 export const PANEL = {
-  portraitShare: 0.36,
+  /** Portrait: the home panel takes this share of the height above the tab bar, within min and max. */
+  portraitShare: 0.46,
   portraitMin: 200,
-  portraitMax: 320,
-  landscapeShare: 0.4,
-  landscapeMin: 260,
-  landscapeMax: 420,
-  /** A landscape panel narrower than this stacks the deal buttons in two rows. */
-  narrowPanel: 300,
-  /** A portrait panel lower than this hides its title and side community buttons (they stay in pause). */
-  shortPanel: 280,
-  hudHeight: 60,
-  /** The tab bar height (plus the bottom safe inset). */
-  navHeight: 58,
-  /** A portrait sheet rises to this share of the screen; the rest above shows the shop. */
-  sheetPortraitShare: 0.66,
+  portraitMax: 440,
+  /** Portrait: the shop keeps at least this much (the top bar included): 44 px tap zones on a 320×568 phone. */
+  portraitStageMin: 290,
+  landscapeShare: 0.42,
+  landscapeMin: 300,
+  landscapeMax: 460,
+  /** Landscape: the shop keeps at least this width. */
+  landscapeStageMin: 260,
+  /** The top bar height (plus the top safe inset); lower on a landscape phone. */
+  hudHeight: 56,
+  hudHeightShort: 50,
+  /** The tab bar height (plus the bottom safe inset): a 24 px icon and a 12 px label; lower on a landscape phone. */
+  navHeight: 62,
+  navHeightShort: 56,
+  /** Screens lower than this use the short bars. */
+  shortHeight: 480,
 };
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -55,35 +59,36 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
 export function computeLayout(width: number, height: number, safe: Insets = NO_INSETS): Layout {
   const w = Math.max(1, Math.floor(width));
   const h = Math.max(1, Math.floor(height));
-  const hudHeight = PANEL.hudHeight + safe.top;
+  const short = h < PANEL.shortHeight;
+  const hudHeight = Math.min((short ? PANEL.hudHeightShort : PANEL.hudHeight) + safe.top, Math.max(1, Math.floor(h / 3)));
+  const navH = Math.min((short ? PANEL.navHeightShort : PANEL.navHeight) + safe.bottom, Math.max(1, Math.floor(h / 3)));
+  const nav = { x: 0, y: h - navH, w, h: navH };
+  const screen = { x: 0, y: hudHeight, w, h: Math.max(1, h - navH - hudHeight) };
+  const above = h - navH;
   if (h >= w) {
-    const navH = Math.min(PANEL.navHeight + safe.bottom, Math.max(1, h - 160));
-    const panelH = Math.max(1, Math.min(h - navH - 120, clamp(h * PANEL.portraitShare, PANEL.portraitMin, PANEL.portraitMax)));
-    const stageH = Math.max(1, h - panelH - navH);
-    const sheetY = Math.min(stageH, Math.max(hudHeight, Math.round(h - navH - h * PANEL.sheetPortraitShare)));
+    const panelH = Math.max(1, Math.min(above - PANEL.portraitStageMin, clamp(Math.round(above * PANEL.portraitShare), PANEL.portraitMin, PANEL.portraitMax)));
+    const stageH = Math.max(1, above - panelH);
     return {
       orientation: 'portrait',
       width: w,
       height: h,
       stage: { x: 0, y: 0, w, h: stageH },
       panel: { x: 0, y: stageH, w, h: panelH },
-      nav: { x: 0, y: h - navH, w, h: navH },
-      sheet: { x: 0, y: sheetY, w, h: Math.max(1, h - navH - sheetY) },
+      nav,
+      screen,
       hudHeight,
       safe,
     };
   }
-  const panelW = Math.max(1, Math.min(w - 160, clamp(w * PANEL.landscapeShare, PANEL.landscapeMin, PANEL.landscapeMax) + safe.right));
-  const navH = Math.min(PANEL.navHeight + safe.bottom, Math.max(1, h - 120));
-  const panel = { x: w - panelW, y: 0, w: panelW, h: Math.max(1, h - navH) };
+  const panelW = Math.max(1, Math.min(w - PANEL.landscapeStageMin, clamp(Math.round(w * PANEL.landscapeShare), PANEL.landscapeMin, PANEL.landscapeMax) + safe.right));
   return {
     orientation: 'landscape',
     width: w,
     height: h,
-    stage: { x: 0, y: 0, w: Math.max(1, w - panelW), h },
-    panel,
-    nav: { x: w - panelW, y: h - navH, w: panelW, h: navH },
-    sheet: { ...panel },
+    stage: { x: 0, y: 0, w: Math.max(1, w - panelW), h: Math.max(1, above) },
+    panel: { x: w - panelW, y: hudHeight, w: panelW, h: Math.max(1, above - hudHeight) },
+    nav,
+    screen,
     hudHeight,
     safe,
   };
@@ -104,14 +109,15 @@ export function readSafeInsets(doc: Document): Insets {
 export function applyLayout(appRoot: HTMLElement, layout: Layout): void {
   appRoot.classList.toggle('portrait', layout.orientation === 'portrait');
   appRoot.classList.toggle('landscape', layout.orientation === 'landscape');
-  appRoot.classList.toggle('panel-narrow', layout.orientation === 'landscape' && layout.panel.w < PANEL.narrowPanel);
-  // A short portrait panel (iPhone SE) keeps the deal and the actions; the title and the side community buttons step aside (pause has them).
-  appRoot.classList.toggle('panel-short', layout.orientation === 'portrait' && layout.panel.h < PANEL.shortPanel);
-  const size = layout.orientation === 'portrait' ? layout.panel.h : layout.panel.w;
-  appRoot.style.setProperty('--panel-size', `${size}px`);
-  appRoot.style.setProperty('--hud-height', `${layout.hudHeight}px`);
-  appRoot.style.setProperty('--nav-size', `${layout.nav.h}px`);
-  appRoot.style.setProperty('--sheet-top', `${layout.sheet.y}px`);
+  const set = (name: string, px: number): void => appRoot.style.setProperty(name, `${px}px`);
+  set('--hud-height', layout.hudHeight);
+  set('--nav-size', layout.nav.h);
+  set('--panel-x', layout.panel.x);
+  set('--panel-y', layout.panel.y);
+  set('--panel-w', layout.panel.w);
+  set('--panel-h', layout.panel.h);
+  set('--stage-w', layout.stage.w);
+  set('--stage-h', layout.stage.h);
 }
 
 /** Recomputes on every size change (resize, rotation, address bar); calls cb at once and after each change. */

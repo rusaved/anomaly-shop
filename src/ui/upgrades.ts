@@ -12,6 +12,8 @@ export interface UpgradeLookups {
   upgrade(id: string): UpgradeData | undefined;
   /** Tier colors grey to red (Q-022, style.json rarity): the dash under an upgrade shows how far it is levelled. */
   tierColors?: readonly string[];
+  /** After it closes (the Shop tab hands the bar back to the home screen). */
+  onClose?(): void;
 }
 
 export interface UpgradesWindow {
@@ -84,6 +86,7 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
     close() {
       overlay.hide();
       game.seenShop();
+      look.onClose?.();
     },
     render() {
       if (!overlay.isOpen() && built) return;

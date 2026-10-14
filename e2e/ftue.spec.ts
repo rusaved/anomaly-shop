@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import { closeHatch, collectErrors, events, mockViolations, open, state } from './helpers.ts';
+import { buyEggAtHome, closeHatch, collectErrors, events, listFromInventory, mockViolations, open, sellInChat, state } from './helpers.ts';
 
 /**
- * M1-09: the first minute (docs/01, section 4) on the phone projects, played by taps on what is visible:
- * tap the egg → feed → sell → buy a new egg → a rare one; every hint on screen is 6 words at most (docs/01, section 9).
+ * M1-09, UB-01, UB-05: the first minute (docs/01, section 4) on the phone projects, played by taps on what is visible:
+ * tap the egg → «To the shop» → feed → a buyer writes → sell in the chat → buy a new egg at home → a rare one; hints 6 words at most.
  */
 interface Targets {
   incubators: Array<{ x: number; y: number }>;
@@ -40,13 +40,16 @@ test('M1-09 first minute: hints up to 6 words lead from the starter egg to a rar
     const t = await targets(page);
     if (s.ftue === 'tapEgg' || s.ftue === 'hatchRare') await tapAt(t.incubators[0]!);
     else if (s.ftue === 'feed') await tapAt(t.slots[0]!);
-    else if (s.ftue === 'sell') await page.locator('[data-action=sell]').tap();
-    else if (s.ftue === 'buyEgg') await page.locator('[data-action=buy-egg]').tap();
+    else if (s.ftue === 'list') await listFromInventory(page);
+    else if (s.ftue === 'sell') await sellInChat(page);
+    else if (s.ftue === 'buyEgg') await buyEggAtHome(page);
+    // The scene is on the home screen: back to it after a tab.
+    if (s.ftue === 'sell' || s.ftue === 'list') await page.locator('[data-tab=eggs]').click();
     await page.waitForTimeout(220);
   }
   const end = await st(page);
   expect(end.ftue).toBeNull();
-  expect(seenSteps.filter((x) => x !== 'waitCustomer')).toEqual(['tapEgg', 'feed', 'sell', 'buyEgg', 'hatchRare']);
+  expect(seenSteps.filter((x) => x !== 'waitCustomer' && x !== 'list')).toEqual(['tapEgg', 'feed', 'sell', 'buyEgg', 'hatchRare']);
   expect(end.stats.deals).toBe(1);
   expect(end.rarities).toContain('valuable');
   for (const h of hints) expect(h.split(/\s+/).length, h).toBeLessThanOrEqual(6);

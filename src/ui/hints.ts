@@ -9,7 +9,7 @@ export interface HintDeps {
   t(key: string): string;
   anchors(): ShopAnchors | null;
   canvas: HTMLElement;
-  /** Where panel buttons live (data-action targets). */
+  /** Where the buttons live (data-action targets): the whole UI layer. */
   panel: HTMLElement;
   /** Top of the free stage area (below the HUD). */
   topInset(): number;
@@ -64,7 +64,12 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       const a = deps.anchors();
       const target = hint.target;
       if (target.kind === 'button') {
-        button = deps.panel.querySelector(`[data-action="${target.action}"]`);
+        // «a|b»: the first of the hooks that is on screen now (UB-01: a card button, else the tile that opens it).
+        button =
+          target.action
+            .split('|')
+            .map((action) => deps.panel.querySelector<HTMLElement>(`[data-action="${action}"]`))
+            .find((el) => el !== null && el.offsetParent !== null) ?? null;
         if (!button) return;
         const b = button.getBoundingClientRect();
         x = b.left + b.width / 2 - base.left;

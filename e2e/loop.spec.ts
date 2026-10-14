@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { closeHatch, collectErrors, mockViolations, open, state } from './helpers.ts';
+import { closeHatch, collectErrors, listFromInventory, mockViolations, open, sellInChat, state } from './helpers.ts';
 
 /** M1 loop on the desktop project: F5 after a deal (SAV), an upgrade survives a reload (M1-08), English texts in the panel. */
 type S = Awaited<ReturnType<typeof state>> & { ftue: string | null; stats: { deals: number }; upgrades: Record<string, number>; incubators: unknown[] };
@@ -15,7 +15,9 @@ async function playToFirstDeal(page: Page): Promise<void> {
     const t = await targets(page);
     if (s.ftue === 'tapEgg') await page.mouse.click(t.incubators[0]!.x, t.incubators[0]!.y);
     else if (s.ftue === 'feed') await page.mouse.click(t.slots[0]!.x, t.slots[0]!.y);
-    else if (s.ftue === 'sell') await page.locator('[data-action=sell]').click();
+    else if (s.ftue === 'list') await listFromInventory(page);
+    else if (s.ftue === 'sell') await sellInChat(page);
+    if (s.ftue === 'list' || s.ftue === 'sell') await page.locator('[data-tab=eggs]').click();
     await page.waitForTimeout(200);
   }
   throw new Error('no deal within the time');
@@ -45,7 +47,7 @@ test('M1-08 the upgrade shop: buying the second incubator changes the shop and s
   const errors = collectErrors(page);
   await open(page);
   await page.evaluate(() => (window as unknown as { __TEST__: { grant(n: number): void } }).__TEST__.grant(60));
-  await page.locator('[data-action=upgrades]').click();
+  await page.locator('[data-tab=shop]').click();
   await expect(page.locator('[data-overlay=upgrades] .shop-item')).toHaveCount(2);
   await page.locator('[data-upgrade=incubator] [data-action=buy-upgrade]').click();
   await page.locator('[data-overlay=upgrades] [data-action=back]').click();
@@ -61,11 +63,14 @@ test('M1-08 the upgrade shop: buying the second incubator changes the shop and s
   expect(errors).toEqual([]);
 });
 
-test('LOC-03 English: the deal card, the action buttons and the upgrade shop have no Russian text', async ({ page }) => {
+test('LOC-03 English: the home screen, the chats, the tab bar and the upgrade shop have no Russian text', async ({ page }) => {
   await open(page, '?mock_lang=en');
   await playToFirstDeal(page);
-  const panel = await page.locator('#panel').innerText();
-  expect(panel.replace(/ВКонтакте/g, '')).not.toMatch(/[Ѐ-ӿ]/);
-  await page.locator('[data-action=upgrades]').click();
+  const home = await page.locator('[data-sheet=eggs]').innerText();
+  expect(home.replace(/ВКонтакте/g, '')).not.toMatch(/[Ѐ-ӿ]/);
+  expect(await page.locator('#nav').innerText()).not.toMatch(/[Ѐ-ӿ]/);
+  await page.locator('[data-tab=chats]').click();
+  expect(await page.locator('[data-sheet=chats]').innerText()).not.toMatch(/[Ѐ-ӿ]/);
+  await page.locator('[data-tab=shop]').click();
   expect(await page.locator('[data-overlay=upgrades]').innerText()).not.toMatch(/[Ѐ-ӿ]/);
 });

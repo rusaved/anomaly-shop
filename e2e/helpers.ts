@@ -115,3 +115,27 @@ export async function closeHatch(page: Page): Promise<boolean> {
   await toShop.click();
   return true;
 }
+
+/** UB-05: the only way to sell — the Chats tab → the oldest chat → «Sell for N». */
+export async function sellInChat(page: Page): Promise<void> {
+  await page.locator('[data-tab=chats]').click();
+  const sell = page.locator('[data-sheet=chats] [data-action=chat-sell]');
+  if (!(await sell.isVisible())) await page.locator('[data-sheet=chats] .chat-row:not(.closed)').last().click();
+  await sell.click();
+}
+
+/** UB-01: eggs are bought on the home screen — the egg's tile, then «Buy» in its card. */
+export async function buyEggAtHome(page: Page, egg = 'egg_basic'): Promise<void> {
+  await page.locator('[data-tab=eggs]').click();
+  const buy = page.locator('[data-action=egg-buy-1]');
+  if (!(await buy.isVisible())) await page.locator(`[data-action=egg-card-${egg}]`).click();
+  await buy.click();
+}
+
+/** UB-03: a creature waiting in the inventory goes on the shelf through «My sales». */
+export async function listFromInventory(page: Page): Promise<void> {
+  await page.locator('[data-tab=sales]').click();
+  await page.locator('[data-sheet=sales] [data-action=sale-add]').first().click();
+  await page.locator('[data-sheet=sales] [data-action^=sale-list-]').first().click();
+}
+

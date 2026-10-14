@@ -62,69 +62,11 @@
   box-shadow: inset 0 0 0 4px var(--c-counterTop), inset 0 0 0 6px var(--c-uiAccentText);
 }
 
-/* Orientation layout (docs/02-tech.md, section 4.4): --panel-size and --hud-height are set by src/ui/layout.ts */
+/* Orientation layout (docs/02-tech.md, section 4.4; UB-01): --hud-height, --nav-size, --panel-* and --stage-* are set by src/ui/layout.ts */
 .hud {
   height: var(--hud-height, 60px);
   padding-top: calc(8px + var(--safe-top));
   padding-bottom: 0;
-}
-.landscape .hud {
-  right: var(--panel-size, 0px);
-}
-#panel {
-  position: absolute;
-  pointer-events: auto;
-  background: var(--c-uiPanel);
-  color: var(--c-uiText);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow: hidden;
-  box-shadow: 0 -2px 0 var(--c-outline);
-}
-.portrait #panel {
-  left: 0;
-  right: 0;
-  bottom: var(--nav-size, 0px);
-  height: var(--panel-size);
-  border-radius: 22px 22px 0 0;
-  padding: 12px calc(14px + var(--safe-right)) 8px calc(14px + var(--safe-left));
-}
-.landscape #panel {
-  top: 0;
-  bottom: var(--nav-size, 0px);
-  right: 0;
-  width: var(--panel-size);
-  border-radius: 22px 0 0 22px;
-  padding: calc(12px + var(--safe-top)) calc(14px + var(--safe-right)) 8px 14px;
-  box-shadow: -2px 0 0 var(--c-outline);
-}
-.panel-title {
-  font-weight: 700;
-  font-size: 13px;
-  line-height: 1.2;
-  color: var(--c-uiMuted);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  flex: 0 0 auto;
-}
-.panel-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.panel-side {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
 }
 
 /* Buttons, overlays and windows */
@@ -271,40 +213,8 @@
   pointer-events: none;
 }
 
-/* M1: actions row, egg buttons, toasts */
-.actions,
-.actions-eggs {
-  display: flex;
-  gap: 8px;
-}
-.actions-eggs {
-  flex: 2 1 0;
-  min-width: 0;
-}
-.actions .btn {
-  flex: 1 1 0;
-  min-width: 0;
-  gap: 6px;
-  padding: 0 10px;
-  white-space: nowrap;
-  position: relative;
-}
-.actions[data-eggs='1'] .actions-eggs {
-  flex: 1 1 0;
-}
-.actions:not([data-eggs='1']) {
-  flex-wrap: wrap;
-}
-.actions:not([data-eggs='1']) .actions-eggs,
-.actions:not([data-eggs='1']) .btn-upgrades {
-  flex: 1 1 100%;
-}
-.actions .btn .dot {
-  width: 10px;
-  height: 10px;
-  top: 4px;
-  right: 4px;
-}
+/* M1: disabled buttons, prices, toasts */
+
 .btn[aria-disabled='true'] {
   filter: saturate(0.3);
   opacity: 0.5;
@@ -321,14 +231,7 @@
   height: 16px;
   box-shadow: inset 0 0 0 3px var(--c-counterTop), inset 0 0 0 4px var(--c-uiAccentText);
 }
-.egg-icon {
-  width: 16px;
-  height: 20px;
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  background: var(--c-egg);
-  box-shadow: inset -3px -3px 0 var(--c-eggSpots), 0 0 0 2px var(--c-outline);
-  flex: 0 0 auto;
-}
+
 .toasts {
   position: absolute;
   left: 0;
@@ -342,7 +245,7 @@
   z-index: 20;
 }
 .landscape .toasts {
-  width: calc(100% - var(--panel-size, 0px));
+  width: var(--stage-w, 100%);
 }
 .toast {
   max-width: calc(100% - 32px);
@@ -382,100 +285,6 @@
   }
 }
 
-/* M1: deal card */
-.deal {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 12px;
-  border-radius: 14px;
-  background: var(--c-uiPanelAlt);
-  min-height: 58px;
-  justify-content: center;
-}
-.deal-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--c-uiMuted);
-  min-height: 18px;
-}
-.deal-avatar {
-  width: 18px;
-  height: 18px;
-  border-radius: 50% 50% 40% 40%;
-  background: var(--c-queueSpot);
-  box-shadow: 0 0 0 2px var(--c-outline);
-  flex: 0 0 auto;
-}
-.deal[data-deal='idle'] .deal-avatar,
-.deal[data-deal='next'] .deal-avatar {
-  visibility: hidden;
-}
-.deal-who {
-  font-weight: 700;
-  color: var(--c-uiText);
-}
-.deal-queue {
-  margin-left: auto;
-  font-size: 13px;
-}
-.deal-text {
-  font-size: 16px;
-  line-height: 1.25;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.deal-text .price {
-  color: var(--c-uiAccent);
-  margin: 0 2px;
-}
-
-/* M1: deal buttons (portrait: one row; landscape: Sell on its own row) */
-.deal-actions {
-  display: grid;
-  grid-template-columns: 1.45fr 1fr 1fr;
-  gap: 8px;
-  margin-top: 4px;
-}
-.deal-actions .btn {
-  padding: 0 8px;
-  gap: 6px;
-  font-size: 16px;
-  min-width: 0;
-  white-space: nowrap;
-}
-.panel-narrow .deal-actions {
-  grid-template-columns: 1fr 1fr;
-}
-.panel-narrow .deal-actions .btn-sell {
-  grid-column: 1 / -1;
-}
-.btn-two {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.05;
-}
-.btn-two small {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--c-uiMuted);
-}
-.deal.bump {
-  animation: deal-bump 0.35s ease-out;
-}
-@keyframes deal-bump {
-  30% {
-    transform: scale(1.04);
-    background: var(--c-uiGood);
-  }
-}
-
 /* M1-07: coins flying to the HUD, HUD pulse */
 .coin-flight {
   position: absolute;
@@ -504,17 +313,7 @@
 }
 
 /* M1-08: upgrades button and shop window */
-.btn-upgrades {
-  position: relative;
-}
-.up-icon {
-  width: 0;
-  height: 0;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-bottom: 10px solid var(--c-uiGood);
-  flex: 0 0 auto;
-}
+
 .dot {
   position: absolute;
   top: 5px;
@@ -665,36 +464,6 @@
 }
 
 /* Playtest M1: reasons on grey eggs, tighter Sell in landscape */
-.btn-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.btn-egg .btn-two small {
-  color: inherit;
-  opacity: 0.85;
-}
-.landscape .deal-actions .btn {
-  font-size: 15px;
-  padding: 0 6px;
-  gap: 4px;
-}
-.deal-who {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.deal-queue {
-  white-space: nowrap;
-  flex: 0 0 auto;
-}
-.deal-share {
-  white-space: nowrap;
-  color: var(--c-uiAccent);
-  font-weight: 700;
-  flex: 0 0 auto;
-}
 
 /* M2-04: «while you were away» */
 .card-away {
@@ -729,37 +498,8 @@
 }
 
 /* M2-05: three or four eggs in the row — the colored icon and the price tell them apart (the name is in the title) */
-.actions[data-eggs='3'] .btn-egg [data-label],
-.actions[data-eggs='4'] .btn-egg [data-label] {
-  display: none;
-}
-.actions[data-eggs='3'] .btn-egg,
-.actions[data-eggs='4'] .btn-egg {
-  padding: 0 6px;
-  gap: 4px;
-}
-.actions[data-eggs='3'] .btn-egg [data-why],
-.actions[data-eggs='4'] .btn-egg [data-why] {
-  display: none;
-}
 
 /* M2-05: Sell keeps any price (1 500, 12 000) — label over the price */
-.btn-sell .btn-two {
-  gap: 1px;
-}
-.btn-sell .sell-label {
-  font-size: 13px;
-}
-.btn-sell .price {
-  font-size: 17px;
-}
-.actions[data-eggs='3'] .btn-egg .coin,
-.actions[data-eggs='4'] .btn-egg .coin {
-  display: none;
-}
-.actions[data-eggs='4'] .btn-egg {
-  font-size: 15px;
-}
 
 /* M2-08: crystals — second currency chip next to the coins; gem icon also on crystal prices */
 .hud-left {
@@ -834,29 +574,7 @@
 .shop-icon-autoBuyEgg { background: var(--c-uiAccent); box-shadow: 0 0 0 3px var(--c-outline); }
 
 /* M2-13: two action rows — eggs; Upgrades + the «Next» card (the nearest goal, a bar, «N more») */
-.actions {
-  flex-direction: column;
-  flex-wrap: nowrap;
-}
-.actions .actions-eggs,
-.actions:not([data-eggs='1']) .actions-eggs {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 8px;
-}
-.actions-more {
-  display: flex;
-  gap: 8px;
-  min-width: 0;
-}
-.actions .actions-more .btn-upgrades,
-.actions:not([data-eggs='1']) .actions-more .btn-upgrades {
-  flex: 0 0 auto;
-  padding: 0 14px;
-}
-.actions-more:has(.next[hidden]) .btn-upgrades {
-  flex: 1 1 auto;
-}
+
 .next {
   position: relative;
   flex: 1 1 auto;
@@ -963,29 +681,9 @@
 .next-left {
   font-size: 11px;
 }
-.panel-short .panel-title,
-.portrait .panel-side,
-.panel-short .panel-side {
-  display: none;
-}
+
 /* Four eggs in a narrow row (landscape phones, SE): tighter buttons */
-.actions[data-eggs='4'] .actions-eggs {
-  gap: 6px;
-}
-.actions[data-eggs='4'] .btn-egg {
-  padding: 0 4px;
-  font-size: 14px;
-}
-.actions[data-eggs='4'] .btn-egg .egg-icon {
-  width: 13px;
-  height: 17px;
-}
-.panel-body > * {
-  flex-shrink: 0;
-}
-.actions-more {
-  width: 100%;
-}
+
 .next-text small {
   white-space: nowrap;
   overflow: hidden;
@@ -1003,8 +701,7 @@
   line-height: 1.2;
   color: var(--c-uiMuted);
 }
-.news[hidden],
-.panel-title[hidden] {
+.news[hidden] {
   display: none;
 }
 .news-tag {
@@ -1055,9 +752,7 @@
     animation: none;
   }
 }
-.panel-short .news {
-  display: none;
-}
+
 /* A narrow «Next» card (landscape phones) keeps «N more coins» and drops the «Next ·» label */
 .landscape .next [data-next-label],
 .landscape .next .next-sep {
@@ -1071,15 +766,6 @@
   box-shadow: inset -5px -5px 0 rgba(0, 0, 0, 0.12), 0 0 0 3px var(--c-outline);
   margin: 0 5px;
 }
-/* iPhone SE: the deal text keeps to one line so both action rows stay on screen */
-.panel-short .deal-text {
-  -webkit-line-clamp: 1;
-  font-size: 14px;
-}
-.panel-short .deal {
-  padding: 6px 10px;
-}
-
 /* M2 playtest: the upgrade shop keeps its head (title, wallet) and Back in sight; only the list scrolls */
 .card-shop {
   overflow: hidden;
@@ -1113,44 +799,34 @@
   background: var(--c-uiPanelAlt);
   font-variant-numeric: tabular-nums;
 }
-/* Three or four eggs on a wide panel (PC): the reason under a grey egg is back */
-.actions {
-  container-type: inline-size;
-}
-@container (min-width: 380px) {
-  .actions[data-eggs='3'] .btn-egg [data-why]:not([hidden]),
-  .actions[data-eggs='4'] .btn-egg [data-why]:not([hidden]) {
-    display: block;
-  }
-}
 
 /* M3-03: the tab bar of the genre standard (docs/01 §6) and the sheets of the tabs. */
+/* UB-01: one tab bar, the whole width at the bottom in every orientation; above every window (a tab works from any of them, UB-02). */
 .nav {
   position: absolute;
-  z-index: 6;
+  z-index: 40;
+  left: 0;
+  right: 0;
   bottom: 0;
-  height: var(--nav-size, 58px);
+  height: var(--nav-size, 62px);
   display: flex;
   justify-content: space-around;
-  align-items: flex-start;
+  align-items: stretch;
   padding: 0 calc(2px + var(--safe-right)) var(--safe-bottom) calc(2px + var(--safe-left));
   background: var(--c-uiPanelAlt);
   box-shadow: 0 -2px 0 var(--c-outline);
   pointer-events: auto;
 }
-.portrait .nav {
-  left: 0;
-  right: 0;
-}
 .landscape .nav {
-  right: 0;
-  width: var(--panel-size);
+  padding-left: calc(10% + var(--safe-left));
+  padding-right: calc(10% + var(--safe-right));
 }
 .nav-tab {
   position: relative;
-  flex: 1 1 0;
-  height: 58px;
-  min-width: 0;
+  /* Content-wide tabs share what is left: every label fits at 12 px on a 320 px phone. */
+  flex: 1 1 auto;
+  padding: 0 2px;
+  min-width: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1166,15 +842,29 @@
   height: 24px;
   display: block;
 }
-.landscape .nav-label {
-  font-size: 9px;
-}
 .nav-label {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.1;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   white-space: nowrap;
+}
+.nav-label-short {
+  display: none;
+}
+/* A 320 px phone: the tabs shrink to their labels (still 12 px). */
+@media (max-width: 340px) {
+  .nav-tab {
+    min-width: 0;
+  }
+}
+@media (max-width: 460px) {
+  .nav-label-full {
+    display: none;
+  }
+  .nav-label-short {
+    display: block;
+  }
 }
 .nav-tab[data-tab='eggs'] .nav-icon {
   display: grid;
@@ -1230,23 +920,38 @@
 .sheet[hidden] {
   display: none;
 }
-.portrait .sheet {
-  left: 0;
-  right: 0;
-  top: var(--sheet-top, 30%);
-  bottom: var(--nav-size, 58px);
+/* UB-01: «Eggs» is the home panel next to the shop (below in portrait, right in landscape); another tab is a screen of its own. */
+.sheet[data-kind='home'] {
+  left: var(--panel-x, 0px);
+  top: var(--panel-y, 50%);
+  width: var(--panel-w, 100%);
+  height: var(--panel-h, 50%);
+}
+.portrait .sheet[data-kind='home'] {
   border-radius: 22px 22px 0 0;
   box-shadow: 0 -2px 0 var(--c-outline);
   padding: 10px calc(12px + var(--safe-right)) 8px calc(12px + var(--safe-left));
 }
-.landscape .sheet {
+.landscape .sheet[data-kind='home'] {
+  border-radius: 22px 0 0 0;
+  box-shadow: -2px -2px 0 var(--c-outline);
+  padding: 10px calc(12px + var(--safe-right)) 8px 12px;
+}
+.sheet[data-kind='screen'] {
+  left: 0;
   right: 0;
-  top: 0;
-  width: var(--panel-size);
-  bottom: var(--nav-size, 58px);
-  border-radius: 22px 0 0 22px;
-  box-shadow: -2px 0 0 var(--c-outline);
-  padding: calc(10px + var(--safe-top)) calc(12px + var(--safe-right)) 8px 12px;
+  top: var(--hud-height, 56px);
+  bottom: var(--nav-size, 62px);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -2px 0 var(--c-outline);
+  padding: 10px calc(12px + var(--safe-right)) 8px calc(12px + var(--safe-left));
+}
+/* A screen on a wide display keeps its lines readable: the content is centred, not stretched. */
+.sheet[data-kind='screen'] > * {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .sheet-top {
   display: flex;
@@ -1262,15 +967,6 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-.sheet-close {
-  width: 44px;
-  height: 44px;
-  margin: -6px -6px -6px 0;
-  border-radius: 50%;
-  font-size: 26px;
-  line-height: 1;
-  color: var(--c-uiMuted);
 }
 .sheet-head:empty {
   display: none;
@@ -1426,16 +1122,19 @@
   right: 6px;
 }
 .btn-small {
-  min-height: 32px;
-  padding: 0 10px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 2px 10px;
   border-radius: 16px;
   background: var(--c-uiAccent);
   color: var(--c-uiAccentText);
   font-size: 13px;
   font-weight: 700;
   display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
-  gap: 4px;
+  gap: 2px 4px;
 }
 .eggs-back {
   min-height: 36px;
@@ -1968,26 +1667,19 @@
 .landscape [data-overlay='settings'] .card h2 {
   margin: 0;
 }
-/* M3-17: the upgrade shop is a side panel — the shop stays in view (portrait: above it; landscape and desktop: to the left). */
+/* M3-17, UB-04: the upgrade shop is a panel from the right over the home panel — the shop stays in view (portrait: above it;
+   landscape and desktop: to the left). */
 .overlay[data-overlay='upgrades'] {
   inset: auto;
+  left: var(--panel-x, 0px);
+  top: var(--panel-y, 50%);
+  width: var(--panel-w, 100%);
+  height: var(--panel-h, 50%);
   padding: 0;
   background: transparent;
   z-index: 7;
   align-items: stretch;
   animation: panel-in 0.22s ease-out;
-}
-.portrait .overlay[data-overlay='upgrades'] {
-  left: 0;
-  right: 0;
-  top: var(--sheet-top, 30%);
-  bottom: var(--nav-size, 58px);
-}
-.landscape .overlay[data-overlay='upgrades'] {
-  right: 0;
-  top: 0;
-  bottom: var(--nav-size, 58px);
-  width: var(--panel-size);
 }
 .overlay[data-overlay='upgrades'] .card {
   width: 100%;
@@ -1997,12 +1689,12 @@
   box-shadow: 0 -2px 0 var(--c-outline);
 }
 .landscape .overlay[data-overlay='upgrades'] .card {
-  border-radius: 22px 0 0 22px;
-  box-shadow: -2px 0 0 var(--c-outline);
+  border-radius: 22px 0 0 0;
+  box-shadow: -2px -2px 0 var(--c-outline);
 }
 @keyframes panel-in {
   from {
-    transform: translateY(24px);
+    transform: translateX(40px);
     opacity: 0;
   }
 }
@@ -2018,4 +1710,13 @@
   bottom: -6px;
   height: 4px;
   border-radius: 2px;
+}
+
+/* UB-01: the end of the home panel — the community buttons (Q-007: two small buttons with a caption on the main screen). */
+.home-foot {
+  margin-top: 16px;
+  padding-bottom: 8px;
+}
+.home-foot:empty {
+  display: none;
 }

@@ -7,6 +7,7 @@ import { FLAGS, type GameView } from './game.ts';
 
 export type FtueStep = 'tapEgg' | 'list' | 'feed' | 'waitCustomer' | 'sell' | 'buyEgg' | 'hatchRare';
 
+/** A button target names data-action hooks; «a|b» — the first one on screen (a card button, else the tile that opens the card). */
 export type FtueTarget = { kind: 'incubator'; index: number } | { kind: 'slot'; index: number } | { kind: 'queue' } | { kind: 'button'; action: string };
 
 export interface FtueHint {
@@ -28,7 +29,8 @@ export function ftueHint(state: SaveData, view: GameView): FtueHint | null {
     if (view.creatures.length > 0) return { step: 'waitCustomer', target: { kind: 'queue' } };
     return view.inventory.length > 0 ? { step: 'list', target: { kind: 'button', action: 'tab-sales' } } : null;
   }
-  if (!state.flags[FLAGS.bought]) return { step: 'buyEgg', target: { kind: 'button', action: 'buy-egg' } };
+  // UB-01: the egg shop is the home screen — the basic egg's tile, then «Buy» in its card.
+  if (!state.flags[FLAGS.bought]) return { step: 'buyEgg', target: { kind: 'button', action: 'egg-buy-1|egg-card-egg_basic' } };
   if (state.stats.hatched < 2 && eggAt >= 0) return { step: 'hatchRare', target: { kind: 'incubator', index: eggAt } };
   return null;
 }

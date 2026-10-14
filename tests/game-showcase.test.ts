@@ -96,10 +96,10 @@ describe('M2-02 showcase', () => {
     expect(rare).toBeGreaterThan(plain * 1.3);
   });
 
-  it('8 and 9 places fit the wall on phones and PC; the tap zone (place + gap) is 44 px, 40 on a 320 px phone', () => {
+  it('1 to 7 places (Q-024 B: 1 + 5 levels + the stool) fit the wall on phones and PC; the tap zone (place + gap) is 44 px, 40 on a 320 px phone', () => {
     for (const [w, h] of [[375, 812], [812, 375], [320, 568], [1280, 720]] as const) {
       const page = computeLayout(w, h);
-      for (const n of [3, 4, 5, 8, 9]) {
+      for (const n of [1, 3, 5, 6, 7]) {
         const l = computeShopLayout(page.stage, page.hudHeight, 0.34, 4, 18, 4, n);
         expect(l.slots).toHaveLength(n);
         for (const s of l.slots) {

@@ -28,6 +28,8 @@ const run = (game: Game, sec: number): void => {
 };
 const arrivals = (deals: number, n = 600) => {
   const { game, seen } = setup(deals);
+  // Coins enough for an egg: no rescue egg, so the showcase stays empty and draws nobody.
+  game.state.coins = 1e6;
   while (seen.filter((e) => e.type === 'customerArrived' && e.customer !== 'golden').length < n) {
     run(game, 1);
     if (game.deal()) game.wait();

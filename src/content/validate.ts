@@ -15,6 +15,7 @@ import {
   NewsFile,
   EventsFile,
   SecretsFile,
+  LinesFile,
   RARITIES,
   SpeciesFile,
   StyleFile,
@@ -34,7 +35,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json'] as const;
 /** Lines players read in the scene and the panel (news, creature and customer lines): no full stop at the end (docs/01a, section 8). */
 const TRAILING_STOP = /[.。]$/;
 /** Long dashes stay out of player texts (producer's style rule). */
@@ -99,6 +100,11 @@ function checkCustomers(customers: CustomersData, errors: string[]): void {
     if (d.unlock.type === 'district') errors.push(`customers.json: districts.${i}.unlock — a district cannot unlock by district`);
   });
   if (!customers.districts.some((d) => d.unlock.type === 'start')) errors.push('customers.json: districts — no district is open at start');
+  if (customers.people.names.length < 20) errors.push(`customers.json: people.names — ${customers.people.names.length} names, 20 at least (M2-18)`);
+  duplicates('customers.json', 'people.names', customers.people.names.map((n) => n.ru), errors);
+  customers.people.names.forEach((n, i) => {
+    if (CYRILLIC.test(n.en)) errors.push(`customers.json: people.names.${i}.en — Cyrillic in the English text`);
+  });
 }
 
 function checkUpgrades(upgrades: UpgradesData, eggs: EggsData | null, errors: string[]): void {
@@ -218,6 +224,26 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   const news = parseFile('news.json', NewsFile, data(files['news.json']), errors);
   const events = parseFile('events.json', EventsFile, data(files['events.json']), errors);
   const secrets = parseFile('secrets.json', SecretsFile, data(files['secrets.json']), errors);
+  const lines = parseFile('lines.json', LinesFile, data(files['lines.json']), errors);
+  if (lines) {
+    // Every species and every customer type speaks; lines are short, end without a full stop, ru and en side by side (parity by design).
+    if (species) for (const s of species.species) if (!lines.creatures[s.id]) errors.push(`lines.json: creatures.${s.id} — no lines for this species`);
+    if (customers) for (const d of customers.districts) if (!lines.customers[d.customer.id]) errors.push(`lines.json: customers.${d.customer.id} — no lines for this customer type`);
+    const check = (path: string, pool: Array<{ ru: string; en: string }>): void => {
+      pool.forEach((line, i) => {
+        for (const lang of ['ru', 'en'] as const) {
+          const text = line[lang];
+          const words = text.trim().split(/\s+/).length;
+          if (words > lines.maxWords) errors.push(`lines.json: ${path}.${i}.${lang} — ${words} words, ${lines.maxWords} at most`);
+          if (TRAILING_STOP.test(text)) errors.push(`lines.json: ${path}.${i}.${lang} — no full stop at the end`);
+          if (LONG_DASH.test(text)) errors.push(`lines.json: ${path}.${i}.${lang} — no long dash in player texts`);
+        }
+        if (CYRILLIC.test(line.en)) errors.push(`lines.json: ${path}.${i}.en — Cyrillic in the English text`);
+      });
+    };
+    for (const [id, set] of Object.entries(lines.creatures)) for (const [ctx, pool] of Object.entries(set)) check(`creatures.${id}.${ctx}`, pool);
+    for (const [id, set] of Object.entries(lines.customers)) for (const [ctx, pool] of Object.entries(set)) check(`customers.${id}.${ctx}`, pool);
+  }
   if (secrets) duplicates('secrets.json', 'secrets', secrets.secrets.map((x) => x.id), errors);
   if (events) {
     duplicates('events.json', 'events', events.events.map((e) => e.id), errors);

@@ -45,6 +45,8 @@ export interface ShopView {
   anchors(): ShopAnchors | null;
   /** Stage point above a customer (coin flights start there). */
   customerPoint(id: number): { x: number; y: number } | null;
+  /** A line over a creature (by uid) or a customer (by id), M2-17; nothing when it is not on the scene. */
+  speak(who: { uid: string } | { customerId: number }, line: string): void;
 }
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
@@ -133,7 +135,6 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   lampBox.addChild(lampG);
   const disco = new Graphics();
   disco.alpha = 0;
-  let thingsKey = '';
   let signSwing = 0;
   let badgeHop = 0;
   let signGlow = false;
@@ -388,52 +389,72 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     }
   }
 
-  // One speech bubble at a time: the creature's line on arrival (and at the sale, M1-06).
-  const bubble = new Container();
-  const bubbleBg = new Graphics();
-  const bubbleText = new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontWeight: '700', fill: c.outline, align: 'center', wordWrap: true } });
-  bubbleText.anchor.set(0.5);
-  bubble.addChild(bubbleBg, bubbleText);
-  bubble.visible = false;
-  root.addChild(bubble);
-  let bubbleLife = 0;
+  // Speech bubbles (M1-06, M2-17): one for the creatures, one for the customers; a new line replaces the old one.
+  interface Bubble {
+    box: Container;
+    bg: Graphics;
+    text: Text;
+    life: number;
+  }
+  function makeBubble(): Bubble {
+    const box = new Container();
+    const bg = new Graphics();
+    const text = new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontWeight: '700', fill: c.outline, align: 'center', wordWrap: true } });
+    text.anchor.set(0.5);
+    box.addChild(bg, text);
+    box.visible = false;
+    root.addChild(box);
+    return { box, bg, text, life: 0 };
+  }
+  const bubble = makeBubble();
+  const talk = makeBubble();
 
-  function say(species: string, at: { x: number; y: number; r: number }, l: ShopLayout): void {
-    const text = deps.line(species);
-    if (!text) return;
+  /** Shows a line over a point (tip toward it); below the point when the top is too close to the HUD. */
+  function showBubble(b: Bubble, line: string, at: { x: number; y: number; r: number }, l: ShopLayout): void {
+    if (!line) return;
     const size = Math.max(13, Math.min(17, l.unit * 0.42));
-    bubbleText.style.fontSize = size;
-    bubbleText.style.wordWrapWidth = Math.min(l.stage.w * 0.6, l.unit * 6);
-    bubbleText.text = text;
-    const w = bubbleText.width + size * 1.4;
-    const h = bubbleText.height + size * 0.9;
+    b.text.style.fontSize = size;
+    b.text.style.wordWrapWidth = Math.min(l.stage.w * 0.6, l.unit * 6);
+    b.text.text = line;
+    const w = b.text.width + size * 1.4;
+    const h = b.text.height + size * 0.9;
     const x = Math.max(l.stage.x + w / 2 + 4, Math.min(l.stage.x + l.stage.w - w / 2 - 4, at.x));
     const below = at.y - at.r * 1.3 - h < l.stage.y + Math.min(l.stage.h * 0.3, hud);
     const y = below ? at.y + at.r * 1.9 + h / 2 : at.y - at.r * 1.3 - h / 2;
-    bubbleBg.clear();
+    const g = b.bg;
+    g.clear();
     const tipX = Math.max(-w / 2 + size, Math.min(w / 2 - size, at.x - x));
-    if (below) bubbleBg.poly([tipX - size * 0.4, -h / 2 + 1, tipX + size * 0.4, -h / 2 + 1, tipX, -h / 2 - size * 0.6]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline, join: 'round' });
-    else bubbleBg.poly([tipX - size * 0.4, h / 2 - 1, tipX + size * 0.4, h / 2 - 1, tipX, h / 2 + size * 0.6]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline, join: 'round' });
-    bubbleBg.roundRect(-w / 2, -h / 2, w, h, Math.min(h / 2, size)).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
-    if (below) bubbleBg.rect(tipX - size * 0.4 + 1, -h / 2 - 1, size * 0.8 - 2, l.outline * 0.8 + 2).fill(c.eyeWhite);
-    else bubbleBg.rect(tipX - size * 0.4 + 1, h / 2 - l.outline * 0.8 - 1, size * 0.8 - 2, l.outline * 0.8 + 2).fill(c.eyeWhite);
-    bubble.position.set(x, y);
-    bubble.visible = true;
-    bubble.alpha = 0;
-    bubbleLife = feel.lineSec;
+    if (below) g.poly([tipX - size * 0.4, -h / 2 + 1, tipX + size * 0.4, -h / 2 + 1, tipX, -h / 2 - size * 0.6]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline, join: 'round' });
+    else g.poly([tipX - size * 0.4, h / 2 - 1, tipX + size * 0.4, h / 2 - 1, tipX, h / 2 + size * 0.6]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline, join: 'round' });
+    g.roundRect(-w / 2, -h / 2, w, h, Math.min(h / 2, size)).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+    if (below) g.rect(tipX - size * 0.4 + 1, -h / 2 - 1, size * 0.8 - 2, l.outline * 0.8 + 2).fill(c.eyeWhite);
+    else g.rect(tipX - size * 0.4 + 1, h / 2 - l.outline * 0.8 - 1, size * 0.8 - 2, l.outline * 0.8 + 2).fill(c.eyeWhite);
+    b.box.position.set(x, y);
+    b.box.visible = true;
+    b.box.alpha = 0;
+    b.life = feel.lineSec;
+  }
+
+  /** The creature's own hatch line (species.json). */
+  function say(species: string, at: { x: number; y: number; r: number }, l: ShopLayout): void {
+    showBubble(bubble, deps.line(species), at, l);
   }
 
   function animateBubble(dt: number): boolean {
-    if (!bubble.visible) return false;
-    bubbleLife -= dt;
-    if (bubbleLife <= 0) {
-      bubble.visible = false;
-      return true;
+    let on = false;
+    for (const b of [bubble, talk]) {
+      if (!b.box.visible) continue;
+      on = true;
+      b.life -= dt;
+      if (b.life <= 0) {
+        b.box.visible = false;
+        continue;
+      }
+      const k = b.life / feel.lineSec;
+      b.box.alpha = k > 0.9 ? (1 - k) / 0.1 : k < 0.15 ? k / 0.15 : 1;
+      b.box.scale.set(k > 0.9 ? 0.85 + 0.15 * ((1 - k) / 0.1) : 1);
     }
-    const k = bubbleLife / feel.lineSec;
-    bubble.alpha = k > 0.9 ? (1 - k) / 0.1 : k < 0.15 ? k / 0.15 : 1;
-    bubble.scale.set(k > 0.9 ? 0.85 + 0.15 * ((1 - k) / 0.1) : 1);
-    return true;
+    return on;
   }
 
   // Offer bubble over the front customer: coin and the price for the selected creature.
@@ -482,10 +503,11 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         node = { box, art, key: '', leaving: false, mood: null, hop: 0 };
         visitors.set(q.id, node);
       }
-      const key = `${q.customer}:${r.toFixed(1)}`;
+      const key = `${q.customer}:${q.outfit}:${q.accessory}:${r.toFixed(1)}`;
       if (node.key !== key) {
         node.key = key;
-        drawCustomer(node.art, q.customer, style.customers[q.customer] ?? { body: c.queueSpot, accent: c.outline }, r, c, l.outline * 0.8);
+        const look = style.customers[q.customer] ?? { body: c.queueSpot, accent: c.outline };
+        drawCustomer(node.art, q.customer, { body: q.outfit || look.body, accent: look.accent }, r, c, l.outline * 0.8, q.accessory);
       }
       const spot = l.queue[Math.min(i, l.queue.length - 1)]!;
       if (step(node, spot.x, spot.y, dt, r)) moving = true;
@@ -658,7 +680,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     departing.length = 0;
     placeLabels(current);
     fx.clear();
-    bubble.visible = false;
+    bubble.box.visible = false;
+    talk.box.visible = false;
     offerKey = '';
     for (const node of visitors.values()) node.key = '';
     invalidate();
@@ -861,14 +884,11 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         }
       } else if (e.type === 'sold') {
         const buyer = visitors.get(e.customerId);
-        const index = slotUids.indexOf(e.uid);
-        const slot = current.slots[index];
         if (buyer) {
           soldTo.set(e.uid, { x: buyer.box.x, y: buyer.box.y - current.unit * 1.2 });
           fx.float(buyer.box.x, buyer.box.y - current.unit * 3, `+${fmt(e.price)}`, c.uiAccent, Math.max(18, current.unit * 0.7), current.unit * 1.1);
           if (e.crystals > 0) fx.float(buyer.box.x + current.unit * 0.9, buyer.box.y - current.unit * 2.2, `+${e.crystals}◆`, c.rarityRare, Math.max(16, current.unit * 0.55), current.unit * 1.0);
         }
-        if (slot) say(e.species, slotCenter(slot), current);
       } else if (e.type === 'haggled' && e.result === 'up') {
         const buyer = visitors.get(e.customerId);
         offerPulse = 0.3;
@@ -932,6 +952,18 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     relabel() {
       texts.showcase.text = t('shop.showcase');
       texts.queue.text = t('shop.queue');
+      invalidate();
+    },
+    speak(who, line) {
+      if (!current) return;
+      if ('uid' in who) {
+        const slot = current.slots[slotUids.indexOf(who.uid)];
+        if (slot) showBubble(bubble, line, slotCenter(slot), current);
+      } else {
+        const node = visitors.get(who.customerId);
+        // Over the customer's head, above the offer bubble.
+        if (node) showBubble(talk, line, { x: node.box.x - current.unit * 0.6, y: node.box.y - current.unit * 2.6, r: current.unit * 0.9 }, current);
+      }
       invalidate();
     },
     customerPoint(id) {

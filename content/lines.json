@@ -1,0 +1,464 @@
+{
+  "$schema": "lines.schema.json",
+  "note": "Реплики существ и покупателей по контексту (docs/01b §4.1–4.2, M2-17): до 6 слов, без точки в конце, ru и en в каждой строке. Движок не повторяет последние noRepeat в одном контексте; tapCooldownSec — реплика на тап не чаще; hungrySec — «не кормили»; idle-реплики — позже.",
+  "noRepeat": 3,
+  "maxWords": 6,
+  "tapCooldownSec": 6,
+  "hungrySec": 30,
+  "creatures": {
+    "kettle": {
+      "tap": [
+        {"ru": "Пш-ш! Вкусно, спасибо!", "en": "Pssh! Yummy, thank you!"},
+        {"ru": "Буль-буль, ещё капельку!", "en": "Bubble bubble, one more drop!"},
+        {"ru": "Закипаю от радости!", "en": "Boiling over with joy!"}
+      ],
+      "hungry": [
+        {"ru": "Пш-ш? Эй, мы тут", "en": "Pssh? Hey, we're right here"},
+        {"ru": "Кто-нибудь, плесните водички?", "en": "Anyone got a splash of water?"},
+        {"ru": "Пс-с, носик просит чаю", "en": "Psst, my spout wants tea"}
+      ],
+      "levelUp": [
+        {"ru": "Я стал вместительнее!", "en": "Now I hold more tea!"},
+        {"ru": "Свисток стал звонче!", "en": "My whistle got louder!"},
+        {"ru": "Пш-ш! Расту как пар!", "en": "Pssh! Rising like steam!"}
+      ],
+      "max": [
+        {"ru": "Я самовар мечты!", "en": "Fully steamed and gleaming!"},
+        {"ru": "Кипяток высшего уровня!", "en": "Max level, full boil!"},
+        {"ru": "Сияю, как начищенный!", "en": "Polished and shining bright!"}
+      ],
+      "sold": [
+        {"ru": "Пш-ш! Еду пить чай!", "en": "Pssh! Off to tea time!"},
+        {"ru": "Новый дом, новые чаепития!", "en": "New home, new tea parties!"},
+        {"ru": "Буду греть вам вечера!", "en": "I'll warm up your evenings!"}
+      ]
+    },
+    "sockfish": {
+      "tap": [
+        {"ru": "Ам-ням! Хрум-хрум!", "en": "Chomp chomp, yum!"},
+        {"ru": "Зубки довольны, спасибо!", "en": "Happy teeth, thank you!"},
+        {"ru": "Ещё! Я же хищник!", "en": "More! I'm a fierce sock!"}
+      ],
+      "hungry": [
+        {"ru": "Эй, носок без обеда!", "en": "Hey, this sock skipped lunch!"},
+        {"ru": "Где мой перекус, а?", "en": "Where's my snack, huh?"},
+        {"ru": "Тут кто-то клацает зубками", "en": "Somebody's clacking teeth over here"}
+      ],
+      "levelUp": [
+        {"ru": "Я вырос на размер!", "en": "I grew a whole size!"},
+        {"ru": "Теперь налезу на великана!", "en": "Now I fit a giant!"},
+        {"ru": "Хищник растёт и пушится!", "en": "Fierce and extra fluffy now!"}
+      ],
+      "max": [
+        {"ru": "Самый грозный носок района!", "en": "Fiercest sock in the neighborhood!"},
+        {"ru": "Я сам себе пара!", "en": "I'm my own pair now!"},
+        {"ru": "Сияю от пятки до мыска!", "en": "Gleaming from heel to toe!"}
+      ],
+      "sold": [
+        {"ru": "Ура, может, там моя пара!", "en": "Maybe my pair lives there!"},
+        {"ru": "Пойду греть новые пятки!", "en": "Off to warm new toes!"},
+        {"ru": "Клац-клац, до встречи!", "en": "Clack clack, see you!"}
+      ]
+    },
+    "pillow": {
+      "tap": [
+        {"ru": "Мм, вкусно, хр-р", "en": "Mmm, tasty, zzz"},
+        {"ru": "Спасибо, сплю дальше", "en": "Thanks, back to sleep"},
+        {"ru": "Ням во сне, удобно!", "en": "Snacking while dreaming, handy!"}
+      ],
+      "hungry": [
+        {"ru": "Ещё пять минуточек… и перекус?", "en": "Five more minutes, then snacks?"},
+        {"ru": "Ой, а где завтрак в постель?", "en": "Hey, where's breakfast in bed?"},
+        {"ru": "Хр-р, эй, покорми соню", "en": "Zzz, psst, feed the sleepyhead"}
+      ],
+      "levelUp": [
+        {"ru": "Я стала пышнее!", "en": "I got extra puffy!"},
+        {"ru": "Ого, проснулась на уровень выше", "en": "Woke up a level higher!"},
+        {"ru": "Сладко подросла во сне", "en": "Grew a bit while napping"}
+      ],
+      "max": [
+        {"ru": "Идеально взбитая подушка!", "en": "Perfectly fluffed at last!"},
+        {"ru": "Мягче не бывает!", "en": "Maximum softness achieved!"},
+        {"ru": "Сплю на высшем уровне", "en": "Napping at the top level"}
+      ],
+      "sold": [
+        {"ru": "Ура, новая кровать!", "en": "Yay, a brand new bed!"},
+        {"ru": "Буду дарить вам сладкие сны", "en": "Sweet dreams are on me!"},
+        {"ru": "Зевну на прощание, пока!", "en": "One goodbye yawn, bye!"}
+      ]
+    },
+    "cloudcat": {
+      "tap": [
+        {"ru": "Мурр! Пушистое спасибо", "en": "Purr! A fluffy thank you"},
+        {"ru": "Мурлычу громом, но ласково", "en": "Purring like gentle thunder"},
+        {"ru": "Ещё! Я лёгкий, но голодный", "en": "More! I'm light but hungry"}
+      ],
+      "hungry": [
+        {"ru": "Мяу? Собирается лёгкий дождик", "en": "Meow? A little drizzle's coming"},
+        {"ru": "Эй, облачко ждёт вкусняшку", "en": "Hey, the cloud wants treats"},
+        {"ru": "Пасмурно без перекуса, мур", "en": "Cloudy with a chance of snacks?"}
+      ],
+      "levelUp": [
+        {"ru": "Я стал пушистее неба!", "en": "Fluffier than the sky now!"},
+        {"ru": "Мурр! Облако подросло", "en": "Purr! The cloud grew bigger"},
+        {"ru": "Теперь умею радугу!", "en": "I can do rainbows now!"}
+      ],
+      "max": [
+        {"ru": "Я целая туча счастья!", "en": "I'm one giant purring cloud!"},
+        {"ru": "Сияю, как солнце сквозь облако", "en": "Glowing like sun through clouds"},
+        {"ru": "Мурлыкаю на всё небо!", "en": "Purring across the whole sky!"}
+      ],
+      "sold": [
+        {"ru": "Мурр! Полечу в новый дом", "en": "Purr! Floating to my new home"},
+        {"ru": "Буду вашей личной погодой!", "en": "I'll be your personal weather!"},
+        {"ru": "Пока! Обещаю только солнышко", "en": "Bye! Sunshine only, I promise"}
+      ]
+    },
+    "lampbug": {
+      "tap": [
+        {"ru": "Щёлк! Стало светлее!", "en": "Click! Things look brighter!"},
+        {"ru": "Спасибо, я весь сияю!", "en": "Thanks, I'm all lit up!"},
+        {"ru": "Вкусно, аж лампочка мигнула!", "en": "So tasty, my bulb flickered!"}
+      ],
+      "hungry": [
+        {"ru": "Щёлк? Светлячок ждёт ужин", "en": "Click? This bug wants dinner"},
+        {"ru": "Эй, у меня мерцает животик", "en": "Hey, my tummy's flickering"},
+        {"ru": "Подзарядите меня, пожалуйста!", "en": "Recharge me, pretty please!"}
+      ],
+      "levelUp": [
+        {"ru": "Плюс сто ватт обаяния!", "en": "Plus a hundred watts of charm!"},
+        {"ru": "Щёлк! Я стал ярче!", "en": "Click! Brighter than before!"},
+        {"ru": "Меня осенило! Я вырос!", "en": "What a bright idea! Growing!"}
+      ],
+      "max": [
+        {"ru": "Свечу на полную мощность!", "en": "Shining at full power!"},
+        {"ru": "Я теперь маленькое солнышко!", "en": "I'm basically a tiny sun!"},
+        {"ru": "Ярче уже не придумать!", "en": "Can't get any brighter!"}
+      ],
+      "sold": [
+        {"ru": "Щёлк! Освещу новый дом!", "en": "Click! I'll light your home!"},
+        {"ru": "Пока! Оставлю свет включённым", "en": "Bye! I'll leave the light on"},
+        {"ru": "Ура, новая уютная полочка!", "en": "Yay, a cozy new shelf!"}
+      ]
+    },
+    "cactus": {
+      "tap": [
+        {"ru": "Спасибо! Обниму, но аккуратно", "en": "Thanks! Careful hug incoming!"},
+        {"ru": "Ням! Цветочек улыбнулся", "en": "Yum! My flower is smiling"},
+        {"ru": "Колючки довольно топорщатся!", "en": "My spikes are wiggling happily!"}
+      ],
+      "hungry": [
+        {"ru": "Эй, полейте обнимашку?", "en": "Psst, water the hug buddy?"},
+        {"ru": "Цветочек намекает на перекус", "en": "My flower hints at snacks"},
+        {"ru": "Кактус машет: ау, перекус?", "en": "Cactus waving: snack time, maybe?"}
+      ],
+      "levelUp": [
+        {"ru": "Распустился ещё цветочек!", "en": "Another flower just bloomed!"},
+        {"ru": "Колючки мягче, объятия крепче!", "en": "Softer spikes, bigger hugs!"},
+        {"ru": "Я вырос! Обнимемся? Осторожно", "en": "I grew! Gentle hug?"}
+      ],
+      "max": [
+        {"ru": "Весь в цвету и любви!", "en": "Full bloom, full of love!"},
+        {"ru": "Самый обнимательный кактус!", "en": "The huggiest cactus ever!"},
+        {"ru": "Мои иголки теперь блестят!", "en": "Even my needles sparkle now!"}
+      ],
+      "sold": [
+        {"ru": "Обниму вас дома, бережно!", "en": "Gentle hugs at my new home!"},
+        {"ru": "Поставьте меня на солнышко!", "en": "Put me somewhere sunny, okay?"},
+        {"ru": "Пока! Цветочек машет вам", "en": "Bye! My flower waves too"}
+      ]
+    },
+    "jellytoast": {
+      "tap": [
+        {"ru": "Хрусь! Спасибо, очень мило", "en": "Crunch! Thanks, that's sweet"},
+        {"ru": "Желе запрыгало от счастья!", "en": "My jelly wobbles with joy!"},
+        {"ru": "Ммм, пахнет утром!", "en": "Mmm, smells like morning!"}
+      ],
+      "hungry": [
+        {"ru": "Эй, тостик слегка остыл", "en": "Hey, this toast cooled off"},
+        {"ru": "Желе вопросительно колышется", "en": "My jelly wobbles a question"},
+        {"ru": "Тостер зовёт? Нет, это я!", "en": "Is that the toaster? Nope, me!"}
+      ],
+      "levelUp": [
+        {"ru": "Я поджарился до золотистого!", "en": "Toasted to golden brown!"},
+        {"ru": "Слой желе стал толще!", "en": "Extra layer of jelly!"},
+        {"ru": "Хрусь! Расту как на дрожжах", "en": "Crunch! Rising like fresh bread"}
+      ],
+      "max": [
+        {"ru": "Самый хрустящий тост на свете!", "en": "Crunchiest toast in the world!"},
+        {"ru": "Желе сверкает, как витраж!", "en": "My jelly shines like glass!"},
+        {"ru": "Румяный и счастливый!", "en": "Golden and glowing all over!"}
+      ],
+      "sold": [
+        {"ru": "Ура! Буду радовать по утрам", "en": "Yay! Morning cheer, coming up!"},
+        {"ru": "Принесу в дом запах утра", "en": "Bringing morning smells home!"},
+        {"ru": "Новый дом? Желе в восторге!", "en": "New home? Jelly's thrilled!"}
+      ]
+    },
+    "mirrorfrog": {
+      "tap": [
+        {"ru": "Ква. И ква в ответ!", "en": "Ribbit. And ribbit back!"},
+        {"ru": "Ням! Мян! Это я наоборот", "en": "Nom! Mon! Mirror munching!"},
+        {"ru": "Вы кормите, я сияю", "en": "You feed, I reflect!"}
+      ],
+      "hungry": [
+        {"ru": "Эй, у меня пустое отражение", "en": "Hey, my reflection looks peckish"},
+        {"ru": "Ква? Квак насчёт перекуса?", "en": "Ribbit? How about a snack?"},
+        {"ru": "Я жду. Отражение тоже ждёт", "en": "I'm waiting. So is my reflection"}
+      ],
+      "levelUp": [
+        {"ru": "Отражение тоже подросло!", "en": "My reflection grew too!"},
+        {"ru": "Ква-ква! Уровень в квадрате!", "en": "Ribbit! Level squared!"},
+        {"ru": "Отражаю на уровень лучше!", "en": "Reflecting even better now!"}
+      ],
+      "max": [
+        {"ru": "Чистейшее зеркало болота!", "en": "Shiniest mirror in the pond!"},
+        {"ru": "Я отражаю только радость!", "en": "I reflect only happiness!"},
+        {"ru": "Двойной блеск, двойное ква!", "en": "Double shine, double ribbit!"}
+      ],
+      "sold": [
+        {"ru": "Ква! Отражу ваш новый дом", "en": "Ribbit! I'll mirror your home"},
+        {"ru": "Пока! Помашу вам дважды", "en": "Bye! Waving twice, of course"},
+        {"ru": "Улыбнитесь! Улыбаюсь в ответ!", "en": "Smile! I'm smiling back!"}
+      ]
+    },
+    "shroom": {
+      "tap": [
+        {"ru": "Кап-кап, спасибо, вкусно!", "en": "Drip drop, thanks, yummy!"},
+        {"ru": "Шляпка раскрылась от счастья!", "en": "My cap popped open happily!"},
+        {"ru": "Ням! Как тёплый дождик", "en": "Yum! Like warm rain!"}
+      ],
+      "hungry": [
+        {"ru": "Эй, под зонтиком пустовато", "en": "Hey, it's empty under here"},
+        {"ru": "Ни капли перекуса, ау?", "en": "Not a drop of snack?"},
+        {"ru": "Грибочек тихо машет шляпкой", "en": "Shroom tips its cap, hopefully"}
+      ],
+      "levelUp": [
+        {"ru": "Шляпка стала шире!", "en": "My cap got wider!"},
+        {"ru": "Теперь укрою двоих!", "en": "Now I cover two!"},
+        {"ru": "Вырос после дождика!", "en": "Sprouted up after rain!"}
+      ],
+      "max": [
+        {"ru": "Лучший зонтик в любой ливень!", "en": "Best umbrella in any downpour!"},
+        {"ru": "Укрою весь двор!", "en": "I can shelter everyone!"},
+        {"ru": "Шляпка сияет в каплях!", "en": "Raindrops sparkle on my cap!"}
+      ],
+      "sold": [
+        {"ru": "Буду беречь вас от мороси", "en": "I'll keep the drizzle off!"},
+        {"ru": "Пока! Зовите, если дождик", "en": "Bye! Call me when it rains"},
+        {"ru": "Новый дом, новые лужицы!", "en": "New home, new puddles!"}
+      ]
+    },
+    "teacup_dragon": {
+      "tap": [
+        {"ru": "Благодарю! Чай стал горячее", "en": "Thank you! Tea's extra hot"},
+        {"ru": "Пых! Это драконье спасибо", "en": "Puff! That's dragon for thanks"},
+        {"ru": "Ням, достойно дракона!", "en": "Yum, worthy of a dragon!"}
+      ],
+      "hungry": [
+        {"ru": "Дракон изволит перекусить", "en": "The dragon would like a snack"},
+        {"ru": "Эй, мой чай стынет!", "en": "Hey, my tea's cooling!"},
+        {"ru": "Кхм, кормить дракона почётно!", "en": "Ahem, feeding dragons is an honor!"}
+      ],
+      "levelUp": [
+        {"ru": "Узрите мой новый уровень!", "en": "Behold my new level!"},
+        {"ru": "Крылышки подросли!", "en": "My little wings grew!"},
+        {"ru": "Пых! Чай закипел гордостью", "en": "Puff! My tea boils with pride"}
+      ],
+      "max": [
+        {"ru": "Великий дракон чайной чашки!", "en": "Grand dragon of the teacup!"},
+        {"ru": "Мой пар достиг облаков!", "en": "My steam reaches the clouds!"},
+        {"ru": "Легенда в фарфоре!", "en": "A legend in porcelain!"}
+      ],
+      "sold": [
+        {"ru": "Буду охранять ваш чай!", "en": "I'll guard your teatime!"},
+        {"ru": "Пых! Ведите в новый замок", "en": "Puff! Lead me to my castle"},
+        {"ru": "Пока! Драконы помнят добро", "en": "Bye! Dragons remember kindness"}
+      ]
+    },
+    "sockfish_gold": {
+      "tap": [
+        {"ru": "Блеск! Благодарю, поклонник!", "en": "Shine! Thank you, fan!"},
+        {"ru": "Ещё! Мне идёт сиять", "en": "More! Sparkle suits me!"},
+        {"ru": "Ням! Даже крошки золотые", "en": "Yum! Even my crumbs are gold"}
+      ],
+      "hungry": [
+        {"ru": "Эй, блеск тускнеет без перекуса", "en": "Hey, my shine needs a snack"},
+        {"ru": "Золотце ждёт угощения!", "en": "Golden one awaits a treat!"},
+        {"ru": "Звезда витрины хочет кушать", "en": "The shelf star wants nibbles"}
+      ],
+      "levelUp": [
+        {"ru": "Блеск! Ещё на карат дороже", "en": "Shine! One carat fancier!"},
+        {"ru": "Мой блеск видно из космоса!", "en": "My shine is visible from space!"},
+        {"ru": "Восхищайтесь, я подрос!", "en": "Admire me, I grew!"}
+      ],
+      "max": [
+        {"ru": "Самый блестящий носок вселенной!", "en": "Shiniest sock in the universe!"},
+        {"ru": "Блеск! Блеск! Максимальный блеск!", "en": "Shine! Shine! Maximum shine!"},
+        {"ru": "Я сокровище, и я знаю", "en": "I'm treasure, and I know it"}
+      ],
+      "sold": [
+        {"ru": "Блеск! Несу сияние в дом", "en": "Shine! Bringing sparkle home!"},
+        {"ru": "Пока! Не забывайте мой блеск", "en": "Bye! Remember my sparkle!"},
+        {"ru": "Ура, новый бархатный ящик!", "en": "Yay, a velvet drawer awaits!"}
+      ]
+    },
+    "moon_donut": {
+      "tap": [
+        {"ru": "Спасибо, сладких снов вам", "en": "Thanks, sweet dreams to you"},
+        {"ru": "Ням! Посыпка звенит, как звёзды", "en": "Yum! My sprinkles twinkle!"},
+        {"ru": "Мм, вкусно, как полночь", "en": "Mmm, tasty as midnight"}
+      ],
+      "hungry": [
+        {"ru": "Луна ждёт, посыпка тоже", "en": "The moon waits, sprinkles too"},
+        {"ru": "Дырочка в серединке намекает", "en": "My donut hole is hinting"},
+        {"ru": "Ночь длинная, а перекус?", "en": "Long night, how about snacks?"}
+      ],
+      "levelUp": [
+        {"ru": "Я стала полнолунием!", "en": "I'm a full moon now!"},
+        {"ru": "Новая посыпка, новый свет!", "en": "Fresh sprinkles, fresh glow!"},
+        {"ru": "Мечтала и выросла!", "en": "Dreamed big, grew bigger!"}
+      ],
+      "max": [
+        {"ru": "Самая сладкая луна неба!", "en": "No moon is sweeter than me!"},
+        {"ru": "Свечу всю ночь напролёт!", "en": "Glowing all night long!"},
+        {"ru": "Мечта сбылась, я сияю", "en": "Dream come true, I glow"}
+      ],
+      "sold": [
+        {"ru": "Буду светить вам ночником", "en": "I'll be your night light!"},
+        {"ru": "Пока! Сладкой ночи всем!", "en": "Bye! Sweet night, everyone!"},
+        {"ru": "Улетаю на новое небо!", "en": "Off to a new sky!"}
+      ]
+    }
+  },
+  "customers": {
+    "thrifty": {
+      "arrive": [
+        {"ru": "Здравствуйте! А скидки бывают?", "en": "Hello! Any discounts today?"},
+        {"ru": "Добрый день, я с копилкой", "en": "Hi there, piggy bank ready!"},
+        {"ru": "Посмотрю, посчитаю, подумаю", "en": "I'll look, count, then think"}
+      ],
+      "offer": [
+        {"ru": "Хм, а подешевле есть?", "en": "Hmm, anything a bit cheaper?"},
+        {"ru": "Миленький! А сколько монеток?", "en": "Cute! How many coins though?"},
+        {"ru": "Дайте-ка я пересчитаю", "en": "Let me count again"}
+      ],
+      "haggleUp": [
+        {"ru": "Ладно, добавлю монетку", "en": "Fine, one more coin"},
+        {"ru": "Уговорили, вежливо соглашаюсь", "en": "Okay, you've convinced me"},
+        {"ru": "Копилка вздохнула, но согласна", "en": "My piggy bank sighs: deal!"}
+      ],
+      "leave": [
+        {"ru": "Хмф! Зайду завтра", "en": "Hmph! I'll pop by tomorrow"},
+        {"ru": "Подкоплю и вернусь!", "en": "I'll save up and return!"},
+        {"ru": "Спасибо, пока дороговато", "en": "Thanks, a bit pricey today"}
+      ],
+      "rare": [
+        {"ru": "Редкий! И почти даром!", "en": "Rare! And such a bargain!"},
+        {"ru": "Ого, сокровище по скидке!", "en": "Wow, treasure at a discount!"},
+        {"ru": "Копилка не зря копилась!", "en": "Worth every saved coin!"}
+      ],
+      "notTheirs": [
+        {"ru": "Дорого, но какой!", "en": "Pricey, but look at it!"},
+        {"ru": "Эх, гулять так гулять!", "en": "Just this once, I splurge!"},
+        {"ru": "Не моё, но очень мило", "en": "Not my style, but adorable"}
+      ]
+    },
+    "collector": {
+      "arrive": [
+        {"ru": "Что редкого сегодня?", "en": "Anything rare today?"},
+        {"ru": "Моя коллекция ждёт пополнения!", "en": "My collection needs a friend!"},
+        {"ru": "Здравствуйте! Лупа наготове", "en": "Hello! Magnifier at the ready"}
+      ],
+      "offer": [
+        {"ru": "Хм, такой у меня есть?", "en": "Hmm, do I have this one?"},
+        {"ru": "Покажите поближе, пожалуйста!", "en": "Closer, please, let me see!"},
+        {"ru": "Интересный экземпляр, очень интересный", "en": "Curious specimen, very curious"}
+      ],
+      "haggleUp": [
+        {"ru": "Ради коллекции добавлю!", "en": "For the collection, I'll add!"},
+        {"ru": "Ладно, ради полной полки!", "en": "Fine, for a full shelf!"},
+        {"ru": "Экспонат того стоит!", "en": "This piece is worth it!"}
+      ],
+      "leave": [
+        {"ru": "Хмф! Загляну позже с лупой", "en": "I'll come back with my magnifier"},
+        {"ru": "Не сегодня, но я вернусь!", "en": "Not today, but I'll return!"},
+        {"ru": "Запишу в блокнот и уйду", "en": "Noting it down, see you!"}
+      ],
+      "rare": [
+        {"ru": "Ах! Жемчужина коллекции!", "en": "Oh! The pearl of my collection!"},
+        {"ru": "Редкость! У меня мурашки!", "en": "Rare! I'm getting goosebumps!"},
+        {"ru": "Наконец-то! Освобожу лучшую полку", "en": "Finally! Clearing my best shelf!"}
+      ],
+      "notTheirs": [
+        {"ru": "Обычный? Пусть будет для полноты", "en": "Common? Still, every set needs one"},
+        {"ru": "Не редкий, но с характером!", "en": "Not rare, but full of charm!"},
+        {"ru": "Коллекция любит и простых", "en": "My collection loves simple ones too"}
+      ]
+    },
+    "rich": {
+      "arrive": [
+        {"ru": "Дорогу! Богач пришёл!", "en": "Make way! Big spender here!"},
+        {"ru": "Покажите самое прокачанное!", "en": "Show me your highest level!"},
+        {"ru": "Монет много, времени мало!", "en": "Lots of coins, little time!"}
+      ],
+      "offer": [
+        {"ru": "Уровень маловат, но мило", "en": "Low level, but cute"},
+        {"ru": "Уровень! Беру два. Шучу", "en": "Level! I'll take two. Kidding"},
+        {"ru": "А можно с позолотой?", "en": "Does it come gold plated?"}
+      ],
+      "haggleUp": [
+        {"ru": "Деньги не проблема!", "en": "Money is no problem!"},
+        {"ru": "Ладно, сдачу оставьте себе!", "en": "Fine, keep the change!"},
+        {"ru": "Добавлю, я сегодня щедрый!", "en": "I'll add more, feeling generous!"}
+      ],
+      "leave": [
+        {"ru": "Хмф! Мой кошелёк обиделся", "en": "Hmph! My wallet is offended"},
+        {"ru": "Ухожу красиво, вернусь эффектно!", "en": "Leaving grandly, returning grander!"},
+        {"ru": "Не сошлись! Загляну позже", "en": "No deal! I'll drop by later"}
+      ],
+      "rare": [
+        {"ru": "Редкий? Достойно моего дворца!", "en": "Rare? Fit for my palace!"},
+        {"ru": "Ах, роскошь! Заверните бантиком", "en": "Ooh, luxury! Gift wrap, please!"},
+        {"ru": "Такого нет даже у меня!", "en": "Even I don't have this!"}
+      ],
+      "notTheirs": [
+        {"ru": "Первый уровень? Ну и пусть!", "en": "Level one? Why not!"},
+        {"ru": "Простенький, но мне нравится!", "en": "Humble, but I like it!"},
+        {"ru": "Начну с малого, как все", "en": "Starting small, like everyone"}
+      ]
+    },
+    "golden": {
+      "arrive": [
+        {"ru": "Сияю и плачу вдвойне!", "en": "Shining bright, paying double!"},
+        {"ru": "Золотой час открыт!", "en": "Golden hour has begun!"},
+        {"ru": "Та-дам! Золотой гость здесь!", "en": "Ta-da! Golden guest arrived!"}
+      ],
+      "offer": [
+        {"ru": "О, сверкает! Как я", "en": "Ooh, sparkly! Just like me"},
+        {"ru": "Прекрасно! Покажите ещё!", "en": "Splendid! Show me more!"},
+        {"ru": "Двойная цена, двойная радость!", "en": "Double price, double joy!"}
+      ],
+      "haggleUp": [
+        {"ru": "Ещё больше золота? С радостью!", "en": "More gold? With pleasure!"},
+        {"ru": "Щедрость сегодня на максимуме!", "en": "Generosity turned up to max!"},
+        {"ru": "Добавлю горсть монет!", "en": "Here's an extra handful!"}
+      ],
+      "leave": [
+        {"ru": "Хмф! Сверкну в другой раз", "en": "Hmph! I'll sparkle by later"},
+        {"ru": "Золото подождёт до завтра!", "en": "The gold can wait till tomorrow!"},
+        {"ru": "Ухожу, но блеск остаётся!", "en": "I'm off, my sparkle stays!"}
+      ],
+      "rare": [
+        {"ru": "Редкость! Это праздник!", "en": "Rare! Let's celebrate!"},
+        {"ru": "Золото к редкости, как раз!", "en": "Gold for rarity, perfect match!"},
+        {"ru": "Великолепно! Беру с восторгом!", "en": "Magnificent! Taking it gladly!"}
+      ],
+      "notTheirs": [
+        {"ru": "Скромный, но сияет душой!", "en": "Modest, but it shines inside!"},
+        {"ru": "Неожиданно, но восхитительно!", "en": "Unexpected, but delightful!"},
+        {"ru": "Даже простое станет золотым!", "en": "Even simple turns golden!"}
+      ]
+    }
+  }
+}

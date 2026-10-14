@@ -10,6 +10,9 @@ import { loadGameContent } from '../scripts/load-game-content.ts';
 const content = loadGameContent();
 const cr = (uid: string, species = 'kettle', level = 1): Creature => ({ uid, species, level, fed: 0, hatchedAt: 0, age: 0 });
 
+/** Random events off: they only run live (never while away) and would tilt the live/away comparison. */
+const calm = { ...content, events: { ...content.events, events: content.events.events.map((e) => ({ ...e, weight: 0 })) } };
+
 function setup(opts: { creatures?: Creature[]; helpers?: string[]; deals?: number; seed?: number } = {}) {
   const save = newSave(0);
   save.flags.ftue_starter = true;
@@ -20,7 +23,7 @@ function setup(opts: { creatures?: Creature[]; helpers?: string[]; deals?: numbe
   save.crystals = 100;
   save.coins = 1e6;
   const store = createStore(save, () => 0);
-  const game = createGame(store, content, createRng(opts.seed ?? 4));
+  const game = createGame(store, calm, createRng(opts.seed ?? 4));
   for (const id of opts.helpers ?? []) expect(game.buyUpgrade(id)).toBe(true);
   game.state.coins = 0;
   const seen: GameEvent[] = [];

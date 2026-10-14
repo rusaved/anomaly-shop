@@ -61,11 +61,21 @@ export const Customer = v.object({
   leaveOnBargain: Share,
   rarityBonus: v.optional(Share),
   levelBonusPerLevel: v.optional(Share),
+  /** The type name next to a woman's name (ru: «Марфа · Бережливая»). */
+  nameF: v.optional(Text),
 });
 /** weight: share of arrivals among open districts; attract: +weight per creature on the showcase this customer likes. */
 export const District = v.object({ id: Id, name: Text, unlock: Unlock, customer: Customer, weight: v.pipe(v.number(), v.minValue(0)), attract: v.pipe(v.number(), v.minValue(0)) });
+export const ACCESSORIES = ['none', 'glasses', 'scarf', 'backpack', 'umbrella', 'flower'] as const;
+/** Different customers (docs/01b, section 4.3; M2-18): a name, an outfit color, an accessory. */
+export const People = v.object({
+  names: v.pipe(v.array(v.object({ ru: NonEmpty, en: NonEmpty, f: v.boolean() })), v.minLength(4)),
+  outfits: v.pipe(v.array(Color), v.minLength(2)),
+  accessories: v.pipe(v.array(v.picklist(ACCESSORIES)), v.minLength(1)),
+});
 export const CustomersFile = v.object({
   queueSize: Count,
+  people: People,
   spawnEverySec: v.pipe(v.number(), v.minValue(0.1)),
   waitNextSec: Money,
   bargainBonus: Range,
@@ -208,6 +218,19 @@ export const SecretsFile = v.object({
   ),
 });
 
+/** Creature and customer lines by context (docs/01b, sections 4.1–4.2; M2-17). */
+export const CREATURE_CONTEXTS = ['tap', 'hungry', 'levelUp', 'max', 'sold'] as const;
+export const CUSTOMER_CONTEXTS = ['arrive', 'offer', 'haggleUp', 'leave', 'rare', 'notTheirs'] as const;
+const LinePool = v.pipe(v.array(v.object({ ru: NonEmpty, en: NonEmpty })), v.minLength(2));
+export const LinesFile = v.object({
+  noRepeat: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  maxWords: Count,
+  tapCooldownSec: v.pipe(v.number(), v.minValue(0)),
+  hungrySec: v.pipe(v.number(), v.minValue(1)),
+  creatures: v.record(Id, v.object(Object.fromEntries(CREATURE_CONTEXTS.map((k) => [k, LinePool])) as Record<(typeof CREATURE_CONTEXTS)[number], typeof LinePool>)),
+  customers: v.record(Id, v.object(Object.fromEntries(CUSTOMER_CONTEXTS.map((k) => [k, LinePool])) as Record<(typeof CUSTOMER_CONTEXTS)[number], typeof LinePool>)),
+});
+
 /** News ticker (docs/01b, section 4.4; M2-14): a line shows when its condition holds. */
 export const NewsWhen = v.variant('type', [
   v.object({ type: v.literal('always') }),
@@ -278,6 +301,9 @@ export type I18nData = v.InferOutput<typeof I18nFile>;
 export type NewsData = v.InferOutput<typeof NewsFile>;
 export type EventsData = v.InferOutput<typeof EventsFile>;
 export type SecretsData = v.InferOutput<typeof SecretsFile>;
+export type LinesData = v.InferOutput<typeof LinesFile>;
+export type CreatureContext = (typeof CREATURE_CONTEXTS)[number];
+export type CustomerContext = (typeof CUSTOMER_CONTEXTS)[number];
 export type SecretTarget = (typeof SECRET_TARGETS)[number];
 export type RandomEventData = v.InferOutput<typeof RandomEvent>;
 export type NewsWhenData = v.InferOutput<typeof NewsWhen>;

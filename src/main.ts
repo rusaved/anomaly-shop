@@ -25,11 +25,12 @@ import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
 import { createNewsTicker } from './ui/news.ts';
 import { createMerchantWindow } from './ui/merchant.ts';
+import { createChatter } from './ui/chatter.ts';
 import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
 import { ftueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
-import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, news, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, lines, news, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -138,7 +139,14 @@ async function boot(): Promise<void> {
   const dealCard = createDealCard(panel.body, play, {
     t: i18n.t,
     lang: i18n.lang,
-    customerName: (id) => customers.districts.find((d) => d.customer.id === id)?.customer.name[i18n.lang()] ?? i18n.t(`customer.${id}`),
+    customerName: (id, person) => {
+      const lang = i18n.lang();
+      const type = customers.districts.find((d) => d.customer.id === id)?.customer;
+      const who = customers.people.names[person];
+      if (!type) return i18n.t(`customer.${id}`);
+      const typeName = (who?.f && type.nameF ? type.nameF : type.name)[lang];
+      return who ? `${who[lang]} · ${typeName}` : typeName;
+    },
     customerColor: (id) => styleData.customers[id]?.body ?? styleData.colors.queueSpot,
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
   });
@@ -217,8 +225,10 @@ async function boot(): Promise<void> {
   const sfx = createSfx(audio, () => store.state.settings.sound && platform.audioAllowed());
   document.addEventListener('pointerdown', () => sfx.unlock(), { capture: true });
   runtime.pause.onChange((paused) => sfx.setSuspended(paused));
+  const chatter = createChatter({ lines, lang: () => i18n.lang(), speak: (who, text) => shop.speak(who, text), view: () => play.view() });
   play.events.on((e) => {
     shop.onEvent(e);
+    chatter.onEvent(e);
     if (e.type === 'change') renderUi();
     else if (e.type === 'denied') {
       toasts.show(i18n.t(`deny.${e.reason}`), 'warn');
@@ -358,6 +368,7 @@ async function boot(): Promise<void> {
     shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, view);
     hints.update(controllable ? ftueHint(store.state, view) : null);
     newsTicker.tick(runtime.pause.isPaused() ? 0 : ticker.deltaMS / 1000, controllable && Boolean(store.state.flags.ftue_done));
+    if (!runtime.pause.isPaused() && store.state.flags.ftue_done) chatter.tick(ticker.deltaMS / 1000);
     funnel.tick(runtime.elapsed());
   });
   scene.app.ticker.addOnce(() => {

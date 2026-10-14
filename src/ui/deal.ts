@@ -6,7 +6,8 @@ import type { Game } from '../sim/game.ts';
 
 export interface DealLookups {
   t(key: string, vars?: Record<string, string | number>): string;
-  customerName(id: string): string;
+  /** «Марфа · Бережливая»: the person's name and the type (person −1: the type alone). */
+  customerName(id: string, person: number): string;
   customerColor(id: string): string;
   speciesName(id: string): string;
   lang(): string;
@@ -68,7 +69,7 @@ export function createDealCard(parent: HTMLElement, game: Game, look: DealLookup
       const deal = view.deal;
       const fmt = new Intl.NumberFormat(look.lang());
       const state = !deal ? (view.queue.length ? 'next' : 'idle') : deal.uid ? 'offer' : 'nocreature';
-      const key = `${look.lang()}:${state}:${deal?.id}:${deal?.offer}:${deal?.species}:${deal?.canHaggle}:${view.queue.length}`;
+      const key = `${look.lang()}:${state}:${deal?.id}:${deal?.offer}:${deal?.species}:${deal?.canHaggle}:${view.queue.length}:${deal?.person}`;
       if (key === last) return;
       const bump = deal !== null && last !== '' && last.split(':')[3] === String(deal.id) && Number(last.split(':')[4]) < deal.offer;
       last = key;
@@ -85,8 +86,9 @@ export function createDealCard(parent: HTMLElement, game: Game, look: DealLookup
         root.classList.add('bump');
       }
       root.dataset.deal = state;
-      avatar.style.background = deal ? look.customerColor(deal.customer) : '';
-      who.textContent = deal ? look.customerName(deal.customer) : '';
+      const front = deal ? view.queue.find((q) => q.id === deal.id) : undefined;
+      avatar.style.background = deal ? front?.outfit || look.customerColor(deal.customer) : '';
+      who.textContent = deal ? look.customerName(deal.customer, deal.person) : '';
       // The share explains why the offer is below the price tag (thrifty pays 70–85%).
       share.textContent = deal?.uid ? look.t('deal.share', { n: Math.round(deal.share * 100) }) : '';
       queue.textContent = view.queue.length > 1 ? look.t('deal.queue', { n: view.queue.length }) : '';

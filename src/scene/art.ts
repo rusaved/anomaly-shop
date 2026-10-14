@@ -277,10 +277,16 @@ export function drawCreature(g: Graphics, look: CreatureLookData, rarity: Rarity
   }
 }
 
-/** A customer standing with the feet at 0,0 (height about 2.1 r); the hat tells the type (thrifty cap, collector beret, rich top hat). */
-export function drawCustomer(g: Graphics, type: string, look: { body: string; accent: string }, r: number, c: Colors, outline: number): void {
+/** A customer standing with the feet at 0,0 (height about 2.1 r); the hat tells the type (thrifty cap, collector beret, rich top hat); an accessory makes the person (M2-18). */
+export function drawCustomer(g: Graphics, type: string, look: { body: string; accent: string }, r: number, c: Colors, outline: number, accessory = 'none'): void {
   const w = outline;
   g.clear();
+  if (accessory === 'backpack') g.roundRect(-r * 0.86, -r * 1.25, r * 0.4, r * 0.8, r * 0.15).fill(look.accent).stroke({ width: w * 0.8, color: c.outline });
+  if (accessory === 'umbrella') {
+    g.moveTo(r * 0.78, -r * 0.2).lineTo(r * 0.78, -r * 1.55).stroke({ width: w * 0.8, color: c.outline, cap: 'round' });
+    g.moveTo(r * 0.78, -r * 0.2).quadraticCurveTo(r * 0.78, -r * 0.02, r * 0.62, -r * 0.08).stroke({ width: w * 0.8, color: c.outline, cap: 'round' });
+    g.moveTo(r * 0.38, -r * 1.5).quadraticCurveTo(r * 0.78, -r * 1.95, r * 1.18, -r * 1.5).closePath().fill(c.rarityRare).stroke({ width: w * 0.7, color: c.outline, join: 'round' });
+  }
   g.ellipse(0, 0, r * 0.75, r * 0.2).fill({ color: c.outline, alpha: 0.18 });
   g.ellipse(-r * 0.28, -r * 0.08, r * 0.2, r * 0.12).fill(c.outline);
   g.ellipse(r * 0.28, -r * 0.08, r * 0.2, r * 0.12).fill(c.outline);
@@ -289,6 +295,19 @@ export function drawCustomer(g: Graphics, type: string, look: { body: string; ac
   dotEyes(g, 0, -r * 1.22, r * 0.2, r * 0.08, c);
   blush(g, 0, -r * 1.08, r * 0.34, r * 0.07, c);
   smile(g, 0, -r * 1.06, r * 0.1, r * 0.07, c, w * 0.7);
+  if (accessory === 'glasses') {
+    for (const dx of [-0.2, 0.2]) g.circle(r * dx, -r * 1.22, r * 0.14).stroke({ width: w * 0.6, color: c.outline });
+    g.moveTo(-r * 0.06, -r * 1.22).lineTo(r * 0.06, -r * 1.22).stroke({ width: w * 0.6, color: c.outline });
+  } else if (accessory === 'scarf') {
+    g.roundRect(-r * 0.6, -r * 0.92, r * 1.2, r * 0.22, r * 0.1).fill(c.blush).stroke({ width: w * 0.6, color: c.outline });
+    g.roundRect(r * 0.18, -r * 0.8, r * 0.2, r * 0.42, r * 0.08).fill(c.blush).stroke({ width: w * 0.6, color: c.outline });
+  } else if (accessory === 'flower') {
+    for (let i = 0; i < 5; i++) {
+      const a = (Math.PI * 2 * i) / 5;
+      g.circle(-r * 0.36 + Math.cos(a) * r * 0.1, -r * 0.62 + Math.sin(a) * r * 0.1, r * 0.08).fill(c.eyeWhite);
+    }
+    g.circle(-r * 0.36, -r * 0.62, r * 0.06).fill(c.counterTop);
+  }
   if (type === 'golden') {
     // The golden customer of an event: a crown and a big coin over the head.
     g.poly([-r * 0.45, -r * 1.62, -r * 0.45, -r * 1.98, -r * 0.22, -r * 1.8, 0, -r * 2.05, r * 0.22, -r * 1.8, r * 0.45, -r * 1.98, r * 0.45, -r * 1.62])

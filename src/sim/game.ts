@@ -87,7 +87,8 @@ export type GameEvent =
   | { type: 'secret'; id: string; target: SecretTarget; show: string; coins: number; repeat: boolean }
   | { type: 'upgradeUnlocked'; id: string }
   | { type: 'rescueEgg'; incubator: number }
-  | { type: 'sold'; uid: string; species: string; price: number; crystals: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper' }
+  | { type: 'sold'; uid: string; species: string; rarity: RarityName; price: number; crystals: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper'; liked: boolean }
+  | { type: 'customerUp'; id: number; customer: string }
   | { type: 'haggled'; customerId: number; result: 'up' | 'left'; bonus: number; offer: number }
   | { type: 'change' };
 
@@ -113,13 +114,19 @@ export interface CreatureView {
 
 export interface CustomerView {
   id: number;
-  /** Customer type id from customers.json (thrifty, collector, rich). */
+  /** Customer type id from customers.json (thrifty, collector, rich; golden for the event customer). */
   customer: string;
+  /** Index into customers.json → people.names (−1: the golden customer has no name), outfit color, accessory (M2-18). */
+  person: number;
+  outfit: string;
+  accessory: string;
 }
 
 export interface DealView {
   id: number;
   customer: string;
+  /** Index into people.names; −1 for the golden customer. */
+  person: number;
   /** The creature on offer (the selected one); null while the shop has none. */
   uid: string | null;
   species: string | null;
@@ -264,6 +271,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     /** The golden customer of an event: pays golden × the price tag, no haggle risk, leaves after ttl seconds. */
     golden?: number;
     ttl?: number;
+    /** Who this is (M2-18): a name never twice in the queue, an outfit, an accessory. */
+    person: number;
+    outfit: string;
+    accessory: string;
   }
   const queue: Visitor[] = [];
   let nextVisitor = 1;
@@ -310,6 +321,15 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   /** Customers start coming once the shop has had its first creature (an empty first visit stays calm). */
   const shopOpen = (): boolean => s().stats.hatched > 0 || s().creatures.length > 0;
 
+  /** A face for a new customer: a name nobody in the queue has, an outfit and an accessory (docs/01b, section 4.3). */
+  function newPerson(): { person: number; outfit: string; accessory: string } {
+    const people = content.customers.people;
+    const taken = new Set(queue.map((v) => v.person));
+    const free = people.names.map((_, i) => i).filter((i) => !taken.has(i));
+    const person = free[rng.int(free.length)] ?? 0;
+    return { person, outfit: people.outfits[rng.int(people.outfits.length)] ?? '', accessory: people.accessories[rng.int(people.accessories.length)] ?? 'none' };
+  }
+
   /** Arrival weights (docs/01a, section 4): the district share, raised by the creatures on the showcase this type likes. */
   function arrivalWeights(): Array<{ district: DistrictData; weight: number }> {
     return openDistricts().map((d) => ({ district: d, weight: d.weight * (1 + d.attract * s().creatures.filter((cr) => likes(d.customer, cr)).length) }));
@@ -325,7 +345,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const roll = rng.range(offer.min, offer.max);
     // Until the first deal the offer covers the next egg (first minute: sale → «buy a new egg»).
     const share = s().stats.deals === 0 ? Math.max(roll, content.ftue.firstOfferShare) : roll;
-    const v: Visitor = { id: nextVisitor++, district, share, mult: 1, bargains: 0 };
+    const v: Visitor = { id: nextVisitor++, district, share, mult: 1, bargains: 0, ...newPerson() };
     queue.push(v);
     emit({ type: 'customerArrived', id: v.id, customer: district.customer.id });
     emit({ type: 'change' });
@@ -346,6 +366,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return {
       id: v.id,
       customer: v.golden ? GOLDEN : c.id,
+      person: v.person,
       uid: cr?.uid ?? null,
       species: cr?.species ?? null,
       level: cr?.level ?? 0,
@@ -470,7 +491,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (data.kind === 'golden') {
       const yard = openDistricts()[0];
       if (!yard) return;
-      const v: Visitor = { id: nextVisitor++, district: yard, share: 1, mult: 1, bargains: 0, golden: data.priceMult, ttl: data.durationSec };
+      const v: Visitor = { id: nextVisitor++, district: yard, share: 1, mult: 1, bargains: 0, golden: data.priceMult, ttl: data.durationSec, person: -1, outfit: '', accessory: 'none' };
       queue.unshift(v);
       frontIn = 0;
       emit({ type: 'customerArrived', id: v.id, customer: GOLDEN });
@@ -649,7 +670,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     entry.sold += 1;
     if (selectedUid === cr.uid) selectedUid = null;
     commit({ flush: true });
-    emit({ type: 'sold', uid: cr.uid, species: cr.species, price, crystals, customer: deal.customer, customerId: deal.id, haggled, by });
+    const buyer = queue[0];
+    const liked = buyer ? Boolean(buyer.golden) || likes(buyer.district.customer, cr) : true;
+    emit({ type: 'sold', uid: cr.uid, species: cr.species, rarity: speciesData(cr.species)?.rarity ?? 'common', price, crystals, customer: deal.customer, customerId: deal.id, haggled, by, liked });
     frontLeaves('sold', 0);
     if (firstCrystal) emit({ type: 'firstCrystal' });
     for (const d of districts) emit({ type: 'districtOpened', district: d.id, customer: d.customer.id });
@@ -839,6 +862,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       if (front && front.id !== frontSeen) {
         frontSeen = front.id;
         counterSec = 0;
+        emit({ type: 'customerUp', id: front.id, customer: front.golden ? GOLDEN : front.district.customer.id });
         const pick = front.golden ? dearest() : favorite(front.district.customer);
         if (pick && pick !== selectedUid) {
           selectedUid = pick;
@@ -910,7 +934,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         queueSize: queueSize(),
         event: active ? { id: active.data.id, kind: active.data.kind, left: active.left, coins: active.coins.map(({ id, x, y }) => ({ id, x, y })), uid: active.uid, egg: active.egg } : null,
         decor: decorLevels(),
-        queue: queue.map((v) => ({ id: v.id, customer: v.golden ? GOLDEN : v.district.customer.id })),
+        queue: queue.map((v) => ({ id: v.id, customer: v.golden ? GOLDEN : v.district.customer.id, person: v.person, outfit: v.outfit, accessory: v.accessory })),
         deal: currentDeal(),
       };
     },

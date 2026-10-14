@@ -54,3 +54,24 @@ describe('M1-10 warm egg', () => {
     expect(setup(500).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm', 'egg_odd', 'egg_glow']);
   });
 });
+
+describe('M2 playtest: the first dearer egg is a good surprise', () => {
+  it('the first warm egg gives at least a rare one, later ones roll their odds', () => {
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const save = newSave(0);
+      save.flags.ftue_starter = true;
+      save.flags.ftue_done = true;
+      save.stats.hatched = 5;
+      save.stats.deals = 6;
+      save.coins = 1000;
+      const game = createGame(createStore(save, () => 0), content, createRng(seed));
+      const seen: GameEvent[] = [];
+      game.events.on((e) => seen.push(e));
+      game.buyEgg('egg_warm');
+      for (let t = 0; t < 11; t += STEP_SEC) game.tick(STEP_SEC);
+      const first = seen.find((e) => e.type === 'hatched');
+      expect(first && first.type === 'hatched' ? first.rarity : 'none').not.toBe('common');
+      expect(game.state.flags.first_egg_warm).toBe(true);
+    }
+  });
+});

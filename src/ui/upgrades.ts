@@ -32,19 +32,27 @@ function effectText(u: UpgradeData, look: UpgradeLookups): string {
 export function createUpgradesWindow(parent: HTMLElement, game: Game, look: UpgradeLookups): UpgradesWindow {
   const overlay = createOverlay(parent, 'upgrades', () => win.close());
   overlay.card.classList.add('card-shop');
+  const head = document.createElement('div');
+  head.className = 'shop-head';
   const title = document.createElement('h2');
   title.dataset.i18n = 'upgrades.title';
+  // The wallet stays in sight while the list scrolls (M2 playtest).
+  const wallet = document.createElement('span');
+  wallet.className = 'shop-wallet';
+  wallet.innerHTML = '<span class="coin coin-sm" aria-hidden="true"></span><b data-wallet></b>';
+  head.append(title, wallet);
   const list = document.createElement('div');
   list.className = 'shop-list';
   const back = button('back', 'settings.back');
-  overlay.card.append(title, list, back);
+  overlay.card.append(head, list, back);
   back.addEventListener('click', () => win.close());
   let built = '';
 
   function build(): void {
     list.replaceChildren();
-    // Positions still to buy on top, maxed ones at the bottom (the nearest goals are what the player looks for).
-    for (const item of [...game.upgradeList()].sort((a, b) => Number(a.maxed) - Number(b.maxed))) {
+    // Affordable first, then the rest by price, maxed at the bottom (the nearest goals are what the player looks for).
+    const rank = (u: { maxed: boolean; affordable: boolean }): number => (u.maxed ? 2 : u.affordable ? 0 : 1);
+    for (const item of [...game.upgradeList()].sort((a, b) => rank(a) - rank(b) || a.price - b.price)) {
       const u = look.upgrade(item.id);
       if (!u) continue;
       const row = document.createElement('div');
@@ -77,12 +85,13 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
     },
     render() {
       if (!overlay.isOpen() && built) return;
-      const key = `${look.lang()}|${game.upgradeList().map((u) => `${u.id}:${u.maxed}`).join(',')}`;
+      const key = `${look.lang()}|${game.upgradeList().map((u) => `${u.id}:${u.maxed}:${u.affordable}:${u.price}`).join(',')}`;
       if (built !== key) {
         built = key;
         build();
       }
       const fmt = new Intl.NumberFormat(look.lang());
+      (wallet.querySelector('[data-wallet]') as HTMLElement).textContent = fmt.format(Math.floor(game.state.coins));
       for (const item of game.upgradeList()) {
         const row = list.querySelector(`[data-upgrade="${item.id}"]`);
         if (!row) continue;

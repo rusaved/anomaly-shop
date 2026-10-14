@@ -38,8 +38,9 @@ describe('M1-08 upgrades', () => {
   });
 
   it('prices: a geometric row from price1 to priceMax, two significant digits', () => {
-    expect([0, 1, 2].map((k) => upgradePrice(up('incubator'), k))).toEqual([50, 500, 5000]);
-    expect([0, 1, 2, 3, 4].map((k) => upgradePrice(up('incubator_speed'), k))).toEqual([40, 120, 350, 1000, 3000]);
+    // M2 playtest: softer rows (×2.3 a level, incubators ×5.5).
+    expect([0, 1, 2].map((k) => upgradePrice(up('incubator'), k))).toEqual([50, 270, 1500]);
+    expect([0, 1, 2, 3, 4].map((k) => upgradePrice(up('incubator_speed'), k))).toEqual([40, 92, 210, 480, 1100]);
     expect(nicePrice(117.7)).toBe(120);
     expect(nicePrice(7.4)).toBe(7);
   });

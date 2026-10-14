@@ -1078,3 +1078,47 @@
 .panel-short .deal {
   padding: 6px 10px;
 }
+
+/* M2 playtest: the upgrade shop keeps its head (title, wallet) and Back in sight; only the list scrolls */
+.card-shop {
+  overflow: hidden;
+}
+.card-shop .shop-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 2px 2px;
+}
+.card-shop > .btn {
+  flex: 0 0 auto;
+}
+.shop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.shop-head h2 {
+  margin: 0;
+}
+.shop-wallet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: var(--c-uiPanelAlt);
+  font-variant-numeric: tabular-nums;
+}
+/* Three or four eggs on a wide panel (PC): the reason under a grey egg is back */
+.actions {
+  container-type: inline-size;
+}
+@container (min-width: 380px) {
+  .actions[data-eggs='3'] .btn-egg [data-why]:not([hidden]),
+  .actions[data-eggs='4'] .btn-egg [data-why]:not([hidden]) {
+    display: block;
+  }
+}

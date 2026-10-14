@@ -36,6 +36,8 @@ export const Egg = v.object({
   chances: v.object({ common: Pct, rare: Pct, epic: Pct, legendary: Pct }),
   unlock: Unlock,
   special: v.optional(v.picklist(['daily'])),
+  /** The first egg of this kind gives at least this rarity (a good first impression of a dearer egg). */
+  firstRarity: v.optional(Rarity),
 });
 export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, rescueEgg: Id, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
 

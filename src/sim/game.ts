@@ -777,7 +777,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const st = s();
     // The first minute (docs/01, section 4): the first creature is common, the second one rare.
     const forced = st.stats.hatched === 0 ? content.ftue.firstRarity : st.stats.hatched === 1 && !st.flags[FLAGS.done] ? content.ftue.secondRarity : null;
-    const rarity = forced ?? pickRarity(egg.chances, rng.next());
+    // The first egg of a dearer kind gives at least its firstRarity (once per kind, flag first_<egg>).
+    const firstOf = egg.firstRarity && !st.flags[`first_${egg.id}`] ? egg.firstRarity : null;
+    if (egg.firstRarity) st.flags[`first_${egg.id}`] = true;
+    let rarity = forced ?? pickRarity(egg.chances, rng.next());
+    if (!forced && firstOf && RARITY_RANK[rarity] < RARITY_RANK[firstOf]) rarity = firstOf;
     const kind = pickSpecies(species, rarity, rng.next());
     st.stats.hatched += 1;
     const uid = `c${st.stats.hatched.toString(36)}${rng.int(1296).toString(36)}`;

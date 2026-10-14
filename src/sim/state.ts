@@ -81,6 +81,8 @@ export interface SaveData {
   market: { lots: Lot[]; refreshIn: number };
   /** «Gifts» (M3-11): communities and the review rewarded once; the 7 days — rewards taken so far and the last local date taken. */
   gifts: { subscribed: Record<string, boolean>; reviewed: boolean; days: number; lastDay: string };
+  /** Side job level (M3-12), from 1. */
+  work: number;
 }
 
 export interface Order {
@@ -161,6 +163,7 @@ export function newSave(now: number): SaveData {
     chatIn: {},
     market: { lots: [], refreshIn: 0 },
     gifts: { subscribed: {}, reviewed: false, days: 0, lastDay: '' },
+    work: 1,
   };
 }
 
@@ -241,6 +244,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     chats: arr(r.chats).map(normalizeChat).filter((c): c is Chat => c !== null),
     chatIn: numberMap(r.chatIn),
     market: normalizeMarket(r.market),
+    work: Math.max(1, Math.floor(num(r.work, 1))),
     gifts: (() => {
       const g = rec(r.gifts);
       return {

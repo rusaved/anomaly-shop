@@ -39,12 +39,13 @@ import { createChatsTab } from './ui/chats.ts';
 import { createMarketTab } from './ui/market.ts';
 import { renderLot } from './ui/seller.ts';
 import { createGiftsWindow } from './ui/gifts.ts';
+import { createWorkWindow } from './ui/work.ts';
 import { RARITIES } from './content/schemas.ts';
 import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
-import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, news, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -112,7 +113,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -316,8 +317,15 @@ async function boot(): Promise<void> {
     '<button type="button" class="hud-btn" data-action="gifts" data-i18n="gifts.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16v9H4z"/><path d="M3 7h18v4H3z"/><path d="M12 7v13"/><path d="M12 7c-2-4-6-3-5 0M12 7c2-4 6-3 5 0"/></svg><span class="nav-badge nav-dot" data-gifts-dot hidden></span></button>',
   );
   (hud.side.querySelector('[data-action="gifts"]') as HTMLElement).addEventListener('click', () => giftsWindow.open());
+  const workWindow = createWorkWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang });
+  hud.side.insertAdjacentHTML(
+    'beforeend',
+    '<button type="button" class="hud-btn" data-action="work" data-i18n="work.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 6 0 0 1-18 0z"/><path d="M8 8c0-2 2-2 2-4M13 8c0-2 2-2 2-4"/></svg></button>',
+  );
+  (hud.side.querySelector('[data-action="work"]') as HTMLElement).addEventListener('click', () => workWindow.open());
   function renderTabs(): void {
     (hud.side.querySelector('[data-gifts-dot]') as HTMLElement).hidden = !giftsWindow.hasNew();
+    workWindow.render();
     const tab = nav.active();
     if (tab === 'market') marketTab.render();
     if (tab === 'chats') chatsTab.render();
@@ -487,6 +495,8 @@ async function boot(): Promise<void> {
       else if (e.rarity !== 'common') toasts.show(`${i18n.t(`rarity.${e.rarity}`)}: ${speciesById(e.species)?.name[i18n.lang()] ?? e.species}`, 'rare', 2200);
     } else if (e.type === 'chatNew') sfx.play('tap');
     else if (e.type === 'lotBought') sfx.play('buy');
+    else if (e.type === 'work') sfx.play('coin');
+    else if (e.type === 'workUp') sfx.play('levelUp');
     else if (e.type === 'gift') {
       toasts.show(i18n.t('gifts.toast', { what: rewardText(e.reward) }), 'good', 2400);
       sfx.play('rare');

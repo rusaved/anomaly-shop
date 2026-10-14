@@ -1886,3 +1886,47 @@
   padding: 6px 0;
   font-size: 14px;
 }
+/* M3-12: Side job */
+.card-work {
+  width: min(92vw, 400px);
+  text-align: center;
+}
+.work-bowl {
+  position: relative;
+  width: 200px;
+  height: 140px;
+  margin: 8px auto;
+  display: block;
+}
+.work-bowl svg {
+  width: 100%;
+  height: 100%;
+}
+.work-bowl.bump {
+  animation: bowl-bump 0.18s ease-out;
+}
+@keyframes bowl-bump {
+  50% {
+    transform: scale(0.92);
+  }
+}
+.work-float {
+  position: absolute;
+  left: 50%;
+  top: 10%;
+  transform: translateX(-50%);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--c-uiAccent);
+  pointer-events: none;
+  animation: work-up 0.7s ease-out forwards;
+}
+@keyframes work-up {
+  to {
+    top: -20%;
+    opacity: 0;
+  }
+}
+.work-level {
+  font-weight: 700;
+}

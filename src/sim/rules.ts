@@ -84,6 +84,14 @@ export function replyDelay(share: number, roll: number, market: { replySec: { mi
   return base * (market.slider.delay[priceZone(share, market.slider)] ?? 1);
 }
 
+/** Side job (M3-12): coins per tap and the price of the next level on the ×priceGrowth ladder. */
+export function workPay(level: number, w: { coinsPerTap: number; incomeGrowth: number }): number {
+  return Math.max(1, coins(w.coinsPerTap * Math.pow(w.incomeGrowth, Math.max(0, level - 1))));
+}
+export function workPrice(level: number, w: { price1: number; priceGrowth: number }): number {
+  return Math.max(1, coins(w.price1 * Math.pow(w.priceGrowth, Math.max(0, level - 1))));
+}
+
 export function pickRarity(chances: EggData['chances'], roll: number): RarityName {
   const total = RARITIES.reduce((s, r) => s + chances[r], 0);
   let x = roll * total;

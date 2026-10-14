@@ -248,5 +248,10 @@
   "gifts.reviewBtn": "Оценить",
   "gifts.coins": "{n} монет",
   "gifts.crystals": "{n} кристалла",
-  "gifts.toast": "Подарок: {what}"
+  "gifts.toast": "Подарок: {what}",
+  "work.title": "Подработка",
+  "work.hint": "Тапай миску: соседские питомцы сыты, тебе монеты",
+  "work.level": "Уровень {n} · +{pay} за тап",
+  "work.up": "Прокачать",
+  "work.upFor": "Прокачать за {n}"
 }

@@ -2,13 +2,13 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
 import { emptyIncubator, type Chat, type Creature, type Incubator, type Lot, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, coins, priceRange, priceZone, replyDelay, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, coins, priceRange, priceZone, replyDelay, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -20,6 +20,7 @@ export interface GameContent {
   secrets: SecretsData;
   market: MarketData;
   gifts: GiftsData;
+  work: WorkData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -79,6 +80,8 @@ export type GameEvent =
   | { type: 'hatched'; incubator: number; uid: string; species: string; rarity: RarityName; by: 'tap' | 'self'; egg: string }
   | { type: 'soldNow'; uid: string; species: string; price: number }
   | { type: 'chatNew'; id: number }
+  | { type: 'work'; coins: number }
+  | { type: 'workUp'; level: number }
   | { type: 'gift'; from: 'subscribe' | 'review' | 'daily'; reward: RewardData }
   | { type: 'lotBought'; id: number; uid: string; price: number }
   | { type: 'marketNew' }
@@ -265,6 +268,12 @@ export interface Game {
   /** Gives eggs into «my eggs» (gifts, codes, rewards). */
   giveEggs(eggId: string, n: number): void;
   tapIncubator(index: number): void;
+  /** «Side job» (M3-12): the level, coins per tap, the price of the next level (null at the top). */
+  workView(): { level: number; pay: number; price: number | null };
+  /** A tap on the bowl: the neighbours' pets are fed, coins come. */
+  workTap(): number;
+  /** «Level up for …». */
+  workUp(): boolean;
   /** «Gifts» (M3-11): what is taken; today is the player's local date (YYYY-MM-DD), the sim keeps no clock of its own. */
   giftsView(today: string): { subscribed: Record<string, boolean>; reviewed: boolean; day: number; dailyReady: boolean };
   /** An egg for following a community (once each), after the player came back from its page. */
@@ -1208,6 +1217,38 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       listIfRoom(uid);
       commit({ flush: true });
       emit({ type: 'lotBought', id, uid, price: pay });
+      emit({ type: 'change' });
+      return true;
+    },
+    workView() {
+      const lv = s().work;
+      const w = content.work;
+      return { level: lv, pay: workPay(lv, w), price: lv < w.levels ? workPrice(lv, w) : null };
+    },
+    workTap() {
+      idleSec = 0;
+      const pay = workPay(s().work, content.work);
+      s().coins += pay;
+      s().stats.taps += 1;
+      commit();
+      emit({ type: 'work', coins: pay });
+      emit({ type: 'change' });
+      return pay;
+    },
+    workUp() {
+      idleSec = 0;
+      const st = s();
+      const w = content.work;
+      if (st.work >= w.levels) return false;
+      const price = workPrice(st.work, w);
+      if (st.coins + 1e-9 < price) {
+        emit({ type: 'denied', action: 'buyEgg', reason: 'coins' });
+        return false;
+      }
+      st.coins -= price;
+      st.work += 1;
+      commit({ flush: true });
+      emit({ type: 'workUp', level: st.work });
       emit({ type: 'change' });
       return true;
     },

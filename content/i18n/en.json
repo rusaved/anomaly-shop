@@ -248,5 +248,10 @@
   "gifts.reviewBtn": "Rate",
   "gifts.coins": "{n} coins",
   "gifts.crystals": "{n} crystals",
-  "gifts.toast": "Gift: {what}"
+  "gifts.toast": "Gift: {what}",
+  "work.title": "Side job",
+  "work.hint": "Tap the bowl: the neighbours' pets are fed, you get coins",
+  "work.level": "Level {n} · +{pay} per tap",
+  "work.up": "Level up",
+  "work.upFor": "Level up for {n}"
 }

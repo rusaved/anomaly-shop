@@ -43,12 +43,12 @@ describe('M2-12 ladder of 8 things', () => {
     }
   });
 
-  it('open as rewards: bowl after the first level up, bell after 5 deals, mat after the first haggle', () => {
+  it('open as rewards: bowl after the first level up, bell at seller level 3 (6 deals), mat after the first haggle', () => {
     const ids = (o: Parameters<typeof setup>[0]) => setup(o).game.upgradeList().map((u) => u.id);
     expect(ids({ deals: 4, stats: { levelUps: 0, haggles: 0 } })).not.toEqual(expect.arrayContaining(['bowl']));
     expect(ids({ deals: 4, stats: { levelUps: 1, haggles: 0 } })).toContain('bowl');
-    expect(ids({ deals: 4, stats: { levelUps: 1, haggles: 0 } })).not.toContain('bell');
-    expect(ids({ deals: 5, stats: { levelUps: 0, haggles: 0 } })).toContain('bell');
+    expect(ids({ deals: 5, stats: { levelUps: 1, haggles: 0 } })).not.toContain('bell');
+    expect(ids({ deals: 6, stats: { levelUps: 0, haggles: 0 } })).toContain('bell');
     expect(ids({ deals: 5, stats: { levelUps: 0, haggles: 0 } })).not.toContain('mat');
     expect(ids({ deals: 5, stats: { levelUps: 0, haggles: 1 } })).toContain('mat');
   });

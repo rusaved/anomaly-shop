@@ -29,11 +29,11 @@ function setup(deals: number, levels: Record<string, number> = {}, seed = 5) {
 }
 
 describe('M2-07 sign and register', () => {
-  it('open by deals: the sign after 6, the register after 12; 5 levels each, prices from upgrades.json', () => {
+  it('open by seller level (UB-08): the sign at 3 (6 deals), the register at 5 (15 deals); 5 levels each, prices from upgrades.json', () => {
     expect(setup(5).game.upgradeList().map((u) => u.id)).not.toContain('sign');
     expect(setup(6).game.upgradeList().map((u) => u.id)).toContain('sign');
-    expect(setup(11).game.upgradeList().map((u) => u.id)).not.toContain('cash');
-    const { game } = setup(12);
+    expect(setup(14).game.upgradeList().map((u) => u.id)).not.toContain('cash');
+    const { game } = setup(15);
     expect(game.upgradeList().map((u) => u.id)).toContain('cash');
     for (const id of ['sign', 'cash']) {
       const u = up(id);

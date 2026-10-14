@@ -38,12 +38,13 @@ import { createMarketTab } from './ui/market.ts';
 import { renderLot } from './ui/seller.ts';
 import { createGiftsWindow } from './ui/gifts.ts';
 import { createWorkWindow } from './ui/work.ts';
+import { createReputation } from './ui/reputation.ts';
 import { RARITIES } from './content/schemas.ts';
 import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
-import { audio, codes, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, codes, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -111,7 +112,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -320,6 +321,20 @@ async function boot(): Promise<void> {
   );
   (hud.side.querySelector('[data-action="gifts"]') as HTMLElement).addEventListener('click', () => giftsWindow.open());
   const workWindow = createWorkWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang });
+  // UB-08: the seller level in the top bar; a tap shows what the next levels open.
+  const reputationChip = createReputation(hud.balance, uiRoot, play, {
+    t: i18n.t,
+    lang: () => i18n.lang(),
+    data: reputation,
+    openers: () => {
+      const lang = i18n.lang();
+      return [
+        ...eggs.eggs.filter((e) => !e.special && (e.section === 'ladder' || e.section === 'seasonal')).map((e) => ({ name: e.name[lang], unlock: e.unlock })),
+        ...customers.districts.map((d) => ({ name: i18n.t('next.district', { name: d.name[lang] }), unlock: d.unlock })),
+        ...upgrades.shop.map((id) => upgrades.upgrades.find((u) => u.id === id)).filter((u) => u !== undefined).map((u) => ({ name: u.name[lang], unlock: u.unlock })),
+      ];
+    },
+  });
   hud.side.insertAdjacentHTML(
     'beforeend',
     '<button type="button" class="hud-btn" data-action="work" data-i18n="work.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 6 0 0 1-18 0z"/><path d="M8 8c0-2 2-2 2-4M13 8c0-2 2-2 2-4"/></svg></button>',
@@ -355,16 +370,18 @@ async function boot(): Promise<void> {
         if (g.kind === 'upgrade') return upgrades.upgrades.find((u) => u.id === g.id)?.name[lang] ?? g.id;
         if (g.kind === 'egg') return eggs.eggs.find((e) => e.id === g.id)?.name[lang] ?? g.id;
         if (g.kind === 'district') return i18n.t('next.district', { name: customers.districts.find((d) => d.id === g.id)?.name[lang] ?? g.id });
+        if (g.kind === 'level') return i18n.t('next.level', { n: g.id });
         return i18n.t('next.rebirth');
       },
     },
     () => {
-      // An egg goal opens the Eggs tab, everything else the shop upgrades.
+      // UB-06: «Next» leads to the action — an egg goal opens its card, a seller level the sales (deals raise it), the rest the upgrades.
       const goal = play.nextGoal();
       if (goal.kind === 'egg') {
         selectTab('eggs');
         eggsTab.show(goal.id);
-      } else selectTab('shop');
+      } else if (goal.kind === 'level' || goal.kind === 'district') selectTab('sales');
+      else selectTab('shop');
     },
   );
   /** Game second of the player's last touch (idle news) and the events of the last minute (event news). */
@@ -407,6 +424,7 @@ async function boot(): Promise<void> {
     nextCard.render();
     upgradesWindow.render();
     merchantWindow.render();
+    reputationChip.render();
   };
   showTab('eggs');
   renderUi();
@@ -455,6 +473,12 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t('toast.upgradeUnlocked', { name }), 'good', 2400);
     }
     else if (e.type === 'cuckoo') sfx.play('levelUp');
+    else if (e.type === 'repUp') {
+      // UB-08: the seller level grows — the chip flashes, a toast says what opened.
+      const opened = reputationChip.up(e.level);
+      toasts.show(opened.length ? i18n.t('rep.upOpened', { n: e.level, what: opened.slice(0, 3).join(', ') }) : i18n.t('rep.up', { n: e.level }), 'rare', 3200);
+      sfx.play('levelUp');
+    }
     else if (e.type === 'eventStarted') {
       recentEvents.push({ id: e.id, at: runtime.elapsed() });
       toasts.show(i18n.t(`event.${e.kind}`), 'rare', 2600);

@@ -265,5 +265,20 @@
   "code.ok": "Done! The gift is yours",
   "code.used": "This code has already worked",
   "code.unknown": "No such code, check the letters",
-  "fx.upgrade": "Upgrade: level {n}"
+  "fx.upgrade": "Upgrade: level {n}",
+  "rep.chip": "Seller level {n}",
+  "rep.title": "Seller level {n}",
+  "rep.level": "Level {n}",
+  "rep.points": "{n} of {m} reputation points",
+  "rep.top": "Top level",
+  "rep.opens": "Opens",
+  "rep.soon": "soon",
+  "rep.nothing": "a new title and closer to the next one",
+  "rep.how": "Every deal gives a point, rare ones more",
+  "rep.up": "Seller level {n}!",
+  "rep.upOpened": "Seller level {n}! Opened: {what}",
+  "next.level": "Seller level {n}",
+  "next.left.xp.one": "{n} more point",
+  "next.left.xp.few": "{n} more points",
+  "next.left.xp.many": "{n} more points"
 }

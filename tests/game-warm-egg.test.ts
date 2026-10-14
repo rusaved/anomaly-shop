@@ -27,15 +27,15 @@ function setup(deals: number) {
 }
 
 describe('M1-10 warm egg', () => {
-  it('locked before 5 deals: not on sale, a purchase is refused', () => {
-    const { game, seen } = setup(3);
+  it('locked before seller level 3 (UB-08: 6 deals): not on sale, a purchase is refused', () => {
+    const { game, seen } = setup(4);
     expect(game.eggList().map((e) => e.id)).toEqual(['egg_basic']);
     expect(game.buyEgg('egg_warm')).toBe(false);
     expect(seen.at(-1)).toMatchObject({ type: 'denied', reason: 'locked' });
   });
 
-  it('the 5th deal opens it (event, «new» mark), it costs its price and hatches in 10 s', () => {
-    const { game, seen } = setup(4);
+  it('the 6th deal (seller level 3) opens it (event, «new» mark), it costs its price and hatches in 10 s', () => {
+    const { game, seen } = setup(5);
     expect(sellViaChat(game)).toBe(true);
     expect(seen.some((e) => e.type === 'eggUnlocked' && e.egg === 'egg_warm')).toBe(true);
     expect(game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm']);

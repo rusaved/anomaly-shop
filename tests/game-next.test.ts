@@ -32,10 +32,10 @@ describe('M2-13 next goal', () => {
     expect(next.have).toBeLessThan(next.need);
   });
 
-  it('deals goals: the warm egg after 5 deals, the street after 20', () => {
-    expect(setup(4, 0).nextGoal()).toMatchObject({ kind: 'egg', id: 'egg_warm', have: 4, need: 5, unit: 'deals' });
+  it('UB-08 level goals: the next seller level opens the warm egg (level 3), the street (level 6)', () => {
+    expect(setup(4, 0).nextGoal()).toMatchObject({ kind: 'level', id: '3', have: 4, need: 6, unit: 'xp' });
     const late = setup(19, 0);
-    expect(late.nextGoal()).toMatchObject({ kind: 'district', id: 'street', have: 19, need: 20, unit: 'deals' });
+    expect(late.nextGoal()).toMatchObject({ kind: 'level', id: '6', have: 19, need: 20, unit: 'xp' });
   });
 
   it('crystal goals count crystals', () => {
@@ -46,7 +46,7 @@ describe('M2-13 next goal', () => {
 
   it('always exactly one goal: everything bought → the new town (rebirth threshold)', () => {
     const all = Object.fromEntries(content.upgrades.upgrades.map((u) => [u.id, u.levels]));
-    const game = setup(6000, 10, all);
+    const game = setup(9000, 10, all);
     expect(game.nextGoal()).toMatchObject({ kind: 'rebirth', unit: 'coins', need: content.upgrades.prestige.thresholdCoinsEarned });
     for (let coins = 0; coins < 20000; coins += 997) {
       const g = setup(30, coins).nextGoal();

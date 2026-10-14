@@ -2,13 +2,13 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CodesData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { CodesData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
 import { emptyIncubator, type Chat, type Creature, type Incubator, type Lot, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, coins, priceRange, priceZone, replyDelay, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, coins, priceRange, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -22,6 +22,7 @@ export interface GameContent {
   gifts: GiftsData;
   work: WorkData;
   codes: CodesData;
+  reputation: ReputationData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -107,6 +108,8 @@ export type GameEvent =
   | { type: 'thingTapped'; target: SecretTarget; first: string; count: number }
   | { type: 'secret'; id: string; target: SecretTarget; show: string; coins: number; repeat: boolean }
   | { type: 'upgradeUnlocked'; id: string }
+  /** UB-08: the seller level went up (reputation.json). */
+  | { type: 'repUp'; level: number }
   | { type: 'rescueEgg'; incubator: number }
   /** Every deal (UB-05, one path): a chat answered by the player or the seller helper, or «sell now» (customer 'now', customerId 0). */
   | { type: 'sold'; uid: string; species: string; rarity: RarityName; price: number; crystals: number; customer: string; customerId: number; haggled: boolean; by: 'player' | 'helper' | 'now'; liked: boolean }
@@ -198,12 +201,20 @@ export interface UpgradeView {
 
 /** The nearest goal not reached yet (docs/01b, section 5.2): the «Next» card shows exactly one. */
 export interface GoalView {
-  kind: 'upgrade' | 'district' | 'egg' | 'rebirth';
+  kind: 'upgrade' | 'district' | 'egg' | 'level' | 'rebirth';
   id: string;
   /** Progress: have of need, in coins, crystals or deals. */
   have: number;
   need: number;
-  unit: 'coins' | 'crystals' | 'deals';
+  unit: 'coins' | 'crystals' | 'deals' | 'xp';
+}
+
+/** UB-08: the seller level — points, the level's threshold and the next one (null at the top). */
+export interface ReputationView {
+  level: number;
+  xp: number;
+  base: number;
+  next: number | null;
 }
 
 /** A market lot with its market value and the verdict «below / at / above the market» (M3-09). */
@@ -318,8 +329,10 @@ export interface Game {
   merchantBuy(choice: 'discount' | 'mystery'): boolean;
   /** A tap on a shop thing (sign, door, lamp): a reply always, a secret on the counter (docs/01b, section 2). */
   tapThing(target: SecretTarget): void;
-  /** The nearest goal not reached yet: the one with the largest share done (shop positions, districts, eggs; rebirth when all is bought). */
+  /** The nearest goal not reached yet: the one with the largest share done (shop positions, the next seller level, deal goals; rebirth when all is bought). */
   nextGoal(): GoalView;
+  /** UB-08: the seller level of reputation.json. */
+  reputation(): ReputationView;
   /** Free showcase places (eggs in incubators take none since UB-05). */
   freeSlots(): number;
   showcaseSlots(): number;
@@ -395,9 +408,13 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const spec = speciesData(cr.species);
     return spec ? coins(creatureValue(spec, cr.level) * valueMult(cr)) : 0;
   };
+  /** Reputation points (UB-08): at least one per deal, so saves and set-ups from before it count their deals. */
+  const repXp = (): number => Math.max(s().stats.xp ?? 0, s().stats.deals * content.reputation.perDeal);
+  /** The seller level (UB-08): reputation points against reputation.json. */
+  const sellerLevel = (): number => repLevel(repXp(), content.reputation.levels).level;
   const baseFacts = (): UnlockFacts => {
     const st = s().stats;
-    return { deals: st.deals, hatched: st.hatched, levelUps: st.levelUps ?? 0, haggles: st.haggles ?? 0, upgrades: s().upgrades, districts: [] };
+    return { deals: st.deals, level: sellerLevel(), hatched: st.hatched, levelUps: st.levelUps ?? 0, haggles: st.haggles ?? 0, upgrades: s().upgrades, districts: [] };
   };
   /** Districts open by deals (docs/01a, section 4); a district never waits for another district (validate:content). */
   const openDistricts = (): DistrictData[] => content.customers.districts.filter((d) => unlockMet(d.unlock, baseFacts()));
@@ -737,9 +754,13 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     st.crystals += crystals;
     const firstCrystal = crystals > 0 && !st.flags[FLAGS.crystal];
     if (firstCrystal) st.flags[FLAGS.crystal] = true;
+    // UB-08: reputation — every deal, more for a rare one (the level before counts the deals before this one).
+    const levelBefore = sellerLevel();
     st.coins += price;
     st.stats.deals += 1;
     st.stats.coinsEarned += price;
+    st.stats.xp = Math.max(st.stats.xp ?? 0, (st.stats.deals - 1) * content.reputation.perDeal) + content.reputation.perDeal + (content.reputation.rarityBonus[rarity] ?? 0);
+    const levelAfter = sellerLevel();
     st.creatures = st.creatures.filter((x) => x.uid !== cr.uid);
     st.showcase = st.showcase.filter((u) => u !== cr.uid);
     delete st.chatIn[cr.uid];
@@ -755,6 +776,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     emit({ type: 'sold', uid: cr.uid, species: cr.species, rarity, price, crystals, customer: chat?.customer || 'now', customerId: chat?.id ?? 0, haggled: Boolean(chat?.countered), by, liked });
     if (chat) emit({ type: 'customerLeft', id: chat.id, reason: 'sold' });
     if (chat && chat.id === active?.chat) endEvent('done');
+    if (levelAfter > levelBefore) emit({ type: 'repUp', level: levelAfter });
     if (firstCrystal) emit({ type: 'firstCrystal' });
     if (doneOrder) emit({ type: 'orderDone', species: doneOrder.species, reward: price });
     for (const d of districts) emit({ type: 'districtOpened', district: d.id, customer: d.customer.id });
@@ -1625,9 +1647,16 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       for (const e of eggs.eggs) {
         if (e.section === 'ladder' && !e.special && e.unlock.type === 'deals' && st.stats.deals < e.unlock.count) goals.push({ kind: 'egg', id: e.id, have: st.stats.deals, need: e.unlock.count, unit: 'deals' });
       }
+      // UB-08: the next seller level opens eggs, districts and upgrades.
+      const rep = game.reputation();
+      if (rep.next !== null) goals.push({ kind: 'level', id: String(rep.level + 1), have: rep.xp, need: rep.next, unit: 'xp' });
       const share = (g: GoalView): number => (g.need > 0 ? g.have / g.need : 1);
       const best = goals.reduce<GoalView | null>((a, g) => (!a || share(g) > share(a) + 1e-9 ? g : a), null);
       return best ?? { kind: 'rebirth', id: 'rebirth', have: st.stats.coinsEarned, need: content.upgrades.prestige.thresholdCoinsEarned, unit: 'coins' };
+    },
+    reputation() {
+      const xp = repXp();
+      return { xp, ...repLevel(xp, content.reputation.levels) };
     },
     seenShop() {
       const st = s();

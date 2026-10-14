@@ -4,6 +4,7 @@
 //     · F5 income per minute at 8–10 min ≥ 1.5 × at 1–3 min · F10 no stall (a deal every minute after the first) without ads
 //     · F11 (M2-12) in minutes 3–10 a shop goal (an upgrade or, from M3, a new egg) within 2 minutes of current income at every check
 //     · F13–F15 (M3-14): a chat deal within 60 s after the first minute, a market buy resold at a profit by 5 min, the second ladder egg by 10 min
+//     · F16 (UB-08): seller levels 2–5 by 1, 2, 3 and 4.5 minutes
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
 //     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
 //   Keeper (feeds every creature to the top before selling): F12 earns at most ×2 of the casual player in 10 min and
@@ -58,6 +59,11 @@ export const CHECKS: Check[] = [
   { id: 'F13', title: 'first deal through a chat, after the first minute', limitSec: 60 },
   { id: 'F14', title: 'a market buy resold at a profit', limitSec: 300 },
   { id: 'F15', title: 'an egg of the second ladder step', limitSec: 600 },
+  // UB-08: the seller level grows from deals — level 2 within the first minute, then a new one about every minute.
+  { id: 'F16.2', title: 'seller level 2', limitSec: 60 },
+  { id: 'F16.3', title: 'seller level 3', limitSec: 120 },
+  { id: 'F16.4', title: 'seller level 4', limitSec: 180 },
+  { id: 'F16.5', title: 'seller level 5', limitSec: 270 },
 ];
 
 /** Pace and long-run limits of docs/01a, section 9 (F11 from docs/01b, section 5.1). */
@@ -213,6 +219,7 @@ export function playOnce(bot: Bot, seed: number, content: GameContent = loadGame
     if (e.type === 'eggBought' && e.egg === secondEgg && times.F15 === undefined) times.F15 = t;
     if (e.type === 'sold' && times.F1 === undefined) times.F1 = t;
     if (e.type === 'upgradeBought' && times.F3 === undefined) times.F3 = t;
+    if (e.type === 'repUp' && e.level >= 2 && e.level <= 5) for (let l = 2; l <= e.level; l++) times[`F16.${l}`] ??= t;
     if (e.type === 'hatched' && e.rarity !== 'common' && times.F4 === undefined) times.F4 = t;
   });
   const act = botPlayer(bot, game);
@@ -374,7 +381,7 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     lines.push(`keeper  F12 10 min = ×${ratio.toFixed(2)} of casual (≤ ×${LIMITS.F12keeperMax}) · rebirth threshold on day ${fmt(day, 1)} (≥ 1.0) ${f12 ? 'ok' : 'FAIL'}`);
   }
   lines.push('F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)');
-  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F15: all green`);
+  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F16: all green`);
   return { ok: failures.length === 0, lines, failures };
 }
 

@@ -157,6 +157,8 @@ export function shelfBonus(ageSec: number, shelf: ShelfData, speed = 1): number 
 
 export interface UnlockFacts {
   deals: number;
+  /** The seller level (UB-08, reputation.json). */
+  level: number;
   hatched: number;
   levelUps: number;
   haggles: number;
@@ -173,6 +175,7 @@ export function unlockMet(u: UnlockData | undefined, f: UnlockFacts): boolean {
   if (u.type === 'stat') return f[u.stat] >= u.count;
   if (u.type === 'upgrade') return (f.upgrades[u.id] ?? 0) > 0;
   if (u.type === 'district') return f.districts.includes(u.id);
+  if (u.type === 'level') return f.level >= u.n;
   return false;
 }
 
@@ -193,4 +196,11 @@ export function upgradePrice(u: UpgradeData, owned: number): number {
 /** Is the egg on sale for this player (docs/01a, section 2): start, after N deals, with a district; special eggs come with M3. */
 export function eggUnlocked(egg: EggData, facts: UnlockFacts): boolean {
   return !egg.special && unlockMet(egg.unlock, facts);
+}
+
+/** UB-08: the seller level for reputation points (levels[i] — points for level i + 1): the level, its threshold and the next one (null at the top). */
+export function repLevel(xp: number, levels: readonly number[]): { level: number; base: number; next: number | null } {
+  let i = 0;
+  while (i + 1 < levels.length && xp + 1e-9 >= (levels[i + 1] ?? Infinity)) i++;
+  return { level: i + 1, base: levels[i] ?? 0, next: levels[i + 1] ?? null };
 }

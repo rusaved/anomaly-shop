@@ -20,6 +20,7 @@ import {
   GiftsFile,
   WorkFile,
   CodesFile,
+  ReputationFile,
   RARITIES,
   SpeciesFile,
   StyleFile,
@@ -42,7 +43,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json'] as const;
 /** The egg price ladder (docs/01 §3 p. 12): eight steps, each ×10 the one before. */
 const LADDER_STEPS = 8;
 const LADDER_STEP = 10;
@@ -300,6 +301,27 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   if (codes) {
     duplicates('codes.json', 'codes', codes.codes.map((c) => c.code), errors);
     codes.codes.forEach((c, i) => checkReward('codes.json', `codes.${i}.reward`, c.reward, eggs, errors));
+  }
+  const reputation = parseFile('reputation.json', ReputationFile, data(files['reputation.json']), errors);
+  if (reputation) {
+    // UB-08: levels start at 0 and grow; titles go up the levels; a level unlock names a level that exists.
+    if (reputation.levels[0] !== 0) errors.push('reputation.json: levels.0 — the first level needs 0 points');
+    reputation.levels.forEach((x, i) => {
+      if (i > 0 && x <= reputation.levels[i - 1]!) errors.push(`reputation.json: levels.${i} — not above the level before`);
+    });
+    reputation.titles.forEach((t, i) => {
+      if (i > 0 && t.from <= reputation.titles[i - 1]!.from) errors.push(`reputation.json: titles.${i}.from — not above the title before`);
+    });
+    const max = reputation.levels.length;
+    const level = (file: string, path: string, u: { type: string; n?: number }): void => {
+      if (u.type === 'level' && (u.n ?? 0) > max) errors.push(`${file}: ${path}.unlock.n — level ${u.n}, the top is ${max}`);
+    };
+    eggs?.eggs.forEach((e, i) => level('eggs.json', `eggs.${i}`, e.unlock));
+    upgrades?.upgrades.forEach((u, i) => u.unlock && level('upgrades.json', `upgrades.${i}`, u.unlock));
+    customers?.districts.forEach((d, i) => level('customers.json', `districts.${i}`, d.unlock));
+    reputation.future.forEach((f, i) => {
+      if (f.level > max) errors.push(`reputation.json: future.${i}.level — level ${f.level}, the top is ${max}`);
+    });
   }
   if (market) checkMarket(market, errors);
   if (gifts) checkGifts(gifts, eggs, errors);

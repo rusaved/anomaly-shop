@@ -29,6 +29,8 @@ export const Unlock = v.variant('type', [
   v.object({ type: v.literal('milestone'), id: v.pipe(v.string(), v.regex(/^M\d+$/)) }),
   v.object({ type: v.literal('stat'), stat: v.picklist(['deals', 'hatched', 'levelUps', 'haggles']), count: Count }),
   v.object({ type: v.literal('upgrade'), id: Id }),
+  /** UB-08: the seller level of reputation.json. */
+  v.object({ type: v.literal('level'), n: Count }),
 ]);
 
 export const Egg = v.object({
@@ -266,6 +268,14 @@ export const GiftsFile = v.object({
 });
 /** Promo codes (docs/01 §3 p. 15; M3-13): in-game rewards only, each code once per player. */
 export const CodesFile = v.object({ codes: v.pipe(v.array(v.object({ code: v.pipe(v.string(), v.regex(/^[A-Z0-9]{3,16}$/, 'code: 3–16 capital letters or digits')), reward: Reward })), v.minLength(1)) });
+/** UB-08: the shop's reputation — the seller level grows with deals and opens eggs, districts and upgrades (unlock {type: level}). */
+export const ReputationFile = v.object({
+  perDeal: Count,
+  rarityBonus: PerRarity,
+  levels: v.pipe(v.array(v.pipe(v.number(), v.minValue(0))), v.minLength(2)),
+  titles: v.pipe(v.array(v.object({ from: Count, name: Text })), v.minLength(1)),
+  future: v.array(v.object({ level: Count, id: Id, name: Text })),
+});
 /** Side job (docs/01 §3 p. 15): tapping the bowl feeds the neighbours' pets for coins; the job levels up on a ×growth ladder. */
 export const WorkFile = v.object({
   coinsPerTap: v.pipe(v.number(), v.minValue(1)),
@@ -370,6 +380,7 @@ export const GameFile = v.object({
 export type EggsData = v.InferOutput<typeof EggsFile>;
 export type ShelfData = v.InferOutput<typeof Shelf>;
 export type UnlockData = v.InferOutput<typeof Unlock>;
+export type ReputationData = v.InferOutput<typeof ReputationFile>;
 export type EggData = v.InferOutput<typeof Egg>;
 export type SpeciesData = v.InferOutput<typeof SpeciesFile>;
 export type SpeciesEntry = v.InferOutput<typeof Species>;

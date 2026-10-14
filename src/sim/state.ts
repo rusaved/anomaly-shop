@@ -62,7 +62,8 @@ export interface SaveData {
   collection: Record<string, CollectionEntry>;
   calendar: { lastDailyAt: number; streak: number; lastLoginDay: string };
   prestige: number;
-  stats: { deals: number; coinsEarned: number; hatched: number; taps: number; levelUps: number; haggles: number };
+  /** xp — reputation points of the seller level (UB-08); saves made before it count their deals. */
+  stats: { deals: number; coinsEarned: number; hatched: number; taps: number; levelUps: number; haggles: number; xp?: number };
   settings: { sound: boolean; lang: Lang | null };
   /** Once-per-player analytics flags and tutorial marks. */
   flags: Record<string, boolean>;
@@ -160,7 +161,7 @@ export function newSave(now: number): SaveData {
     collection: {},
     calendar: { lastDailyAt: 0, streak: 0, lastLoginDay: '' },
     prestige: 0,
-    stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0 },
+    stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0, xp: 0 },
     settings: { sound: true, lang: null },
     flags: {},
     secrets: {},
@@ -243,6 +244,7 @@ export function normalize(raw: unknown, now: number): SaveData {
       taps: num(st.taps, 0),
       levelUps: num(st.levelUps, 0),
       haggles: num(st.haggles, 0),
+      xp: Math.max(0, num(st.xp, num(st.deals, 0))),
     },
     settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null },
     flags: Object.fromEntries(Object.entries(rec(r.flags)).filter(([, v]) => v === true).map(([k]) => [k, true])),

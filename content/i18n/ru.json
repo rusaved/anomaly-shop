@@ -188,5 +188,14 @@
   "hatch.keep": "Оставить",
   "hatch.sell": "Продать сразу",
   "hatch.sellFor": "Продать сразу за {n}",
-  "hatch.toShop": "В лавку"
+  "hatch.toShop": "В лавку",
+  "price.below": "Ниже рынка",
+  "price.market": "Рыночная",
+  "price.above": "Выше рынка",
+  "price.marketIs": "Рынок: {n}",
+  "price.speed0": "Покупатель напишет быстро",
+  "price.speed1": "Покупатель напишет как обычно",
+  "price.speed2": "Покупателя придётся подождать",
+  "sales.free": "Свободно",
+  "sales.slots": "На продаже {n} из {all}"
 }

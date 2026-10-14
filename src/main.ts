@@ -34,6 +34,8 @@ import { createNav, type TabId } from './ui/nav.ts';
 import { createSheet, type Sheet } from './ui/sheet.ts';
 import { createInventoryTab } from './ui/inventory.ts';
 import { createEggsTab } from './ui/eggs.ts';
+import { createSalesTab } from './ui/sales.ts';
+import { RARITIES } from './content/schemas.ts';
 import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
@@ -192,10 +194,10 @@ async function boot(): Promise<void> {
   for (const id of ['market', 'inventory', 'sales', 'eggs', 'chats', 'season'] as const) sheets.set(id, createSheet(uiRoot, id, closeTab));
   const nav = createNav(uiRoot, showTab);
   hud.balance.addEventListener('click', () => showTab('shop'));
-  for (const [id, key] of [['market', 'market.wait'], ['sales', 'sales.empty'], ['chats', 'chats.empty'], ['season', 'season.later']] as const) {
+  for (const [id, key] of [['market', 'market.wait'], ['chats', 'chats.empty'], ['season', 'season.later']] as const) {
     const s = sheets.get(id)!;
     s.body.innerHTML = `<p class="empty" data-i18n="${key}"></p>`;
-    s.setTitle(i18n.t(id === 'sales' ? 'sales.title' : `nav.${id}`));
+    s.setTitle(i18n.t(`nav.${id}`));
   }
   const inventoryTab = createInventoryTab(sheets.get('inventory')!, play, () => store.state, {
     t: i18n.t,
@@ -235,11 +237,21 @@ async function boot(): Promise<void> {
   window.setInterval(() => {
     if (nav.active() === 'eggs') eggsTab.render();
   }, 1000);
+  const salesTab = createSalesTab(sheets.get('sales')!, play, {
+    t: i18n.t,
+    lang: i18n.lang,
+    speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
+    portrait: (id, r) => portraits.creature(id, r),
+    rarityColor: (r) => rarityColor(styleData.rarity, r),
+    slider: market.slider,
+    zoneColors: RARITIES.map((r) => styleData.rarity[r]),
+  });
   function renderTabs(): void {
     const tab = nav.active();
     if (tab === 'inventory') inventoryTab.render();
     if (tab === 'eggs') eggsTab.render();
-    for (const [id, s] of sheets) if (id !== 'inventory' && id !== 'eggs' && s.shown()) s.setTitle(i18n.t(id === 'sales' ? 'sales.title' : `nav.${id}`));
+    if (tab === 'sales') salesTab.render();
+    for (const [id, s] of sheets) if (id !== 'inventory' && id !== 'eggs' && id !== 'sales' && s.shown()) s.setTitle(i18n.t(`nav.${id}`));
     nav.badge('shop', play.upgradeList().some((u) => u.affordable || u.fresh));
     const shopEggs = play.eggShop();
     nav.badge('eggs', shopEggs.eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open)));

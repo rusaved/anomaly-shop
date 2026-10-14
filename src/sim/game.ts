@@ -8,7 +8,7 @@ import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
 import { emptyIncubator, type Creature, type Incubator, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, coins, priceRange, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, coins, priceRange, priceZone, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -129,6 +129,10 @@ export interface CreatureView {
   /** The price range (M3-05): low — «sell now», high — the top of «above the market». */
   low: number;
   high: number;
+  /** The asking price on the slider (M3-06): coins, share of the appraisal and its zone 0…5. */
+  ask: number;
+  askShare: number;
+  zone: number;
   /** Feeding taps done toward the next level and taps it needs. */
   fed: number;
   need: number;
@@ -244,6 +248,8 @@ export interface Game {
   /** Gives eggs into «my eggs» (gifts, codes, rewards). */
   giveEggs(eggId: string, n: number): void;
   tapIncubator(index: number): void;
+  /** The price slider (M3-06): sets the asking price as a share of the appraisal (clamped to the slider). */
+  setAsk(uid: string, share: number): boolean;
   /** «Sell now» (M3-05): the creature goes at the low end of its price range, no customer needed. */
   sellNow(uid: string): boolean;
   /** Egg care: one portion of food for coins (docs/01 §3 p. 12). */
@@ -947,6 +953,15 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       return buyEggBy(eggId, 'player');
     },
     sellNow,
+    setAsk(uid, share) {
+      const cr = s().creatures.find((x) => x.uid === uid);
+      if (!cr || !Number.isFinite(share)) return false;
+      const { min, max } = content.market.slider;
+      cr.askShare = Math.min(max, Math.max(min, share));
+      commit();
+      emit({ type: 'change' });
+      return true;
+    },
     eggShop() {
       const st = s();
       const show = eggs.eggs.filter((e) => !e.special && e.section !== 'reward');
@@ -1206,6 +1221,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
             maxLevel: spec?.maxLevel ?? 1,
             price: appraisal(x),
             ...priceRange(appraisal(x), content.market.range),
+            ask: Math.max(1, coins(appraisal(x) * (x.askShare ?? 1))),
+            askShare: x.askShare ?? 1,
+            zone: priceZone(x.askShare ?? 1, content.market.slider),
             fed: x.fed,
             need: tapsForLevel(x.level, species.tapsPerLevelBase, species.tapGrowth),
           };

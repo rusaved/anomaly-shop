@@ -19,6 +19,8 @@ export interface Creature {
   age: number;
   /** Price multiplier from the egg it hatched from (eggs.json valueMult: the ×10 egg ladder). */
   mult?: number;
+  /** The asking price on the price slider as a share of the appraisal (M3-06); missing = the market price (1). */
+  askShare?: number;
 }
 
 export interface Incubator {
@@ -162,7 +164,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     creatures: arr(r.creatures)
       .map((c) => rec(c))
       .filter((o) => typeof o.uid === 'string' && typeof o.species === 'string')
-      .map((o) => ({ uid: o.uid as string, species: o.species as string, level: Math.max(1, num(o.level, 1)), fed: Math.max(0, num(o.fed, 0)), hatchedAt: num(o.hatchedAt, 0), age: Math.max(0, num(o.age, 0)), mult: Math.max(1, num(o.mult, 1)) })),
+      .map((o) => ({ uid: o.uid as string, species: o.species as string, level: Math.max(1, num(o.level, 1)), fed: Math.max(0, num(o.fed, 0)), hatchedAt: num(o.hatchedAt, 0), age: Math.max(0, num(o.age, 0)), mult: Math.max(1, num(o.mult, 1)), ...(typeof o.askShare === 'number' && Number.isFinite(o.askShare) ? { askShare: o.askShare } : {}) })),
     showcase: arr(r.showcase).filter((x): x is string => typeof x === 'string'),
     upgrades: numberMap(r.upgrades),
     helpers: numberMap(r.helpers),

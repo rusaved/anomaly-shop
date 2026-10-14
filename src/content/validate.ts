@@ -117,6 +117,10 @@ function playerLine(file: string, path: string, text: { ru: string; en: string }
 function checkMarket(market: MarketData, errors: string[]): void {
   for (const k of ['refreshSec', 'price', 'level', 'hobbyDiscount'] as const) if (market[k].min > market[k].max) errors.push(`market.json: ${k} — min above max`);
   if (market.price.min >= 1) errors.push('market.json: price.min — no lot would be below the market');
+  if (market.replySec.min > market.replySec.max) errors.push('market.json: replySec — min above max');
+  // Cheaper zones answer faster: the delays grow from the first zone to the last.
+  if (market.slider.delay.some((d, i) => i > 0 && d < (market.slider.delay[i - 1] ?? 0))) errors.push('market.json: slider.delay — must grow from zone to zone');
+  if (market.slider.min >= 1) errors.push('market.json: slider.min — the slider must reach below the market');
 }
 
 function checkGifts(gifts: GiftsData, eggs: EggsData | null, errors: string[]): void {

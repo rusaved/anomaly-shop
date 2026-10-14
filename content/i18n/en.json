@@ -188,5 +188,14 @@
   "hatch.keep": "Keep",
   "hatch.sell": "Sell now",
   "hatch.sellFor": "Sell now for {n}",
-  "hatch.toShop": "To the shop"
+  "hatch.toShop": "To the shop",
+  "price.below": "Below market",
+  "price.market": "Market",
+  "price.above": "Above market",
+  "price.marketIs": "Market: {n}",
+  "price.speed0": "A buyer will write soon",
+  "price.speed1": "A buyer will write as usual",
+  "price.speed2": "A buyer may take a while",
+  "sales.free": "Free",
+  "sales.slots": "On sale {n} of {all}"
 }

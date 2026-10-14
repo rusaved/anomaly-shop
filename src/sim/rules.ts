@@ -71,6 +71,19 @@ export function priceRange(appraisal: number, range: { low: number; high: number
   return { low: Math.max(1, coins(appraisal * range.low)), high: Math.max(1, coins(appraisal * range.high)) };
 }
 
+/** The zone of an asking price on the slider (M3-06): 0…5 from far below the market to far above; share = ask / appraisal. */
+export function priceZone(share: number, slider: { min: number; max: number; delay: readonly number[] }): number {
+  const n = slider.delay.length;
+  const k = (share - slider.min) / (slider.max - slider.min);
+  return Math.min(n - 1, Math.max(0, Math.floor(k * n)));
+}
+
+/** Seconds until a buyer writes (M3-06): the base 8–15 s by roll, times the zone's delay — cheap goes fast, dear takes long. */
+export function replyDelay(share: number, roll: number, market: { replySec: { min: number; max: number }; slider: { min: number; max: number; delay: readonly number[] } }): number {
+  const base = market.replySec.min + (market.replySec.max - market.replySec.min) * roll;
+  return base * (market.slider.delay[priceZone(share, market.slider)] ?? 1);
+}
+
 export function pickRarity(chances: EggData['chances'], roll: number): RarityName {
   const total = RARITIES.reduce((s, r) => s + chances[r], 0);
   let x = roll * total;

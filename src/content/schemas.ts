@@ -240,6 +240,10 @@ export const MarketFile = v.object({
   bargainFloor: Share,
   /** A creature's price range as shares of its appraisal: low — «sell now», high — «above the market». */
   range: v.object({ low: Share, high: v.pipe(v.number(), v.minValue(1)) }),
+  /** The price slider (M3-06): from min to max of the appraisal in six equal zones; delay — how much slower a buyer writes in each zone. */
+  slider: v.object({ min: Share, max: v.pipe(v.number(), v.minValue(1)), delay: v.pipe(v.array(v.pipe(v.number(), v.minValue(0.1))), v.length(6)) }),
+  /** Seconds before a buyer writes about a creature at the market price (docs/01 §3 p. 13: 8–15 s). */
+  replySec: v.object({ min: Money, max: Money }),
 });
 /** Gifts (docs/01 §3 p. 15): an egg for following a community (once each), for a review, and seven days of growing rewards. */
 export const GiftsFile = v.object({

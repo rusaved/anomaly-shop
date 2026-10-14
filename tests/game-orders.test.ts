@@ -77,6 +77,7 @@ describe('M2-19 order board', () => {
     run(game, 0.1);
     const o = game.state.order!;
     game.state.creatures = [cr('fit', o.species, o.level)];
+    game.state.showcase = game.state.creatures.map((c) => c.uid);
     run(game, 7);
     const deal = game.deal()!;
     expect(deal.order).toBe(true);
@@ -92,6 +93,7 @@ describe('M2-19 order board', () => {
     run(game, 0.1);
     const o = game.state.order!;
     game.state.creatures = [cr('low', o.species, o.level - 1)];
+    game.state.showcase = game.state.creatures.map((c) => c.uid);
     run(game, 7);
     expect(game.deal()!.order).toBe(false);
     const back = normalize(parseSave(serialize(game.state)), 0);

@@ -58,8 +58,14 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     overlay.hide();
     look.onResult?.();
   };
-  keep.addEventListener('click', close);
-  toShop.addEventListener('click', close);
+  keep.addEventListener('click', () => {
+    game.unlist(uid);
+    close();
+  });
+  toShop.addEventListener('click', () => {
+    game.list(uid);
+    close();
+  });
   sell.addEventListener('click', () => {
     game.sellNow(uid);
     close();

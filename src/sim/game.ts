@@ -174,7 +174,10 @@ export interface GameView {
   queue: CustomerView[];
   /** The front customer's offer; null when nobody stands at the counter yet. */
   deal: DealView | null;
+  /** The creatures on sale: the showcase of the shop = the slots of «My sales» (M3-07), in slot order. */
   creatures: CreatureView[];
+  /** The creatures kept off sale (the inventory, M3-07). */
+  inventory: CreatureView[];
   /** The creature the player works with (last tapped); the deal is about it. */
   selected: string | null;
   /** Showcase places (upgrades included). */
@@ -248,6 +251,10 @@ export interface Game {
   /** Gives eggs into «my eggs» (gifts, codes, rewards). */
   giveEggs(eggId: string, n: number): void;
   tapIncubator(index: number): void;
+  /** «My sales» (M3-07): puts a creature from the inventory on a free sale slot; false when the showcase is full. */
+  list(uid: string): boolean;
+  /** «Take off» / «Keep» (M3-07): the creature leaves its sale slot for the inventory. */
+  unlist(uid: string): boolean;
   /** The price slider (M3-06): sets the asking price as a share of the appraisal (clamped to the slider). */
   setAsk(uid: string, share: number): boolean;
   /** «Sell now» (M3-05): the creature goes at the low end of its price range, no customer needed. */
@@ -308,6 +315,20 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const { eggs, species } = content;
   const basicEgg = content.ftue.starterEgg;
   const s = (): SaveData => store.state;
+  /** The creatures on sale (M3-07): the showcase of the shop is the slots of «My sales»; the rest wait in the inventory. */
+  const onSale = (): Creature[] => {
+    const st = s();
+    const by = new Map(st.creatures.map((c) => [c.uid, c]));
+    return st.showcase.map((u) => by.get(u)).filter((c): c is Creature => Boolean(c));
+  };
+  /** Puts a creature on sale if a slot is free (eggs in incubators keep their slots). */
+  const listIfRoom = (uid: string): boolean => {
+    const st = s();
+    if (st.showcase.includes(uid)) return true;
+    if (!st.creatures.some((c) => c.uid === uid) || st.showcase.length + st.incubators.filter((i) => i.egg).length >= showcaseSlots()) return false;
+    st.showcase.push(uid);
+    return true;
+  };
 
   const eggData = (id: string) => eggs.eggs.find((e) => e.id === id);
   const speciesData = (id: string) => species.species.find((x) => x.id === id);
@@ -379,10 +400,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return cr.level >= 3;
   };
   /** The dearest creature (the golden customer takes it: he pays a multiple of the tag). */
-  const dearest = (): string | null => s().creatures.reduce<Creature | null>((best, cr) => (!best || appraisal(cr) > appraisal(best) ? cr : best), null)?.uid ?? null;
+  const dearest = (): string | null => onSale().reduce<Creature | null>((best, cr) => (!best || appraisal(cr) > appraisal(best) ? cr : best), null)?.uid ?? null;
   /** The creature a customer picks from the showcase by type: thrifty the cheapest, collector the rarest, rich the highest level. */
   const favorite = (c: DistrictData['customer']): string | null => {
-    const list = s().creatures.map((cr) => ({ cr, spec: speciesData(cr.species), price: appraisal(cr) }));
+    const list = onSale().map((cr) => ({ cr, spec: speciesData(cr.species), price: appraisal(cr) }));
     if (!list.length) return null;
     const rank = (x: (typeof list)[number]): number =>
       c.likes === 'cheap' ? -x.price : c.likes === 'rare' ? RARITY_RANK[x.spec?.rarity ?? 'common'] * 1e9 + x.price : x.cr.level * 1e9 + x.price;
@@ -403,7 +424,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
 
   /** Arrival weights (docs/01a, section 4): the district share, raised by the creatures on the showcase this type likes. */
   function arrivalWeights(): Array<{ district: DistrictData; weight: number }> {
-    return openDistricts().map((d) => ({ district: d, weight: d.weight * (1 + d.attract * s().creatures.filter((cr) => likes(d.customer, cr)).length) }));
+    return openDistricts().map((d) => ({ district: d, weight: d.weight * (1 + d.attract * onSale().filter((cr) => likes(d.customer, cr)).length) }));
   }
 
   function spawnVisitor(): void {
@@ -509,8 +530,27 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   let selectedUid: string | null = null;
   /** Game seconds since the player last touched the shop (taps, deals, eggs): helpers step in only when nobody plays. */
   let idleSec = 0;
+  function creatureView(x: Creature): CreatureView {
+    const spec = speciesData(x.species);
+    const price = appraisal(x);
+    return {
+      uid: x.uid,
+      species: x.species,
+      rarity: spec?.rarity ?? 'common',
+      level: x.level,
+      maxLevel: spec?.maxLevel ?? 1,
+      price,
+      ...priceRange(price, content.market.range),
+      ask: Math.max(1, coins(price * (x.askShare ?? 1))),
+      askShare: x.askShare ?? 1,
+      zone: priceZone(x.askShare ?? 1, content.market.slider),
+      fed: x.fed,
+      need: tapsForLevel(x.level, species.tapsPerLevelBase, species.tapGrowth),
+    };
+  }
+
   function selected(): string | null {
-    const list = s().creatures;
+    const list = onSale();
     if (selectedUid && list.some((x) => x.uid === selectedUid)) return selectedUid;
     selectedUid = list[0]?.uid ?? null;
     return selectedUid;
@@ -536,7 +576,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return n > 0 ? n : 3;
   }
   function freeSlots(): number {
-    const busy = s().creatures.length + s().incubators.filter((i) => i.egg).length;
+    const busy = s().showcase.length + s().incubators.filter((i) => i.egg).length;
     return Math.max(0, showcaseSlots() - busy);
   }
 
@@ -592,7 +632,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
 
   function possible(e: EventData): boolean {
     if (e.weight <= 0 || sessionSec < e.fromMin * 60) return false;
-    if (e.kind === 'golden' || e.kind === 'sneeze') return s().creatures.length > 0;
+    if (e.kind === 'golden' || e.kind === 'sneeze') return onSale().length > 0;
     return true;
   }
 
@@ -611,7 +651,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       frontIn = 0;
       emit({ type: 'customerArrived', id: v.id, customer: GOLDEN });
     } else if (data.kind === 'sneeze') {
-      const list = s().creatures;
+      const list = onSale();
       ev.uid = list[rng.int(list.length)]?.uid ?? null;
       const st = s().stats;
       const avgSale = st.deals > 0 ? st.coinsEarned / st.deals : 0;
@@ -780,6 +820,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     st.stats.deals += 1;
     st.stats.coinsEarned += price;
     st.creatures = st.creatures.filter((x) => x.uid !== cr.uid);
+    st.showcase = st.showcase.filter((u) => u !== cr.uid);
     const districts = openDistricts().filter((d) => !districtsBefore.has(d.id));
     const opened = eggs.eggs.filter((e) => eggOpen(e) && !eggsBefore.has(e.id));
     for (const e of opened) st.flags[`egg_new_${e.id}`] = true;
@@ -812,6 +853,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     st.stats.deals += 1;
     st.stats.coinsEarned += price;
     st.creatures = st.creatures.filter((x) => x.uid !== uid);
+    st.showcase = st.showcase.filter((u) => u !== uid);
     const entry = (st.collection[cr.species] ??= { seen: 1, hatched: 0, sold: 0 });
     entry.sold += 1;
     if (selectedUid === uid) selectedUid = null;
@@ -892,10 +934,12 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     st.stats.hatched += 1;
     const uid = `c${st.stats.hatched.toString(36)}${rng.int(1296).toString(36)}`;
     st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: egg.valueMult ?? 1 });
+    // The new creature goes on sale (its egg held the slot); with the showcase full it waits in the inventory.
+    Object.assign(inc, emptyIncubator());
+    listIfRoom(uid);
     const entry = (st.collection[kind.id] ??= { seen: 0, hatched: 0, sold: 0 });
     entry.seen += 1;
     entry.hatched += 1;
-    Object.assign(inc, emptyIncubator());
     const done = st.stats.hatched >= 2 && !st.flags[FLAGS.done];
     if (done) st.flags[FLAGS.done] = true;
     commit({ flush: true });
@@ -923,6 +967,14 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return { id, level, levels: u.levels, price, affordable: !maxed && wallet + 1e-9 >= price, maxed, fresh: Boolean(s().flags[`up_new_${id}`]) };
   }
 
+  // Saves from before M3 kept every creature on the showcase: they all start on sale (as many as there are slots).
+  if (!s().flags.showcase_m3) {
+    const st = s();
+    const known = new Set(st.creatures.map((c) => c.uid));
+    st.showcase = st.showcase.filter((u) => known.has(u));
+    if (!st.showcase.length) st.showcase = st.creatures.slice(0, showcaseSlots()).map((c) => c.uid);
+    st.flags.showcase_m3 = true;
+  }
   // The starter egg (docs/01, section 4): already in the incubator on the very first visit, waiting for a tap.
   {
     const st = s();
@@ -953,6 +1005,23 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       return buyEggBy(eggId, 'player');
     },
     sellNow,
+    list(uid) {
+      idleSec = 0;
+      const ok = listIfRoom(uid);
+      if (!ok) emit({ type: 'denied', action: 'buyEgg', reason: 'full' });
+      commit({ flush: true });
+      emit({ type: 'change' });
+      return ok;
+    },
+    unlist(uid) {
+      const st = s();
+      if (!st.showcase.includes(uid)) return false;
+      st.showcase = st.showcase.filter((u) => u !== uid);
+      if (selectedUid === uid) selectedUid = null;
+      commit({ flush: true });
+      emit({ type: 'change' });
+      return true;
+    },
     setAsk(uid, share) {
       const cr = s().creatures.find((x) => x.uid === uid);
       if (!cr || !Number.isFinite(share)) return false;
@@ -1120,7 +1189,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     tick(dt) {
       idleSec += dt;
       const st = s();
-      for (const cr of st.creatures) cr.age = (cr.age ?? 0) + dt;
+      for (const cr of onSale()) cr.age = (cr.age ?? 0) + dt;
       if (frontIn > 0) {
         frontIn = Math.max(0, frontIn - dt);
         if (frontIn === 0) emit({ type: 'change' });
@@ -1211,23 +1280,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
             feedPrice: feedPrice(inc),
           };
         }),
-        creatures: s().creatures.map((x) => {
-          const spec = speciesData(x.species);
-          return {
-            uid: x.uid,
-            species: x.species,
-            rarity: spec?.rarity ?? 'common',
-            level: x.level,
-            maxLevel: spec?.maxLevel ?? 1,
-            price: appraisal(x),
-            ...priceRange(appraisal(x), content.market.range),
-            ask: Math.max(1, coins(appraisal(x) * (x.askShare ?? 1))),
-            askShare: x.askShare ?? 1,
-            zone: priceZone(x.askShare ?? 1, content.market.slider),
-            fed: x.fed,
-            need: tapsForLevel(x.level, species.tapsPerLevelBase, species.tapGrowth),
-          };
-        }),
+        inventory: s()
+          .creatures.filter((x) => !s().showcase.includes(x.uid))
+          .map((x) => creatureView(x)),
+        creatures: onSale().map((x) => creatureView(x)),
         selected: selected(),
         slots: showcaseSlots(),
         queueSize: queueSize(),

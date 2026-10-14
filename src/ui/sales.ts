@@ -22,6 +22,9 @@ export interface SalesTab {
   show(uid: string | null): void;
 }
 
+/** The «pick a creature for a free slot» view. */
+const PICK = '#pick';
+
 export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): SalesTab {
   const root = document.createElement('div');
   root.className = 'sales';
@@ -48,15 +51,18 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
   function renderList(): void {
     const view = game.view();
     const fmt = new Intl.NumberFormat(look.lang());
-    const next = `l:${look.lang()}:${view.slots}:${view.creatures.map((c) => `${c.uid}.${c.ask}.${c.zone}`).join(',')}`;
+    const next = `l:${look.lang()}:${view.slots}:${view.creatures.map((c) => `${c.uid}.${c.ask}.${c.zone}`).join(',')}:${view.inventory.length}`;
     if (next === key) return;
     key = next;
     slider = null;
     const cards: HTMLElement[] = view.creatures.map((c) => slotCard(c, fmt));
     for (let i = view.creatures.length; i < view.slots; i++) {
-      const el = document.createElement('div');
+      const el = document.createElement('button');
+      el.type = 'button';
       el.className = 'card card-empty';
-      el.innerHTML = `<span class="card-pic"><span class="slot-plus" aria-hidden="true">+</span></span><span class="card-sub">${look.t('sales.free')}</span>`;
+      el.dataset.action = 'sale-add';
+      el.innerHTML = `<span class="card-pic"><span class="slot-plus" aria-hidden="true">+</span></span><span class="card-sub">${look.t(view.inventory.length ? 'sales.add' : 'sales.free')}</span>`;
+      el.addEventListener('click', () => tab.show(PICK));
       cards.push(el);
     }
     const sum = document.createElement('p');
@@ -66,6 +72,30 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     grid.className = 'cards';
     grid.append(sum, ...cards);
     root.replaceChildren(grid);
+  }
+
+  /** The inventory to pick from for a free slot. */
+  function renderPick(): void {
+    const view = game.view();
+    const fmt = new Intl.NumberFormat(look.lang());
+    const next = `p:${look.lang()}:${view.inventory.map((c) => c.uid).join(',')}:${view.creatures.length}`;
+    if (next === key) return;
+    key = next;
+    root.innerHTML = `<button type="button" class="eggs-back" data-action="sale-back">‹ ${look.t('eggs.back')}</button><h3 class="eggs-title">${look.t('sales.pick')}</h3>`;
+    root.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => tab.show(null));
+    const grid = document.createElement('div');
+    grid.className = 'cards';
+    if (!view.inventory.length) grid.innerHTML = `<p class="empty">${look.t('sales.nothing')}</p>`;
+    for (const c of view.inventory) {
+      // A copy of the slot card without its «open» handler: a tap here lists the creature.
+      const fresh = slotCard(c, fmt).cloneNode(true) as HTMLElement;
+      fresh.dataset.action = `sale-list-${c.uid}`;
+      fresh.addEventListener('click', () => {
+        if (game.list(c.uid)) tab.show(null);
+      });
+      grid.appendChild(fresh);
+    }
+    root.appendChild(grid);
   }
 
   function renderCard(uid: string): void {
@@ -88,7 +118,12 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
       `<div class="egg-hero"><img alt="" src="${look.portrait(c.species, c.rarity)}"><div><h3 class="egg-name"></h3>` +
       `<p class="card-sub"><i class="rarity-dot" style="background:${look.rarityColor(c.rarity)}"></i> ${look.t(`rarity.${c.rarity}`)} · ${look.t('card.level', { n: c.level })}</p>` +
       `<p class="card-sub">${look.t('price.marketIs', { n: fmt.format(c.price) })}</p></div></div>` +
-      '<div data-slider></div>';
+      '<div data-slider></div>' +
+      `<div class="egg-buy"><button type="button" class="btn btn-alt" data-action="sale-off">${look.t('sales.off')}</button></div>`;
+    root.querySelector('[data-action="sale-off"]')?.addEventListener('click', () => {
+      game.unlist(uid);
+      tab.show(null);
+    });
     (root.querySelector('.egg-name') as HTMLElement).textContent = look.speciesName(c.species);
     root.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => tab.show(null));
     slider = createPriceSlider(root.querySelector('[data-slider]') as HTMLElement, look.slider, { t: look.t, lang: look.lang, colors: look.zoneColors }, (share) => game.setAsk(uid, share));
@@ -98,7 +133,8 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
   const tab: SalesTab = {
     render() {
       sheet.setTitle(look.t('sales.title'));
-      if (open) renderCard(open);
+      if (open === PICK) renderPick();
+      else if (open) renderCard(open);
       else renderList();
     },
     show(uid) {

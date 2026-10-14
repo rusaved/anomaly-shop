@@ -46,15 +46,16 @@ export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveDat
       const fmt = new Intl.NumberFormat(look.lang());
       if (mode === 'items') {
         const view = game.view();
-        const next = `i:${look.lang()}:${view.creatures.map((c) => `${c.uid}.${c.level}.${c.price}`).join(',')}`;
+        const all = [...view.creatures.map((c) => ({ c, on: true })), ...view.inventory.map((c) => ({ c, on: false }))];
+        const next = `i:${look.lang()}:${all.map(({ c, on }) => `${c.uid}.${c.level}.${c.price}.${on}`).join(',')}`;
         if (next === key) return;
         key = next;
-        if (!view.creatures.length) {
+        if (!all.length) {
           list.innerHTML = `<p class="empty" data-empty>${look.t('inventory.empty')}</p>`;
           return;
         }
         list.replaceChildren(
-          ...view.creatures.map((c) => {
+          ...all.map(({ c, on }) => {
             const b = document.createElement('button');
             b.type = 'button';
             b.className = 'card';
@@ -65,7 +66,13 @@ export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveDat
             (b.querySelector('.card-name') as HTMLElement).textContent = look.speciesName(c.species);
             (b.querySelector('.card-sub') as HTMLElement).textContent = `${look.t(`rarity.${c.rarity}`)} · ${look.t('card.level', { n: c.level })}`;
             (b.querySelector('.card-price b') as HTMLElement).textContent = fmt.format(c.price);
-            b.addEventListener('click', () => look.pick(c.uid));
+            const chip = document.createElement('span');
+            chip.className = on ? 'card-sub chip-on' : 'card-sub';
+            chip.dataset.action = on ? '' : `inv-list-${c.uid}`;
+            chip.textContent = look.t(on ? 'inventory.onSale' : 'inventory.list');
+            b.appendChild(chip);
+            b.dataset.on = String(on);
+            b.addEventListener('click', () => (on ? look.pick(c.uid) : game.list(c.uid)));
             return b;
           }),
         );

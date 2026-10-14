@@ -1662,3 +1662,7 @@
   display: inline-block;
   vertical-align: middle;
 }
+.chip-on {
+  color: var(--c-uiGood);
+  font-weight: 700;
+}

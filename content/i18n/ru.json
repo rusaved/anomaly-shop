@@ -197,5 +197,11 @@
   "price.speed1": "Покупатель напишет как обычно",
   "price.speed2": "Покупателя придётся подождать",
   "sales.free": "Свободно",
-  "sales.slots": "На продаже {n} из {all}"
+  "sales.slots": "На продаже {n} из {all}",
+  "sales.add": "Выставить",
+  "sales.pick": "Кого выставить",
+  "sales.nothing": "В инвентаре пусто",
+  "sales.off": "Снять с продажи",
+  "inventory.onSale": "На продаже",
+  "inventory.list": "Выставить"
 }

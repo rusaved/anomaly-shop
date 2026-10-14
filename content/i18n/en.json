@@ -197,5 +197,11 @@
   "price.speed1": "A buyer will write as usual",
   "price.speed2": "A buyer may take a while",
   "sales.free": "Free",
-  "sales.slots": "On sale {n} of {all}"
+  "sales.slots": "On sale {n} of {all}",
+  "sales.add": "List",
+  "sales.pick": "Who goes on sale",
+  "sales.nothing": "The inventory is empty",
+  "sales.off": "Take off sale",
+  "inventory.onSale": "On sale",
+  "inventory.list": "List"
 }

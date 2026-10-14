@@ -24,7 +24,7 @@ function setup(speciesId = 'kettle') {
 }
 
 describe('M1-04 feeding', () => {
-  it('5 taps take a fresh creature to level 2, then +1 tap per 2 levels', () => {
+  it('5 taps take a fresh creature to level 2, then +1 tap per 2 levels and at least ×tapGrowth per level (M2 review)', () => {
     const { game, seen } = setup();
     for (let i = 0; i < 4; i++) game.tapCreature('a');
     expect(game.state.creatures[0]).toMatchObject({ level: 1, fed: 4 });
@@ -35,7 +35,10 @@ describe('M1-04 feeding', () => {
     expect(tapsForLevel(2, 5)).toBe(6);
     expect(tapsForLevel(3, 5)).toBe(6);
     expect(tapsForLevel(4, 5)).toBe(7);
-    for (let i = 0; i < 6; i++) game.tapCreature('a');
+    // M2: high levels cost more taps (species.json → tapGrowth 1.3): 5, 7, 9, 11, 15 … 41 at level 9.
+    const g = content.species.tapGrowth;
+    expect([1, 2, 3, 4, 5, 9].map((l) => tapsForLevel(l, 5, g))).toEqual([5, 7, 9, 11, 15, 41]);
+    for (let i = 0; i < tapsForLevel(2, 5, g); i++) game.tapCreature('a');
     expect(game.state.creatures[0]!.level).toBe(3);
   });
 
@@ -48,7 +51,7 @@ describe('M1-04 feeding', () => {
     expect(up && up.type === 'fed' ? up.gain : 0).toBe(coins(spec.basePrice * spec.growth) - coins(spec.basePrice));
     const view = game.view().creatures.find((c) => c.uid === 'a')!;
     expect(view.price).toBe(coins(creatureValue(spec, 2)));
-    expect(view.need).toBe(6);
+    expect(view.need).toBe(tapsForLevel(2, content.species.tapsPerLevelBase, content.species.tapGrowth));
   });
 
   it('feeding stops at maxLevel (taps still select)', () => {

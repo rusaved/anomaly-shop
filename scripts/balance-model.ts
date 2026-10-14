@@ -5,6 +5,8 @@
 //     · F11 (M2-12) in minutes 3–10 a shop goal within 2 minutes of current income at every check
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
 //     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
+//   Keeper (feeds every creature to the top before selling): F12 earns at most ×2 of the casual player in 10 min and
+//     crosses the rebirth threshold no earlier than the first night (feeding pays, never breaks the economy).
 // Usage: node scripts/balance-model.ts [--seeds 24] [--out docs/evidence/M2/balance.txt]
 // Erasable TypeScript only: Node runs this file without a bundler (relative .ts imports).
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -37,6 +39,9 @@ export const BOTS: Bot[] = [
   { name: 'slow', tapsPerSec: 1.5, reactSec: 3, sellLevel: 2, haggleRisk: 0, bestEggs: true },
 ];
 
+/** Feeds every creature to its max level before selling it (a natural way to play with the MAX badge, M2 review). */
+export const KEEPER: Bot = { name: 'keeper', tapsPerSec: 3, reactSec: 1.2, sellLevel: 99, haggleRisk: 0, bestEggs: true };
+
 export interface Check {
   id: string;
   title: string;
@@ -58,6 +63,7 @@ export const LIMITS = {
   F8street: 600,
   F8square: 2400,
   F11goalMinutes: 2,
+  F12keeperMax: 2,
   /** F11 is the criterion of M2-12 (the ladder of 8 things): reported from M2-09, failing the run from M2-12. */
   F11enforced: true,
 };
@@ -319,8 +325,19 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
         ` · F8 street ${fmt(street)} s, square ${fmt(square)} s p90 (${LIMITS.F8street} / ${LIMITS.F8square}) ${f8 ? 'ok' : 'FAIL'}`,
     );
   }
+  // F12: the keeper's 10 minutes against the casual player's, and the keeper's rebirth day (median runs).
+  {
+    const casual = BOTS.find((b) => b.name === 'casual')!;
+    const n = Math.max(3, Math.round(seeds / 3));
+    const ten = (bot: Bot) => quantile(Array.from({ length: n }, (_, i) => playOnce(bot, 3000 + i * 7919, content).earned[9] ?? 0), 0.5);
+    const ratio = ten(KEEPER) / Math.max(1, ten(casual));
+    const day = quantile(Array.from({ length: Math.max(2, Math.round(longSeeds / 2)) }, (_, i) => playDays(KEEPER, 4000 + i * 104729, content).rebirthDay), 0.5);
+    const f12 = ratio <= LIMITS.F12keeperMax && day >= LIMITS.F7days[0] - 1;
+    if (!f12) failures.push(`keeper F12 ×${ratio.toFixed(2)} of casual in 10 min (≤ ×${LIMITS.F12keeperMax}), rebirth threshold on day ${fmt(day, 1)} (not before the first night)`);
+    lines.push(`keeper  F12 10 min = ×${ratio.toFixed(2)} of casual (≤ ×${LIMITS.F12keeperMax}) · rebirth threshold on day ${fmt(day, 1)} (≥ 1.0) ${f12 ? 'ok' : 'FAIL'}`);
+  }
   lines.push('F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)');
-  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}: all green`);
+  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12: all green`);
   return { ok: failures.length === 0, lines, failures };
 }
 

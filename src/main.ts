@@ -366,6 +366,7 @@ async function boot(): Promise<void> {
         hint: hints.text(),
         ftue: ftueHint(store.state, play.view())?.step ?? null,
         rarities: store.state.creatures.map((c) => speciesById(c.species)?.rarity ?? ''),
+        event: play.view().event?.kind ?? null,
       }),
       anchors: () => shop.anchors(),
       grant: (coins) => {

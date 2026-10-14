@@ -51,7 +51,7 @@ export const Species = v.object({
 /** Showcase growth (docs/01, section 3.5): a creature gains growthPerMin of its price per minute on the shelf, up to maxBonus. */
 export const Shelf = v.object({ growthPerMin: v.pipe(v.number(), v.minValue(0)), maxBonus: v.pipe(v.number(), v.minValue(0)) });
 const PerRarity = v.object({ common: Money, rare: Money, epic: Money, legendary: Money });
-export const SpeciesFile = v.object({ tapsPerLevelBase: Count, shelf: Shelf, crystalsPerSale: PerRarity, species: v.pipe(v.array(Species), v.minLength(1)) });
+export const SpeciesFile = v.object({ tapsPerLevelBase: Count, tapGrowth: v.pipe(v.number(), v.minValue(1)), shelf: Shelf, crystalsPerSale: PerRarity, species: v.pipe(v.array(Species), v.minLength(1)) });
 
 export const Customer = v.object({
   id: Id,

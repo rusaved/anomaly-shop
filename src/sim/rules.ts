@@ -53,9 +53,11 @@ export function coins(value: number): number {
   return Math.max(1, Math.round(value));
 }
 
-/** Feeding taps from this level to the next: tapsPerLevelBase + 1 per 2 levels (docs/01a, section 3). */
-export function tapsForLevel(level: number, base: number): number {
-  return base + Math.floor(Math.max(1, level) / 2);
+/** Feeding taps from this level to the next: tapsPerLevelBase + 1 per 2 levels (docs/01a, section 3), and from M2 at least
+ * base × tapGrowth^(level − 1): high levels cost more taps, so feeding to the top pays but never breaks the economy. */
+export function tapsForLevel(level: number, base: number, tapGrowth = 1): number {
+  const l = Math.max(1, level);
+  return Math.max(base + Math.floor(l / 2), Math.ceil(base * Math.pow(tapGrowth, l - 1) - 1e-9));
 }
 
 export interface OfferParams {

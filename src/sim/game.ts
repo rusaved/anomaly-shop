@@ -678,7 +678,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const before = appraisal(cr);
     if (!maxed) {
       cr.fed += food;
-      if (cr.fed >= tapsForLevel(cr.level, species.tapsPerLevelBase)) {
+      if (cr.fed >= tapsForLevel(cr.level, species.tapsPerLevelBase, species.tapGrowth)) {
         cr.fed = 0;
         cr.level += 1;
         levelUp = true;
@@ -981,7 +981,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
             maxLevel: spec?.maxLevel ?? 1,
             price: appraisal(x),
             fed: x.fed,
-            need: tapsForLevel(x.level, species.tapsPerLevelBase),
+            need: tapsForLevel(x.level, species.tapsPerLevelBase, species.tapGrowth),
           };
         }),
         selected: selected(),

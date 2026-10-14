@@ -35,6 +35,7 @@ import { createSheet, type Sheet } from './ui/sheet.ts';
 import { createInventoryTab } from './ui/inventory.ts';
 import { createEggsTab } from './ui/eggs.ts';
 import { createSalesTab } from './ui/sales.ts';
+import { createChatsTab } from './ui/chats.ts';
 import { RARITIES } from './content/schemas.ts';
 import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
@@ -194,7 +195,7 @@ async function boot(): Promise<void> {
   for (const id of ['market', 'inventory', 'sales', 'eggs', 'chats', 'season'] as const) sheets.set(id, createSheet(uiRoot, id, closeTab));
   const nav = createNav(uiRoot, showTab);
   hud.balance.addEventListener('click', () => showTab('shop'));
-  for (const [id, key] of [['market', 'market.wait'], ['chats', 'chats.empty'], ['season', 'season.later']] as const) {
+  for (const [id, key] of [['market', 'market.wait'], ['season', 'season.later']] as const) {
     const s = sheets.get(id)!;
     s.body.innerHTML = `<p class="empty" data-i18n="${key}"></p>`;
     s.setTitle(i18n.t(`nav.${id}`));
@@ -246,12 +247,28 @@ async function boot(): Promise<void> {
     slider: market.slider,
     zoneColors: RARITIES.map((r) => styleData.rarity[r]),
   });
+  const chatsTab = createChatsTab(sheets.get('chats')!, play, {
+    t: i18n.t,
+    lang: () => i18n.lang(),
+    character: (id) => customers.characters.find((c) => c.id === id),
+    person: (i) => {
+      const p = customers.people.names[i];
+      return { name: p?.[i18n.lang()] ?? '?', f: Boolean(p?.f) };
+    },
+    speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
+    rarity: (id) => speciesById(id)?.rarity ?? 'common',
+    portrait: (id, r) => portraits.creature(id, r),
+    rarityColor: (r) => rarityColor(styleData.rarity, r),
+    avatarColor: (i) => customers.people.outfits[i % customers.people.outfits.length] ?? styleData.colors.uiAccent,
+  });
   function renderTabs(): void {
     const tab = nav.active();
+    if (tab === 'chats') chatsTab.render();
     if (tab === 'inventory') inventoryTab.render();
     if (tab === 'eggs') eggsTab.render();
     if (tab === 'sales') salesTab.render();
-    for (const [id, s] of sheets) if (id !== 'inventory' && id !== 'eggs' && id !== 'sales' && s.shown()) s.setTitle(i18n.t(`nav.${id}`));
+    for (const [id, s] of sheets) if (id === 'market' || id === 'season') s.setTitle(i18n.t(`nav.${id}`));
+    nav.badge('chats', play.chats().filter((c) => c.unread).length);
     nav.badge('shop', play.upgradeList().some((u) => u.affordable || u.fresh));
     const shopEggs = play.eggShop();
     nav.badge('eggs', shopEggs.eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open)));
@@ -411,6 +428,10 @@ async function boot(): Promise<void> {
       // The player opened it: the hatch show (M3-05); by itself (helpers, time away) — a toast for the rare ones.
       if (e.by === 'tap') hatchShow.play(e);
       else if (e.rarity !== 'common') toasts.show(`${i18n.t(`rarity.${e.rarity}`)}: ${speciesById(e.species)?.name[i18n.lang()] ?? e.species}`, 'rare', 2200);
+    } else if (e.type === 'chatNew') sfx.play('tap');
+    else if (e.type === 'chatSold') {
+      sfx.play('coin');
+      hud.pulse();
     } else if (e.type === 'soldNow') {
       sfx.play('coin');
       hud.pulse();

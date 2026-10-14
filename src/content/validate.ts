@@ -161,6 +161,18 @@ function checkCustomers(customers: CustomersData, errors: string[]): void {
   });
   if (!customers.characters.some((c) => c.weight > 0)) errors.push('customers.json: characters — every weight is 0');
   customers.hobbies.forEach((h, i) => playerLine('customers.json', `hobbies.${i}.line`, h.line, errors));
+  // Chat lines (M3-08): 8 words at most, {n} in the offers.
+  customers.characters.forEach((c, i) => {
+    for (const [ctx, pool] of Object.entries(c.lines))
+      pool.forEach((line, j) => {
+        const path = `characters.${i}.lines.${ctx}.${j}`;
+        playerLine('customers.json', path, line, errors);
+        for (const lang of ['ru', 'en'] as const) {
+          if (line[lang].trim().split(/\s+/).length > 8) errors.push(`customers.json: ${path}.${lang} — more than 8 words`);
+          if ((ctx === 'offer' || ctx === 'last') && !line[lang].includes('{n}')) errors.push(`customers.json: ${path}.${lang} — no {n} for the price`);
+        }
+      });
+  });
   customers.people.names.forEach((n, i) => {
     if (CYRILLIC.test(n.en)) errors.push(`customers.json: people.names.${i}.en — Cyrillic in the English text`);
   });

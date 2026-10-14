@@ -203,5 +203,14 @@
   "sales.nothing": "В инвентаре пусто",
   "sales.off": "Снять с продажи",
   "inventory.onSale": "На продаже",
-  "inventory.list": "Выставить"
+  "inventory.list": "Выставить",
+  "chats.me.sell": "Продаю за {n}",
+  "chats.me.counter": "Могу отдать за {n}",
+  "chats.me.decline": "Нет, спасибо",
+  "chats.sell": "Продать за {n}",
+  "chats.decline": "Отказаться",
+  "chats.counter": "Встречная цена {n}",
+  "chats.sold": "Продано",
+  "chats.gone": "Покупатель ушёл",
+  "chats.ask": "Моя цена {n}"
 }

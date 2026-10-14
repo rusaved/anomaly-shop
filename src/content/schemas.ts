@@ -102,13 +102,26 @@ export const Orders = v.object({ minutes: v.pipe(v.number(), v.minValue(0.5)), r
  * Characters (docs/01 §3 p. 13): how a person writes in the chats and on the market.
  * offer — the first offer as a share of the asking price; give — how far below their price (or above their offer) they still agree.
  */
-export const Character = v.object({ id: Id, name: Text, weight: v.pipe(v.number(), v.minValue(0)), offer: v.object({ min: Money, max: Money }), give: Share });
+export const CHAT_CONTEXTS = ['greet', 'offer', 'accept', 'refuse', 'last', 'thanks', 'bye'] as const;
+const Lines = v.pipe(v.array(Text), v.minLength(1));
+export const Character = v.object({
+  id: Id,
+  name: Text,
+  nameF: v.optional(Text),
+  weight: v.pipe(v.number(), v.minValue(0)),
+  offer: v.object({ min: Money, max: Money }),
+  give: Share,
+  /** What the person writes in «Chats» (M3-08), by context; {n} — coins. */
+  lines: v.object(Object.fromEntries(CHAT_CONTEXTS.map((k) => [k, Lines])) as Record<(typeof CHAT_CONTEXTS)[number], typeof Lines>),
+});
 /** Hobbies: «How are you?» with a seller who shares it gives a discount (M3-10). */
 export const Hobby = v.object({ id: Id, name: Text, line: Text });
 export const CustomersFile = v.object({
   queueSize: Count,
   people: People,
   characters: v.pipe(v.array(Character), v.minLength(1)),
+  /** «Chats» (M3-08): how many open chats at once and how many closed ones stay in the list. */
+  chat: v.object({ maxOpen: Count, keep: Count }),
   hobbies: v.pipe(v.array(Hobby), v.minLength(2)),
   orders: Orders,
   spawnEverySec: v.pipe(v.number(), v.minValue(0.1)),
@@ -364,6 +377,7 @@ export type CalendarData = v.InferOutput<typeof CalendarFile>;
 export type CareData = v.InferOutput<typeof Care>;
 export type EggSection = (typeof EGG_SECTIONS)[number];
 export type CharacterData = v.InferOutput<typeof Character>;
+export type ChatContext = (typeof CHAT_CONTEXTS)[number];
 export type HobbyData = v.InferOutput<typeof Hobby>;
 export type MarketData = v.InferOutput<typeof MarketFile>;
 export type GiftsData = v.InferOutput<typeof GiftsFile>;

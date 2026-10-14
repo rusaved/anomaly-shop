@@ -203,5 +203,14 @@
   "sales.nothing": "The inventory is empty",
   "sales.off": "Take off sale",
   "inventory.onSale": "On sale",
-  "inventory.list": "List"
+  "inventory.list": "List",
+  "chats.me.sell": "Selling for {n}",
+  "chats.me.counter": "I can do {n}",
+  "chats.me.decline": "No, thanks",
+  "chats.sell": "Sell for {n}",
+  "chats.decline": "Decline",
+  "chats.counter": "Counter {n}",
+  "chats.sold": "Sold",
+  "chats.gone": "The buyer left",
+  "chats.ask": "My price {n}"
 }

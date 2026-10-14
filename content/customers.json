@@ -1,6 +1,6 @@
 {
   "$schema": "customers.schema.json",
-  "note": "Районы и типы покупателей из docs/01a-content.md §4. offer — доля от оценки существа (min..max). bargain — успех +10..30% к предложению, провал — покупатель уходит с шансом leaveOnBargain. bargainMax — сколько раз можно торговаться с одним покупателем (дальше «последняя цена»). waitNextSec — «подождать»: следующий подходит через столько секунд. weight — доля прихода среди открытых районов; attract — +доля за каждое существо на витрине, которое этот тип любит (likes: cheap — обычные, rare — редкие и выше, level — уровень 3+). people (M2-18): у каждого покупателя имя из names (f — женское, тогда тип пишется nameF), цвет одежды из outfits, аксессуар из accessories; в очереди имена не повторяются. orders (M2-19, доска заказов): один заказ — вид из доступных игроку (редкость, которая выпадает из открытых яиц) и уровень level, награда rewardMult × оценки на этом уровне; срок minutes, потом новый, без наказания; выполняется продажей подходящего существа (вид, уровень не ниже) — платится наибольшее из предложения и награды. characters (M3, docs/01 §3 п. 13): характер человека в переписках и на рынке — weight доля среди людей, offer — первое предложение как доля цены продавца, give — насколько ниже своей цены (или выше своего предложения) он ещё соглашается. hobbies — увлечения: «Как дела?» продавцу с тем же увлечением даёт скидку (market.json hobbyDiscount).",
+  "note": "Районы и типы покупателей из docs/01a-content.md §4. offer — доля от оценки существа (min..max). bargain — успех +10..30% к предложению, провал — покупатель уходит с шансом leaveOnBargain. bargainMax — сколько раз можно торговаться с одним покупателем (дальше «последняя цена»). waitNextSec — «подождать»: следующий подходит через столько секунд. weight — доля прихода среди открытых районов; attract — +доля за каждое существо на витрине, которое этот тип любит (likes: cheap — обычные, rare — редкие и выше, level — уровень 3+). people (M2-18): у каждого покупателя имя из names (f — женское, тогда тип пишется nameF), цвет одежды из outfits, аксессуар из accessories; в очереди имена не повторяются. orders (M2-19, доска заказов): один заказ — вид из доступных игроку (редкость, которая выпадает из открытых яиц) и уровень level, награда rewardMult × оценки на этом уровне; срок minutes, потом новый, без наказания; выполняется продажей подходящего существа (вид, уровень не ниже) — платится наибольшее из предложения и награды. characters (M3, docs/01 §3 п. 13): характер человека в переписках и на рынке — weight доля среди людей, offer — первое предложение как доля цены продавца, give — насколько ниже своей цены (или выше своего предложения) он ещё соглашается. hobbies — увлечения: «Как дела?» продавцу с тем же увлечением даёт скидку (market.json hobbyDiscount). lines — реплики характера в «Переписках» (M3-08): greet, offer {n}, accept, refuse, last {n} (последняя цена), thanks, bye; до 8 слов, без точки в конце. chat — maxOpen чатов сразу, keep — сколько закрытых хранить.",
   "queueSize": 3,
   "spawnEverySec": 6,
   "waitNextSec": 2,
@@ -39,12 +39,132 @@
   },
   "orders": {"minutes": 5, "rewardMult": {"min": 2, "max": 3}, "level": {"min": 2, "max": 5}},
   "characters": [
-    {"id": "chatty", "name": {"ru": "Болтун", "en": "Chatterbox"}, "weight": 0.22, "offer": {"min": 0.85, "max": 0.95}, "give": 0.1},
-    {"id": "greedy", "name": {"ru": "Жадина", "en": "Penny-pincher"}, "weight": 0.2, "offer": {"min": 0.6, "max": 0.75}, "give": 0.04},
-    {"id": "hasty", "name": {"ru": "Торопыга", "en": "Rusher"}, "weight": 0.18, "offer": {"min": 0.9, "max": 1.0}, "give": 0.12},
-    {"id": "collector", "name": {"ru": "Коллекционер", "en": "Collector"}, "weight": 0.16, "offer": {"min": 0.9, "max": 1.05}, "give": 0.08},
-    {"id": "rich", "name": {"ru": "Богач", "en": "Big Spender"}, "weight": 0.12, "offer": {"min": 1.0, "max": 1.15}, "give": 0.15},
-    {"id": "troll", "name": {"ru": "Тролль", "en": "Prankster"}, "weight": 0.12, "offer": {"min": 0.3, "max": 0.5}, "give": 0.2}
+    {
+      "id": "chatty",
+      "name": {"ru": "Болтун", "en": "Chatterbox"},
+      "weight": 0.22,
+      "offer": {"min": 0.85, "max": 0.95},
+      "give": 0.1,
+      "lines": {
+        "greet": [
+          {"ru": "Привет-привет! Я по объявлению", "en": "Hi hi! I'm here about your ad"},
+          {"ru": "Ой, какая прелесть у вас", "en": "Oh, what a cutie you have"}
+        ],
+        "offer": [
+          {"ru": "Возьму за {n}, идёт?", "en": "I'll take it for {n}, deal?"},
+          {"ru": "Даю {n} и рассказываю анекдот", "en": "I give {n} and a joke"}
+        ],
+        "accept": [{"ru": "Ладно, уговорили, по рукам!", "en": "Fine, you talked me into it!"}],
+        "refuse": [{"ru": "Ой, дороговато для меня", "en": "Oh, a bit pricey for me"}],
+        "last": [{"ru": "Последнее слово: {n}", "en": "My last word: {n}"}],
+        "thanks": [{"ru": "Ура! Побежал всем рассказывать", "en": "Yay! Off to tell everyone"}],
+        "bye": [{"ru": "Жаль! Ну, хорошего дня", "en": "Pity! Have a nice day"}]
+      },
+      "nameF": {"ru": "Болтушка", "en": "Chatterbox"}
+    },
+    {
+      "id": "greedy",
+      "name": {"ru": "Жадина", "en": "Penny-pincher"},
+      "weight": 0.2,
+      "offer": {"min": 0.6, "max": 0.75},
+      "give": 0.04,
+      "lines": {
+        "greet": [
+          {"ru": "Здравствуйте. Почём отдаёте?", "en": "Hello. How much?"},
+          {"ru": "Добрый день. Скидка будет?", "en": "Good day. Any discount?"}
+        ],
+        "offer": [
+          {"ru": "Больше {n} не дам", "en": "Won't give more than {n}"},
+          {"ru": "{n}, и то много", "en": "{n}, and that's a lot"}
+        ],
+        "accept": [{"ru": "Эх, ладно, беру", "en": "Oh well, I'll take it"}],
+        "refuse": [{"ru": "Нет уж, это грабёж", "en": "No way, that's robbery"}],
+        "last": [{"ru": "Ну хорошо, {n}. И всё", "en": "Fine, {n}. That's it"}],
+        "thanks": [{"ru": "Выгодно взял, спасибо", "en": "Good bargain, thanks"}],
+        "bye": [{"ru": "Найду подешевле", "en": "I'll find a cheaper one"}]
+      }
+    },
+    {
+      "id": "hasty",
+      "name": {"ru": "Торопыга", "en": "Rusher"},
+      "weight": 0.18,
+      "offer": {"min": 0.9, "max": 1.0},
+      "give": 0.12,
+      "lines": {
+        "greet": [{"ru": "Привет! Бегу, коротко", "en": "Hi! In a hurry, quick"}],
+        "offer": [
+          {"ru": "{n} прямо сейчас?", "en": "{n} right now?"},
+          {"ru": "Даю {n}, решай быстро", "en": "{n}, decide fast"}
+        ],
+        "accept": [{"ru": "Да, да, беру!", "en": "Yes, yes, deal!"}],
+        "refuse": [{"ru": "Некогда торговаться, пока", "en": "No time to haggle, bye"}],
+        "last": [{"ru": "{n} и бегу", "en": "{n} and I'm off"}],
+        "thanks": [{"ru": "Супер, уже бегу!", "en": "Super, running!"}],
+        "bye": [{"ru": "Опаздываю, пока!", "en": "Running late, bye!"}]
+      }
+    },
+    {
+      "id": "collector",
+      "name": {"ru": "Коллекционер", "en": "Collector"},
+      "weight": 0.16,
+      "offer": {"min": 0.9, "max": 1.05},
+      "give": 0.08,
+      "lines": {
+        "greet": [
+          {"ru": "Добрый день. Ищу редких", "en": "Good day. Looking for rare ones"},
+          {"ru": "Можно взглянуть поближе?", "en": "May I take a closer look?"}
+        ],
+        "offer": [{"ru": "Предлагаю {n}, честная цена", "en": "I offer {n}, a fair price"}],
+        "accept": [{"ru": "Согласен, ценная находка", "en": "Agreed, a fine find"}],
+        "refuse": [{"ru": "Для коллекции дороговато", "en": "Too dear for my collection"}],
+        "last": [{"ru": "Готов поднять до {n}", "en": "Ready to go up to {n}"}],
+        "thanks": [{"ru": "Займёт почётное место на полке", "en": "It gets a place of honor"}],
+        "bye": [{"ru": "Удачи, загляну ещё", "en": "Good luck, I'll be back"}]
+      },
+      "nameF": {"ru": "Коллекционерка", "en": "Collector"}
+    },
+    {
+      "id": "rich",
+      "name": {"ru": "Богач", "en": "Big Spender"},
+      "weight": 0.12,
+      "offer": {"min": 1.0, "max": 1.15},
+      "give": 0.15,
+      "lines": {
+        "greet": [{"ru": "Добрый день! Беру лучшее", "en": "Good day! I take the best"}],
+        "offer": [
+          {"ru": "Плачу {n}, не мелочусь", "en": "Paying {n}, no small talk"},
+          {"ru": "{n}? Пусть будет {n}", "en": "{n}? Let it be {n}"}
+        ],
+        "accept": [{"ru": "Конечно! Деньги не вопрос", "en": "Of course! Money is no issue"}],
+        "refuse": [{"ru": "Хм, даже для меня много", "en": "Hm, too much even for me"}],
+        "last": [{"ru": "Хорошо, {n}, и закончим", "en": "Fine, {n}, and done"}],
+        "thanks": [{"ru": "Прекрасно! Водитель заберёт", "en": "Lovely! My driver will pick it up"}],
+        "bye": [{"ru": "Что ж, всего доброго", "en": "Well then, all the best"}]
+      },
+      "nameF": {"ru": "Богачка", "en": "Big Spender"}
+    },
+    {
+      "id": "troll",
+      "name": {"ru": "Тролль", "en": "Prankster"},
+      "weight": 0.12,
+      "offer": {"min": 0.3, "max": 0.5},
+      "give": 0.2,
+      "lines": {
+        "greet": [
+          {"ru": "Здарова! А оно кусается?", "en": "Hey! Does it bite?"},
+          {"ru": "Ого, а если его погладить?", "en": "Wow, what if I pet it?"}
+        ],
+        "offer": [
+          {"ru": "Даю {n} и фантик", "en": "{n} and a candy wrapper"},
+          {"ru": "{n}, и это щедро", "en": "{n}, and that's generous"}
+        ],
+        "accept": [{"ru": "Ха, ну ладно, беру", "en": "Ha, fine, I'll take it"}],
+        "refuse": [{"ru": "Шучу! Ну почти", "en": "Just kidding! Well, almost"}],
+        "last": [{"ru": "Ладно, {n}. Без шуток", "en": "Okay, {n}. No jokes"}],
+        "thanks": [{"ru": "Буду с ним дружить", "en": "We'll be best friends"}],
+        "bye": [{"ru": "Пошёл искать единорога", "en": "Off to find a unicorn"}]
+      }
+    }
   ],
   "hobbies": [
     {"id": "fishing", "name": {"ru": "Рыбалка", "en": "Fishing"}, "line": {"ru": "Вчера поймал карася с ладошку", "en": "Caught a fish the size of my palm"}},
@@ -55,5 +175,6 @@
     {"id": "stars", "name": {"ru": "Звёзды", "en": "Stargazing"}, "line": {"ru": "Ночью видел падающую звезду", "en": "Saw a shooting star last night"}},
     {"id": "football", "name": {"ru": "Футбол", "en": "Football"}, "line": {"ru": "Наши вчера выиграли", "en": "Our team won yesterday"}},
     {"id": "puzzles", "name": {"ru": "Пазлы", "en": "Puzzles"}, "line": {"ru": "Собрал пазл на тысячу деталей", "en": "Finished a thousand piece puzzle"}}
-  ]
+  ],
+  "chat": {"maxOpen": 6, "keep": 12}
 }

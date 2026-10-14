@@ -6,9 +6,9 @@ import type { CustomersData, DistrictData, EggSection, EggsData, MarketData, Eve
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
-import { emptyIncubator, type Creature, type Incubator, type Order, type SaveData } from './state.ts';
+import { emptyIncubator, type Chat, type Creature, type Incubator, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, coins, priceRange, priceZone, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, coins, priceRange, priceZone, replyDelay, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -77,6 +77,9 @@ export type GameEvent =
   | { type: 'freeEgg'; egg: string }
   | { type: 'hatched'; incubator: number; uid: string; species: string; rarity: RarityName; by: 'tap' | 'self'; egg: string }
   | { type: 'soldNow'; uid: string; species: string; price: number }
+  | { type: 'chatNew'; id: number }
+  | { type: 'chatSold'; id: number; uid: string; price: number }
+  | { type: 'chatReply'; id: number; ctx: string }
   | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number; by: FeedBy }
   | { type: 'customerArrived'; id: number; customer: string }
   | { type: 'customerLeft'; id: number; reason: 'sold' | 'haggle' | 'wait' }
@@ -251,6 +254,15 @@ export interface Game {
   /** Gives eggs into «my eggs» (gifts, codes, rewards). */
   giveEggs(eggId: string, n: number): void;
   tapIncubator(index: number): void;
+  /** «Chats» (M3-08): buyers' messages about creatures on sale, newest first. */
+  chats(): Chat[];
+  /** Sells the creature to the buyer of the chat at the offered price. */
+  chatSell(id: number): boolean;
+  /** «No, thanks»: the buyer leaves, another one will write later. */
+  chatDecline(id: number): boolean;
+  /** «Counter price»: the player's asking price; the buyer agrees within its give, else names a last price. Once per chat. */
+  chatCounter(id: number): boolean;
+  chatRead(id: number): void;
   /** «My sales» (M3-07): puts a creature from the inventory on a free sale slot; false when the showcase is full. */
   list(uid: string): boolean;
   /** «Take off» / «Keep» (M3-07): the creature leaves its sale slot for the inventory. */
@@ -312,7 +324,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const commit = (opts?: { flush?: boolean }): void => {
     if (!quiet) store.commit(opts);
   };
-  const { eggs, species } = content;
+  const { eggs, species, customers } = content;
   const basicEgg = content.ftue.starterEgg;
   const s = (): SaveData => store.state;
   /** The creatures on sale (M3-07): the showcase of the shop is the slots of «My sales»; the rest wait in the inventory. */
@@ -842,12 +854,21 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
 
   /** «Sell now» (M3-05): no customer, the low end of the price range; a deal like any other (counts, crystals, unlocks). */
   function sellNow(uid: string): boolean {
-    const st = s();
-    const cr = st.creatures.find((x) => x.uid === uid);
+    const cr = s().creatures.find((x) => x.uid === uid);
     if (!cr) return false;
-    const districtsBefore = new Set(openDistricts().map((d) => d.id));
-    const eggsBefore = new Set(eggs.eggs.filter(eggOpen).map((e) => e.id));
     const price = priceRange(appraisal(cr), content.market.range).low;
+    completeSale(cr, price);
+    emit({ type: 'soldNow', uid, species: cr.species, price });
+    afterSale();
+    return true;
+  }
+
+  let pendingOpen: { districts: Set<string>; eggs: Set<string> } | null = null;
+  /** A sale without the counter (sell now, a chat): coins, the deal count, crystals, the collection; unlock events go after. */
+  function completeSale(cr: Creature, price: number): void {
+    const st = s();
+    const uid = cr.uid;
+    pendingOpen = { districts: new Set(openDistricts().map((d) => d.id)), eggs: new Set(eggs.eggs.filter(eggOpen).map((e) => e.id)) };
     st.crystals += species.crystalsPerSale[speciesData(cr.species)?.rarity ?? 'common'];
     st.coins += price;
     st.stats.deals += 1;
@@ -857,16 +878,87 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const entry = (st.collection[cr.species] ??= { seen: 1, hatched: 0, sold: 0 });
     entry.sold += 1;
     if (selectedUid === uid) selectedUid = null;
-    const districts = openDistricts().filter((d) => !districtsBefore.has(d.id));
-    const opened = eggs.eggs.filter((e) => eggOpen(e) && !eggsBefore.has(e.id));
-    for (const e of opened) st.flags[`egg_new_${e.id}`] = true;
     commit({ flush: true });
-    emit({ type: 'soldNow', uid, species: cr.species, price });
-    for (const d of districts) emit({ type: 'districtOpened', district: d.id, customer: d.customer.id });
-    for (const e of opened) emit({ type: 'eggUnlocked', egg: e.id });
-    emit({ type: 'change' });
-    return true;
   }
+  function afterSale(): void {
+    const before = pendingOpen;
+    pendingOpen = null;
+    if (before) {
+      const districts = openDistricts().filter((d) => !before.districts.has(d.id));
+      const opened = eggs.eggs.filter((e) => eggOpen(e) && !before.eggs.has(e.id));
+      for (const e of opened) s().flags[`egg_new_${e.id}`] = true;
+      if (opened.length) commit({ flush: true });
+      for (const d of districts) emit({ type: 'districtOpened', district: d.id, customer: d.customer.id });
+      for (const e of opened) emit({ type: 'eggUnlocked', egg: e.id });
+    }
+    emit({ type: 'change' });
+  }
+
+  // «Chats» (M3-08): a buyer writes about each creature on sale after replyDelay of its price zone.
+  let nextChatId = Math.max(0, ...s().chats.map((c) => c.id)) + 1;
+  const characterOf = (id: string) => customers.characters.find((c) => c.id === id);
+  const pickLineIndex = (character: string, ctx: string): number => {
+    const pool = (characterOf(character)?.lines as Record<string, unknown[]> | undefined)?.[ctx];
+    return pool?.length ? rng.int(pool.length) : 0;
+  };
+  function newChat(cr: Creature): void {
+    const st = s();
+    const chars = customers.characters;
+    const total = chars.reduce((sum, c) => sum + c.weight, 0);
+    let roll = rng.next() * total;
+    const ch = chars.find((c) => (roll -= c.weight) < 0) ?? chars[chars.length - 1]!;
+    const ask = Math.max(1, coins(appraisal(cr) * (cr.askShare ?? 1)));
+    const offer = Math.max(1, coins(ask * rng.range(ch.offer.min, ch.offer.max)));
+    const chat: Chat = {
+      id: nextChatId++,
+      uid: cr.uid,
+      species: cr.species,
+      person: rng.int(customers.people.names.length),
+      character: ch.id,
+      hobby: customers.hobbies[rng.int(customers.hobbies.length)]?.id ?? '',
+      offer,
+      countered: false,
+      state: 'open',
+      unread: true,
+      lines: [
+        { from: 'them', ctx: 'greet', i: pickLineIndex(ch.id, 'greet') },
+        { from: 'them', ctx: 'offer', i: pickLineIndex(ch.id, 'offer'), n: offer },
+      ],
+    };
+    st.chats.push(chat);
+    const closed = st.chats.filter((c) => c.state !== 'open');
+    if (closed.length > customers.chat.keep) {
+      const drop = new Set(closed.slice(0, closed.length - customers.chat.keep).map((c) => c.id));
+      st.chats = st.chats.filter((c) => !drop.has(c.id));
+    }
+    commit();
+    emit({ type: 'chatNew', id: chat.id });
+  }
+  function runChats(dt: number): void {
+    const st = s();
+    const sale = onSale();
+    const listed = new Set(sale.map((c) => c.uid));
+    // A creature sold or taken off: its open chat closes, the buyer says goodbye.
+    for (const c of st.chats)
+      if (c.state === 'open' && !listed.has(c.uid)) {
+        c.state = 'gone';
+        c.lines.push({ from: 'them', ctx: 'bye', i: pickLineIndex(c.character, 'bye') });
+      }
+    for (const uid of Object.keys(st.chatIn)) if (!listed.has(uid)) delete st.chatIn[uid];
+    if (!st.flags[FLAGS.done]) return;
+    const open = st.chats.filter((c) => c.state === 'open');
+    for (const cr of sale) {
+      if (open.some((c) => c.uid === cr.uid)) continue;
+      const left = (st.chatIn[cr.uid] ??= replyDelay(cr.askShare ?? 1, rng.next(), content.market)) - dt;
+      st.chatIn[cr.uid] = left;
+      if (left <= 0 && open.length < customers.chat.maxOpen) {
+        delete st.chatIn[cr.uid];
+        newChat(cr);
+        open.push(st.chats[st.chats.length - 1]!);
+      }
+    }
+  }
+  const openChat = (id: number): Chat | undefined => s().chats.find((c) => c.id === id && c.state === 'open');
 
   function canBuyEgg(eggId = basicEgg): BuyCheck {
     const egg = eggData(eggId);
@@ -1005,6 +1097,64 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       return buyEggBy(eggId, 'player');
     },
     sellNow,
+    chats() {
+      return [...s().chats].reverse();
+    },
+    chatSell(id) {
+      idleSec = 0;
+      const chat = openChat(id);
+      const cr = chat ? s().creatures.find((x) => x.uid === chat.uid) : undefined;
+      if (!chat || !cr) return false;
+      chat.lines.push({ from: 'me', ctx: 'sell', i: 0, n: chat.offer }, { from: 'them', ctx: 'thanks', i: pickLineIndex(chat.character, 'thanks') });
+      chat.state = 'sold';
+      chat.unread = false;
+      completeSale(cr, chat.offer);
+      emit({ type: 'chatSold', id, uid: cr.uid, price: chat.offer });
+      afterSale();
+      return true;
+    },
+    chatDecline(id) {
+      idleSec = 0;
+      const chat = openChat(id);
+      if (!chat) return false;
+      chat.lines.push({ from: 'me', ctx: 'decline', i: 0 }, { from: 'them', ctx: 'bye', i: pickLineIndex(chat.character, 'bye') });
+      chat.state = 'gone';
+      chat.unread = false;
+      commit();
+      emit({ type: 'chatReply', id, ctx: 'bye' });
+      emit({ type: 'change' });
+      return true;
+    },
+    chatCounter(id) {
+      idleSec = 0;
+      const chat = openChat(id);
+      const cr = chat ? s().creatures.find((x) => x.uid === chat.uid) : undefined;
+      const ch = chat ? characterOf(chat.character) : undefined;
+      if (!chat || !cr || !ch || chat.countered) return false;
+      const ask = Math.max(1, coins(appraisal(cr) * (cr.askShare ?? 1)));
+      chat.countered = true;
+      chat.lines.push({ from: 'me', ctx: 'counter', i: 0, n: ask });
+      if (ask <= chat.offer * (1 + ch.give)) {
+        chat.offer = Math.max(chat.offer, ask);
+        chat.lines.push({ from: 'them', ctx: 'accept', i: pickLineIndex(ch.id, 'accept') });
+      } else {
+        const last = Math.max(chat.offer, coins(chat.offer * (1 + ch.give)));
+        chat.lines.push({ from: 'them', ctx: 'refuse', i: pickLineIndex(ch.id, 'refuse') }, { from: 'them', ctx: 'last', i: pickLineIndex(ch.id, 'last'), n: last });
+        chat.offer = last;
+      }
+      s().stats.haggles += 1;
+      commit();
+      emit({ type: 'chatReply', id, ctx: chat.lines[chat.lines.length - 1]!.ctx });
+      emit({ type: 'change' });
+      return true;
+    },
+    chatRead(id) {
+      const chat = s().chats.find((c) => c.id === id);
+      if (!chat || !chat.unread) return;
+      chat.unread = false;
+      commit();
+      emit({ type: 'change' });
+    },
     list(uid) {
       idleSec = 0;
       const ok = listIfRoom(uid);
@@ -1257,6 +1407,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       // Free egg timers (M3-04) and «my eggs» into free incubators.
       for (const id of Object.keys(st.freeIn)) st.freeIn[id] = Math.max(0, (st.freeIn[id] ?? 0) - dt);
       if (Object.keys(st.myEggs).length) placeMine();
+      if (!quiet) runChats(dt);
       runHelpers(dt);
       runClock(dt);
       runOrders(dt);

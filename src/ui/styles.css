@@ -1666,3 +1666,105 @@
   color: var(--c-uiGood);
   font-weight: 700;
 }
+/* M3-08: Chats */
+.chat-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 14px;
+  text-align: left;
+}
+.chat-row + .chat-row {
+  margin-top: 4px;
+}
+.chat-row.unread {
+  background: var(--c-uiPanelAlt);
+}
+.chat-row.closed {
+  opacity: 0.6;
+}
+.chat-row img {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+}
+.chat-avatar {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--c-outline);
+}
+.chat-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.chat-who {
+  font-size: 14px;
+}
+.chat-last {
+  font-size: 13px;
+  color: var(--c-uiMuted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.chat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 14px;
+  background: var(--c-uiPanelAlt);
+}
+.chat-item .card-pic,
+.chat-item .card-pic img {
+  width: 48px;
+  height: 48px;
+}
+.chat-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0;
+}
+.bubble {
+  margin: 0;
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 16px;
+  font-size: 15px;
+}
+.bubble.them {
+  align-self: flex-start;
+  background: var(--c-uiPanelAlt);
+  border-bottom-left-radius: 4px;
+}
+.bubble.me {
+  align-self: flex-end;
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+  border-bottom-right-radius: 4px;
+}
+.chat-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chat-buttons .btn {
+  flex: 1 1 40%;
+  font-size: 15px;
+}

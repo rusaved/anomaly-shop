@@ -74,6 +74,9 @@ export interface SaveData {
   myEggs: Record<string, number>;
   /** Game seconds until each free egg comes back (eggs.json freeEverySec); missing = ready now. */
   freeIn: Record<string, number>;
+  /** «Chats» (M3-08): buyers' messages, newest last; and seconds until a buyer writes about each creature on sale. */
+  chats: Chat[];
+  chatIn: Record<string, number>;
 }
 
 export interface Order {
@@ -82,6 +85,28 @@ export interface Order {
   reward: number;
   left: number;
   person: number;
+}
+
+/** One line of a chat (M3-08): the buyer's line by context and index in customers.json, or the player's answer; n — coins. */
+export interface ChatLine {
+  from: 'them' | 'me';
+  ctx: string;
+  i: number;
+  n?: number;
+}
+/** A buyer writing about a creature on sale (docs/01 §3 p. 13). */
+export interface Chat {
+  id: number;
+  uid: string;
+  species: string;
+  person: number;
+  character: string;
+  hobby: string;
+  offer: number;
+  countered: boolean;
+  state: 'open' | 'sold' | 'gone';
+  unread: boolean;
+  lines: ChatLine[];
 }
 
 export function emptyIncubator(): Incubator {
@@ -113,6 +138,8 @@ export function newSave(now: number): SaveData {
     order: null,
     myEggs: {},
     freeIn: {},
+    chats: [],
+    chatIn: {},
   };
 }
 
@@ -190,6 +217,30 @@ export function normalize(raw: unknown, now: number): SaveData {
     order: normalizeOrder(r.order),
     myEggs: Object.fromEntries(Object.entries(numberMap(r.myEggs)).filter(([, n]) => n >= 1).map(([k, n]) => [k, Math.floor(n)])),
     freeIn: Object.fromEntries(Object.entries(numberMap(r.freeIn)).map(([k, n]) => [k, Math.max(0, n)])),
+    chats: arr(r.chats).map(normalizeChat).filter((c): c is Chat => c !== null),
+    chatIn: numberMap(r.chatIn),
+  };
+}
+
+function normalizeChat(v: unknown): Chat | null {
+  const o = rec(v);
+  if (typeof o.uid !== 'string' || typeof o.character !== 'string') return null;
+  const state = o.state === 'sold' || o.state === 'gone' ? o.state : 'open';
+  return {
+    id: Math.floor(num(o.id, 0)),
+    uid: o.uid,
+    species: str(o.species, ''),
+    person: Math.floor(num(o.person, 0)),
+    character: o.character,
+    hobby: str(o.hobby, ''),
+    offer: Math.max(1, num(o.offer, 1)),
+    countered: bool(o.countered, false),
+    state,
+    unread: bool(o.unread, false),
+    lines: arr(o.lines)
+      .map((l) => rec(l))
+      .filter((l) => (l.from === 'them' || l.from === 'me') && typeof l.ctx === 'string')
+      .map((l) => ({ from: l.from as 'them' | 'me', ctx: l.ctx as string, i: Math.floor(num(l.i, 0)), ...(typeof l.n === 'number' ? { n: l.n } : {}) })),
   };
 }
 

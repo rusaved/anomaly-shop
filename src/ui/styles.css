@@ -1820,3 +1820,69 @@
   min-width: 56px;
   font-size: 18px;
 }
+/* M3-11: Gifts */
+.hud-btn {
+  position: relative;
+  pointer-events: auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--c-uiPanel);
+  color: var(--c-uiText);
+  box-shadow: 0 2px 0 var(--c-outline);
+}
+.hud-btn svg {
+  width: 26px;
+  height: 26px;
+}
+.hud-btn .nav-badge {
+  top: 2px;
+  right: 2px;
+}
+.card-gifts {
+  width: min(94vw, 460px);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 2px;
+  border-radius: 10px;
+  background: var(--c-uiPanelAlt);
+  font-size: 10px;
+  text-align: center;
+}
+.day img {
+  width: 28px;
+  height: 28px;
+}
+.day b {
+  font-size: 10px;
+  line-height: 1.1;
+  word-break: break-word;
+}
+.day-today {
+  outline: 2px solid var(--c-uiAccent);
+}
+.day-taken {
+  opacity: 0.45;
+}
+.gift-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+}

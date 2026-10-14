@@ -234,5 +234,19 @@
   "seller.me.bye": "Goodbye",
   "seller.item.0": "Healthy, cheerful, eats for two",
   "seller.item.1": "Sleeps well, sings in the morning",
-  "seller.item.2": "Gentle, used to hands"
+  "seller.item.2": "Gentle, used to hands",
+  "gifts.title": "Gifts",
+  "gifts.close": "Done",
+  "gifts.days": "7 days of gifts",
+  "gifts.day": "Day {n}",
+  "gifts.take": "Take the gift",
+  "gifts.tomorrow": "A new gift tomorrow",
+  "gifts.follow": "Follow the game community and get an egg!",
+  "gifts.followBtn": "Follow",
+  "gifts.got": "Received",
+  "gifts.review": "Rate the game",
+  "gifts.reviewBtn": "Rate",
+  "gifts.coins": "{n} coins",
+  "gifts.crystals": "{n} crystals",
+  "gifts.toast": "Gift: {what}"
 }

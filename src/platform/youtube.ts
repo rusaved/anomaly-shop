@@ -126,6 +126,7 @@ export function createYoutubePlatform(deps: YoutubeDeps): Platform {
     },
     showInterstitial: () => Promise.resolve({ shown: false }),
     showRewarded: () => Promise.resolve({ rewarded: false }),
+    requestReview: () => Promise.resolve({ available: false, sent: false }),
     async load() {
       if (!sdk) return null;
       try {

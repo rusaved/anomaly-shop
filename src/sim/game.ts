@@ -2,7 +2,7 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CustomersData, DistrictData, EggSection, EggsData, MarketData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
@@ -19,6 +19,7 @@ export interface GameContent {
   events: EventsData;
   secrets: SecretsData;
   market: MarketData;
+  gifts: GiftsData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -78,6 +79,7 @@ export type GameEvent =
   | { type: 'hatched'; incubator: number; uid: string; species: string; rarity: RarityName; by: 'tap' | 'self'; egg: string }
   | { type: 'soldNow'; uid: string; species: string; price: number }
   | { type: 'chatNew'; id: number }
+  | { type: 'gift'; from: 'subscribe' | 'review' | 'daily'; reward: RewardData }
   | { type: 'lotBought'; id: number; uid: string; price: number }
   | { type: 'marketNew' }
   | { type: 'chatSold'; id: number; uid: string; price: number }
@@ -263,6 +265,14 @@ export interface Game {
   /** Gives eggs into «my eggs» (gifts, codes, rewards). */
   giveEggs(eggId: string, n: number): void;
   tapIncubator(index: number): void;
+  /** «Gifts» (M3-11): what is taken; today is the player's local date (YYYY-MM-DD), the sim keeps no clock of its own. */
+  giftsView(today: string): { subscribed: Record<string, boolean>; reviewed: boolean; day: number; dailyReady: boolean };
+  /** An egg for following a community (once each), after the player came back from its page. */
+  claimSubscribe(id: string): boolean;
+  /** The golden egg for a review sent through the platform (once). */
+  claimReview(): boolean;
+  /** Today's reward of the 7 days; the count only goes on (a missed day loses nothing), after the 7th — again from the 1st. */
+  claimDaily(today: string): boolean;
   /** The market (M3-09): lots of sellers and seconds until new ones. */
   market(): { lots: LotView[]; refreshIn: number };
   /** «Don't wait» (until M5 a plain refresh, then for an ad). */
@@ -995,6 +1005,17 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     let roll = side.next() * chars.reduce((sum, c) => sum + c.weight, 0);
     return chars.find((c) => (roll -= c.weight) < 0) ?? chars[chars.length - 1]!;
   };
+  /** Coins, crystals and an egg into «my eggs» (gifts, codes). */
+  function giveReward(r: RewardData, from: 'subscribe' | 'review' | 'daily'): void {
+    const st = s();
+    if (r.coins) st.coins += r.coins;
+    if (r.crystals) st.crystals += r.crystals;
+    if (r.egg && eggData(r.egg)) st.myEggs[r.egg] = (st.myEggs[r.egg] ?? 0) + 1;
+    commit({ flush: true });
+    emit({ type: 'gift', from, reward: r });
+    if (r.egg) placeMine();
+    emit({ type: 'change' });
+  }
   function stockMarket(): void {
     const st = s();
     const m = content.market;
@@ -1188,6 +1209,35 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       commit({ flush: true });
       emit({ type: 'lotBought', id, uid, price: pay });
       emit({ type: 'change' });
+      return true;
+    },
+    giftsView(today) {
+      const g = s().gifts;
+      return { subscribed: { ...g.subscribed }, reviewed: g.reviewed, day: g.days % content.gifts.daily.length, dailyReady: g.lastDay !== today };
+    },
+    claimSubscribe(id) {
+      const g = s().gifts;
+      const item = content.gifts.subscribe.find((x) => x.id === id);
+      if (!item || g.subscribed[id]) return false;
+      g.subscribed[id] = true;
+      giveReward(item.reward, 'subscribe');
+      return true;
+    },
+    claimReview() {
+      const g = s().gifts;
+      if (g.reviewed) return false;
+      g.reviewed = true;
+      giveReward(content.gifts.review.reward, 'review');
+      return true;
+    },
+    claimDaily(today) {
+      const g = s().gifts;
+      if (!today || g.lastDay === today) return false;
+      const item = content.gifts.daily[g.days % content.gifts.daily.length];
+      if (!item) return false;
+      g.days += 1;
+      g.lastDay = today;
+      giveReward(item.reward, 'daily');
       return true;
     },
     lotHobby(id) {

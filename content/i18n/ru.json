@@ -234,5 +234,19 @@
   "seller.me.bye": "До свидания",
   "seller.item.0": "Здоровый, весёлый, ест за двоих",
   "seller.item.1": "Спит хорошо, по утрам поёт",
-  "seller.item.2": "Ласковый, к рукам привык"
+  "seller.item.2": "Ласковый, к рукам привык",
+  "gifts.title": "Подарки",
+  "gifts.close": "Готово",
+  "gifts.days": "7 дней подарков",
+  "gifts.day": "День {n}",
+  "gifts.take": "Забрать подарок",
+  "gifts.tomorrow": "Новый подарок завтра",
+  "gifts.follow": "Подпишись на сообщество игры и получи яйцо!",
+  "gifts.followBtn": "Подписаться",
+  "gifts.got": "Получено",
+  "gifts.review": "Оцени игру",
+  "gifts.reviewBtn": "Оценить",
+  "gifts.coins": "{n} монет",
+  "gifts.crystals": "{n} кристалла",
+  "gifts.toast": "Подарок: {what}"
 }

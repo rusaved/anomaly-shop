@@ -159,6 +159,18 @@ export function createYandexPlatform(deps: YandexDeps): Platform {
         });
       });
     },
+    async requestReview() {
+      const fb = (sdk as unknown as { feedback?: { canReview(): Promise<{ value: boolean }>; requestReview(): Promise<{ feedbackSent: boolean }> } } | null)?.feedback;
+      if (!fb) return { available: false, sent: false };
+      try {
+        const can = await fb.canReview();
+        if (!can.value) return { available: false, sent: false };
+        const r = await fb.requestReview();
+        return { available: true, sent: Boolean(r.feedbackSent) };
+      } catch {
+        return { available: false, sent: false };
+      }
+    },
     showRewarded(placement) {
       if (!sdk || !deps.caps.ads) return Promise.resolve({ rewarded: false });
       const adv = sdk.adv;

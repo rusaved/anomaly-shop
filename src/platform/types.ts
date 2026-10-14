@@ -32,6 +32,8 @@ export interface Platform {
   onAudioChange(cb: (on: boolean) => void): void;
   showInterstitial(placement: string): Promise<{ shown: boolean }>;
   showRewarded(placement: string): Promise<{ rewarded: boolean }>;
+  /** The platform review window (M3-11 «Gifts»): available — the platform can ask now; sent — the player left a review. */
+  requestReview(): Promise<{ available: boolean; sent: boolean }>;
   load(): Promise<string | null>;
   save(data: string, opts?: { flush?: boolean }): void;
   now(): number;

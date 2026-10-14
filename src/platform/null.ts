@@ -62,6 +62,8 @@ export function createNullPlatform(deps: NullDeps = browserDeps()): Platform {
     },
     showInterstitial: () => Promise.resolve({ shown: false }),
     showRewarded: () => Promise.resolve({ rewarded: false }),
+    // No platform here: the review is a stand-in (docs/01 §3 p. 15), so the gift can be tried in the null profile.
+    requestReview: () => Promise.resolve({ available: true, sent: true }),
     load: () => Promise.resolve(mirror.get(SAVE_KEY)),
     save(data) {
       mirror.set(SAVE_KEY, data);

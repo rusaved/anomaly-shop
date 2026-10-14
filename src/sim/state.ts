@@ -79,6 +79,8 @@ export interface SaveData {
   chatIn: Record<string, number>;
   /** The market (M3-09): the lots and game seconds until the sellers bring new ones. */
   market: { lots: Lot[]; refreshIn: number };
+  /** «Gifts» (M3-11): communities and the review rewarded once; the 7 days — rewards taken so far and the last local date taken. */
+  gifts: { subscribed: Record<string, boolean>; reviewed: boolean; days: number; lastDay: string };
 }
 
 export interface Order {
@@ -158,6 +160,7 @@ export function newSave(now: number): SaveData {
     chats: [],
     chatIn: {},
     market: { lots: [], refreshIn: 0 },
+    gifts: { subscribed: {}, reviewed: false, days: 0, lastDay: '' },
   };
 }
 
@@ -238,6 +241,15 @@ export function normalize(raw: unknown, now: number): SaveData {
     chats: arr(r.chats).map(normalizeChat).filter((c): c is Chat => c !== null),
     chatIn: numberMap(r.chatIn),
     market: normalizeMarket(r.market),
+    gifts: (() => {
+      const g = rec(r.gifts);
+      return {
+        subscribed: Object.fromEntries(Object.entries(rec(g.subscribed)).filter(([, x]) => x === true).map(([k]) => [k, true])),
+        reviewed: bool(g.reviewed, false),
+        days: Math.max(0, Math.floor(num(g.days, 0))),
+        lastDay: str(g.lastDay, ''),
+      };
+    })(),
   };
 }
 

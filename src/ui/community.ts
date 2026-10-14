@@ -1,6 +1,6 @@
 // What: the two community buttons (docs/02-tech.md, section 6.5; docs/03 CNT-08): Telegram and VK with the promo-code caption.
 // Called by: src/ui/pause.ts, src/ui/settings.ts, src/main.ts (side slot of the panel) — by community.placement of game.json.
-// Keep: the only window.open in the game; nothing is rewarded; with community === null (youtube) nothing is rendered.
+// Keep: the only window.open in the game; the one reward for following lives in src/ui/gifts.ts (M3-11, once); with community === null (youtube) nothing is rendered.
 
 import { track } from '../analytics/track.ts';
 

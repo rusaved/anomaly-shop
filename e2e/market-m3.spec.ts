@@ -17,6 +17,6 @@ test('M3-09 market: lots, timer, don\'t wait, a lot card opens', async ({ page }
   await expect(lots.first()).not.toHaveAttribute('data-lot', first ?? '');
   await lots.first().click();
   await expect(page.locator('[data-action=lot-buy]')).toBeVisible();
-  await expect(page.locator('[data-sheet=market] .egg-name')).not.toBeEmpty();
+  await expect(page.locator('[data-sheet=market] .chat-item-name')).not.toBeEmpty();
   expect(errors).toEqual([]);
 });

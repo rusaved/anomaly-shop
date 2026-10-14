@@ -220,5 +220,19 @@
   "market.above": "Выше рынка",
   "market.sold": "Продано",
   "market.take": "Заберу сейчас за {n}",
-  "market.seller": "Продаёт {who}"
+  "market.seller": "Продаёт {who}",
+  "seller.ask": "Отдам за {n}",
+  "seller.offer": "Предложить",
+  "seller.coins": "Монет пока не хватает",
+  "seller.discount": "Для своих отдам за {n}",
+  "seller.me.take": "Скидка? Возьму за {n}",
+  "seller.me.now": "Заберу сейчас",
+  "seller.me.item": "Что с ним?",
+  "seller.me.how": "Как дела?",
+  "seller.me.hobby": "О, я тоже люблю: {hobby}!",
+  "seller.me.bargain": "Скидка? Возьму за…",
+  "seller.me.bye": "До свидания",
+  "seller.item.0": "Здоровый, весёлый, ест за двоих",
+  "seller.item.1": "Спит хорошо, по утрам поёт",
+  "seller.item.2": "Ласковый, к рукам привык"
 }

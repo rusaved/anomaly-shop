@@ -220,5 +220,19 @@
   "market.above": "Above market",
   "market.sold": "Sold",
   "market.take": "Take it now for {n}",
-  "market.seller": "Sold by {who}"
+  "market.seller": "Sold by {who}",
+  "seller.ask": "Yours for {n}",
+  "seller.offer": "Offer",
+  "seller.coins": "Not enough coins yet",
+  "seller.discount": "For a friend, {n}",
+  "seller.me.take": "Discount? I'll take it for {n}",
+  "seller.me.now": "I'll take it now",
+  "seller.me.item": "What about it?",
+  "seller.me.how": "How are you?",
+  "seller.me.hobby": "Oh, I love it too: {hobby}!",
+  "seller.me.bargain": "Discount? I'll take it for…",
+  "seller.me.bye": "Goodbye",
+  "seller.item.0": "Healthy, cheerful, eats for two",
+  "seller.item.1": "Sleeps well, sings in the morning",
+  "seller.item.2": "Gentle, used to hands"
 }

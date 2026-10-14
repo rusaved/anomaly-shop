@@ -270,6 +270,8 @@ async function boot(): Promise<void> {
     portrait: (id: string, r: Parameters<typeof portraits.creature>[1]) => portraits.creature(id, r),
     rarityColor: (r: Parameters<typeof portraits.creature>[1]) => rarityColor(styleData.rarity, r),
     character: (id: string) => customers.characters.find((c) => c.id === id),
+    hobby: (id: string) => customers.hobbies.find((h) => h.id === id),
+    bargainFloor: market.bargainFloor,
     person: (i: number) => {
       const p = customers.people.names[i];
       return { name: p?.[i18n.lang()] ?? '?', f: Boolean(p?.f) };

@@ -269,6 +269,10 @@ export interface Game {
   refreshMarket(): void;
   /** Buys a lot at its price (or a bargained one, M3-10); the creature goes on sale or into the inventory. */
   buyLot(id: number, price?: number): boolean;
+  /** Seller chat (M3-10): «I love it too!» after «How are you?» — a hobby discount, once per lot; returns the share taken off. */
+  lotHobby(id: number): number;
+  /** Seller chat: «Discount? I'll take it for…» — the seller agrees within the give of its character (then the lot is bought), once per lot. */
+  lotBargain(id: number, price: number): 'yes' | 'no' | 'coins' | 'done';
   /** «Chats» (M3-08): buyers' messages about creatures on sale, newest first. */
   chats(): Chat[];
   /** Sells the creature to the buyer of the chat at the offered price. */
@@ -1185,6 +1189,36 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       emit({ type: 'lotBought', id, uid, price: pay });
       emit({ type: 'change' });
       return true;
+    },
+    lotHobby(id) {
+      idleSec = 0;
+      const lot = s().market.lots.find((l) => l.id === id && !l.sold);
+      if (!lot || lot.hobbyDone) return 0;
+      const { min, max } = content.market.hobbyDiscount;
+      const off = side.range(min, max);
+      lot.price = Math.max(1, coins(lot.price * (1 - off)));
+      lot.hobbyDone = true;
+      commit();
+      emit({ type: 'change' });
+      return off;
+    },
+    lotBargain(id, price) {
+      idleSec = 0;
+      const lot = s().market.lots.find((l) => l.id === id && !l.sold);
+      const ch = lot ? customers.characters.find((c) => c.id === lot.character) : undefined;
+      if (!lot || !ch || lot.bargained) return 'done';
+      const want = Math.max(1, Math.round(price));
+      lot.bargained = true;
+      if (want < lot.price * (1 - ch.give) - 1e-9) {
+        commit();
+        emit({ type: 'change' });
+        return 'no';
+      }
+      if (s().coins + 1e-9 < want) {
+        lot.bargained = false;
+        return 'coins';
+      }
+      return game.buyLot(id, want) ? 'yes' : 'coins';
     },
     chats() {
       return [...s().chats].reverse();

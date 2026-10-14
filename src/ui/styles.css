@@ -1070,3 +1070,11 @@
   box-shadow: inset -5px -5px 0 rgba(0, 0, 0, 0.12), 0 0 0 3px var(--c-outline);
   margin: 0 5px;
 }
+/* iPhone SE: the deal text keeps to one line so both action rows stay on screen */
+.panel-short .deal-text {
+  -webkit-line-clamp: 1;
+  font-size: 14px;
+}
+.panel-short .deal {
+  padding: 6px 10px;
+}

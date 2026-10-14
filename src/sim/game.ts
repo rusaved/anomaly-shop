@@ -2,7 +2,7 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { CodesData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
@@ -21,6 +21,7 @@ export interface GameContent {
   market: MarketData;
   gifts: GiftsData;
   work: WorkData;
+  codes: CodesData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -82,7 +83,7 @@ export type GameEvent =
   | { type: 'chatNew'; id: number }
   | { type: 'work'; coins: number }
   | { type: 'workUp'; level: number }
-  | { type: 'gift'; from: 'subscribe' | 'review' | 'daily'; reward: RewardData }
+  | { type: 'gift'; from: 'subscribe' | 'review' | 'daily' | 'code'; reward: RewardData }
   | { type: 'lotBought'; id: number; uid: string; price: number }
   | { type: 'marketNew' }
   | { type: 'chatSold'; id: number; uid: string; price: number }
@@ -268,6 +269,8 @@ export interface Game {
   /** Gives eggs into «my eggs» (gifts, codes, rewards). */
   giveEggs(eggId: string, n: number): void;
   tapIncubator(index: number): void;
+  /** A promo code (M3-13): case and spaces do not matter; each code once. */
+  redeemCode(code: string): 'ok' | 'used' | 'unknown';
   /** «Side job» (M3-12): the level, coins per tap, the price of the next level (null at the top). */
   workView(): { level: number; pay: number; price: number | null };
   /** A tap on the bowl: the neighbours' pets are fed, coins come. */
@@ -1015,7 +1018,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return chars.find((c) => (roll -= c.weight) < 0) ?? chars[chars.length - 1]!;
   };
   /** Coins, crystals and an egg into «my eggs» (gifts, codes). */
-  function giveReward(r: RewardData, from: 'subscribe' | 'review' | 'daily'): void {
+  function giveReward(r: RewardData, from: 'subscribe' | 'review' | 'daily' | 'code'): void {
     const st = s();
     if (r.coins) st.coins += r.coins;
     if (r.crystals) st.crystals += r.crystals;
@@ -1219,6 +1222,15 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       emit({ type: 'lotBought', id, uid, price: pay });
       emit({ type: 'change' });
       return true;
+    },
+    redeemCode(input) {
+      const code = input.trim().toUpperCase().replace(/\s+/g, '');
+      const item = content.codes.codes.find((c) => c.code === code);
+      if (!item) return 'unknown';
+      if (s().codes.includes(code)) return 'used';
+      s().codes.push(code);
+      giveReward(item.reward, 'code');
+      return 'ok';
     },
     workView() {
       const lv = s().work;

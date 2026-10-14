@@ -19,9 +19,10 @@ import linesJson from '@content/lines.json';
 import marketJson from '@content/market.json';
 import giftsJson from '@content/gifts.json';
 import workJson from '@content/work.json';
+import codesJson from '@content/codes.json';
 import ruJson from '@content/i18n/ru.json';
 import enJson from '@content/i18n/en.json';
-import { AudioFile, CalendarFile, CustomersFile, EggsFile, FeelFile, FtueFile, I18nFile, NewsFile, EventsFile, SecretsFile, LinesFile, MarketFile, GiftsFile, WorkFile, SpeciesFile, StyleFile, UpgradesFile, type LangName } from './schemas.ts';
+import { AudioFile, CalendarFile, CustomersFile, EggsFile, FeelFile, FtueFile, I18nFile, NewsFile, EventsFile, SecretsFile, LinesFile, MarketFile, GiftsFile, WorkFile, CodesFile, SpeciesFile, StyleFile, UpgradesFile, type LangName } from './schemas.ts';
 
 export const eggs = v.parse(EggsFile, eggsJson);
 export const species = v.parse(SpeciesFile, speciesJson);
@@ -40,6 +41,7 @@ export const lines = v.parse(LinesFile, linesJson);
 export const market = v.parse(MarketFile, marketJson);
 export const gifts = v.parse(GiftsFile, giftsJson);
 export const work = v.parse(WorkFile, workJson);
+export const codes = v.parse(CodesFile, codesJson);
 
 function dictionary(json: Record<string, unknown>): Record<string, string> {
   const { $schema: _s, note: _n, ...rest } = json;

@@ -19,6 +19,7 @@ import {
   MarketFile,
   GiftsFile,
   WorkFile,
+  CodesFile,
   RARITIES,
   SpeciesFile,
   StyleFile,
@@ -41,7 +42,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json'] as const;
 /** The egg price ladder (docs/01 §3 p. 12): eight steps, each ×10 the one before. */
 const LADDER_STEPS = 8;
 const LADDER_STEP = 10;
@@ -296,6 +297,11 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   const market = parseFile('market.json', MarketFile, data(files['market.json']), errors);
   const gifts = parseFile('gifts.json', GiftsFile, data(files['gifts.json']), errors);
   parseFile('work.json', WorkFile, data(files['work.json']), errors);
+  const codes = parseFile('codes.json', CodesFile, data(files['codes.json']), errors);
+  if (codes) {
+    duplicates('codes.json', 'codes', codes.codes.map((c) => c.code), errors);
+    codes.codes.forEach((c, i) => checkReward('codes.json', `codes.${i}.reward`, c.reward, eggs, errors));
+  }
   if (market) checkMarket(market, errors);
   if (gifts) checkGifts(gifts, eggs, errors);
   if (lines) {

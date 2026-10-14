@@ -55,7 +55,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
   function eggCard(v: EggCardView, fmt: Intl.NumberFormat): HTMLElement {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = `card card-egg${v.open ? '' : ' locked'}`;
+    b.className = `tile card-egg${v.open ? '' : ' locked'}`;
     b.dataset.egg = v.id;
     b.dataset.action = `egg-card-${v.id}`;
     const egg = look.egg(v.id);
@@ -96,7 +96,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
           look.t('eggs.incubating'),
           busy.map(({ inc, i }) => {
             const el = document.createElement('div');
-            el.className = 'card card-egg card-inc';
+            el.className = 'tile card-egg card-inc';
             el.dataset.incubator = String(i);
             const tint = inc.careLevel > 0 ? look.careShell[inc.careLevel] : undefined;
             el.innerHTML =
@@ -119,7 +119,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
           look.t('eggs.my'),
           shop.my.map((m) => {
             const el = document.createElement('div');
-            el.className = 'card card-egg';
+            el.className = 'tile card-egg';
             el.dataset.my = m.id;
             el.innerHTML = `<span class="card-pic"><img alt="" src="${look.eggPicture(m.id)}"><i class="count">×${m.count}</i></span><span class="card-name"></span><span class="card-sub">${look.t('eggs.waiting')}</span>`;
             (el.querySelector('.card-name') as HTMLElement).textContent = look.eggName(m.id);
@@ -167,7 +167,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
       `<div class="cards cards-odds">${odds
         .map(
           (o) =>
-            `<div class="card card-odds" data-species="${o.species}" data-chance="${o.chance}"><span class="card-pic"><img alt="" src="${look.portrait(o.species, o.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(o.rarity)}"></i></span>` +
+            `<div class="tile card-odds" data-species="${o.species}" data-chance="${o.chance}"><span class="card-pic"><img alt="" src="${look.portrait(o.species, o.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(o.rarity)}"></i></span>` +
             `<span class="card-name"></span><span class="card-sub">${pct(o.chance)}</span></div>`,
         )
         .join('')}</div>`;

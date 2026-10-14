@@ -36,7 +36,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
   const slotCard = (c: CreatureView, fmt: Intl.NumberFormat): HTMLElement => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'card card-sale';
+    b.className = 'tile card-sale';
     b.dataset.uid = c.uid;
     b.dataset.action = `sale-${c.uid}`;
     b.innerHTML =
@@ -59,7 +59,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     for (let i = view.creatures.length; i < view.slots; i++) {
       const el = document.createElement('button');
       el.type = 'button';
-      el.className = 'card card-empty';
+      el.className = 'tile card-empty';
       el.dataset.action = 'sale-add';
       el.innerHTML = `<span class="card-pic"><span class="slot-plus" aria-hidden="true">+</span></span><span class="card-sub">${look.t(view.inventory.length ? 'sales.add' : 'sales.free')}</span>`;
       el.addEventListener('click', () => tab.show(PICK));

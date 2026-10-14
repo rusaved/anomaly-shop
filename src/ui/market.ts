@@ -50,7 +50,7 @@ export function createMarketTab(sheet: Sheet, game: Game, look: MarketLookups): 
       ...mk.lots.map((l) => {
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = `card card-lot${l.sold ? ' sold' : ''}`;
+        b.className = `tile card-lot${l.sold ? ' sold' : ''}`;
         b.dataset.lot = String(l.id);
         b.dataset.verdict = l.verdict;
         b.innerHTML =

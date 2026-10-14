@@ -14,7 +14,7 @@ export interface SettingsWindow {
   close(): void;
 }
 
-export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n: I18n, links: CommunityLinks | null, onBack: () => void): SettingsWindow {
+export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n: I18n, links: CommunityLinks | null, onBack: () => void, redeem?: (code: string) => 'ok' | 'used' | 'unknown'): SettingsWindow {
   const overlay = createOverlay(parent, 'settings', () => win.close());
   const title = document.createElement('h2');
   title.dataset.i18n = 'settings.title';
@@ -55,8 +55,34 @@ export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n
   i18n.onChange(markLang);
   langRow.append(langLabel, langGroup);
 
+  // Promo code (M3-13): a field and «Apply»; a wrong code gets a soft answer.
+  const codeRow = document.createElement('div');
+  codeRow.className = 'row code-row';
+  const codeInput = document.createElement('input');
+  codeInput.type = 'text';
+  codeInput.className = 'code-input';
+  codeInput.dataset.action = 'code-input';
+  codeInput.maxLength = 20;
+  codeInput.autocomplete = 'off';
+  codeInput.spellcheck = false;
+  codeInput.dataset.i18n = 'code.placeholder';
+  codeInput.dataset.i18nAttr = 'placeholder';
+  const codeApply = button('code-apply', 'code.apply', 'btn-primary');
+  const codeAnswer = document.createElement('p');
+  codeAnswer.className = 'code-answer';
+  codeAnswer.dataset.codeAnswer = '';
+  codeApply.addEventListener('click', () => {
+    if (!redeem || !codeInput.value.trim()) return;
+    const r = redeem(codeInput.value);
+    codeAnswer.textContent = i18n.t(`code.${r}`);
+    codeAnswer.dataset.codeAnswer = r;
+    if (r === 'ok') codeInput.value = '';
+  });
+  codeRow.append(codeInput, codeApply);
+
   const back = button('back', 'settings.back', 'btn-primary');
   overlay.card.append(title, soundRow, langRow);
+  if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
   overlay.card.appendChild(back);
 

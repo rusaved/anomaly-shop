@@ -45,7 +45,7 @@ import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
-import { audio, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, codes, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -113,7 +113,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -510,7 +510,7 @@ async function boot(): Promise<void> {
     }
   });
   const pauseWindow = createPauseWindow(uiRoot, runtime.pause, links, () => settingsWindow.open());
-  const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.show());
+  const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.show(), (code) => play.redeemCode(code));
   hud.pauseButton.addEventListener('click', () => pauseWindow.open());
   document.addEventListener('keydown', (e) => {
     if (e.code !== 'Escape' || !controllable) return;

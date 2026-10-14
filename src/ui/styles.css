@@ -1319,7 +1319,7 @@
 .empty {
   margin-top: 24px;
 }
-.card {
+.tile {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1408,7 +1408,7 @@
   color: var(--c-uiAccentText);
   font-weight: 700;
 }
-.card .count {
+.tile .count {
   position: absolute;
   right: -6px;
   top: -4px;
@@ -1929,4 +1929,39 @@
 }
 .work-level {
   font-weight: 700;
+}
+/* M3-13: promo code in the settings */
+.code-row {
+  gap: 8px;
+}
+.code-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 2px solid var(--c-uiMuted);
+  background: var(--c-uiPanelAlt);
+  color: var(--c-uiText);
+  font: inherit;
+  text-transform: uppercase;
+  -webkit-user-select: text;
+  user-select: text;
+  pointer-events: auto;
+}
+.code-answer:empty {
+  display: none;
+}
+.code-answer {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--c-uiMuted);
+}
+/* A low landscape phone: the settings window with the promo code stays inside 375 px. */
+.landscape [data-overlay='settings'] .card {
+  gap: 6px;
+  padding: 12px 18px;
+}
+.landscape [data-overlay='settings'] .card h2 {
+  margin: 0;
 }

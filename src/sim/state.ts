@@ -83,6 +83,8 @@ export interface SaveData {
   gifts: { subscribed: Record<string, boolean>; reviewed: boolean; days: number; lastDay: string };
   /** Side job level (M3-12), from 1. */
   work: number;
+  /** Promo codes already used (M3-13). */
+  codes: string[];
 }
 
 export interface Order {
@@ -164,6 +166,7 @@ export function newSave(now: number): SaveData {
     market: { lots: [], refreshIn: 0 },
     gifts: { subscribed: {}, reviewed: false, days: 0, lastDay: '' },
     work: 1,
+    codes: [],
   };
 }
 
@@ -245,6 +248,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     chatIn: numberMap(r.chatIn),
     market: normalizeMarket(r.market),
     work: Math.max(1, Math.floor(num(r.work, 1))),
+    codes: arr(r.codes).filter((x): x is string => typeof x === 'string'),
     gifts: (() => {
       const g = rec(r.gifts);
       return {

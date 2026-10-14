@@ -264,6 +264,8 @@ export const GiftsFile = v.object({
   review: v.object({ reward: Reward }),
   daily: v.pipe(v.array(v.object({ day: Count, reward: Reward })), v.length(7)),
 });
+/** Promo codes (docs/01 §3 p. 15; M3-13): in-game rewards only, each code once per player. */
+export const CodesFile = v.object({ codes: v.pipe(v.array(v.object({ code: v.pipe(v.string(), v.regex(/^[A-Z0-9]{3,16}$/, 'code: 3–16 capital letters or digits')), reward: Reward })), v.minLength(1)) });
 /** Side job (docs/01 §3 p. 15): tapping the bowl feeds the neighbours' pets for coins; the job levels up on a ×growth ladder. */
 export const WorkFile = v.object({
   coinsPerTap: v.pipe(v.number(), v.minValue(1)),
@@ -382,6 +384,7 @@ export type HobbyData = v.InferOutput<typeof Hobby>;
 export type MarketData = v.InferOutput<typeof MarketFile>;
 export type GiftsData = v.InferOutput<typeof GiftsFile>;
 export type WorkData = v.InferOutput<typeof WorkFile>;
+export type CodesData = v.InferOutput<typeof CodesFile>;
 export type RewardData = v.InferOutput<typeof Reward>;
 export type FtueData = v.InferOutput<typeof FtueFile>;
 export type FeelData = v.InferOutput<typeof FeelFile>;

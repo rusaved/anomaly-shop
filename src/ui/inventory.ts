@@ -58,7 +58,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveDat
           ...all.map(({ c, on }) => {
             const b = document.createElement('button');
             b.type = 'button';
-            b.className = 'card';
+            b.className = 'tile';
             b.dataset.uid = c.uid;
             b.innerHTML =
               `<span class="card-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(c.rarity)}"></i></span>` +
@@ -87,7 +87,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveDat
       const items = all.map((s) => {
         const have = (col[s.id]?.hatched ?? 0) > 0;
         const el = document.createElement('div');
-        el.className = `card card-col${have ? '' : ' unknown'}`;
+        el.className = `tile card-col${have ? '' : ' unknown'}`;
         el.innerHTML = `<span class="card-pic"><img alt="" src="${look.portrait(s.id, s.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(s.rarity)}"></i></span><span class="card-name"></span>`;
         (el.querySelector('.card-name') as HTMLElement).textContent = have ? look.speciesName(s.id) : '?';
         return el;

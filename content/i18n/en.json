@@ -253,5 +253,10 @@
   "work.hint": "Tap the bowl: the neighbours' pets are fed, you get coins",
   "work.level": "Level {n} · +{pay} per tap",
   "work.up": "Level up",
-  "work.upFor": "Level up for {n}"
+  "work.upFor": "Level up for {n}",
+  "code.placeholder": "Promo code",
+  "code.apply": "Apply",
+  "code.ok": "Done! The gift is yours",
+  "code.used": "This code has already worked",
+  "code.unknown": "No such code, check the letters"
 }

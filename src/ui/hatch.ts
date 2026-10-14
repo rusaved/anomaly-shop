@@ -99,6 +99,9 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     q('[data-hatch-name]').textContent = look.speciesName(cr.species);
     q('[data-hatch-rarity]').textContent = look.t(`rarity.${cr.rarity}`);
     q('[data-hatch-dot]').style.background = look.rarityColor(cr.rarity);
+    // UB-10: a valuable one and above is an event — the card glows in its rarity color, the rarity grows, the picture pops.
+    overlay.card.style.setProperty('--rc', look.rarityColor(cr.rarity));
+    overlay.card.classList.toggle('hatch-rare', cr.rarity !== 'common' && cr.rarity !== 'good');
     q('[data-hatch-range]').textContent = `${fmt.format(cr.low)} – ${fmt.format(cr.high)}`;
     sell.hidden = false;
     sell.textContent = look.t('hatch.sellFor', { n: fmt.format(cr.low) });
@@ -115,7 +118,7 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
       result.hidden = true;
       skipHint.hidden = false;
       skipHint.textContent = look.t('hatch.skip');
-      overlay.card.classList.remove('shown');
+      overlay.card.classList.remove('shown', 'hatch-rare');
       title.textContent = look.t('hatch.title');
       const odds = look.odds(e.egg);
       const total = odds.reduce((s, o) => s + o.chance, 0) || 1;

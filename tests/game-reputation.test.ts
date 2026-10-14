@@ -5,7 +5,7 @@ import { repLevel } from '../src/sim/rules.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
-import { sellViaChat } from './chat-helper.ts';
+import { sellViaChat, waitChat } from './chat-helper.ts';
 
 /** UB-08: the seller level grows from deals (content/reputation.json): +perDeal a deal, more for a rare one; repUp once per new level. */
 const content = loadGameContent();
@@ -43,6 +43,23 @@ describe('UB-08 reputation', () => {
     const { game } = shopWith(0, [rare.id]);
     expect(sellViaChat(game, 240)).toBe(true);
     expect(game.reputation().xp).toBe(rep.perDeal + rep.rarityBonus[rare.rarity]!);
+  });
+
+  it('UB-10 the first deals never meet a lowballing character (customers.json chat.gentleDeals)', () => {
+    const fair = new Set(content.customers.characters.filter((c) => c.offer.max >= content.customers.chat.gentleMinOffer).map((c) => c.id));
+    expect(fair.size).toBeLessThan(content.customers.characters.length);
+    for (let seed = 1; seed <= 12; seed++) {
+      const save = newSave(0);
+      Object.assign(save.flags, { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true });
+      save.creatures = [0, 1, 2].map((i) => ({ uid: `g${i}`, species: common, level: 1, fed: 0, hatchedAt: 0, age: 0 }));
+      const game = createGame(createStore(save, () => 0), content, createRng(seed));
+      for (let i = 0; i < content.customers.chat.gentleDeals; i++) {
+        game.list(`g${i}`);
+        const chat = waitChat(game, 240)!;
+        expect(fair.has(chat.character), `seed ${seed} deal ${i}: ${chat.character}`).toBe(true);
+        expect(game.chatSell(chat.id)).toBe(true);
+      }
+    }
   });
 
   it('repLevel: thresholds from the data, the top level has no next', () => {

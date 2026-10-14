@@ -5,7 +5,7 @@
   "starterWaitsForTap": true, "firstEggOneTap": true,
   "firstRarity": "common",
   "secondRarity": "valuable",
-  "firstCustomerSec": 5,
+  "firstCustomerSec": 12,
   "firstOfferShare": 0.85,
   "maxHintWords": 6
 }

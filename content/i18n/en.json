@@ -186,6 +186,7 @@
   "eggs.lock.deals": "After {n} deals",
   "eggs.lock.district": "District {name}",
   "eggs.lock.later": "Opens later",
+  "eggs.lock.level": "Level {n} ★",
   "eggs.buy": "Buy",
   "eggs.back": "Back",
   "eggs.hatchIn": "Hatches in {t}",
@@ -287,7 +288,7 @@
   "rep.up": "Seller level {n}!",
   "rep.upOpened": "Seller level {n}! Opened: {what}",
   "next.level": "Seller level {n}",
-  "next.left.xp.one": "{n} more point",
-  "next.left.xp.few": "{n} more points",
-  "next.left.xp.many": "{n} more points"
+  "next.left.xp.one": "{n} more ★",
+  "next.left.xp.few": "{n} more ★",
+  "next.left.xp.many": "{n} more ★"
 }

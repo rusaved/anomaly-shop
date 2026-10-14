@@ -804,8 +804,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const pool = (characterOf(character)?.lines as Record<string, unknown[]> | undefined)?.[ctx];
     return pool?.length ? side.int(pool.length) : 0;
   };
-  const pickCharacter = () => {
-    const chars = customers.characters;
+  /** gentle (UB-10): the first deals pick among characters who pay fair (customers.json chat.gentleMinOffer). */
+  const pickCharacter = (gentle = false) => {
+    const all = customers.characters;
+    const chars = gentle ? all.filter((c) => c.offer.max >= customers.chat.gentleMinOffer) : all;
     let roll = side.next() * chars.reduce((sum, c) => sum + c.weight, 0);
     return chars.find((c) => (roll -= c.weight) < 0) ?? chars[chars.length - 1]!;
   };
@@ -835,7 +837,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   /** A buyer writes about a creature on the shelf: the offer is the character's share of the asking price with the type's bonuses. */
   function newChat(cr: Creature, golden?: number): Chat {
     const st = s();
-    const ch = pickCharacter();
+    const ch = pickCharacter(st.stats.deals < customers.chat.gentleDeals);
     const c = pickDistrict(cr)?.customer;
     const spec = speciesData(cr.species);
     // The type pays its share; the character bargains around it (a troll lowballs, a rich one pays more).

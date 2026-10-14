@@ -186,6 +186,7 @@
   "eggs.lock.deals": "После {n} сделок",
   "eggs.lock.district": "Район {name}",
   "eggs.lock.later": "Откроется позже",
+  "eggs.lock.level": "С уровня {n} ★",
   "eggs.buy": "Купить",
   "eggs.back": "Назад",
   "eggs.hatchIn": "Вылупится за {t}",
@@ -287,7 +288,7 @@
   "rep.up": "Уровень продавца {n}!",
   "rep.upOpened": "Уровень продавца {n}! Открыто: {what}",
   "next.level": "Уровень продавца {n}",
-  "next.left.xp.one": "ещё {n} очко",
-  "next.left.xp.few": "ещё {n} очка",
-  "next.left.xp.many": "ещё {n} очков"
+  "next.left.xp.one": "ещё {n} ★",
+  "next.left.xp.few": "ещё {n} ★",
+  "next.left.xp.many": "ещё {n} ★"
 }

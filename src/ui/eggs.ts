@@ -53,6 +53,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
   const lockText = (u: UnlockData): string => {
     if (u.type === 'deals') return look.t('eggs.lock.deals', { n: u.count });
     if (u.type === 'district') return look.t('eggs.lock.district', { name: look.districtName(u.id) });
+    if (u.type === 'level') return look.t('eggs.lock.level', { n: u.n });
     return look.t('eggs.lock.later');
   };
   const coinsHtml = (n: number, fmt: Intl.NumberFormat): string => `<span class="coin coin-sm" aria-hidden="true"></span><b>${fmt.format(n)}</b>`;

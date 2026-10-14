@@ -124,8 +124,11 @@ export const CustomersFile = v.object({
   queueSize: Count,
   people: People,
   characters: v.pipe(v.array(Character), v.minLength(1)),
-  /** «Chats» (M3-08, UB-05): closed chats kept in the list; holdOnShelf — a creature in a chat leaves its slot (Q-025); firstCounter — the counter price in the first deal. */
-  chat: v.object({ keep: Count, holdOnShelf: v.boolean(), firstCounter: v.boolean() }),
+  /**
+   * «Chats» (M3-08, UB-05): closed chats kept in the list; holdOnShelf — a creature in a chat leaves its slot (Q-025); firstCounter — the counter price in the first deal;
+   * gentleDeals / gentleMinOffer (UB-10) — the first deals never meet a character whose best offer is under this share (no lowball while learning).
+   */
+  chat: v.object({ keep: Count, holdOnShelf: v.boolean(), firstCounter: v.boolean(), gentleDeals: v.optional(Count, 0), gentleMinOffer: v.optional(v.pipe(v.number(), v.minValue(0)), 0) }),
   hobbies: v.pipe(v.array(Hobby), v.minLength(2)),
   orders: Orders,
   districts: v.pipe(v.array(District), v.minLength(1)),

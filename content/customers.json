@@ -172,5 +172,5 @@
     {"id": "football", "name": {"ru": "Футбол", "en": "Football"}, "line": {"ru": "Наши вчера выиграли", "en": "Our team won yesterday"}},
     {"id": "puzzles", "name": {"ru": "Пазлы", "en": "Puzzles"}, "line": {"ru": "Собрал пазл на тысячу деталей", "en": "Finished a thousand piece puzzle"}}
   ],
-  "chat": {"keep": 12, "holdOnShelf": true, "firstCounter": false}
+  "chat": {"keep": 12, "holdOnShelf": true, "firstCounter": false, "gentleDeals": 3, "gentleMinOffer": 0.8}
 }

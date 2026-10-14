@@ -1258,6 +1258,23 @@
   gap: 6px;
   color: var(--c-uiMuted);
 }
+/* UB-10: a rare hatch is an event. */
+.card.hatch-rare {
+  box-shadow: 0 0 0 4px var(--rc), 0 0 40px var(--rc);
+}
+.card.hatch-rare .hatch-rarity {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--rc);
+}
+.card.hatch-rare .hatch-result img {
+  animation: hatch-pop 0.55s ease-out;
+}
+@keyframes hatch-pop {
+  0% { transform: scale(0.5); }
+  70% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
 .rarity-dot {
   width: 10px;
   height: 10px;

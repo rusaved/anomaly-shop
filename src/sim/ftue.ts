@@ -39,7 +39,7 @@ export function ftueHint(state: SaveData, view: GameView): FtueHint | null {
     return view.inventory.length > 0 ? { step: 'list', target: LIST } : null;
   }
   // UB-01: the egg shop is the home screen — the basic egg's tile, then «Buy» in its card.
-  if (!state.flags[FLAGS.bought]) return { step: 'buyEgg', target: { kind: 'button', action: 'egg-buy-1|egg-card-egg_basic' } };
+  if (!state.flags[FLAGS.bought]) return { step: 'buyEgg', target: { kind: 'button', action: 'egg-buy-1|egg-card-egg_basic|tab-eggs' } };
   if (state.stats.hatched < 2 && eggAt >= 0) return { step: 'hatchRare', target: { kind: 'incubator', index: eggAt } };
   return null;
 }

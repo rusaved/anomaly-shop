@@ -2,7 +2,7 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CustomersData, DistrictData, EggsData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { CustomersData, DistrictData, EggSection, EggsData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
@@ -72,6 +72,8 @@ export type GameEvent =
   | { type: 'eggTap'; incubator: number; started: boolean }
   | { type: 'eggReady'; incubator: number }
   | { type: 'eggFed'; incubator: number; price: number; level: number }
+  | { type: 'eggsStored'; egg: string; count: number }
+  | { type: 'freeEgg'; egg: string }
   | { type: 'hatched'; incubator: number; uid: string; species: string; rarity: RarityName }
   | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number; by: FeedBy }
   | { type: 'customerArrived'; id: number; customer: string }
@@ -201,6 +203,22 @@ export interface GoalView {
   unit: 'coins' | 'crystals' | 'deals';
 }
 
+/** One egg on the egg screen (M3-04). */
+export interface EggCardView {
+  id: string;
+  section: EggSection;
+  price: number;
+  open: boolean;
+  affordable: boolean;
+  fresh: boolean;
+  /** Free eggs: game seconds until the next one (0 = take it now). */
+  freeIn: number | null;
+}
+export interface EggShopView {
+  my: Array<{ id: string; count: number }>;
+  eggs: EggCardView[];
+}
+
 export type BuyCheck = { ok: true; incubator: number; price: number } | { ok: false; reason: DenyReason; price: number };
 
 export interface Game {
@@ -212,6 +230,14 @@ export interface Game {
   /** Eggs on sale now (unlocked ones), cheapest first, with their purchase check. */
   eggList(): Array<{ id: string; check: BuyCheck; fresh: boolean }>;
   buyEgg(eggId?: string): boolean;
+  /** The egg screen: every egg on sale (open or not yet), free eggs with their timers, my eggs. */
+  eggShop(): EggShopView;
+  /** Buys n eggs at once (×3 / ×5): the free incubators take them, the rest wait in «my eggs». */
+  buyEggs(eggId: string, n: number): boolean;
+  /** Takes a free egg whose timer is done into «my eggs». */
+  claimFree(eggId: string): boolean;
+  /** Gives eggs into «my eggs» (gifts, codes, rewards). */
+  giveEggs(eggId: string, n: number): void;
   tapIncubator(index: number): void;
   /** Egg care: one portion of food for coins (docs/01 §3 p. 12). */
   feedEgg(index: number): boolean;
@@ -787,6 +813,21 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return true;
   }
 
+  /** «My eggs» go into free incubators by themselves (the first kind first). */
+  function placeMine(): void {
+    const mine = s().myEggs;
+    for (let spot = eggSpot(); spot >= 0; spot = eggSpot()) {
+      const id = Object.keys(mine).find((k) => (mine[k] ?? 0) > 0 && eggData(k));
+      if (!id) return;
+      mine[id] = (mine[id] ?? 0) - 1;
+      if ((mine[id] ?? 0) <= 0) delete mine[id];
+      placeEgg(spot, id, false);
+      commit({ flush: true });
+      emit({ type: 'eggBought', incubator: spot, egg: id, price: 0, by: 'gift' });
+      emit({ type: 'change' });
+    }
+  }
+
   function placeEgg(index: number, eggId: string, waiting: boolean): void {
     const inc = s().incubators[index];
     if (!inc) return;
@@ -868,6 +909,77 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     },
     buyEgg(eggId = basicEgg) {
       return buyEggBy(eggId, 'player');
+    },
+    eggShop() {
+      const st = s();
+      const show = eggs.eggs.filter((e) => !e.special && e.section !== 'reward');
+      return {
+        my: Object.entries(st.myEggs)
+          .filter(([id, n]) => n > 0 && eggData(id))
+          .map(([id, count]) => ({ id, count })),
+        eggs: show.map((e) => {
+          const open = e.section === 'free' ? eggUnlocked(e, facts()) : eggOpen(e);
+          return {
+            id: e.id,
+            section: e.section,
+            price: e.price.coins,
+            open,
+            affordable: open && st.coins + 1e-9 >= e.price.coins,
+            fresh: Boolean(st.flags[`egg_new_${e.id}`]),
+            freeIn: e.section === 'free' ? Math.max(0, st.freeIn[e.id] ?? 0) : null,
+          };
+        }),
+      };
+    },
+    buyEggs(eggId, n) {
+      const egg = eggData(eggId);
+      const count = Math.max(1, Math.floor(n));
+      if (!egg || !eggOpen(egg)) {
+        emit({ type: 'denied', action: 'buyEgg', reason: 'locked' });
+        return false;
+      }
+      const total = egg.price.coins * count;
+      if (s().coins + 1e-9 < total) {
+        emit({ type: 'denied', action: 'buyEgg', reason: 'coins' });
+        return false;
+      }
+      const st = s();
+      st.coins -= total;
+      st.flags[FLAGS.bought] = true;
+      delete st.flags[`egg_new_${eggId}`];
+      let stored = 0;
+      for (let i = 0; i < count; i++) {
+        const spot = eggSpot();
+        if (spot >= 0) {
+          placeEgg(spot, eggId, false);
+          emit({ type: 'eggBought', incubator: spot, egg: eggId, price: egg.price.coins, by: 'player' });
+        } else stored += 1;
+      }
+      if (stored) st.myEggs[eggId] = (st.myEggs[eggId] ?? 0) + stored;
+      commit({ flush: true });
+      if (stored) emit({ type: 'eggsStored', egg: eggId, count: stored });
+      emit({ type: 'change' });
+      return true;
+    },
+    claimFree(eggId) {
+      const egg = eggData(eggId);
+      const st = s();
+      if (!egg || egg.section !== 'free' || !egg.freeEverySec || !eggUnlocked(egg, facts()) || (st.freeIn[eggId] ?? 0) > 0) return false;
+      st.freeIn[eggId] = egg.freeEverySec;
+      st.myEggs[eggId] = (st.myEggs[eggId] ?? 0) + 1;
+      commit({ flush: true });
+      emit({ type: 'freeEgg', egg: eggId });
+      placeMine();
+      emit({ type: 'change' });
+      return true;
+    },
+    giveEggs(eggId, n) {
+      if (!eggData(eggId) || n < 1) return;
+      s().myEggs[eggId] = (s().myEggs[eggId] ?? 0) + Math.floor(n);
+      commit({ flush: true });
+      emit({ type: 'eggsStored', egg: eggId, count: Math.floor(n) });
+      placeMine();
+      emit({ type: 'change' });
     },
     tapIncubator(index) {
       const inc = s().incubators[index];
@@ -968,7 +1080,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         }
       }
       // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free.
-      if (st.creatures.length === 0 && st.incubators[0] && !st.incubators.some((i) => i.egg) && st.stats.hatched > 0) {
+      if (st.creatures.length === 0 && st.incubators[0] && !st.incubators.some((i) => i.egg) && !Object.keys(st.myEggs).length && st.stats.hatched > 0) {
         const cheapest = Math.min(...eggs.eggs.filter(eggOpen).map((e) => e.price.coins));
         if (st.coins + 1e-9 < cheapest) {
           placeEgg(0, eggs.rescueEgg, false);
@@ -1014,6 +1126,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
           else emit({ type: 'eggReady', incubator: i });
         }
       }
+      // Free egg timers (M3-04) and «my eggs» into free incubators.
+      for (const id of Object.keys(st.freeIn)) st.freeIn[id] = Math.max(0, (st.freeIn[id] ?? 0) - dt);
+      if (Object.keys(st.myEggs).length) placeMine();
       runHelpers(dt);
       runClock(dt);
       runOrders(dt);

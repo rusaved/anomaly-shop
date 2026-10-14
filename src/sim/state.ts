@@ -68,6 +68,10 @@ export interface SaveData {
   secrets: Record<string, number>;
   /** The collector's order on the board (docs/01b, section 5.3): species, level at least, reward, game seconds left, who asks. */
   order: Order | null;
+  /** «My eggs» (docs/01 §3 p. 12; M3-04): bought or given eggs waiting for an incubator, by egg id. */
+  myEggs: Record<string, number>;
+  /** Game seconds until each free egg comes back (eggs.json freeEverySec); missing = ready now. */
+  freeIn: Record<string, number>;
 }
 
 export interface Order {
@@ -105,6 +109,8 @@ export function newSave(now: number): SaveData {
     flags: {},
     secrets: {},
     order: null,
+    myEggs: {},
+    freeIn: {},
   };
 }
 
@@ -180,6 +186,8 @@ export function normalize(raw: unknown, now: number): SaveData {
     flags: Object.fromEntries(Object.entries(rec(r.flags)).filter(([, v]) => v === true).map(([k]) => [k, true])),
     secrets: numberMap(r.secrets),
     order: normalizeOrder(r.order),
+    myEggs: Object.fromEntries(Object.entries(numberMap(r.myEggs)).filter(([, n]) => n >= 1).map(([k, n]) => [k, Math.floor(n)])),
+    freeIn: Object.fromEntries(Object.entries(numberMap(r.freeIn)).map(([k, n]) => [k, Math.max(0, n)])),
   };
 }
 

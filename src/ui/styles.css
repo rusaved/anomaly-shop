@@ -1381,3 +1381,111 @@
   align-items: center;
   gap: 8px;
 }
+/* M3-04: the Eggs tab */
+.eggs-section + .eggs-section {
+  margin-top: 12px;
+}
+.eggs-title {
+  margin: 8px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-uiMuted);
+}
+.card-egg {
+  position: relative;
+}
+.card-egg.locked .card-pic img {
+  opacity: 0.45;
+}
+.card-price.dim,
+.btn.dim {
+  opacity: 0.55;
+}
+.chip-good {
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: var(--c-uiGood);
+  color: var(--c-uiAccentText);
+  font-weight: 700;
+}
+.card .count {
+  position: absolute;
+  right: -6px;
+  top: -4px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+}
+.card-egg .dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+.btn-small {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 16px;
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.eggs-back {
+  min-height: 36px;
+  padding: 0 4px;
+  font-weight: 700;
+  color: var(--c-uiMuted);
+}
+.egg-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 8px;
+}
+.egg-hero img {
+  width: 84px;
+  height: 84px;
+}
+.egg-name {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+.egg-buy {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.egg-buy .btn {
+  flex: 1 1 0;
+  min-height: 48px;
+  min-width: 84px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 700;
+}
+.cards-odds {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+}
+.card-odds .card-pic,
+.card-odds .card-pic img {
+  width: 52px;
+  height: 52px;
+}
+.card-odds .rarity-dash {
+  left: 12px;
+  right: 12px;
+}
+.btn-alt {
+  background: var(--c-uiPanelAlt);
+  color: var(--c-uiText);
+  box-shadow: 0 2px 0 var(--c-outline);
+}

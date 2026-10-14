@@ -55,6 +55,17 @@ export function careLevel(b: number, data: CareData): number {
   return Math.min(top, Math.max(1, Math.round((b / data.maxBonus) * top)));
 }
 
+/** What is inside an egg (the egg card, M3-04): every species it can hatch with its chance — the rarity share split evenly. */
+export function eggOdds(chances: EggData['chances'], data: SpeciesData): Array<{ species: string; rarity: RarityName; chance: number }> {
+  const out: Array<{ species: string; rarity: RarityName; chance: number }> = [];
+  for (const r of RARITIES) {
+    const pool = data.species.filter((s) => s.rarity === r);
+    if (chances[r] <= 0 || !pool.length) continue;
+    for (const s of pool) out.push({ species: s.id, rarity: r, chance: chances[r] / pool.length });
+  }
+  return out;
+}
+
 export function pickRarity(chances: EggData['chances'], roll: number): RarityName {
   const total = RARITIES.reduce((s, r) => s + chances[r], 0);
   let x = roll * total;

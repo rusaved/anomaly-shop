@@ -207,16 +207,28 @@ async function boot(): Promise<void> {
   const eggsTab = createEggsTab(sheets.get('eggs')!, play, {
     t: i18n.t,
     lang: i18n.lang,
+    egg: (id) => eggs.eggs.find((e) => e.id === id),
     eggName: (id) => eggs.eggs.find((e) => e.id === id)?.name[i18n.lang()] ?? id,
-    eggPicture: (id) => portraits.egg(id),
+    eggPicture: (id, tint) => portraits.egg(id, tint),
+    species,
+    speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
+    portrait: (id, r) => portraits.creature(id, r),
+    rarityColor: (r) => rarityColor(styleData.rarity, r),
+    districtName: (id) => customers.districts.find((d) => d.id === id)?.name[i18n.lang()] ?? id,
+    careShell: eggs.care.shell,
   });
+  // Timers on the egg screen (free egg, hatching) tick each second while it is open.
+  window.setInterval(() => {
+    if (nav.active() === 'eggs') eggsTab.render();
+  }, 1000);
   function renderTabs(): void {
     const tab = nav.active();
     if (tab === 'inventory') inventoryTab.render();
     if (tab === 'eggs') eggsTab.render();
     for (const [id, s] of sheets) if (id !== 'inventory' && id !== 'eggs' && s.shown()) s.setTitle(i18n.t(id === 'sales' ? 'sales.title' : `nav.${id}`));
     nav.badge('shop', play.upgradeList().some((u) => u.affordable || u.fresh));
-    nav.badge('eggs', play.eggList().some((e) => e.fresh));
+    const shopEggs = play.eggShop();
+    nav.badge('eggs', shopEggs.eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open)));
   }
   const nextCard = createNextCard(
     actions.more,
@@ -234,9 +246,11 @@ async function boot(): Promise<void> {
     },
     () => {
       // An egg goal opens the Eggs tab, everything else the shop upgrades.
-      if (play.nextGoal().kind === 'egg') {
+      const goal = play.nextGoal();
+      if (goal.kind === 'egg') {
         nav.mark('eggs');
         showTab('eggs');
+        eggsTab.show(goal.id);
       } else upgradesWindow.open();
     },
   );
@@ -361,6 +375,11 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t('toast.upgrade', { name, n: e.level }), 'good');
     }
     else if (e.type === 'eggBought') sfx.play('buy');
+    else if (e.type === 'eggsStored') toasts.show(i18n.t('eggs.stored', { n: e.count }), 'good', 1800);
+    else if (e.type === 'freeEgg') {
+      toasts.show(i18n.t('eggs.freeTaken'), 'good', 2000);
+      sfx.play('buy');
+    } else if (e.type === 'eggFed') sfx.play('buy');
     else if (e.type === 'hatched') {
       sfx.play(e.rarity === 'common' ? 'hatch' : 'rare');
       const name = speciesById(e.species)?.name[i18n.lang()] ?? e.species;

@@ -60,6 +60,16 @@ export interface SaveData {
   flags: Record<string, boolean>;
   /** Taps on shop things for the easter eggs (docs/01b, section 2): sign, door, lamp. */
   secrets: Record<string, number>;
+  /** The collector's order on the board (docs/01b, section 5.3): species, level at least, reward, game seconds left, who asks. */
+  order: Order | null;
+}
+
+export interface Order {
+  species: string;
+  level: number;
+  reward: number;
+  left: number;
+  person: number;
 }
 
 export function emptyIncubator(): Incubator {
@@ -88,6 +98,7 @@ export function newSave(now: number): SaveData {
     settings: { sound: true, lang: null },
     flags: {},
     secrets: {},
+    order: null,
   };
 }
 
@@ -153,7 +164,14 @@ export function normalize(raw: unknown, now: number): SaveData {
     settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null },
     flags: Object.fromEntries(Object.entries(rec(r.flags)).filter(([, v]) => v === true).map(([k]) => [k, true])),
     secrets: numberMap(r.secrets),
+    order: normalizeOrder(r.order),
   };
+}
+
+function normalizeOrder(v: unknown): Order | null {
+  const o = rec(v);
+  if (typeof o.species !== 'string') return null;
+  return { species: o.species, level: Math.max(1, num(o.level, 1)), reward: Math.max(1, num(o.reward, 1)), left: Math.max(0, num(o.left, 0)), person: Math.floor(num(o.person, 0)) };
 }
 
 export function serialize(save: SaveData): string {

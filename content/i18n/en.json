@@ -129,5 +129,8 @@
   "secret.door.stranger": "Someone peeked in: see you soon",
   "secret.lamp.disco": "Disco time!",
   "fx.knock": "Knock knock",
-  "fx.ding": "Ding"
+  "fx.ding": "Ding",
+  "order.new": "New order: {name}, lvl {n}+ · {reward}",
+  "order.info": "{who} wants: {name}, lvl {n}+ · {reward} · {m} min",
+  "order.done": "Order done! +{n}"
 }

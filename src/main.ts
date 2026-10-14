@@ -124,6 +124,14 @@ async function boot(): Promise<void> {
       tapEvent: () => play.tapEvent(),
       tapEventCoin: (id) => play.tapEventCoin(id),
       tapThing: (target) => play.tapThing(target),
+      tapBoard: () => {
+        const o = store.state.order;
+        if (!o) return;
+        const lang = i18n.lang();
+        const who = customers.people.names[o.person]?.[lang] ?? '';
+        toasts.show(i18n.t('order.info', { who, name: speciesById(o.species)?.name[lang] ?? o.species, n: o.level, reward: o.reward, m: Math.max(1, Math.ceil(o.left / 60)) }), 'good', 3200);
+        sfx.play('tap');
+      },
     },
   });
   const hud = createHud(uiRoot, lang, () => feel.hudRollSec);
@@ -265,6 +273,11 @@ async function boot(): Promise<void> {
     else if (e.type === 'merchantOpen') merchantWindow.open();
     else if (e.type === 'eventCoin') sfx.play('coin');
     else if (e.type === 'thingTapped') sfx.play('tap');
+    else if (e.type === 'orderNew') toasts.show(i18n.t('order.new', { name: speciesById(e.species)?.name[i18n.lang()] ?? e.species, n: e.level, reward: e.reward }), 'good', 3000);
+    else if (e.type === 'orderDone') {
+      toasts.show(i18n.t('order.done', { n: e.reward }), 'rare', 2600);
+      sfx.play('rare');
+    }
     else if (e.type === 'secret') {
       toasts.show(i18n.t(`secret.${e.id}.${e.show}`), 'rare', 2400);
       sfx.play('rare');

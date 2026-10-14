@@ -53,7 +53,7 @@ export interface Decor {
   /** On the wall at the top, between the HUD chips. */
   clock: Spot;
   lamp: Spot;
-  /** On the wall under the showcase, left. */
+  /** On the front of the counter, left end (the register is at the right end). */
   board: Rect;
   /** Feeder by the showcase, seller by the counter, courier at the door. */
   feeder: Spot;
@@ -149,7 +149,7 @@ export function computeShopLayout(
     radio: { x: showcase.x + showcase.w - u * 1.2, y: showcase.y - u * 0.5, w: u * 0.9, h: u * 0.55 },
     clock: { x: stage.x + stage.w * 0.63, y: stage.y + Math.max(u * 0.75, top * 0.55), r: u * 0.42 },
     lamp: lampSpot(),
-    board: { x: showcase.x + u * 0.1, y: Math.min(floorY - u * 1.0, showcase.y + showcase.h + u * 0.6), w: u * 1.3, h: u * 0.9 },
+    board: { x: counter.x + u * 0.2, y: counter.y + counter.h * 0.14, w: Math.min(u * 1.1, counter.h * 1.1), h: counter.h * 0.72 },
     feeder: { x: Math.max(stage.x + u * 0.35, counter.x - u * 0.05), y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.25), r: u * 0.3 },
     seller: { x: Math.min(sideX + u * 0.5, door.x - spotR * 2.2), y: counter.y + counter.h * 0.8, r: u * 0.38 },
     courier: { x: door.x + door.w - u * 0.1, y: door.y - u * 0.05, r: u * 0.24 },

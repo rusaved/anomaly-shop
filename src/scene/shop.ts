@@ -20,6 +20,8 @@ export interface ShopHandlers {
   tapEventCoin(id: number): void;
   /** Sign, door, lamp: easter eggs (M2-16). */
   tapThing(target: SecretTarget): void;
+  /** The order board (M2-19). */
+  tapBoard(): void;
 }
 
 export interface ShopAnchors {
@@ -179,6 +181,15 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     hit('sign', new Rectangle(d.sign.x - 4, d.sign.y - 4, d.sign.w + 8, Math.max(44, d.sign.h + 12)));
     hit('door', new Rectangle(l.door.x, l.door.y, l.door.w, l.door.h));
     hit('lamp', new Circle(d.lamp.x, d.lamp.y, Math.max(22, d.lamp.r * 1.4)));
+    if (decorItems.board) {
+      const box = new Container();
+      box.eventMode = 'static';
+      box.cursor = 'pointer';
+      box.hitArea = new Rectangle(d.board.x - 4, d.board.y - 4, Math.max(44, d.board.w + 8), Math.max(44, d.board.h + 8));
+      box.on('pointerdown', () => handlers.tapBoard());
+      hits.addChildAt(box, 0);
+      thingHits.push(box);
+    }
   }
 
   function animateThings(dt: number, l: ShopLayout): boolean {
@@ -356,7 +367,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
 
   /** Price pill under the portrait and a level badge at its top right (local to the creature box). */
   /** picked: the customer at the counter bids for this one — its pill takes the offer bubble's accent color. */
-  function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout, picked: boolean): void {
+  function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout, picked: boolean, order: 'none' | 'wanted' | 'ready'): void {
     const size = Math.max(11, r * 0.42);
     node.price.text = fmt(cv.price);
     node.price.style.fontSize = size;
@@ -375,6 +386,19 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     const br = size * 0.72;
     node.tag.circle(r * 0.92, -r * 0.88, br).fill(max ? c.rarityLegendary : c.uiPanel).stroke({ width: l.outline * 0.6, color: c.outline });
     node.level.style.fill = max ? c.outline : c.uiText;
+    // The board order wants this species (M2-19): a star at the bottom left, gold once the level is enough.
+    if (order !== 'none') {
+      const sx = -r * 0.95;
+      const sy = r * 0.62;
+      const sr = Math.max(7, r * 0.3);
+      const pts: number[] = [];
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + (Math.PI * i) / 5;
+        const d = i % 2 === 0 ? sr : sr * 0.45;
+        pts.push(sx + Math.cos(a) * d, sy + Math.sin(a) * d);
+      }
+      node.tag.poly(pts).fill(order === 'ready' ? c.rarityLegendary : c.uiMuted).stroke({ width: l.outline * 0.5, color: c.outline, join: 'round' });
+    }
     node.level.position.set(r * 0.92, -r * 0.88);
     // Satiety bar flows into the level badge (genre standard XP bar).
     node.bar.clear();
@@ -633,10 +657,11 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         drawCreature(node.art, style.creatures[cv.species] ?? FALLBACK_LOOK, cv.rarity, at.r, c, l.outline * 0.8);
       }
       const picked = cv.uid === view.selected && view.deal?.uid === cv.uid;
-      const shown = `${cv.price}:${cv.level}:${cv.maxLevel}:${cv.fed}:${cv.need}:${picked}`;
+      const order = view.order && view.order.species === cv.species ? (cv.level >= view.order.level ? 'ready' : 'wanted') : 'none';
+      const shown = `${cv.price}:${cv.level}:${cv.maxLevel}:${cv.fed}:${cv.need}:${picked}:${order}`;
       if (node.shown !== shown) {
         node.shown = shown;
-        drawTags(node, cv, at.r, l, picked);
+        drawTags(node, cv, at.r, l, picked, order);
         moving = true;
       }
       if (node.arrive < 1 && node.from) {
@@ -921,6 +946,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         } else if (e.show === 'stranger') strangerLeft = 2.2;
         else if (e.show === 'disco') discoLeft = 3;
         if (e.coins > 0) fx.float(current.door.x, current.door.y - current.unit * 0.6, `+${fmt(e.coins)}`, c.uiAccent, Math.max(16, current.unit * 0.55), current.unit);
+      } else if (e.type === 'orderDone') {
+        const b = current.decor.board;
+        fx.burst(b.x + b.w / 2, b.y + b.h / 2, 12, [c.rarityLegendary, c.uiAccent, c.eyeWhite], current.unit * 2.5, current.outline);
       } else if (e.type === 'eventCoin') {
         const box = eventCoins.get(e.id);
         if (box) {

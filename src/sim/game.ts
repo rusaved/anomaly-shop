@@ -5,7 +5,7 @@
 import type { CustomersData, DistrictData, EggsData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import type { Rng } from '../core/rng.ts';
-import { emptyIncubator, type Creature, type SaveData } from './state.ts';
+import { emptyIncubator, type Creature, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
 import { coins, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
@@ -24,6 +24,8 @@ const OFFLINE_STEP_SEC = 0.5;
 
 /** Customer type id of the golden event customer (style.json → customers.golden, i18n customer.golden). */
 export const GOLDEN = 'golden';
+
+const RARITIES_ALL = ['common', 'rare', 'epic', 'legendary'] as const;
 
 const RARITY_RANK: Record<RarityName, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
 
@@ -83,6 +85,9 @@ export type GameEvent =
   | { type: 'eventCoin'; id: number; value: number }
   | { type: 'eventGift'; coins: number }
   | { type: 'merchantOpen' }
+  | { type: 'orderNew'; species: string; level: number; reward: number }
+  | { type: 'orderDone'; species: string; reward: number }
+  | { type: 'orderExpired'; species: string }
   | { type: 'thingTapped'; target: SecretTarget; first: string; count: number }
   | { type: 'secret'; id: string; target: SecretTarget; show: string; coins: number; repeat: boolean }
   | { type: 'upgradeUnlocked'; id: string }
@@ -127,6 +132,8 @@ export interface DealView {
   customer: string;
   /** Index into people.names; −1 for the golden customer. */
   person: number;
+  /** The creature fits the board order: the offer is at least the order reward. */
+  order: boolean;
   /** The creature on offer (the selected one); null while the shop has none. */
   uid: string | null;
   species: string | null;
@@ -155,6 +162,8 @@ export interface GameView {
   queueSize: number;
   /** The random event on now, or null. */
   event: EventView | null;
+  /** The collector's order on the board (M2-19), or null without the board. */
+  order: Order | null;
   /** Bought things the scene draws, by decor item: level bought. */
   decor: Record<string, number>;
 }
@@ -351,6 +360,44 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     emit({ type: 'change' });
   }
 
+  // ---- Collector orders (docs/01b, section 5.3; M2-19): one at a time on the board, from species the player can get.
+  const orderFits = (cr: Creature): boolean => {
+    const o = s().order;
+    return Boolean(o && owned('orders') && cr.species === o.species && cr.level >= o.level);
+  };
+
+  function newOrder(): void {
+    const cfg = content.customers.orders;
+    // Species of the rarities the open eggs can hatch.
+    const rarities = new Set(eggs.eggs.filter(eggOpen).flatMap((e) => RARITIES_ALL.filter((r) => e.chances[r] > 0)));
+    const pool = species.species.filter((x) => rarities.has(x.rarity));
+    const spec = pool[rng.int(pool.length)];
+    if (!spec) return;
+    const top = Math.max(cfg.level.min, Math.min(cfg.level.max, spec.maxLevel));
+    const level = cfg.level.min + rng.int(top - cfg.level.min + 1);
+    const reward = coins(creatureValue(spec, level) * rng.range(cfg.rewardMult.min, cfg.rewardMult.max));
+    const person = rng.int(content.customers.people.names.length);
+    s().order = { species: spec.id, level, reward, left: cfg.minutes * 60, person };
+    emit({ type: 'orderNew', species: spec.id, level, reward });
+  }
+
+  function runOrders(dt: number): void {
+    const st = s();
+    if (!owned('orders')) return;
+    if (!st.order) {
+      newOrder();
+      commit();
+      emit({ type: 'change' });
+      return;
+    }
+    st.order.left -= dt;
+    if (st.order.left > 0) return;
+    // Missed: nothing is taken, a new collector writes a new order.
+    const old = st.order.species;
+    st.order = null;
+    emit({ type: 'orderExpired', species: old });
+  }
+
   function currentDeal(): DealView | null {
     const v = queue[0];
     if (!v || frontIn > 0) return null;
@@ -363,18 +410,22 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       : v.golden
         ? coins(appraisal(cr) * v.golden * v.mult)
         : offerFor(spec, cr.level, { share: v.share, mult: v.mult, rarityBonus: c.rarityBonus, levelBonusPerLevel: c.levelBonusPerLevel, cashBonus: effectSum('bargain'), valueMult: valueMult(cr) });
+    const fits = Boolean(cr && orderFits(cr));
+    const order = s().order;
+    const paid = fits && order ? Math.max(offer, order.reward) : offer;
     return {
       id: v.id,
       customer: v.golden ? GOLDEN : c.id,
       person: v.person,
+      order: fits,
       uid: cr?.uid ?? null,
       species: cr?.species ?? null,
       level: cr?.level ?? 0,
-      offer,
+      offer: paid,
       bargains: v.bargains,
       canHaggle: v.bargains < content.customers.bargainMax,
       leaveChance: v.golden ? 0 : Math.max(0, c.leaveOnBargain + effectSum('leaveChance')),
-      share: cr && spec ? offer / appraisal(cr) : v.share * v.mult,
+      share: cr && spec ? paid / appraisal(cr) : v.share * v.mult,
     };
   }
 
@@ -652,9 +703,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     }
     const districtsBefore = new Set(openDistricts().map((d) => d.id));
     const eggsBefore = new Set(eggs.eggs.filter(eggOpen).map((e) => e.id));
-    const share = by === 'helper' ? helperSellShare() : 1;
+    const share = by === 'helper' && !deal.order ? helperSellShare() : 1;
     const price = Math.max(1, Math.round(deal.offer * share));
     const haggled = deal.bargains > 0;
+    const doneOrder = deal.order ? st.order : null;
+    if (doneOrder) st.order = null;
     const crystals = species.crystalsPerSale[speciesData(cr.species)?.rarity ?? 'common'];
     st.crystals += crystals;
     const firstCrystal = crystals > 0 && !st.flags[FLAGS.crystal];
@@ -675,6 +728,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     emit({ type: 'sold', uid: cr.uid, species: cr.species, rarity: speciesData(cr.species)?.rarity ?? 'common', price, crystals, customer: deal.customer, customerId: deal.id, haggled, by, liked });
     frontLeaves('sold', 0);
     if (firstCrystal) emit({ type: 'firstCrystal' });
+    if (doneOrder) emit({ type: 'orderDone', species: doneOrder.species, reward: price });
     for (const d of districts) emit({ type: 'districtOpened', district: d.id, customer: d.customer.id });
     for (const e of opened) emit({ type: 'eggUnlocked', egg: e.id });
     emit({ type: 'change' });
@@ -907,6 +961,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       }
       runHelpers(dt);
       runClock(dt);
+      runOrders(dt);
       if (!quiet) {
         clock += dt;
         checkShop(dt);
@@ -932,6 +987,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         selected: selected(),
         slots: showcaseSlots(),
         queueSize: queueSize(),
+        order: owned('orders') ? s().order : null,
         event: active ? { id: active.data.id, kind: active.data.kind, left: active.left, coins: active.coins.map(({ id, x, y }) => ({ id, x, y })), uid: active.uid, egg: active.egg } : null,
         decor: decorLevels(),
         queue: queue.map((v) => ({ id: v.id, customer: v.golden ? GOLDEN : v.district.customer.id, person: v.person, outfit: v.outfit, accessory: v.accessory })),

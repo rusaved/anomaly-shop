@@ -73,9 +73,12 @@ export const People = v.object({
   outfits: v.pipe(v.array(Color), v.minLength(2)),
   accessories: v.pipe(v.array(v.picklist(ACCESSORIES)), v.minLength(1)),
 });
+/** Collector orders (docs/01b, section 5.3; M2-19). */
+export const Orders = v.object({ minutes: v.pipe(v.number(), v.minValue(0.5)), rewardMult: v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(v.number(), v.minValue(1)) }), level: v.object({ min: Count, max: Count }) });
 export const CustomersFile = v.object({
   queueSize: Count,
   people: People,
+  orders: Orders,
   spawnEverySec: v.pipe(v.number(), v.minValue(0.1)),
   waitNextSec: Money,
   bargainBonus: Range,

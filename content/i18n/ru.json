@@ -129,5 +129,8 @@
   "secret.door.stranger": "Кто-то заглянул: «Ещё увидимся»",
   "secret.lamp.disco": "Дискотека!",
   "fx.knock": "Тук-тук",
-  "fx.ding": "Дзынь"
+  "fx.ding": "Дзынь",
+  "order.new": "Новый заказ: {name}, ур. {n}+ · {reward}",
+  "order.info": "{who} ищет: {name}, ур. {n}+ · {reward} · {m} мин",
+  "order.done": "Заказ выполнен! +{n}"
 }

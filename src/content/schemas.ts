@@ -310,6 +310,23 @@ export const DecorFile = v.object({
   ),
   sets: v.array(v.object({ theme: Id, name: Text, bonus: Share })),
 });
+/** M4-20: finds (achievements) — 30, 10 hidden; a reward once; the condition reads the save (docs/01b §5.5). */
+const FindWhen = v.variant('type', [
+  v.object({ type: v.literal('stat'), stat: v.picklist(['dealsAll', 'hatched', 'levelUps', 'haggles', 'coinsEarned']), n: Count }),
+  v.object({ type: v.literal('level'), n: Count }),
+  v.object({ type: v.literal('city'), n: Count }),
+  v.object({ type: v.literal('collected'), n: v.pipe(v.number(), v.integer(), v.minValue(0)) }),
+  v.object({ type: v.literal('rows'), n: Count }),
+  v.object({ type: v.literal('upgrades'), n: Count }),
+  v.object({ type: v.literal('guest'), n: Count }),
+  v.object({ type: v.literal('flag'), id: Id }),
+]);
+export const AchievementsFile = v.object({
+  items: v.pipe(
+    v.array(v.object({ id: Id, name: Text, desc: Text, hidden: v.boolean(), reward: v.object({ coins: v.optional(Count), crystals: v.optional(Count) }), when: FindWhen })),
+    v.minLength(1),
+  ),
+});
 /** M4-01: the collection by rarity — a full row gives crystals once and a price bonus for that rarity for good. */
 export const CollectionFile = v.object({ rowBonus: PerRarity, rowCrystals: PerRarity });
 /** Q-027 B: a live player's interface time for the balance model (scripts/balance-model.ts): the result, tabs, chats, cards. */
@@ -453,6 +470,7 @@ export type NavData = v.InferOutput<typeof NavFile>;
 export type PaceData = v.InferOutput<typeof PaceFile>;
 export type CollectionData = v.InferOutput<typeof CollectionFile>;
 export type DecorData = v.InferOutput<typeof DecorFile>;
+export type AchievementsData = v.InferOutput<typeof AchievementsFile>;
 export type TabUnlockData = v.InferOutput<typeof TabUnlock>;
 export type CodesData = v.InferOutput<typeof CodesFile>;
 export type RewardData = v.InferOutput<typeof Reward>;

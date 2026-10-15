@@ -18,6 +18,8 @@ export interface InventoryLookups {
   list(uid: string): void;
   /** M4-23: the market's mood chip for a species ('' when none). */
   mood(species: string): string;
+  /** M4-20: a find's name, how to get it and its reward, in the player's language. */
+  find(id: string): { name: string; desc: string; coins: number; crystals: number };
 }
 
 export interface InventoryTab {
@@ -25,16 +27,17 @@ export interface InventoryTab {
 }
 
 export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLookups): InventoryTab {
-  let mode: 'items' | 'collection' = 'items';
+  let mode: 'items' | 'collection' | 'finds' = 'items';
   sheet.head.innerHTML =
     '<div class="subtabs" role="tablist"><button type="button" class="subtab" data-sub="items" data-i18n="inventory.items"></button>' +
-    '<button type="button" class="subtab" data-sub="collection" data-i18n="inventory.collection"></button></div>';
+    '<button type="button" class="subtab" data-sub="collection" data-i18n="inventory.collection"></button>' +
+    '<button type="button" class="subtab" data-sub="finds" data-i18n="inventory.finds"></button></div>';
   const list = document.createElement('div');
   list.className = 'cards';
   sheet.body.appendChild(list);
   sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) =>
     b.addEventListener('click', () => {
-      mode = b.dataset.sub === 'collection' ? 'collection' : 'items';
+      mode = b.dataset.sub === 'collection' ? 'collection' : b.dataset.sub === 'finds' ? 'finds' : 'items';
       key = '';
       tab.render();
     }),
@@ -79,6 +82,45 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
             return b;
           }),
         );
+        return;
+      }
+      if (mode === 'finds') {
+        // M4-20: the finds — got ones with their name and reward, open ones with how to get them and how far, hidden ones as «???».
+        const finds = game.finds();
+        const next = `f:${look.lang()}:${finds.map((f) => `${f.got ? 1 : 0}${f.claimed ? 1 : 0}${Math.min(f.have, f.need)}`).join(',')}`;
+        if (next === key) return;
+        key = next;
+        const sum = document.createElement('p');
+        sum.className = 'cards-sum';
+        sum.dataset.finds = `${finds.filter((f) => f.got).length}/${finds.length}`;
+        sum.textContent = look.t('finds.sum', { n: finds.filter((f) => f.got).length, all: finds.length });
+        const tiles = [...finds].sort((a, b) => Number(b.got) - Number(a.got) || Number(a.hidden) - Number(b.hidden)).map((f) => {
+          const d = look.find(f.id);
+          const secret = f.hidden && !f.got;
+          const el = document.createElement('div');
+          el.className = `find${f.got ? ' got' : ''}${secret ? ' secret' : ''}`;
+          el.dataset.find = f.id;
+          const reward = d.crystals ? `◆ ${fmt.format(d.crystals)}` : `${fmt.format(d.coins)}`;
+          el.innerHTML = `<b class="find-name"></b><span class="card-sub find-desc"></span><span class="find-foot"><span class="card-sub find-progress"></span><span class="find-reward">${d.crystals ? '' : '<span class="coin coin-sm" aria-hidden="true"></span>'}${reward}</span></span>`;
+          (el.querySelector('.find-name') as HTMLElement).textContent = secret ? '???' : d.name;
+          (el.querySelector('.find-desc') as HTMLElement).textContent = secret ? look.t('finds.secret') : d.desc;
+          (el.querySelector('.find-progress') as HTMLElement).textContent = f.got ? (f.claimed ? look.t('finds.got') : '') : f.need > 1 && !secret ? `${fmt.format(Math.min(f.have, f.need))} / ${fmt.format(f.need)}` : '';
+          // Found, the reward waits: «Take» in place of the reward line.
+          if (f.got && !f.claimed) {
+            const take = document.createElement('button');
+            take.type = 'button';
+            take.className = 'btn btn-primary btn-small';
+            take.dataset.action = `find-take-${f.id}`;
+            take.innerHTML = `${look.t('finds.take')} ${d.crystals ? '' : '<span class="coin coin-sm" aria-hidden="true"></span>'}${reward}`;
+            take.addEventListener('click', () => game.claimFind(f.id));
+            el.querySelector('.find-reward')?.replaceWith(take);
+          }
+          return el;
+        });
+        const grid = document.createElement('div');
+        grid.className = 'finds';
+        grid.append(...tiles);
+        list.replaceChildren(sum, grid);
         return;
       }
       // M4-01: the collection by rarity — «Collected N/M», a row per rarity with its bonus, every species with its status.

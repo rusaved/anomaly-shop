@@ -2,7 +2,7 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { AchievementsData, CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
@@ -25,6 +25,7 @@ export interface GameContent {
   reputation: ReputationData;
   collection: CollectionData;
   decor: DecorData;
+  achievements: AchievementsData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -104,6 +105,8 @@ export type GameEvent =
   | { type: 'rebirth'; city: number }
   | { type: 'rowDone'; rarity: RarityName; crystals: number; bonus: number }
   | { type: 'guestUnpaid' }
+  | { type: 'find'; id: string; coins: number; crystals: number }
+  | { type: 'findClaimed'; id: string; coins: number; crystals: number }
   | { type: 'guestBought'; id: string }
   | { type: 'eggBought'; incubator: number; egg: string; price: number; by: 'player' | 'helper' | 'gift' | 'merchant' }
   | { type: 'eggTap'; incubator: number; started: boolean }
@@ -373,6 +376,10 @@ export interface Game {
   collection(): CollectionView;
   /** M4-05: the guest zone of the pickup point — the decorations, their bonus and upkeep, the full themes. */
   guestZone(): GuestZoneView;
+  /** M4-20: the finds — got or not, the reward claimed or waiting, hidden, how far a numeric one is. */
+  finds(): Array<{ id: string; got: boolean; claimed: boolean; hidden: boolean; have: number; need: number }>;
+  /** M4-20: takes the reward of a find (coins or crystals), once. */
+  claimFind(id: string): boolean;
   /** M4-05: puts a decoration in the guest zone (coins, once the point is rented). */
   buyGuest(id: string): boolean;
   /** M4-05: takes a decoration away — its upkeep stops, nothing comes back. */
@@ -707,6 +714,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       for (let i = 0; i < n; i++) ev.coins.push({ id: nextCoinId++, x: rng.next(), y: rng.next(), value: Math.max(randInt(data.coinValue), Math.round(avgSale * data.saleShare)) });
     } else if (data.kind === 'doorEgg') ev.egg = giftEgg();
     active = ev;
+    s().flags[`seen_event_${data.kind}`] = true;
     emit({ type: 'eventStarted', id: data.id, kind: data.kind, uid: ev.uid ?? undefined });
     emit({ type: 'change' });
   }
@@ -849,6 +857,38 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return levelUp;
   }
 
+  // ---- M4-20: finds (achievements) — every condition reads the save; a reward once, the mark find_<id> survives a move.
+  type FindData = AchievementsData['items'][number];
+  const findHave = (f: FindData): { have: number; need: number } => {
+    const st = s();
+    const w = f.when;
+    if (w.type === 'stat') return { have: Math.floor(w.stat === 'dealsAll' ? Math.max(st.stats.dealsAll ?? 0, st.stats.deals) : (st.stats[w.stat] ?? 0)), need: w.n };
+    if (w.type === 'level') return { have: sellerLevel(), need: w.n };
+    if (w.type === 'city') return { have: st.prestige + 1, need: w.n };
+    if (w.type === 'collected') {
+      const all = species.species.length;
+      return { have: species.species.filter((x) => (st.collection[x.id]?.seen ?? 0) > 0).length, need: w.n || all };
+    }
+    if (w.type === 'rows') return { have: RARITIES.filter((r) => st.flags[`row_${r}`]).length, need: w.n };
+    if (w.type === 'upgrades') return { have: Object.values(st.upgrades).filter((n) => n > 0).length, need: w.n };
+    if (w.type === 'guest') return { have: st.guest.items.length, need: w.n };
+    return { have: st.flags[w.id] ? 1 : 0, need: 1 };
+  };
+  let findsIn = 0;
+  function checkFinds(): void {
+    const st = s();
+    for (const f of content.achievements.items) {
+      if (st.flags[`find_${f.id}`]) continue;
+      const { have, need } = findHave(f);
+      if (have < need) continue;
+      // Found: marked at once; the reward waits for a tap in «Finds» (claimFind) — the genre's «collect» moment.
+      st.flags[`find_${f.id}`] = true;
+      commit({ flush: true });
+      emit({ type: 'find', id: f.id, coins: f.reward.coins ?? 0, crystals: f.reward.crystals ?? 0 });
+      emit({ type: 'change' });
+    }
+  }
+
   /** M4-01: a row of the collection just filled — crystals once, the price bonus from now on (flag row_<rarity>, kept by a move). */
   function checkRows(): void {
     const st = s();
@@ -878,6 +918,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const levelBefore = sellerLevel();
     st.coins += price;
     st.stats.deals += 1;
+    st.stats.dealsAll = Math.max(st.stats.dealsAll ?? 0, st.stats.deals - 1) + 1;
     st.stats.coinsEarned += price;
     st.stats.xp = Math.max(st.stats.xp ?? 0, (st.stats.deals - 1) * content.reputation.perDeal) + content.reputation.perDeal + (content.reputation.rarityBonus[rarity] ?? 0);
     const levelAfter = sellerLevel();
@@ -1174,6 +1215,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const entry = (st.collection[kind.id] ??= { seen: 0, hatched: 0, sold: 0 });
     entry.seen += 1;
     entry.hatched += 1;
+    st.flags[`seen_rarity_${kind.rarity}`] = true;
     checkRows();
     const done = st.stats.hatched >= 2 && !st.flags[FLAGS.done];
     if (done) st.flags[FLAGS.done] = true;
@@ -1579,6 +1621,12 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       idleSec += dt;
       const st = s();
       runPoint(dt);
+      // M4-20: the finds look at the save once a second (cheap: 30 conditions).
+      findsIn -= dt;
+      if (findsIn <= 0 && !quiet) {
+        findsIn = 1;
+        checkFinds();
+      }
       for (const cr of onSale()) cr.age = (cr.age ?? 0) + dt;
       // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free.
       if (st.creatures.length === 0 && st.incubators[0] && !st.incubators.some((i) => i.egg) && !Object.keys(st.myEggs).length && st.stats.hatched > 0) {
@@ -1743,6 +1791,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
           const repeat = Boolean(st.flags[flag]);
           const coinsWon = repeat ? 0 : step.coins;
           st.flags[flag] = true;
+          // M4-20: the easter egg's step is a mark the finds read.
+          st.flags[`seen_secret_${sec.id}_${step.show}`] = true;
           st.coins += coinsWon;
           st.stats.coinsEarned += coinsWon;
           if (step.streak) streak.n = 0;
@@ -1792,6 +1842,22 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const best = goals.reduce<GoalView | null>((a, g) => (!a || share(g) > share(a) + 1e-9 ? g : a), null);
       const city = game.rebirthView();
       return best ?? { kind: 'rebirth', id: 'rebirth', have: city.have, need: city.need, unit: 'coins' };
+    },
+    finds() {
+      const st = s();
+      return content.achievements.items.map((f) => ({ id: f.id, got: Boolean(st.flags[`find_${f.id}`]), claimed: Boolean(st.flags[`find_claimed_${f.id}`]), hidden: f.hidden, ...findHave(f) }));
+    },
+    claimFind(id) {
+      const st = s();
+      const f = content.achievements.items.find((x) => x.id === id);
+      if (!f || !st.flags[`find_${id}`] || st.flags[`find_claimed_${id}`]) return false;
+      st.flags[`find_claimed_${id}`] = true;
+      st.coins += f.reward.coins ?? 0;
+      st.crystals += f.reward.crystals ?? 0;
+      commit({ flush: true });
+      emit({ type: 'findClaimed', id, coins: f.reward.coins ?? 0, crystals: f.reward.crystals ?? 0 });
+      emit({ type: 'change' });
+      return true;
     },
     guestZone() {
       const st = s();

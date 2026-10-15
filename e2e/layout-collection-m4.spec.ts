@@ -41,3 +41,19 @@ test('M4-23 market mood: the chip in the sale card of the species in fashion', a
   await expect(page.locator('[data-detail=sale] [data-mood=hot]')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+/** M4-20 on the phone projects: «Finds» — a screen of its own in the Inventory: got ones with an edge, hidden ones «???» until found. */
+test('M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked', async ({ page }) => {
+  const errors = collectErrors(page);
+  await seedSave(page, { stats: { deals: 12, coinsEarned: 1500, hatched: 12, taps: 100, levelUps: 3, haggles: 1, xp: 12 } });
+  await open(page, '?mock_device=mobile');
+  await page.locator('[data-tab=inventory]').tap();
+  await page.locator('[data-sheet=inventory] [data-sub=finds]').tap();
+  await expect(page.locator('[data-sheet=inventory] [data-finds]')).toHaveAttribute('data-finds', /^\d+\/30$/);
+  await expect(page.locator('[data-find=first_deal]')).toHaveClass(/got/);
+  await page.locator('[data-action=find-take-first_deal]').tap();
+  await expect(page.locator('[data-find=first_deal] .find-progress')).not.toBeEmpty();
+  await expect(page.locator('[data-find=door_knock] .find-name')).toHaveText('???');
+  await expect(page.locator('.find.secret')).toHaveCount(10);
+  expect(errors).toEqual([]);
+});

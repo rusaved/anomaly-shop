@@ -47,7 +47,7 @@ import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
-import { audio, codes, collection, decor as decorData, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { achievements, audio, codes, collection, decor as decorData, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -115,7 +115,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection, decor: decorData }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection, decor: decorData, achievements }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -255,6 +255,11 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     pick: (uid) => play.tapCreature(uid),
     mood: moodOf,
+    find: (id) => {
+      const f = achievements.items.find((x) => x.id === id);
+      const lang = i18n.lang();
+      return { name: f?.name[lang] ?? id, desc: f?.desc[lang] ?? '', coins: f?.reward.coins ?? 0, crystals: f?.reward.crystals ?? 0 };
+    },
     list: (uid) => {
       if (!play.list(uid)) return;
       selectTab('sales');
@@ -440,6 +445,8 @@ async function boot(): Promise<void> {
     if (tab === 'shop') shopTab.render();
     sheets.get('season')?.setTitle(i18n.t('nav.season'));
     nav.badge('chats', play.chats().filter((c) => c.unread).length);
+    // M4-20: a find with its reward waiting — a dot on the Inventory tab.
+    nav.badge('inventory', play.finds().some((f) => f.got && !f.claimed));
     const upgradeReady = play.upgradeList().some((u) => u.affordable || u.fresh);
     nav.badge('shop', upgradeReady);
     (stageButton.querySelector('[data-upgrades-dot]') as HTMLElement).hidden = !upgradeReady;
@@ -552,6 +559,7 @@ async function boot(): Promise<void> {
   document.addEventListener('pointerdown', () => sfx.unlock(), { capture: true });
   runtime.pause.onChange((paused) => sfx.setSuspended(paused));
   const chatter = createChatter({ lines, lang: () => i18n.lang(), speak: (who, text) => shop.speak(who, text), view: () => play.view() });
+  const foundNow: string[] = [];
   play.events.on((e) => {
     shop.onEvent(e);
     // M3-18: «Lv N!» flies in the scene — the toasts wait for it.
@@ -584,6 +592,17 @@ async function boot(): Promise<void> {
       sfx.play('levelUp');
       selectTab('eggs');
     }
+    else if (e.type === 'find') {
+      // Several finds at once (an old save, a lucky deal): one toast for all of them.
+      foundNow.push(e.id);
+      if (foundNow.length === 1)
+        window.setTimeout(() => {
+          const f = achievements.items.find((x) => x.id === foundNow[0]);
+          toasts.show(foundNow.length > 1 ? i18n.t('toast.finds', { n: foundNow.length }) : i18n.t('toast.find', { name: f?.name[i18n.lang()] ?? '' }), 'rare', 2600);
+          foundNow.length = 0;
+          sfx.play('rare');
+        }, 60);
+    } else if (e.type === 'findClaimed') sfx.play('coin');
     else if (e.type === 'guestUnpaid') toasts.show(i18n.t('toast.guestUnpaid'), 'warn', 2600);
     else if (e.type === 'guestBought') {
       toasts.show(i18n.t('toast.guestBought', { name: decorData.items.find((x) => x.id === e.id)?.name[i18n.lang()] ?? e.id }), 'good', 2000);

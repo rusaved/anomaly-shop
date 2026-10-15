@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import * as v from 'valibot';
-import { CollectionFile, CustomersFile, FeelFile, PaceFile, ReputationFile, EggsFile, EventsFile, CodesFile, FtueFile, GiftsFile, MarketFile, SecretsFile, SpeciesFile, UpgradesFile, WorkFile } from '../src/content/schemas.ts';
+import { CollectionFile, CustomersFile, DecorFile, FeelFile, PaceFile, ReputationFile, EggsFile, EventsFile, CodesFile, FtueFile, GiftsFile, MarketFile, SecretsFile, SpeciesFile, UpgradesFile, WorkFile } from '../src/content/schemas.ts';
 import type { GameContent } from '../src/sim/game.ts';
 
 const root = resolve(import.meta.dirname, '..');
@@ -24,6 +24,7 @@ export function loadGameContent(): GameContent {
     codes: v.parse(CodesFile, json('codes.json')),
     reputation: v.parse(ReputationFile, json('reputation.json')),
     collection: v.parse(CollectionFile, json('collection.json')),
+    decor: v.parse(DecorFile, json('decor.json')),
   };
 }
 

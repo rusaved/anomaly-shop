@@ -23,9 +23,10 @@ import codesJson from '@content/codes.json';
 import reputationJson from '@content/reputation.json';
 import navJson from '@content/nav.json';
 import collectionJson from '@content/collection.json';
+import decorJson from '@content/decor.json';
 import ruJson from '@content/i18n/ru.json';
 import enJson from '@content/i18n/en.json';
-import { AudioFile, CalendarFile, CustomersFile, EggsFile, FeelFile, FtueFile, I18nFile, NewsFile, EventsFile, SecretsFile, LinesFile, MarketFile, GiftsFile, WorkFile, CodesFile, ReputationFile, NavFile, CollectionFile, SpeciesFile, StyleFile, UpgradesFile, type LangName } from './schemas.ts';
+import { AudioFile, CalendarFile, CustomersFile, EggsFile, FeelFile, FtueFile, I18nFile, NewsFile, EventsFile, SecretsFile, LinesFile, MarketFile, GiftsFile, WorkFile, CodesFile, ReputationFile, NavFile, CollectionFile, DecorFile, SpeciesFile, StyleFile, UpgradesFile, type LangName } from './schemas.ts';
 
 export const eggs = v.parse(EggsFile, eggsJson);
 export const species = v.parse(SpeciesFile, speciesJson);
@@ -48,6 +49,7 @@ export const codes = v.parse(CodesFile, codesJson);
 export const reputation = v.parse(ReputationFile, reputationJson);
 export const nav = v.parse(NavFile, navJson);
 export const collection = v.parse(CollectionFile, collectionJson);
+export const decor = v.parse(DecorFile, decorJson);
 
 function dictionary(json: Record<string, unknown>): Record<string, string> {
   const { $schema: _s, note: _n, ...rest } = json;

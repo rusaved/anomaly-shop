@@ -45,7 +45,7 @@ import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
-import { audio, codes, collection, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, codes, collection, decor as decorData, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -113,7 +113,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection, decor: decorData }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -237,6 +237,12 @@ async function boot(): Promise<void> {
     upgrade: (id) => upgrades.upgrades.find((u) => u.id === id),
     tierColors: Object.values(styleData.rarity),
     sections: navData.shop.sections.filter((x) => x.enabled).map((x) => x.id),
+    guestName: (id) => decorData.items.find((x) => x.id === id)?.name[i18n.lang()] ?? id,
+    themeName: (theme) => decorData.sets.find((x) => x.theme === theme)?.name[i18n.lang()] ?? theme,
+    pointLevel: (() => {
+      const u = upgrades.upgrades.find((x) => x.id === 'point_rent')?.unlock;
+      return u?.type === 'level' ? u.n : 1;
+    })(),
   });
   shopTab.section('upgrades');
   const inventoryTab = createInventoryTab(sheets.get('inventory')!, play, {
@@ -451,7 +457,11 @@ async function boot(): Promise<void> {
         selectTab('eggs');
         eggsTab.show(goal.id);
       } else if (goal.kind === 'level' || goal.kind === 'district') selectTab('sales');
-      else openUpgrades();
+      else {
+        openUpgrades();
+        // M4-05: a step of the pickup point opens its section.
+        if (upgrades.upgrades.find((u) => u.id === goal.id)?.group === 'point') shopTab.section('point');
+      }
     },
   );
   /** Game second of the player's last touch (idle news) and the events of the last minute (event news). */
@@ -554,6 +564,11 @@ async function boot(): Promise<void> {
       sfx.play('buy');
     }
     else if (e.type === 'firstCrystal') toasts.show(i18n.t('toast.crystal'), 'rare', 2800);
+    else if (e.type === 'guestUnpaid') toasts.show(i18n.t('toast.guestUnpaid'), 'warn', 2600);
+    else if (e.type === 'guestBought') {
+      toasts.show(i18n.t('toast.guestBought', { name: decorData.items.find((x) => x.id === e.id)?.name[i18n.lang()] ?? e.id }), 'good', 2000);
+      sfx.play('buy');
+    }
     else if (e.type === 'rowDone') {
       toasts.show(i18n.t('toast.rowDone', { row: i18n.t(`collection.row.${e.rarity}`), p: Math.round(e.bonus * 100), c: e.crystals }), 'rare', 3200);
       sfx.play('rare');

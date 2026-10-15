@@ -14,6 +14,11 @@ export interface UpgradeLookups {
   tierColors?: readonly string[];
   /** The sections open now (content/nav.json shop.sections). */
   sections: readonly string[];
+  /** M4-05: the name of a guest zone decoration and of a theme. */
+  guestName(id: string): string;
+  themeName(theme: string): string;
+  /** The seller level the lease of the point opens at. */
+  pointLevel: number;
 }
 
 export interface ShopTab {
@@ -27,7 +32,7 @@ function effectText(u: UpgradeData, look: UpgradeLookups): string {
   const e = u.effect;
   const pct = (x: number): number => Math.round(Math.abs(x) * 100);
   const key = `upgrade.effect.${e.type}`;
-  if (e.type === 'slots' || e.type === 'showcaseSlots' || e.type === 'feedPerTap' || e.type === 'queueSize') return look.t(key, { n: e.perLevel });
+  if (e.type === 'slots' || e.type === 'showcaseSlots' || e.type === 'feedPerTap' || e.type === 'queueSize' || e.type === 'passive') return look.t(key, { n: e.perLevel });
   if (e.type === 'hatchTime' || e.type === 'spawnRate' || e.type === 'bargain' || e.type === 'give' || e.type === 'appraisal') return look.t(key, { n: pct(e.perLevel) });
   return look.t(key);
 }
@@ -56,9 +61,54 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
   list.className = 'shop-list';
   box.append(head, list);
   sheet.body.appendChild(box);
+  // M4-05, Q-019: the «Pickup point» section — the steps of the point with their tiers, then the guest zone.
+  const pointBox = document.createElement('div');
+  pointBox.className = 'card-shop';
+  pointBox.dataset.section = 'point';
+  pointBox.hidden = true;
+  pointBox.innerHTML = '<h3 class="eggs-title" data-i18n="shop.section.point"></h3><p class="card-sub" data-point-locked hidden></p><div class="shop-list" data-point-list></div><div class="guest" data-guest></div>';
+  sheet.body.appendChild(pointBox);
+  const pointList = pointBox.querySelector('[data-point-list]') as HTMLElement;
+  const pointLocked = pointBox.querySelector('[data-point-locked]') as HTMLElement;
+  const guestBox = pointBox.querySelector('[data-guest]') as HTMLElement;
   let built = '';
+  let guestKey = '';
+  function renderGuest(): void {
+    const z = game.guestZone();
+    const fmt = new Intl.NumberFormat(look.lang());
+    const pct = (x: number): string => new Intl.NumberFormat(look.lang(), { maximumFractionDigits: 1 }).format(x * 100);
+    const key = `${look.lang()}|${JSON.stringify(z)}`;
+    if (key === guestKey) return;
+    guestKey = key;
+    if (!z.open) {
+      guestBox.innerHTML = `<h3 class="eggs-title">${look.t('guest.title')}</h3><p class="card-sub">${look.t('guest.locked')}</p>`;
+      return;
+    }
+    const sets = z.sets.map((x) => `<span class="guest-set${x.done ? ' done' : ''}" data-set="${x.theme}">${look.t('guest.set', { name: look.themeName(x.theme), b: pct(x.bonus) })}</span>`).join(' ');
+    guestBox.innerHTML =
+      `<h3 class="eggs-title">${look.t('guest.title')}</h3>` +
+      `<p class="card-sub" data-guest-sum>${look.t('guest.sum', { b: pct(z.bonus), u: fmt.format(z.upkeep) })}</p>` +
+      (z.unpaid ? `<p class="card-sub guest-unpaid" data-guest-unpaid>${look.t('guest.unpaid')}</p>` : '') +
+      `<p class="guest-sets">${sets}</p><div class="shop-list" data-guest-list></div>`;
+    const glist = guestBox.querySelector('[data-guest-list]') as HTMLElement;
+    for (const it of z.items) {
+      const row = document.createElement('div');
+      row.className = 'shop-item';
+      row.dataset.guest = it.id;
+      row.innerHTML =
+        `<span class="shop-text"><b></b><small>${look.t('guest.effect', { b: pct(it.bargain), u: fmt.format(it.upkeep) })}</small><small>${look.themeName(it.theme)}</small></span>` +
+        (it.owned
+          ? `<button type="button" class="btn btn-alt btn-buy" data-action="guest-remove" data-id="${it.id}">${look.t('guest.remove')}</button>`
+          : `<button type="button" class="btn btn-primary btn-buy" data-action="guest-buy" data-id="${it.id}" aria-disabled="${!it.affordable}"><span class="coin coin-sm" aria-hidden="true"></span>${fmt.format(it.price)}</button>`);
+      (row.querySelector('b') as HTMLElement).textContent = look.guestName(it.id);
+      row.querySelector('[data-action=guest-buy]')?.addEventListener('click', () => game.buyGuest(it.id));
+      row.querySelector('[data-action=guest-remove]')?.addEventListener('click', () => game.removeGuest(it.id));
+      glist.appendChild(row);
+    }
+  }
   function build(): void {
     list.replaceChildren();
+    pointList.replaceChildren();
     // Affordable first, then the rest by price, maxed at the bottom (the nearest goals are what the player looks for).
     const rank = (u: { maxed: boolean; affordable: boolean }): number => (u.maxed ? 2 : u.affordable ? 0 : 1);
     for (const item of [...game.upgradeList()].sort((a, b) => rank(a) - rank(b) || a.price - b.price)) {
@@ -78,7 +128,7 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
       joke.hidden = !u.joke;
       (row.querySelector('[data-new]') as HTMLElement).textContent = look.t('upgrades.new');
       row.querySelector('button')?.addEventListener('click', () => game.buyUpgrade(item.id));
-      list.appendChild(row);
+      (u.group === 'point' ? pointList : list).appendChild(row);
     }
   }
 
@@ -87,6 +137,7 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
       if (look.sections.includes(id)) current = id;
       sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) => b.classList.toggle('active', b.dataset.sub === current));
       box.hidden = current !== 'upgrades';
+      pointBox.hidden = current !== 'point';
     },
     render() {
       sheet.setTitle(look.t('nav.shop'));
@@ -95,11 +146,15 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
       if (built !== key) {
         built = key;
         build();
+        // M4-05: before the lease the section says when the point opens.
+        pointLocked.hidden = pointList.childElementCount > 0;
+        pointLocked.textContent = look.t('point.locked', { n: look.pointLevel });
       }
       const fmt = new Intl.NumberFormat(look.lang());
       (wallet.querySelector('[data-wallet]') as HTMLElement).textContent = fmt.format(Math.floor(game.state.coins));
+      renderGuest();
       for (const item of game.upgradeList()) {
-        const row = list.querySelector(`[data-upgrade="${item.id}"]`);
+        const row = sheet.body.querySelector(`[data-upgrade="${item.id}"]`);
         if (!row) continue;
         const levelText = row.querySelector('[data-level]') as HTMLElement;
         // One-off things say «Bought» once bought; levelled ones count levels.

@@ -137,7 +137,7 @@ export const CustomersFile = v.object({
 });
 
 /** Things the scene can draw for bought upgrades (src/scene/decor.ts). */
-export const DECOR_ITEMS = ['sign', 'register', 'bell', 'mat', 'bowl', 'stool', 'radio', 'clock', 'board', 'tags', 'feeder', 'seller', 'courier'] as const;
+export const DECOR_ITEMS = ['sign', 'register', 'bell', 'mat', 'bowl', 'stool', 'radio', 'clock', 'board', 'tags', 'feeder', 'seller', 'courier', 'point_rent', 'point_repair', 'point_furnish', 'point_clerk', 'point_second', 'point_passive'] as const;
 
 export const Effect = v.variant('type', [
   v.object({ type: v.literal('slots'), perLevel: Count }),
@@ -155,6 +155,8 @@ export const Effect = v.variant('type', [
   v.object({ type: v.literal('shelfGrowth'), perLevel: v.pipe(v.number(), v.minValue(0)) }),
   v.object({ type: v.literal('orders') }),
   v.object({ type: v.literal('cuckoo'), everySec: v.pipe(v.number(), v.minValue(1)), fed: Count }),
+  /** M4-05: the pickup point pays coins a minute by itself (while playing and away). */
+  v.object({ type: v.literal('passive'), perLevel: v.pipe(v.number(), v.minValue(0)) }),
 ]);
 export const Upgrade = v.object({
   id: Id,
@@ -170,6 +172,8 @@ export const Upgrade = v.object({
   joke: v.optional(Text),
   /** The thing the scene draws once it is bought (docs/01b, section 1.4: every upgrade is seen in the shop). */
   decor: v.optional(v.picklist(DECOR_ITEMS)),
+  /** M4-05: «point» — a step of the pickup point (the Shop's «Point» section); none — the shop upgrades. */
+  group: v.optional(v.picklist(['point'])),
 });
 export const UpgradesFile = v.object({
   offlineMaxHours: v.pipe(v.number(), v.minValue(0)),
@@ -295,6 +299,16 @@ export const ReputationFile = v.object({
   levels: v.pipe(v.array(v.pipe(v.number(), v.minValue(0))), v.minLength(2)),
   titles: v.pipe(v.array(v.object({ from: Count, name: Text })), v.minLength(1)),
   future: v.array(v.object({ level: Count, id: Id, name: Text })),
+});
+/** M4-05, Q-019: the guest zone of the pickup point — decorations with a bargain bonus and an upkeep a minute; a full theme adds more. */
+export const GUEST_ITEMS = ['rug', 'plant', 'poster', 'bench', 'floorlamp', 'aquarium'] as const;
+export const DecorFile = v.object({
+  unlock: Unlock,
+  items: v.pipe(
+    v.array(v.object({ id: v.picklist(GUEST_ITEMS), name: Text, price: v.pipe(v.number(), v.minValue(1)), bargain: Share, upkeep: v.pipe(v.number(), v.minValue(0)), theme: Id })),
+    v.minLength(1),
+  ),
+  sets: v.array(v.object({ theme: Id, name: Text, bonus: Share })),
 });
 /** M4-01: the collection by rarity — a full row gives crystals once and a price bonus for that rarity for good. */
 export const CollectionFile = v.object({ rowBonus: PerRarity, rowCrystals: PerRarity });
@@ -438,6 +452,7 @@ export type WorkData = v.InferOutput<typeof WorkFile>;
 export type NavData = v.InferOutput<typeof NavFile>;
 export type PaceData = v.InferOutput<typeof PaceFile>;
 export type CollectionData = v.InferOutput<typeof CollectionFile>;
+export type DecorData = v.InferOutput<typeof DecorFile>;
 export type TabUnlockData = v.InferOutput<typeof TabUnlock>;
 export type CodesData = v.InferOutput<typeof CodesFile>;
 export type RewardData = v.InferOutput<typeof Reward>;

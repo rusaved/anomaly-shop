@@ -59,6 +59,14 @@ export interface Decor {
   feeder: Spot;
   seller: Spot;
   courier: Spot;
+  /** M4-05: the pickup point — parcel shelves on the wall between the showcase and the door, its sign, the parcel locker by the door,
+   * the clerk at the counter's left end, the guest zone along the bottom of the floor, the poster under the showcase. */
+  shelves: Rect;
+  pointSign: Spot;
+  locker: Rect;
+  clerk: Spot;
+  guests: Rect;
+  poster: Rect;
 }
 
 export const SHOP = { showcaseSlots: 3, queueSpots: 3, minUnit: 18 };
@@ -137,6 +145,25 @@ export function computeShopLayout(
     if (gapR - gapL >= r * 4) return { x: (gapL + gapR) / 2, y: top + u * 0.45, r };
     return { x: stage.x + stage.w * 0.45, y: Math.min(top + u * 0.35, showcase.y - r * 1.2), r };
   };
+  /** M4-05: where the pickup point stands — in the free wall between the showcase and the door, along the floor bottom. */
+  const pointSpots = () => {
+    // Beside the showcase when the wall there is wide enough, else one long shelf under it (a wide showcase takes the wall).
+    const left = showcase.x + showcase.w + u * 0.35;
+    const right = door.x - u * 0.45;
+    const shelfH = Math.min(u * 1.5, wallFree * 0.42);
+    const under = { x: showcase.x + u * 1.05, y: showcase.y + showcase.h + u * 0.75, w: door.x - u * 1.3 - showcase.x - u * 1.05, h: floorY - u * 0.3 - (showcase.y + showcase.h + u * 0.75) };
+    const shelves: Rect = right - left >= u * 2.2 ? { x: left, y: floorY - shelfH - u * 0.15, w: right - left, h: shelfH } : { ...under, w: Math.max(0, under.w), h: Math.max(0, under.h) };
+    const bottom = stage.y + stage.h;
+    const guestsH = Math.min(u * 0.95, Math.max(u * 0.5, bottom - (counter.y + counter.h) - u * 0.1));
+    return {
+      shelves,
+      pointSign: { x: left + u * 0.45, y: Math.max(top + u * 0.4, shelves.y - u * 0.7), r: u * 0.32 },
+      locker: { x: door.x - u * 0.85, y: floorY - u * 1.4, w: u * 0.65, h: u * 1.25 },
+      clerk: { x: Math.max(stage.x + u * 0.45, counter.x - u * 0.15), y: counter.y - u * 0.05, r: u * 0.36 },
+      guests: { x: stage.x + u * 0.2, y: bottom - guestsH - u * 0.05, w: Math.max(u * 2, counter.x + counter.w * 0.75 - stage.x - u * 0.2), h: guestsH },
+      poster: { x: showcase.x + u * 0.1, y: showcase.y + showcase.h + u * 0.35, w: u * 0.75, h: Math.min(u * 0.95, Math.max(u * 0.4, floorY - showcase.y - showcase.h - u * 0.6)) },
+    };
+  };
   const signW = door.w * 1.3;
   const sideX = counter.x + counter.w;
   const decor: Decor = {
@@ -153,6 +180,7 @@ export function computeShopLayout(
     feeder: { x: Math.max(stage.x + u * 0.35, counter.x - u * 0.05), y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.25), r: u * 0.3 },
     seller: { x: Math.min(sideX + u * 0.5, door.x - spotR * 2.2), y: counter.y + counter.h * 0.8, r: u * 0.38 },
     courier: { x: door.x + door.w - u * 0.1, y: door.y - u * 0.05, r: u * 0.24 },
+    ...pointSpots(),
   };
 
   // The clock steps left of the radio when they would meet over the showcase (wide screens).

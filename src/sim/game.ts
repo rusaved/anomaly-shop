@@ -2,7 +2,7 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CodesData, CollectionData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
@@ -24,6 +24,7 @@ export interface GameContent {
   codes: CodesData;
   reputation: ReputationData;
   collection: CollectionData;
+  decor: DecorData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -73,6 +74,15 @@ export interface OfflineReport {
 
 export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noCreature' | 'max';
 
+export interface GuestZoneView {
+  open: boolean;
+  bonus: number;
+  upkeep: number;
+  unpaid: boolean;
+  items: Array<{ id: string; owned: boolean; price: number; bargain: number; upkeep: number; theme: string; affordable: boolean }>;
+  sets: Array<{ theme: string; done: boolean; bonus: number }>;
+}
+
 export type CollectionStatus = 'none' | 'shop' | 'sold';
 export interface CollectionView {
   have: number;
@@ -93,6 +103,8 @@ export interface RebirthView {
 export type GameEvent =
   | { type: 'rebirth'; city: number }
   | { type: 'rowDone'; rarity: RarityName; crystals: number; bonus: number }
+  | { type: 'guestUnpaid' }
+  | { type: 'guestBought'; id: string }
   | { type: 'eggBought'; incubator: number; egg: string; price: number; by: 'player' | 'helper' | 'gift' | 'merchant' }
   | { type: 'eggTap'; incubator: number; started: boolean }
   | { type: 'eggReady'; incubator: number }
@@ -359,6 +371,12 @@ export interface Game {
   rebirth(): boolean;
   /** M4-01: the collection by rarity — every species with its status, «N of M» per row and in all. */
   collection(): CollectionView;
+  /** M4-05: the guest zone of the pickup point — the decorations, their bonus and upkeep, the full themes. */
+  guestZone(): GuestZoneView;
+  /** M4-05: puts a decoration in the guest zone (coins, once the point is rented). */
+  buyGuest(id: string): boolean;
+  /** M4-05: takes a decoration away — its upkeep stops, nothing comes back. */
+  removeGuest(id: string): boolean;
   /** M4-23: the device's day (YYYY-MM-DD) — the mood of the market follows it. */
   setDay(day: string): void;
   /** M4-23: the species in fashion and the one everybody is fed up with today, with their price multipliers (null: no day yet). */
@@ -442,6 +460,41 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const m = mood();
     return m?.hot === id ? content.market.mood.hot : m?.cold === id ? content.market.mood.cold : 1;
   };
+  // M4-05: the guest zone of the pickup point — the bargain bonus of the decorations standing (and of a full theme), unless unpaid.
+  const guestItems = () => content.decor.items.filter((x) => s().guest.items.includes(x.id));
+  const guestSets = () => content.decor.sets.filter((set) => content.decor.items.filter((x) => x.theme === set.theme).every((x) => s().guest.items.includes(x.id)));
+  const guestBonus = (): number => (s().guest.unpaid ? 0 : guestItems().reduce((n, x) => n + x.bargain, 0) + guestSets().reduce((n, x) => n + x.bonus, 0));
+  const guestUpkeep = (): number => guestItems().reduce((n, x) => n + x.upkeep, 0);
+  /** The pickup point pays by itself (effect passive, coins a minute), the guest zone costs its upkeep — while playing and away. */
+  function runPoint(dt: number): void {
+    const st = s();
+    const passive = effectSum('passive') * cityMult(st.prestige, content.upgrades.prestige.incomeBonusPerPrestige);
+    if (passive > 0) {
+      const gain = (passive * dt) / 60;
+      st.coins += gain;
+      st.stats.coinsEarned += gain;
+    }
+    const upkeep = guestUpkeep();
+    if (upkeep <= 0) {
+      st.guest.unpaid = false;
+      return;
+    }
+    st.guest.due += (upkeep * dt) / 60;
+    if (st.guest.due < 1) return;
+    const pay = Math.floor(st.guest.due);
+    if (st.coins >= pay) {
+      st.coins -= pay;
+      st.guest.due -= pay;
+      if (st.guest.unpaid) {
+        st.guest.unpaid = false;
+        emit({ type: 'change' });
+      }
+    } else if (!st.guest.unpaid) {
+      st.guest.unpaid = true;
+      emit({ type: 'guestUnpaid' });
+      emit({ type: 'change' });
+    }
+  }
   // M4-01: a full row of the collection adds to the price of its rarity for good.
   const rowBonus = (cr: Creature): number => {
     const r = speciesData(cr.species)?.rarity;
@@ -555,11 +608,13 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   let decorCache: Record<string, number> = {};
   /** Bought upgrades that show in the shop (docs/01b, section 1.4), cached between purchases. */
   function decorLevels(): Record<string, number> {
-    const key = JSON.stringify(s().upgrades);
+    const key = `${JSON.stringify(s().upgrades)}|${s().guest.items.join(',')}|${s().guest.unpaid}`;
     if (key !== decorKey) {
       decorKey = key;
       decorCache = {};
       for (const u of content.upgrades.upgrades) if (u.decor && upgradeLevel(u.id) > 0) decorCache[u.decor] = upgradeLevel(u.id);
+      // M4-05: the guest zone (level 2 — paid, 1 — the guests are bored: the upkeep failed).
+      for (const id of s().guest.items) decorCache[`guest_${id}`] = s().guest.unpaid ? 1 : 2;
     }
     return decorCache;
   }
@@ -911,7 +966,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     let offer = golden
       ? coins(appraisal(cr) * golden)
       : spec
-        ? offerFor(spec, cr.level, { share, mult: 1, rarityBonus: c?.rarityBonus, levelBonusPerLevel: c?.levelBonusPerLevel, cashBonus: effectSum('bargain'), valueMult: valueMult(cr) })
+        ? offerFor(spec, cr.level, { share, mult: 1, rarityBonus: c?.rarityBonus, levelBonusPerLevel: c?.levelBonusPerLevel, cashBonus: effectSum('bargain') + guestBonus(), valueMult: valueMult(cr) })
         : 1;
     const order = !golden && orderFits(cr);
     if (order && st.order) offer = Math.max(offer, st.order.reward);
@@ -1523,6 +1578,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     tick(dt) {
       idleSec += dt;
       const st = s();
+      runPoint(dt);
       for (const cr of onSale()) cr.age = (cr.age ?? 0) + dt;
       // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free.
       if (st.creatures.length === 0 && st.incubators[0] && !st.incubators.some((i) => i.egg) && !Object.keys(st.myEggs).length && st.stats.hatched > 0) {
@@ -1734,6 +1790,45 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const city = game.rebirthView();
       return best ?? { kind: 'rebirth', id: 'rebirth', have: city.have, need: city.need, unit: 'coins' };
     },
+    guestZone() {
+      const st = s();
+      const full = new Set(guestSets().map((x) => x.theme));
+      return {
+        open: unlockMet(content.decor.unlock, facts()),
+        bonus: guestBonus(),
+        upkeep: guestUpkeep(),
+        unpaid: st.guest.unpaid,
+        items: content.decor.items.map((x) => ({ id: x.id, owned: st.guest.items.includes(x.id), price: x.price, bargain: x.bargain, upkeep: x.upkeep, theme: x.theme, affordable: st.coins + 1e-9 >= x.price })),
+        sets: content.decor.sets.map((x) => ({ theme: x.theme, done: full.has(x.theme), bonus: x.bonus })),
+      };
+    },
+    buyGuest(id) {
+      const st = s();
+      const item = content.decor.items.find((x) => x.id === id);
+      if (!item || st.guest.items.includes(id) || !unlockMet(content.decor.unlock, facts())) {
+        emit({ type: 'denied', action: 'upgrade', reason: 'locked' });
+        return false;
+      }
+      if (st.coins + 1e-9 < item.price) {
+        emit({ type: 'denied', action: 'upgrade', reason: 'coins' });
+        return false;
+      }
+      st.coins -= item.price;
+      st.guest.items.push(id);
+      commit({ flush: true });
+      emit({ type: 'guestBought', id });
+      emit({ type: 'change' });
+      return true;
+    },
+    removeGuest(id) {
+      const st = s();
+      if (!st.guest.items.includes(id)) return false;
+      st.guest.items = st.guest.items.filter((x) => x !== id);
+      if (!st.guest.items.length) st.guest = { items: [], unpaid: false, due: 0 };
+      commit({ flush: true });
+      emit({ type: 'change' });
+      return true;
+    },
     setDay(day) {
       if (day === today) return;
       today = day;
@@ -1781,6 +1876,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       st.chats = [];
       st.chatIn = {};
       st.order = null;
+      st.guest = { items: [], unpaid: false, due: 0 };
       st.stats.deals = 0;
       st.stats.xp = 0;
       st.incubators = [emptyIncubator()];

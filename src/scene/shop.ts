@@ -8,7 +8,7 @@ import type { GameEvent, GameView } from '../sim/game.ts';
 import { drawCreature, drawCustomer, drawEgg, drawRing, rarityColor } from './art.ts';
 import type { EventView } from '../sim/game.ts';
 import { createFx } from './fx.ts';
-import { drawBell, drawDecor, drawLamp, drawSign } from './decor.ts';
+import { drawBell, drawPointBack, drawDecor, drawLamp, drawSign } from './decor.ts';
 import type { SecretTarget } from '../content/schemas.ts';
 import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop-layout.ts';
 
@@ -118,6 +118,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   const back = new Graphics();
   const furniture = new Graphics();
   const decorG = new Graphics();
+  /** M4-05: the pickup point behind the furniture (repair, shelves, the parcel locker). */
+  const pointBack = new Graphics();
   const bellBox = new Container();
   const bellG = new Graphics();
   bellBox.addChild(bellG);
@@ -250,7 +252,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let eventCoins = new Map<number, Container>();
   let eventThing: Container | null = null;
   let eventSpot: Spot | null = null;
-  root.addChild(back, furniture, stranger, plaqueBox, decorG, signBox, lampBox, bellBox, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, disco, fx.layer, hits, eventLayer);
+  root.addChild(back, pointBack, furniture, stranger, plaqueBox, decorG, signBox, lampBox, bellBox, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, disco, fx.layer, hits, eventLayer);
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
@@ -288,6 +290,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let captionKey = '';
   let captionsOn = true;
   let quietOn = false;
+  /** What the one-caption choice showed last (a change is a redraw). */
+  let captionsKey = '';
   /** Whether the layout leaves room for the showcase label (landscape phones: no). */
   let showcaseFits = true;
   /** UB-10: the caption stays on the counter front — two lines at most, smaller when the counter is low. */
@@ -391,7 +395,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     // The label gives way to the incubators when the wall is short (landscape phones).
     const domeTop = Math.min(...l.incubators.map((i) => i.y - i.r - l.outline));
     showcaseFits = texts.showcase.y + size * 1.2 < domeTop;
-    texts.showcase.visible = showcaseFits;
+    // The one-caption choice is made again after a relayout (it would keep a stale «shown»).
+    captionsKey = '';
+    oneCaption();
     texts.queue.position.set(l.door.x + l.door.w / 2, l.door.y - size - l.outline * 2);
     // UB-07: the hanging sign covers this label; the door with its buyers speaks for itself.
     texts.queue.visible = false;
@@ -879,7 +885,6 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
    * M4-00: one caption at a time on the shop (docs/01 §1а «на экране одна надпись за раз»): a hint at the shop > a floating word
    * (level up, upgrade, rarity) > the newest speech line > the counter sign > the showcase label. The hidden ones keep their timers.
    */
-  let captionsKey = '';
   function oneCaption(): void {
     const words = fx.words().length > 0;
     const lines = [bubble, talk].filter((b) => b.box.visible).sort((a, b) => b.life - a.life);
@@ -924,6 +929,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         decorKey = key;
         decorItems = view.decor;
         drawDecor(decorG, decorItems, current, c);
+        drawPointBack(pointBack, decorItems, current, c);
         buildThings(current, decorItems.sign ?? 0);
         bellBox.visible = Boolean(decorItems.bell);
         drawBell(bellG, current.decor.bell.r, c, current.outline);

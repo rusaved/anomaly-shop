@@ -22,6 +22,7 @@ import {
   NavFile,
   PaceFile,
   CollectionFile,
+  DecorFile,
   CodesFile,
   ReputationFile,
   RARITIES,
@@ -46,7 +47,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json', 'nav.json', 'pace.json', 'collection.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json', 'nav.json', 'pace.json', 'collection.json', 'decor.json'] as const;
 /** The egg price ladder (docs/01 §3 p. 12): eight steps, each ×10 the one before; M4-08 (Q-029): the top that opens city by city goes ×3. */
 const LADDER_STEPS = 8;
 const LADDER_STEP = 10;
@@ -306,6 +307,8 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   parseFile('work.json', WorkFile, data(files['work.json']), errors);
   parseFile('pace.json', PaceFile, data(files['pace.json']), errors);
   parseFile('collection.json', CollectionFile, data(files['collection.json']), errors);
+  const decor = parseFile('decor.json', DecorFile, data(files['decor.json']), errors);
+  if (decor) duplicates('decor.json', 'items', decor.items.map((x) => x.id), errors);
   const nav = parseFile('nav.json', NavFile, data(files['nav.json']), errors);
   if (nav && nav.tabs.eggs.type !== 'always') errors.push('nav.json: tabs.eggs — the home tab is always open');
   const codes = parseFile('codes.json', CodesFile, data(files['codes.json']), errors);

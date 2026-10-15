@@ -11,7 +11,8 @@
 //     seconds of content/pace.json and feel.json hatchShowSec; the limits of F1–F3, F11, F16 are for that tempo.
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
 //     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
-//   Week (M4-08, casual): F17 something new opens every day of 7 · F18 the second city 1–3 days after the first, its egg bought.
+//   Week (M4-08, casual): F17 something new opens every day of 7, the guest zone pays its upkeep (M4-05) · F18 the second city
+//     1–3 days after the first, its egg bought.
 //   Keeper (feeds every creature to the top before selling): F12 earns at most ×2 of the casual player in 10 min and
 //     crosses the rebirth threshold no earlier than the first night (feeding pays, never breaks the economy).
 // Usage: node scripts/balance-model.ts [--seeds 24] [--out docs/evidence/M2/balance.txt]
@@ -39,6 +40,8 @@ export interface Bot {
   bestEggs: boolean;
   /** Never taps a creature (the «feeding pays» check, Q-027 B). */
   noFeed?: boolean;
+  /** Never decorates the guest zone (the «decorations pay their upkeep» check, M4-05). */
+  noDecor?: boolean;
 }
 
 export const BOTS: Bot[] = [
@@ -86,6 +89,8 @@ export const LIMITS = {
   F12keeperMax: 2,
   /** M4-08: F17 — at least this many new things a day (opened or first bought: eggs, districts, upgrades; a city) in each of 7 days. */
   F17opensPerDay: 1,
+  /** M4-05: F17 — a week with the guest zone earns at least this share of a week without it (the upkeep never eats the bonus). */
+  F17decorMin: 1,
   /** M4-08: F18 — days from the first move to the second. */
   F18gapDays: [1, 3] as const,
   /** F11 is the criterion of M2-12 (the ladder of 8 things): reported from M2-09, failing the run from M2-12. */
@@ -204,14 +209,20 @@ export function botPlayer(bot: Bot, game: Game, pace: Pace = loadPace()): () => 
     // Within reach: the egg costs at most 3 minutes of the income of the last minute; the egg a new city opens (the top of
     // the ladder, M4-08: the «Next» card shows it) is worth a whole session of saving.
     const income = perMin();
-    const saving = game.eggList().some((e) => e.fresh && ladder.has(e.id) && e.check.price <= st.coins + income * (cityEggs.has(e.id) ? 30 : 3));
+    const goal = game.eggList().find((e) => e.fresh && ladder.has(e.id) && e.check.price <= st.coins + income * (cityEggs.has(e.id) ? 30 : 3));
+    const saving = Boolean(goal);
     // Helpers first (the shop works while the player is away — the idle goal a player aims at once it shows).
     const helper = (id: string): number => (id.startsWith('helper_') ? 0 : 1);
-    const upgrade = saving ? undefined : game.upgradeList().filter((u) => u.affordable).sort((a, b) => helper(a.id) - helper(b.id) || a.price - b.price)[0];
+    // Saving still allows the small things (≤ 5% of the egg): a day of saving is not a day of nothing.
+    const upgrade = game.upgradeList().filter((u) => u.affordable && (!goal || u.price <= goal.check.price * 0.05)).sort((a, b) => helper(a.id) - helper(b.id) || a.price - b.price)[0];
     if (upgrade) {
       game.buyUpgrade(upgrade.id);
       return go('shop') + tap + bot.reactSec;
     }
+    // M4-05: the guest zone — a decoration once it is affordable twice over (cheapest first), not while saving.
+    const zone = bot.noDecor || goal ? null : game.guestZone();
+    const decoration = zone?.open ? zone.items.filter((x) => !x.owned && st.coins >= x.price * 2).sort((a, b) => a.price - b.price)[0] : undefined;
+    if (decoration && game.buyGuest(decoration.id)) return go('shop') + pace.cardSec;
     // A ready egg waits for a tap (M3-02): a player opens it at once.
     const readyEgg = view.incubators.findIndex((i) => i.ready);
     if (readyEgg >= 0) {
@@ -385,6 +396,8 @@ export interface WeekResult {
   cityEgg: number;
   /** New things each day 1–7: an egg, a district or an upgrade opens or is bought for the first time here, a new city. */
   opens: number[];
+  /** Coins earned in the week (M4-05: with the guest zone against without). */
+  earned: number;
 }
 
 /** M4-08: a week of a player — 30 active minutes and 8 hours away a day, moving to a new city whenever it is ready. */
@@ -421,7 +434,7 @@ export function playWeek(bot: Bot, seed: number, content: GameContent = loadGame
     part = 1;
     if (day < WEEK_DAYS) game.offline(AWAY_SEC);
   }
-  return { moves, cityEgg, opens };
+  return { moves, cityEgg, opens, earned: game.state.stats.coinsEarned };
 }
 
 const quantile = (xs: number[], q: number): number => {
@@ -516,10 +529,16 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     const gap = quantile(runs.map((r) => (r.moves[1] ?? Infinity) - (r.moves[0] ?? Infinity)), 0.5);
     const egg = quantile(runs.map((r) => r.cityEgg), 0.5);
     const f18 = gap >= LIMITS.F18gapDays[0] && gap <= LIMITS.F18gapDays[1] && egg <= WEEK_DAYS;
+    // M4-05 (F17): the guest zone pays its upkeep — a week with decorations earns at least as much as one without.
+    const plain = Array.from({ length: longSeeds }, (_, i) => playWeek({ ...casual, noDecor: true }, 5000 + i * 104729, content));
+    const decorRatio = quantile(runs.map((r) => r.earned), 0.5) / Math.max(1, quantile(plain.map((r) => r.earned), 0.5));
+    const fDecor = decorRatio >= LIMITS.F17decorMin;
+    if (!fDecor) failures.push(`casual F17 the guest zone costs more than it brings: ×${decorRatio.toFixed(2)} of a week without it`);
     if (!f17) failures.push(`casual F17 a day without anything new: ${daily.join(' / ')}`);
     if (!f18) failures.push(`casual F18 the second city ${fmt(gap, 1)} days after the first (want ${LIMITS.F18gapDays.join('–')}), its egg on day ${fmt(egg, 1)} (want ≤ ${WEEK_DAYS})`);
     lines.push(
       `week    F17 new things by day ${daily.join(' / ')} (≥ ${LIMITS.F17opensPerDay} a day) ${f17 ? 'ok' : 'FAIL'}` +
+        ` · guest zone ×${decorRatio.toFixed(2)} (≥ ${LIMITS.F17decorMin}) ${fDecor ? 'ok' : 'FAIL'}` +
         ` · F18 moves on day ${fmt(first, 1)}, the next ${fmt(gap, 1)} days later (${LIMITS.F18gapDays.join('–')}), the city egg on day ${fmt(egg, 1)} ${f18 ? 'ok' : 'FAIL'}`,
     );
   }

@@ -25,12 +25,113 @@ function helperBody(g: Graphics, x: number, y: number, r: number, body: string, 
   g.moveTo(x - r * 0.15, y + r * 0.12).quadraticCurveTo(x, y + r * 0.25, x + r * 0.15, y + r * 0.12).stroke({ width: w * 0.6, color: c.outline, cap: 'round' });
 }
 
+/**
+ * M4-05: the pickup point behind the furniture — the repair (wallpaper stripes, a skirting, floor tiles by tier), the parcel
+ * shelves (more boxes each tier of furnishing), the parcel locker of passive income; drawn into its own layer under the counter.
+ */
+export function drawPointBack(g: Graphics, items: Record<string, number>, l: ShopLayout, c: Colors): void {
+  const d = l.decor;
+  const w = l.outline * 0.8;
+  const stroke = { width: w, color: c.outline };
+  const u = l.unit;
+  g.clear();
+  const repair = items.point_repair ?? 0;
+  if (repair > 0) {
+    // Tier 1: wallpaper stripes; 2: a skirting along the floor; 3: floor tiles.
+    for (let x = l.wall.x + u * 0.6; x < l.wall.x + l.wall.w; x += u * 1.2) g.rect(x, l.wall.y, u * 0.35, l.wall.h).fill({ color: c.wallShade, alpha: 0.55 });
+    if (repair >= 2) g.rect(l.wall.x, l.floor.y - u * 0.22, l.wall.w, u * 0.22).fill(c.counter).stroke(stroke);
+    if (repair >= 3) for (let x = l.floor.x; x < l.floor.x + l.floor.w; x += u * 1.2) for (let y = l.floor.y + u * 0.6; y < l.floor.y + l.floor.h; y += u * 1.2) g.rect(x, y, u * 1.2, w * 0.6).fill({ color: c.floorLine, alpha: 0.6 });
+  }
+  const furnish = items.point_furnish ?? 0;
+  const sh = d.shelves;
+  if ((items.point_rent ?? 0) > 0 && sh.w > u * 1.4 && sh.h > u * 0.45) {
+    // The shelves: one board per tier of the lease (1–3) where the wall is tall enough, boxes on them by the furnishing tier.
+    const boards = Math.max(1, Math.min(items.point_rent ?? 0, Math.floor(sh.h / (u * 0.5))));
+    const boardGap = sh.h / Math.max(1, boards);
+    for (let b = 0; b < boards; b++) {
+      const y = sh.y + sh.h - b * boardGap;
+      g.rect(sh.x, y, sh.w, w * 1.6).fill(c.counter).stroke(stroke);
+      const boxes = Math.min(Math.floor(sh.w / (u * 0.6)), furnish * 2 + 1);
+      for (let i = 0; i < boxes; i++) {
+        const bw = u * (0.42 + ((i * 7 + b * 3) % 3) * 0.06);
+        const bh = Math.min(boardGap * 0.8, u * (0.36 + ((i * 5 + b) % 3) * 0.08));
+        const x = sh.x + u * 0.12 + i * u * 0.6;
+        g.rect(x, y - bh, bw, bh).fill(c.counterTop).stroke(stroke);
+        g.rect(x + bw * 0.42, y - bh, bw * 0.16, bh).fill({ color: c.counter, alpha: 0.8 });
+      }
+    }
+  }
+  const passive = items.point_passive ?? 0;
+  if (passive > 0) {
+    const k = d.locker;
+    g.roundRect(k.x, k.y, k.w, k.h, w * 2).fill(c.doorFrame).stroke(stroke);
+    const rows = 2 + passive;
+    for (let r = 0; r < rows; r++) for (let col = 0; col < 2; col++) g.rect(k.x + k.w * (0.1 + col * 0.42), k.y + k.h * (0.08 + (r * 0.84) / rows), k.w * 0.38, (k.h * 0.84) / rows - w).fill(c.queueSpot).stroke({ width: w * 0.5, color: c.outline });
+  }
+}
+
+/** M4-05: one decoration of the guest zone at x on the floor line y (size s); a bored zone (upkeep unpaid) draws it faded. */
+function guestThing(g: Graphics, id: string, x: number, y: number, s: number, c: Colors, w: number, alpha: number): void {
+  const stroke = { width: w, color: c.outline, alpha };
+  if (id === 'plant') {
+    g.roundRect(x - s * 0.22, y - s * 0.32, s * 0.44, s * 0.32, s * 0.06).fill({ color: c.counter, alpha }).stroke(stroke);
+    for (const [dx, dy] of [[-0.18, -0.6], [0.16, -0.66], [0, -0.85]] as const) g.ellipse(x + s * dx, y + s * dy, s * 0.17, s * 0.26).fill({ color: c.uiGood, alpha }).stroke(stroke);
+  } else if (id === 'bench') {
+    g.rect(x - s * 0.55, y - s * 0.38, s * 1.1, s * 0.14).fill({ color: c.counter, alpha }).stroke(stroke);
+    g.rect(x - s * 0.48, y - s * 0.24, s * 0.1, s * 0.24).fill({ color: c.doorFrame, alpha });
+    g.rect(x + s * 0.38, y - s * 0.24, s * 0.1, s * 0.24).fill({ color: c.doorFrame, alpha });
+  } else if (id === 'floorlamp') {
+    g.moveTo(x, y).lineTo(x, y - s * 0.9).stroke(stroke);
+    g.circle(x, y - s * 0.95, s * 0.3).fill({ color: c.counterTop, alpha: 0.35 * alpha });
+    g.moveTo(x - s * 0.24, y - s * 0.82).lineTo(x - s * 0.14, y - s * 1.08).lineTo(x + s * 0.14, y - s * 1.08).lineTo(x + s * 0.24, y - s * 0.82).closePath().fill({ color: c.uiAccent, alpha }).stroke(stroke);
+  } else if (id === 'aquarium') {
+    g.roundRect(x - s * 0.42, y - s * 0.62, s * 0.84, s * 0.56, s * 0.08).fill({ color: c.incubatorGlass, alpha }).stroke(stroke);
+    g.rect(x - s * 0.42, y - s * 0.42, s * 0.84, s * 0.36).fill({ color: c.queueSpot, alpha: 0.7 * alpha });
+    g.ellipse(x - s * 0.1, y - s * 0.26, s * 0.1, s * 0.06).fill({ color: c.uiAccent, alpha });
+    g.rect(x - s * 0.36, y - s * 0.06, s * 0.72, s * 0.06).fill({ color: c.doorFrame, alpha });
+  }
+}
+
 /** Draws every bought thing (decor item → level) into g. */
 export function drawDecor(g: Graphics, items: Record<string, number>, l: ShopLayout, c: Colors): void {
   const d = l.decor;
   const w = l.outline * 0.8;
   const stroke = { width: w, color: c.outline };
   g.clear();
+  // M4-05: the guest zone — a rug along the floor bottom, then the decorations on it; the poster on the wall under the showcase.
+  const guests = ['plant', 'bench', 'floorlamp', 'aquarium'].filter((id) => items[`guest_${id}`]);
+  const zone = d.guests;
+  const faded = (id: string): number => ((items[`guest_${id}`] ?? 2) === 1 ? 0.45 : 1);
+  if (items.guest_rug) g.roundRect(zone.x, zone.y + zone.h * 0.62, zone.w, zone.h * 0.32, zone.h * 0.16).fill({ color: c.blush, alpha: faded('rug') }).stroke({ width: w, color: c.outline, alpha: faded('rug') });
+  guests.forEach((id, i) => guestThing(g, id, zone.x + zone.h * 0.7 + i * Math.min(zone.h * 1.5, (zone.w - zone.h) / Math.max(1, guests.length - 1 || 1)), zone.y + zone.h * 0.85, zone.h, c, w, faded(id)));
+  if (items.guest_poster && d.poster.h > l.unit * 0.35) {
+    const p = d.poster;
+    g.rect(p.x, p.y, p.w, p.h).fill({ color: c.eyeWhite, alpha: faded('poster') }).stroke({ width: w, color: c.outline, alpha: faded('poster') });
+    // A cat's head: ears and a face.
+    const cx = p.x + p.w / 2;
+    const cy = p.y + p.h * 0.58;
+    const r = Math.min(p.w, p.h) * 0.26;
+    g.poly([cx - r, cy - r * 0.4, cx - r * 0.7, cy - r * 1.35, cx - r * 0.2, cy - r * 0.8]).fill({ color: c.uiAccent, alpha: faded('poster') });
+    g.poly([cx + r, cy - r * 0.4, cx + r * 0.7, cy - r * 1.35, cx + r * 0.2, cy - r * 0.8]).fill({ color: c.uiAccent, alpha: faded('poster') });
+    g.circle(cx, cy, r).fill({ color: c.uiAccent, alpha: faded('poster') }).stroke({ width: w * 0.6, color: c.outline });
+  }
+  // M4-05: the point's sign (a parcel), brighter each lease tier; the clerk at the counter; «2» of the second point on the sign.
+  const rent = items.point_rent ?? 0;
+  if (rent > 0) {
+    const sp = d.pointSign;
+    if (rent >= 3) g.circle(sp.x, sp.y, sp.r * 1.45).fill({ color: c.counterTop, alpha: 0.5 });
+    g.roundRect(sp.x - sp.r, sp.y - sp.r * 0.8, sp.r * 2, sp.r * 1.6, sp.r * 0.2).fill(rent >= 2 ? c.showcase : c.counterTop).stroke(stroke);
+    g.rect(sp.x - sp.r * 0.12, sp.y - sp.r * 0.8, sp.r * 0.24, sp.r * 1.6).fill(c.counter);
+    if (items.point_second) {
+      g.circle(sp.x + sp.r * 1.05, sp.y - sp.r * 0.75, sp.r * 0.45).fill(c.uiGood).stroke(stroke);
+      g.circle(sp.x + sp.r * 1.05, sp.y - sp.r * 0.75, sp.r * 0.16).fill(c.outline);
+    }
+  }
+  if (items.point_clerk) {
+    const k = d.clerk;
+    helperBody(g, k.x, k.y, k.r, c.queueSpot, c, w);
+    if ((items.point_clerk ?? 0) >= 2) g.rect(k.x - k.r * 0.5, k.y - k.r * 0.85, k.r, k.r * 0.22).fill(c.uiAccent).stroke({ width: w * 0.6, color: c.outline });
+  }
   if (items.mat) {
     const m = d.mat;
     g.roundRect(m.x, m.y, m.w, m.h, m.h / 2).fill(c.blush).stroke(stroke);

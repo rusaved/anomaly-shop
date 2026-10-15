@@ -306,3 +306,40 @@ describe('youtube profile on a fake ytgame', () => {
     expect(await p.load()).toBeNull();
   });
 });
+
+describe('M4-04 leaders', () => {
+  it('the local board (null, youtube): no sign-in, the player among fixed neighbours, sorted, the best score kept', async () => {
+    const p = createNullPlatform({ storage: memoryStorage(), languageCode: 'ru', device: 'desktop', now: () => 0, caps: CAPS, prefix: 'x' });
+    expect(p.leaders.needsLogin()).toBe(false);
+    await p.leaders.submit(5000);
+    await p.leaders.submit(10);
+    const { entries, me } = await p.leaders.top(20);
+    expect(me?.score).toBe(5000);
+    expect(entries.map((e) => e.score)).toEqual([...entries.map((e) => e.score)].sort((a, b) => b - a));
+    expect(entries.map((e) => e.rank)).toEqual(entries.map((_, i) => i + 1));
+    expect((await p.leaders.top(3)).entries).toHaveLength(3);
+  });
+
+  it('Yandex on the mock: a lite player is asked to sign in by a button; after it the score goes to the board, once a second at most', async () => {
+    const win = loadMock('');
+    let t = 10_000;
+    const p = createYandexPlatform(yandexDeps(win, { now: () => t }));
+    await p.init();
+    expect(p.leaders.needsLogin()).toBe(true);
+    await p.leaders.submit(700);
+    expect(win.__YA_MOCK__!.calls.some((c) => c.name === 'leaderboards.setScore')).toBe(false);
+    expect(await p.leaders.login()).toBe(true);
+    expect(p.leaders.needsLogin()).toBe(false);
+    await p.leaders.submit(700);
+    await p.leaders.submit(800);
+    expect(win.__YA_MOCK__!.calls.filter((c) => c.name === 'leaderboards.setScore')).toHaveLength(1);
+    // The mock counts real time for its once-a-second rule; the platform's own gap uses the injected clock.
+    await new Promise((r) => setTimeout(r, 1100));
+    t += 2000;
+    await p.leaders.submit(900);
+    const { entries, me } = await p.leaders.top(10);
+    expect(me).toMatchObject({ score: 900, me: true });
+    expect(entries[0]?.score).toBe(900);
+    expect(win.__YA_MOCK__!.violations).toEqual([]);
+  });
+});

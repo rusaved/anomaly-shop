@@ -20,6 +20,7 @@ import { createCoinFlight } from './ui/coin-flight.ts';
 import { createShopTab } from './ui/upgrades.ts';
 import { moodChip } from './ui/mood.ts';
 import { createRebirthWindow } from './ui/rebirth.ts';
+import { createLeadersWindow } from './ui/leaders.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
 import { createNewsTicker } from './ui/news.ts';
@@ -403,6 +404,14 @@ async function boot(): Promise<void> {
     '<button type="button" class="hud-btn" data-action="work" data-i18n="work.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 6 0 0 1-18 0z"/><path d="M8 8c0-2 2-2 2-4M13 8c0-2 2-2 2-4"/></svg></button>',
   );
   (hud.side.querySelector('[data-action="work"]') as HTMLElement).addEventListener('click', () => workWindow.open());
+  // M4-04: «Leaders» in the top bar (docs/01 §6): the platform board of coins earned; the score goes on open and every 2 minutes.
+  const leadersWindow = createLeadersWindow(uiRoot, platform.leaders, { t: i18n.t, lang: i18n.lang, score: () => store.state.stats.coinsEarned });
+  hud.side.insertAdjacentHTML(
+    'beforeend',
+    '<button type="button" class="hud-btn" data-action="leaders" data-i18n="leaders.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4"/><path d="M17 6h3a3 3 0 0 1-3 4"/><path d="M12 14v4M8 20h8"/></svg></button>',
+  );
+  (hud.side.querySelector('[data-action="leaders"]') as HTMLElement).addEventListener('click', () => leadersWindow.open());
+  window.setInterval(() => leadersWindow.sync(), 120_000);
   /** Q-026 B: which tabs are open now; an opened one stays open (flag open_<id>), a fresh one pulses. */
   let tabsKnown = false;
   function openTabs(): void {

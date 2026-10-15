@@ -18,6 +18,7 @@ const OPENERS: Array<[string, string]> = [
   ['[data-action=reputation]', 'reputation'],
   ['[data-action=gifts]', 'gifts'],
   ['[data-action=work]', 'work'],
+  ['[data-action=leaders]', 'leaders'],
   ['[data-action=pause]', 'pause'],
 ];
 

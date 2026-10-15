@@ -13,6 +13,24 @@ export interface PlatformCaps {
   analytics: boolean;
 }
 
+/** M4-04: one row of the leaderboard; name '' — an anonymous player (the UI says «Player»). */
+export interface LeaderEntry {
+  rank: number;
+  name: string;
+  score: number;
+  me: boolean;
+}
+
+/** M4-04: the general leaderboard of the platform (coins earned); a local stand-in where the platform has none. */
+export interface Leaders {
+  /** The player is not signed in: the score waits for a sign-in (the Yandex «lite» player). */
+  needsLogin(): boolean;
+  /** Asks the platform to sign in (a button tap); true when signed in after it. */
+  login(): Promise<boolean>;
+  submit(score: number): Promise<void>;
+  top(n: number): Promise<{ entries: LeaderEntry[]; me: LeaderEntry | null }>;
+}
+
 export interface Platform {
   readonly name: PlatformName;
   readonly device: DeviceType;
@@ -34,6 +52,8 @@ export interface Platform {
   showRewarded(placement: string): Promise<{ rewarded: boolean }>;
   /** The platform review window (M3-11 «Gifts»): available — the platform can ask now; sent — the player left a review. */
   requestReview(): Promise<{ available: boolean; sent: boolean }>;
+  /** M4-04: the general leaderboard. */
+  readonly leaders: Leaders;
   load(): Promise<string | null>;
   save(data: string, opts?: { flush?: boolean }): void;
   now(): number;

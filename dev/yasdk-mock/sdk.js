@@ -294,6 +294,10 @@
       return Promise.resolve(out);
     },
     leaderboards: leaderboards,
+    // M4-04: the sign-in dialog — the mock signs the player in at once (mock_auth=1 starts signed in).
+    auth: {
+      openAuthDialog: function () { record('auth.openAuthDialog'); authorized = true; return Promise.resolve(); },
+    },
     getLeaderboards: function () { record('getLeaderboards'); return Promise.resolve(leaderboards); },
     // ?mock_shortcut=accepted|rejected|unavailable: the desktop shortcut prompt.
     shortcut: {

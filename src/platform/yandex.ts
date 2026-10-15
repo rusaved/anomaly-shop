@@ -3,9 +3,9 @@
 // Keep: sdk.js is loaded by index.html before this code; init() retries once and then works like the null profile; ready() once.
 
 import type { Player, SDK, SafeStorage } from 'ysdk';
-import type { DeviceType, Platform, PlatformCaps, PlatformTrack } from './types.ts';
+import type { DeviceType, LeaderEntry, Leaders, Platform, PlatformCaps, PlatformTrack } from './types.ts';
 import { browserStorage, createMirror, type KeyValue, type Mirror } from './storage.ts';
-import { gameLanguage, guessDevice, pickNewestSave, profileCaps } from './shared.ts';
+import { createLocalLeaders, gameLanguage, guessDevice, pickNewestSave, profileCaps } from './shared.ts';
 import { CLOUD_QUEUE, createSaveQueue } from './save-queue.ts';
 
 export const SAVE_KEY = 'save';
@@ -40,6 +40,22 @@ export function browserDeps(track: PlatformTrack): YandexDeps {
 function mapDevice(type: string | undefined, fallback: DeviceType): DeviceType {
   if (type === 'mobile' || type === 'tablet' || type === 'desktop') return type;
   return type === 'tv' ? 'desktop' : fallback;
+}
+
+/** M4-04: the general leaderboard of the game in the Yandex console (technical name; created by the producer before the release). */
+export const LEADERBOARD = 'coins';
+/** The SDK takes one score a second at most; the game sends far less often. */
+const SCORE_GAP_MS = 1500;
+
+interface YaEntry {
+  rank: number;
+  score: number;
+  player: { uniqueID: string; publicName: string };
+}
+interface YaBoards {
+  setScore(name: string, score: number): Promise<void>;
+  getEntries(name: string, opts: { quantityTop: number; includeUser: boolean; quantityAround: number }): Promise<{ entries: YaEntry[] }>;
+  getPlayerEntry(name: string): Promise<YaEntry>;
 }
 
 export function createYandexPlatform(deps: YandexDeps): Platform {
@@ -79,8 +95,54 @@ export function createYandexPlatform(deps: YandexDeps): Platform {
     }
   }
 
+  // M4-04: the leaderboard through the SDK; without the SDK (sdk.js missing) — the local stand-in.
+  const local = createLocalLeaders();
+  let lastScoreAt = -Infinity;
+  const boards = (): YaBoards | null => (sdk as unknown as { leaderboards?: YaBoards } | null)?.leaderboards ?? null;
+  const lite = (): boolean => !player || (player as unknown as { getMode?(): string }).getMode?.() === 'lite';
+  const myId = (): string => (player as unknown as { getUniqueID?(): string } | null)?.getUniqueID?.() ?? '';
+  const toEntry = (e: YaEntry): LeaderEntry => ({ rank: e.rank, name: e.player.publicName ?? '', score: e.score, me: e.player.uniqueID === myId() });
+  const leaders: Leaders = {
+    needsLogin: () => Boolean(boards()) && lite(),
+    async login() {
+      const auth = (sdk as unknown as { auth?: { openAuthDialog(): Promise<void> } } | null)?.auth;
+      if (!sdk || !auth) return false;
+      try {
+        await auth.openAuthDialog();
+        player = await sdk.getPlayer({ signed: false });
+      } catch {
+        return false;
+      }
+      return !lite();
+    },
+    async submit(score) {
+      const lb = boards();
+      if (!lb) return local.submit(score);
+      if (lite() || deps.now() - lastScoreAt < SCORE_GAP_MS) return;
+      lastScoreAt = deps.now();
+      try {
+        await lb.setScore(LEADERBOARD, Math.floor(score));
+      } catch {
+        deps.track('leaderboard_failed');
+      }
+    },
+    async top(n) {
+      const lb = boards();
+      if (!lb) return local.top(n);
+      try {
+        const res = await lb.getEntries(LEADERBOARD, { quantityTop: n, includeUser: !lite(), quantityAround: 1 });
+        const entries = res.entries.map(toEntry);
+        let me = entries.find((e) => e.me) ?? null;
+        if (!me && !lite()) me = toEntry(await lb.getPlayerEntry(LEADERBOARD).catch(() => ({ rank: 0, score: 0, player: { uniqueID: myId(), publicName: '' } })));
+        return { entries: entries.filter((e) => e.rank <= n), me };
+      } catch {
+        return { entries: [], me: null };
+      }
+    },
+  };
   return {
     name: 'yandex',
+    leaders,
     get device() {
       return mapDevice(sdk?.deviceInfo.type, deps.device);
     },

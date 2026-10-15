@@ -2,7 +2,7 @@
 // Called by: src/platform/yandex.ts, youtube.ts, null.ts; tests/platform.test.ts.
 // Keep: no DOM and no SDK here; every function takes its inputs as arguments.
 
-import type { DeviceType, Lang, PlatformCaps } from './types.ts';
+import type { Leaders, DeviceType, Lang, PlatformCaps } from './types.ts';
 
 /** Maps a platform or browser language code to one of the game languages. */
 export function pickLanguage(
@@ -82,5 +82,26 @@ export function once(fn: () => void): () => void {
     if (done) return;
     done = true;
     fn();
+  };
+}
+
+/**
+ * M4-04: a leaderboard kept on the device (the null and youtube profiles: no network, no sign-in): a few made-up neighbours
+ * around the player's own score, the same every time (no randomness).
+ */
+export function createLocalLeaders(): Leaders {
+  let mine = 0;
+  const rivals = [250_000, 120_000, 60_000, 30_000, 15_000, 8_000, 4_000, 2_000, 900, 300];
+  return {
+    needsLogin: () => false,
+    login: () => Promise.resolve(true),
+    submit(score) {
+      mine = Math.max(mine, Math.floor(score));
+      return Promise.resolve();
+    },
+    top(n) {
+      const all = [...rivals.map((score) => ({ name: '', score, me: false })), { name: '', score: mine, me: true }].sort((a, b) => b.score - a.score).map((e, i) => ({ ...e, rank: i + 1 }));
+      return Promise.resolve({ entries: all.slice(0, n), me: all.find((e) => e.me) ?? null });
+    },
   };
 }

@@ -2090,3 +2090,69 @@
   justify-content: space-between;
   gap: 8px;
 }
+
+/* M4-04: the leaders — ranks, names, coins; the player's own row stands out by an edge. */
+.leaders-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.leaders-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: var(--c-uiPanelAlt);
+}
+.leaders-row.me {
+  box-shadow: inset 0 0 0 2px var(--c-uiAccent);
+}
+.leaders-rank {
+  min-width: 2ch;
+  text-align: right;
+}
+.leaders-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.leaders-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* M4-04: four buttons in the top bar (settings, gifts, side job, leaders) and the balance fit a 360–420 px phone:
+   44 px buttons (the tap minimum), tighter gaps, the crystals chip under the coins. */
+@media (max-width: 420px) {
+  .hud {
+    gap: 4px;
+  }
+  .hud-side {
+    gap: 4px;
+  }
+  .hud-btn,
+  .hud-pause {
+    width: 44px;
+    height: 44px;
+  }
+  .hud-coins {
+    min-width: 0;
+    padding: 0 10px 0 8px;
+    gap: 6px;
+    font-size: 18px;
+  }
+  .hud-balance {
+    position: relative;
+    gap: 4px;
+  }
+  .hud-crystals {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+  }
+}

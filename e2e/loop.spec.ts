@@ -48,9 +48,9 @@ test('M1-08 the upgrade shop: buying the second incubator changes the shop and s
   await open(page);
   await page.evaluate(() => (window as unknown as { __TEST__: { grant(n: number): void } }).__TEST__.grant(60));
   await page.locator('[data-tab=shop]').click();
-  await expect(page.locator('[data-overlay=upgrades] .shop-item')).toHaveCount(2);
+  await expect(page.locator('[data-sheet=shop] .shop-item')).toHaveCount(2);
   await page.locator('[data-upgrade=incubator] [data-action=buy-upgrade]').click();
-  await page.locator('[data-overlay=upgrades] [data-action=back]').click();
+  await page.locator('[data-sheet=shop] [data-action=sheet-close]').click();
   const s = await st(page);
   expect(s.incubators).toHaveLength(2);
   expect(s.coins).toBe(10);
@@ -71,6 +71,8 @@ test('LOC-03 English: the home screen, the chats, the tab bar and the upgrade sh
   expect(await page.locator('#nav').innerText()).not.toMatch(/[Ѐ-ӿ]/);
   await page.locator('[data-tab=chats]').click();
   expect(await page.locator('[data-sheet=chats]').innerText()).not.toMatch(/[Ѐ-ӿ]/);
+  // Q-026 B: the Shop tab opens once an upgrade is affordable.
+  await page.evaluate(() => (window as unknown as { __TEST__: { grant(n: number): void } }).__TEST__.grant(100));
   await page.locator('[data-tab=shop]').click();
-  expect(await page.locator('[data-overlay=upgrades]').innerText()).not.toMatch(/[Ѐ-ӿ]/);
+  expect(await page.locator('[data-sheet=shop]').innerText()).not.toMatch(/[Ѐ-ӿ]/);
 });

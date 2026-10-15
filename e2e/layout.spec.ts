@@ -12,8 +12,10 @@ test('SCR-01 phone: HUD, home panel, tab bar and community buttons inside the vi
     '[data-action=pause]',
     '[data-sheet=eggs]',
     '[data-sheet=eggs] .sheet-title',
-    ...['market', 'inventory', 'sales', 'eggs', 'chats', 'shop', 'season'].map((tab) => `[data-tab=${tab}]`),
+    '[data-tab=eggs]',
   ]);
+  // Q-026 B: a fresh game shows the home tab only; the rest open step by step, «Season» after its update.
+  for (const tab of ['market', 'inventory', 'sales', 'chats', 'shop', 'season']) await expect(page.locator(`[data-tab=${tab}]`)).toBeHidden();
   const vp = page.viewportSize()!;
   // UB-01: the community buttons (Q-007) at the end of the home panel: scrolled to, they fit.
   const tg = page.locator('[data-community=side] [data-action=community-telegram]');

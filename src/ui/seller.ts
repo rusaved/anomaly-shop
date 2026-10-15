@@ -16,6 +16,8 @@ export interface SellerLookups {
   person(i: number): { name: string; f: boolean };
   /** The lowest «I'll take it for…» as a share of the asking price (market.json bargainFloor). */
   bargainFloor: number;
+  /** M4-23: the market's mood chip for a species ('' when none). */
+  mood(species: string): string;
 }
 
 /** Generic seller answers to «What about it?» (i18n seller.item.N). */
@@ -45,7 +47,7 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
       `<button type="button" class="eggs-back" data-action="lot-back">‹ ${look.t('eggs.back')}</button>` +
       `<div class="chat-head"><b class="chat-who"></b></div>` +
       `<div class="chat-item"><span class="card-pic"><img alt="" src="${look.portrait(l.species, l.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(l.rarity)}"></i></span>` +
-      `<span><b class="chat-item-name"></b> · ${look.t('card.level', { n: l.level })}<br><span class="card-sub">${look.t('price.marketIs', { n: fmt.format(l.value) })} · <span class="verdict v-${l.verdict}">${look.t(`market.${l.verdict}`)}</span></span></span></div>` +
+      `<span><b class="chat-item-name"></b> · ${look.t('card.level', { n: l.level })}<br><span class="card-sub">${look.t('price.marketIs', { n: fmt.format(l.value) })} · <span class="verdict v-${l.verdict}">${look.t(`market.${l.verdict}`)}</span> ${look.mood(l.species)}</span></span></div>` +
       `<div class="chat-lines">${lines.map((x) => `<p class="bubble ${x.me ? 'me' : 'them'}"></p>`).join('')}</div><div class="chat-buttons"></div>`;
     (body.querySelector('.chat-who') as HTMLElement).textContent = who;
     (body.querySelector('.chat-item-name') as HTMLElement).textContent = look.speciesName(l.species);

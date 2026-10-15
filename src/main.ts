@@ -17,7 +17,8 @@ import { createSettingsWindow } from './ui/settings.ts';
 import { communityLinks, renderCommunity } from './ui/community.ts';
 import { renderBuildLabel } from './ui/label.ts';
 import { createCoinFlight } from './ui/coin-flight.ts';
-import { createUpgradesWindow } from './ui/upgrades.ts';
+import { createShopTab } from './ui/upgrades.ts';
+import { moodChip } from './ui/mood.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
 import { createNewsTicker } from './ui/news.ts';
@@ -25,9 +26,9 @@ import { createMerchantWindow } from './ui/merchant.ts';
 import { createChatter } from './ui/chatter.ts';
 import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { ftueHint, tabHint } from './sim/ftue.ts';
+import { ftueHint, tabHint, tabUnlocked } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
-import { createNav, type TabId } from './ui/nav.ts';
+import { createNav, TABS, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
 import { createSheet, type Sheet } from './ui/sheet.ts';
 import { createInventoryTab } from './ui/inventory.ts';
@@ -44,7 +45,7 @@ import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
-import { audio, codes, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { audio, codes, collection, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -112,7 +113,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -157,33 +158,38 @@ async function boot(): Promise<void> {
   hud.crystals(store.state.crystals, store.state.crystals > 0 || Boolean(store.state.flags.crystal_seen));
   const flight = createCoinFlight(uiRoot);
   const links = platform.caps.community ? communityLinks() : null;
-  const upgradesWindow = createUpgradesWindow(uiRoot, play, {
-    t: i18n.t,
-    lang: i18n.lang,
-    upgrade: (id) => upgrades.upgrades.find((u) => u.id === id),
-    tierColors: Object.values(styleData.rarity),
-    onClose: () => {
-      if (nav.active() === 'shop') nav.mark('eggs');
-    },
-  });
-  // The genre-standard frame (docs/01 §1а, §6; UB-01): one tab bar at the bottom, «Eggs» is home (the shop scene + its panel),
-  // every other tab is a screen of its own; one is always active.
+  // The genre-standard frame (docs/01 §1а, §6): one tab bar at the bottom, «Eggs» is home (the shop scene + its panel).
+  // M4-00: one panel model for every tab — the same panel by the shop (right of it on a PC and sideways, under it on a phone);
+  // ✕, a tap on the active tab or on the shop closes a tab to the home «Eggs»; «Back» lives only inside a tab; each keeps its scroll.
   const portraits = createPortraits(scene.app, styleData);
+  /** M4-23: the mood chip of a species today. */
+  const moodOf = (id: string): string => {
+    const m = play.mood();
+    const kind = m?.hot === id ? 'hot' : m?.cold === id ? 'cold' : null;
+    return moodChip(kind, kind === 'hot' ? (m?.hotMult ?? 1) : (m?.coldMult ?? 1), i18n.t, i18n.lang());
+  };
   const sheets = new Map<TabId, Sheet>();
-  const showTab = (tab: TabId): void => {
+  for (const id of TABS) sheets.set(id, createSheet(uiRoot, id, id === 'eggs'));
+  let shown: TabId = 'eggs';
+  const showTab = (tab: TabId, again = false): void => {
     // UB-02: a tab works from any window — whatever is open closes its own way first.
     dismissAll();
-    // Q-021 B: until M5 the Shop tab is the shop upgrades — over the home screen, the shop stays in view (UB-04).
-    const screen: TabId = tab === 'shop' ? 'eggs' : tab;
+    if (again && tab !== 'eggs') {
+      selectTab('eggs');
+      return;
+    }
+    // On the home tab a second tap brings the egg list back (the egg card closes).
+    if (again) eggsTab.show(null);
     for (const [id, sh] of sheets) {
-      if (id === screen) sh.show();
+      if (id === tab) sh.show();
       else sh.hide();
     }
-    if (tab === 'shop') upgradesWindow.open();
+    if (shown === 'shop' && tab !== 'shop') play.seenShop();
+    shown = tab;
     // UB-10: the Chats tab opens on its list (new buyers on top), never on an old closed chat.
     if (tab === 'chats') chatsTab.show(null);
-    // The shop's own button lives on the home screen only (it would lie under another tab's screen).
-    stageButton.hidden = screen !== 'eggs';
+    // A tap on the shop closes another tab (the shop is the home screen).
+    sceneCatcher.hidden = tab === 'eggs';
     renderTabs();
     // UB-06: the first visit of a tab — its one hint, until the next tap.
     intro = play.seenTab(tab) ? { tab, at: performance.now() } : null;
@@ -200,29 +206,47 @@ async function boot(): Promise<void> {
     nav.mark(tab);
     showTab(tab);
   };
-  // UB-04: a button on the shop itself opens its upgrades — a panel from the right, the shop stays in view (the Shop tab does the same).
+  const sceneCatcher = document.createElement('div');
+  sceneCatcher.className = 'scene-catcher';
+  sceneCatcher.dataset.action = 'scene-close';
+  sceneCatcher.hidden = true;
+  sceneCatcher.addEventListener('click', () => selectTab('eggs'));
+  uiRoot.appendChild(sceneCatcher);
+  for (const [id, sh] of sheets) if (id !== 'eggs') sh.onClose(() => selectTab('eggs'));
+  // UB-04: a button on the shop itself opens the Shop on its «Upgrades» (Q-021 B), the shop stays in view.
   uiRoot.insertAdjacentHTML(
     'beforeend',
     '<button type="button" class="stage-btn" data-action="open-upgrades"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4l6 6-3 3-6-6z"/><path d="M11 7L4 14l3 3 7-7"/><path d="M6 19l-2 1 1-2"/></svg><span data-i18n="upgrades.open"></span><span class="nav-badge nav-dot" data-upgrades-dot hidden></span></button>',
   );
   const stageButton = uiRoot.querySelector('[data-action="open-upgrades"]') as HTMLElement;
-  stageButton.addEventListener('click', () => selectTab('shop'));
-  for (const id of ['market', 'inventory', 'sales', 'eggs', 'chats', 'season'] as const) sheets.set(id, createSheet(uiRoot, id, id === 'eggs' ? 'home' : 'screen'));
+  const openUpgrades = (): void => {
+    selectTab('shop');
+    shopTab.section('upgrades');
+  };
+  stageButton.addEventListener('click', openUpgrades);
   const nav = createNav(uiRoot, showTab);
-  hud.balance.addEventListener('click', () => selectTab('shop'));
+  hud.balance.addEventListener('click', openUpgrades);
   for (const [id, key] of [['season', 'season.later']] as const) {
     const s = sheets.get(id)!;
     s.body.innerHTML = `<p class="empty" data-i18n="${key}"></p>`;
     s.setTitle(i18n.t(`nav.${id}`));
   }
-  const inventoryTab = createInventoryTab(sheets.get('inventory')!, play, () => store.state, {
+  const shopTab = createShopTab(sheets.get('shop')!, play, {
+    t: i18n.t,
+    lang: i18n.lang,
+    upgrade: (id) => upgrades.upgrades.find((u) => u.id === id),
+    tierColors: Object.values(styleData.rarity),
+    sections: navData.shop.sections.filter((x) => x.enabled).map((x) => x.id),
+  });
+  shopTab.section('upgrades');
+  const inventoryTab = createInventoryTab(sheets.get('inventory')!, play, {
     t: i18n.t,
     lang: i18n.lang,
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
-    species: () => species.species.map((s) => ({ id: s.id, rarity: s.rarity })),
     portrait: (id, r) => portraits.creature(id, r),
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     pick: (uid) => play.tapCreature(uid),
+    mood: moodOf,
     list: (uid) => {
       if (!play.list(uid)) return;
       selectTab('sales');
@@ -256,7 +280,10 @@ async function boot(): Promise<void> {
     onReveal: (rarity) => sfx.play(rarity === 'common' ? 'hatch' : 'rare'),
     // UB-10: past the first minute «To the shop» opens the price slider (the first minute stays one tap: FTUE, UB-06).
     onListed: (uid) => {
-      if (store.state.flags.ftue_done) salesTab.show(uid);
+      if (!store.state.flags.ftue_done) return;
+      // M4-00: the price card is an inner page of «My sales» — the tab opens on it.
+      selectTab('sales');
+      salesTab.show(uid);
     },
   });
   // Timers on the egg screen (free egg, hatching) tick each second while it is open.
@@ -271,6 +298,7 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     slider: market.slider,
     zoneColors: RARITIES.map((r) => styleData.rarity[r]),
+    mood: moodOf,
     openChat: (uid) => {
       selectTab('chats');
       chatsTab.show(uid);
@@ -289,6 +317,7 @@ async function boot(): Promise<void> {
     portrait: (id, r) => portraits.creature(id, r),
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     avatarColor: (i) => customers.people.outfits[i % customers.people.outfits.length] ?? styleData.colors.uiAccent,
+    mood: moodOf,
   });
   const sellerLook = {
     t: i18n.t,
@@ -299,6 +328,7 @@ async function boot(): Promise<void> {
     character: (id: string) => customers.characters.find((c) => c.id === id),
     hobby: (id: string) => customers.hobbies.find((h) => h.id === id),
     bargainFloor: market.bargainFloor,
+    mood: moodOf,
     person: (i: number) => {
       const p = customers.people.names[i];
       return { name: p?.[i18n.lang()] ?? '?', f: Boolean(p?.f) };
@@ -363,7 +393,23 @@ async function boot(): Promise<void> {
     '<button type="button" class="hud-btn" data-action="work" data-i18n="work.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 6 0 0 1-18 0z"/><path d="M8 8c0-2 2-2 2-4M13 8c0-2 2-2 2-4"/></svg></button>',
   );
   (hud.side.querySelector('[data-action="work"]') as HTMLElement).addEventListener('click', () => workWindow.open());
+  /** Q-026 B: which tabs are open now; an opened one stays open (flag open_<id>), a fresh one pulses. */
+  let tabsKnown = false;
+  function openTabs(): void {
+    const st = store.state;
+    const facts = { hatched: st.stats.hatched, chats: play.chats().length, level: play.reputation().level, upgrade: play.upgradeList().some((u) => u.affordable) };
+    for (const id of TABS) {
+      const u = navData.tabs[id];
+      const flag = `open_${id}`;
+      if (u.type !== 'hidden' && !st.flags[flag] && tabUnlocked(u, facts)) st.flags[flag] = true;
+      const open = u.type === 'always' || Boolean(st.flags[flag] && u.type !== 'hidden');
+      nav.setOpen(id, open, tabsKnown);
+    }
+    tabsKnown = true;
+    stageButton.hidden = !store.state.flags.open_shop;
+  }
   function renderTabs(): void {
+    openTabs();
     (hud.side.querySelector('[data-gifts-dot]') as HTMLElement).hidden = !giftsWindow.hasNew();
     workWindow.render();
     const tab = nav.active();
@@ -372,6 +418,7 @@ async function boot(): Promise<void> {
     if (tab === 'inventory') inventoryTab.render();
     if (tab === 'eggs') eggsTab.render();
     if (tab === 'sales') salesTab.render();
+    if (tab === 'shop') shopTab.render();
     sheets.get('season')?.setTitle(i18n.t('nav.season'));
     nav.badge('chats', play.chats().filter((c) => c.unread).length);
     const upgradeReady = play.upgradeList().some((u) => u.affordable || u.fresh);
@@ -404,7 +451,7 @@ async function boot(): Promise<void> {
         selectTab('eggs');
         eggsTab.show(goal.id);
       } else if (goal.kind === 'level' || goal.kind === 'district') selectTab('sales');
-      else selectTab('shop');
+      else openUpgrades();
     },
   );
   /** Game second of the player's last touch (idle news) and the events of the last minute (event news). */
@@ -435,6 +482,23 @@ async function boot(): Promise<void> {
     },
     () => i18n.lang(),
   );
+  // M4-23: the mood of the market follows the device's day; the ticker announces it once a day.
+  let moodDay = '';
+  const syncDay = (): void => {
+    const day = today();
+    play.setDay(day);
+    if (day === moodDay) return;
+    moodDay = day;
+    newsTicker.announce(() => {
+      const m = play.mood();
+      if (!m) return '';
+      const name = (id: string) => speciesById(id)?.name[i18n.lang()] ?? id;
+      const fmt = new Intl.NumberFormat(i18n.lang(), { maximumFractionDigits: 2 });
+      return i18n.t('news.mood', { hot: name(m.hot), cold: name(m.cold), x: fmt.format(m.hotMult), y: fmt.format(m.coldMult) });
+    });
+  };
+  syncDay();
+  window.setInterval(syncDay, 60_000);
   const toasts = createToasts(uiRoot);
   const merchantWindow = createMerchantWindow(uiRoot, play, {
     t: i18n.t,
@@ -445,7 +509,6 @@ async function boot(): Promise<void> {
   const renderUi = (): void => {
     renderTabs();
     nextCard.render();
-    upgradesWindow.render();
     merchantWindow.render();
     reputationChip.render();
   };
@@ -491,6 +554,10 @@ async function boot(): Promise<void> {
       sfx.play('buy');
     }
     else if (e.type === 'firstCrystal') toasts.show(i18n.t('toast.crystal'), 'rare', 2800);
+    else if (e.type === 'rowDone') {
+      toasts.show(i18n.t('toast.rowDone', { row: i18n.t(`collection.row.${e.rarity}`), p: Math.round(e.bonus * 100), c: e.crystals }), 'rare', 3200);
+      sfx.play('rare');
+    }
     else if (e.type === 'upgradeUnlocked') {
       const name = upgrades.upgrades.find((u) => u.id === e.id)?.name[i18n.lang()] ?? e.id;
       toasts.show(i18n.t('toast.upgradeUnlocked', { name }), 'good', 2400);
@@ -570,6 +637,9 @@ async function boot(): Promise<void> {
     if (settingsWindow.overlay.isOpen()) settingsWindow.close();
     else if (!dismissTop()) pauseWindow.toggle();
   });
+  /** Hint targets inside the shop scene (the rest point at buttons and panels). */
+  const SCENE_TARGETS = new Set(['incubator', 'slot', 'queue']);
+  let sceneHintOn = false;
   const hints = createHints(uiRoot, {
     t: i18n.t,
     anchors: () => shop.anchors(),
@@ -621,6 +691,7 @@ async function boot(): Promise<void> {
         shelf: play.view().creatures.map((c) => c.uid),
         windows: [...uiRoot.querySelectorAll<HTMLElement>('.overlay:not([hidden]):not(.under)')].map((el) => el.dataset.overlay ?? ''),
         upgradeFx: shop.lastUpgradeText(),
+        captions: [...shop.captions(), ...(sceneHintOn ? [hints.text()] : []), ...(toasts.showing() ? [toasts.showing()] : [])],
         hatchTiming: hatchShow.timing(),
         newest: (() => {
           // The newest creature wherever it is (UB-05: a tapped egg's creature waits in the inventory).
@@ -648,7 +719,13 @@ async function boot(): Promise<void> {
     const hint = controllable ? ftueHint(store.state, view) : null;
     const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';
     const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
-    hints.update(tabIntro ?? (hint && !(sceneHint && nav.active() !== 'eggs') ? hint : null));
+    // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.
+    const toastNow = toasts.showing();
+    const wanted = tabIntro ?? (hint && !(sceneHint && nav.active() !== 'eggs') ? hint : null);
+    const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) ? null : wanted;
+    hints.update(shownHint);
+    sceneHintOn = Boolean(shownHint && SCENE_TARGETS.has(shownHint.target.kind) && hints.text());
+    shop.quiet(sceneHintOn || Boolean(toastNow));
     newsTicker.tick(runtime.pause.isPaused() ? 0 : ticker.deltaMS / 1000, controllable && Boolean(store.state.flags.ftue_done));
     if (!runtime.pause.isPaused() && store.state.flags.ftue_done) chatter.tick(ticker.deltaMS / 1000);
     funnel.tick(runtime.elapsed());

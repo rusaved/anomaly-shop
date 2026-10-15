@@ -11,6 +11,8 @@ export interface Toasts {
   hold(ms: number): void;
   /** Toasts waiting (tests). */
   waiting(): number;
+  /** The toast on screen now ('' when none): M4-00 — the shop keeps its own captions quiet meanwhile. */
+  showing(): string;
 }
 
 /** The producer's rule after M2: one text on screen at a time, long enough to read. */
@@ -80,5 +82,6 @@ export function createToasts(parent: HTMLElement): Toasts {
       heldUntil = Math.max(heldUntil, Date.now() + ms);
     },
     waiting: () => queue.length + (current ? 1 : 0),
+    showing: () => (current && !current.classList.contains('out') ? (current.textContent ?? '') : ''),
   };
 }

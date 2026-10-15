@@ -51,6 +51,10 @@ export interface ShopView {
   anchors(): ShopAnchors | null;
   /** UB-10: the counter caption of the tap gestures — off while the first minute's hints teach them. */
   signGestures(on: boolean): void;
+  /** M4-00: a hint points into the shop — the shop's own captions and lines keep quiet meanwhile (one caption at a time). */
+  quiet(on: boolean): void;
+  /** M4-00: the captions on the shop now (labels, the counter sign, speech lines, floating words) — never more than one. */
+  captions(): string[];
   /** Stage point above a customer (coin flights start there). */
   customerPoint(id: number): { x: number; y: number } | null;
   /** A line over a creature (by uid) or a customer (by id), M2-17; nothing when it is not on the scene. */
@@ -283,6 +287,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   labels.addChild(caption);
   let captionKey = '';
   let captionsOn = true;
+  let quietOn = false;
+  /** Whether the layout leaves room for the showcase label (landscape phones: no). */
+  let showcaseFits = true;
   /** UB-10: the caption stays on the counter front — two lines at most, smaller when the counter is low. */
   let counterH = 0;
   const fitCaption = (): void => {
@@ -383,7 +390,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     texts.showcase.position.set(l.showcase.x + l.showcase.w / 2, l.showcase.y + l.showcase.h + l.outline);
     // The label gives way to the incubators when the wall is short (landscape phones).
     const domeTop = Math.min(...l.incubators.map((i) => i.y - i.r - l.outline));
-    texts.showcase.visible = texts.showcase.y + size * 1.2 < domeTop;
+    showcaseFits = texts.showcase.y + size * 1.2 < domeTop;
+    texts.showcase.visible = showcaseFits;
     texts.queue.position.set(l.door.x + l.door.w / 2, l.door.y - size - l.outline * 2);
     // UB-07: the hanging sign covers this label; the door with its buyers speaks for itself.
     texts.queue.visible = false;
@@ -867,6 +875,27 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     return moving;
   }
 
+  /**
+   * M4-00: one caption at a time on the shop (docs/01 §1а «на экране одна надпись за раз»): a hint at the shop > a floating word
+   * (level up, upgrade, rarity) > the newest speech line > the counter sign > the showcase label. The hidden ones keep their timers.
+   */
+  let captionsKey = '';
+  function oneCaption(): void {
+    const words = fx.words().length > 0;
+    const lines = [bubble, talk].filter((b) => b.box.visible).sort((a, b) => b.life - a.life);
+    const line = !quietOn && !words ? lines[0] : undefined;
+    for (const b of [bubble, talk]) b.box.renderable = b === line;
+    const sign = !quietOn && !words && !line && Boolean(caption.text);
+    caption.renderable = sign;
+    texts.showcase.visible = showcaseFits && !quietOn && !words && !line && !sign;
+    // The shop draws on demand: a caption that came or went is a change to draw.
+    const key = `${line === bubble ? 1 : line === talk ? 2 : 0}${sign ? 1 : 0}${texts.showcase.visible ? 1 : 0}`;
+    if (key !== captionsKey) {
+      captionsKey = key;
+      invalidate();
+    }
+  }
+
   return {
     root,
     layout(stage, hudHeight) {
@@ -882,6 +911,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         caption.text = sign ? t(sign) : '';
         fitCaption();
       }
+      oneCaption();
       if (view.incubators.length !== incubatorCount || view.slots !== slotCount || view.queueSize !== queueCount) {
         incubatorCount = Math.max(1, view.incubators.length);
         slotCount = Math.max(1, view.slots);
@@ -1048,6 +1078,21 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     },
     signGestures(on) {
       captionsOn = on;
+    },
+    quiet(on) {
+      if (on === quietOn) return;
+      quietOn = on;
+      fx.quiet(on);
+      oneCaption();
+    },
+    captions() {
+      // The same choice the next frame makes: what is in sight right now.
+      oneCaption();
+      const out = [...fx.words()];
+      for (const b of [bubble, talk]) if (b.box.visible && b.box.renderable && b.box.alpha > 0.05) out.push(b.text.text);
+      if (caption.renderable && caption.text) out.push(caption.text);
+      if (texts.showcase.visible) out.push(texts.showcase.text);
+      return out;
     },
     anchors() {
       if (!current) return null;

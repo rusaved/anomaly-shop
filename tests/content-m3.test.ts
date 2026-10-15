@@ -23,10 +23,10 @@ describe('M3-01 frame data', () => {
     for (const e of eggs.eggs.filter((x) => !x.special)) expect(RARITIES.reduce((s, r) => s + e.chances[r], 0)).toBeCloseTo(100, 9);
   });
 
-  it('the egg ladder: 8 steps, each ×10; free, seasonal and reward sections; every egg has a shell look', () => {
+  it('the egg ladder: 8 steps, ×10 up to the glowing one, then the city top ×5, ×3, ×3, ×3 (M4-08, Q-029); free, seasonal and reward sections; every egg has a shell look', () => {
     const ladder = eggs.eggs.filter((e) => e.section === 'ladder');
     expect(ladder).toHaveLength(8);
-    ladder.slice(1).forEach((e, i) => expect(e.price.coins / ladder[i]!.price.coins).toBe(10));
+    expect(ladder.slice(1).map((e, i) => e.price.coins / ladder[i]!.price.coins)).toEqual([10, 10, 10, 5, 3, 3, 3]);
     for (const s of ['free', 'seasonal', 'reward'] as const) expect(eggs.eggs.some((e) => e.section === s)).toBe(true);
     for (const e of eggs.eggs.filter((x) => !x.special)) expect(style.eggs[e.id], e.id).toBeTruthy();
     expect(eggs.care.shell.length).toBeGreaterThanOrEqual(2);

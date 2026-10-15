@@ -62,6 +62,8 @@ export interface SaveData {
   collection: Record<string, CollectionEntry>;
   calendar: { lastDailyAt: number; streak: number; lastLoginDay: string };
   prestige: number;
+  /** M4-06: coins earned when the shop moved to its current city (the next move counts from here). */
+  cityEarnedAt: number;
   /** xp — reputation points of the seller level (UB-08); saves made before it count their deals. */
   stats: { deals: number; coinsEarned: number; hatched: number; taps: number; levelUps: number; haggles: number; xp?: number };
   settings: { sound: boolean; lang: Lang | null };
@@ -161,6 +163,7 @@ export function newSave(now: number): SaveData {
     collection: {},
     calendar: { lastDailyAt: 0, streak: 0, lastLoginDay: '' },
     prestige: 0,
+    cityEarnedAt: 0,
     stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0, xp: 0 },
     settings: { sound: true, lang: null },
     flags: {},
@@ -237,6 +240,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     ),
     calendar: { lastDailyAt: num(cal.lastDailyAt, 0), streak: num(cal.streak, 0), lastLoginDay: str(cal.lastLoginDay, '') },
     prestige: Math.max(0, num(r.prestige, 0)),
+    cityEarnedAt: Math.max(0, num(r.cityEarnedAt, 0)),
     stats: {
       deals: num(st.deals, 0),
       coinsEarned: num(st.coinsEarned, 0),

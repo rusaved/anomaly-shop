@@ -1,31 +1,30 @@
-// What: the Inventory tab (docs/01 §6; M3-03): «Inventory» — the creatures the shop has, «Collection» — every species, found or not yet.
+// What: the Inventory tab (docs/01 §6; M3-03, M4-01): «Inventory» — the creatures the shop has, «Collection» — rows by rarity, statuses, row bonus.
 // Called by: src/main.ts (create once into its sheet; render on every commit while the sheet is open).
 // Keep: reads the game view and the save only; the rarity shows as a colored dash under the picture (M3-17 color discipline), text stays plain.
 
 import type { RarityName } from '../content/schemas.ts';
 import type { Game } from '../sim/game.ts';
-import type { SaveData } from '../sim/state.ts';
 import type { Sheet } from './sheet.ts';
 
 export interface InventoryLookups {
   t(key: string, vars?: Record<string, string | number>): string;
   lang(): string;
   speciesName(id: string): string;
-  /** All species in collection order with their rarity. */
-  species(): Array<{ id: string; rarity: RarityName }>;
   portrait(species: string, rarity: RarityName): string;
   rarityColor(r: RarityName): string;
   /** Taps a creature in the shop (selects it for the customer at the counter). */
   pick(uid: string): void;
   /** UB-10: list a creature for sale — its price slider opens. */
   list(uid: string): void;
+  /** M4-23: the market's mood chip for a species ('' when none). */
+  mood(species: string): string;
 }
 
 export interface InventoryTab {
   render(): void;
 }
 
-export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveData, look: InventoryLookups): InventoryTab {
+export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLookups): InventoryTab {
   let mode: 'items' | 'collection' = 'items';
   sheet.head.innerHTML =
     '<div class="subtabs" role="tablist"><button type="button" class="subtab" data-sub="items" data-i18n="inventory.items"></button>' +
@@ -50,7 +49,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveDat
         const view = game.view();
         // On sale counts the ones a buyer is writing about too (Q-025: off the shelf, still being sold).
         const all = [...view.creatures.map((c) => ({ c, on: true })), ...view.talking.map((c) => ({ c, on: true })), ...view.inventory.map((c) => ({ c, on: false }))];
-        const next = `i:${look.lang()}:${all.map(({ c, on }) => `${c.uid}.${c.level}.${c.price}.${on}`).join(',')}`;
+        const next = `i:${look.lang()}:${all.map(({ c, on }) => `${c.uid}.${c.level}.${c.price}.${on}`).join(',')}:${JSON.stringify(game.mood())}`;
         if (next === key) return;
         key = next;
         if (!all.length) {
@@ -69,6 +68,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveDat
             (b.querySelector('.card-name') as HTMLElement).textContent = look.speciesName(c.species);
             (b.querySelector('.card-sub') as HTMLElement).textContent = `${look.t(`rarity.${c.rarity}`)} · ${look.t('card.level', { n: c.level })}`;
             (b.querySelector('.card-price b') as HTMLElement).textContent = fmt.format(c.price);
+            b.querySelector('.card-price')?.insertAdjacentHTML('afterend', look.mood(c.species));
             const chip = document.createElement('span');
             chip.className = on ? 'card-sub chip-on' : 'card-sub';
             chip.dataset.action = on ? '' : `inv-list-${c.uid}`;
@@ -81,24 +81,42 @@ export function createInventoryTab(sheet: Sheet, game: Game, save: () => SaveDat
         );
         return;
       }
-      const col = save().collection;
-      const all = look.species();
-      const next = `c:${look.lang()}:${all.map((s) => (col[s.id]?.hatched ?? 0) > 0).join('')}`;
+      // M4-01: the collection by rarity — «Collected N/M», a row per rarity with its bonus, every species with its status.
+      const view = game.collection();
+      const next = `c:${look.lang()}:${view.rows.map((r) => `${r.done}.${r.species.map((x) => x.status[0]).join('')}`).join(',')}`;
       if (next === key) return;
       key = next;
-      const found = all.filter((s) => (col[s.id]?.hatched ?? 0) > 0).length;
-      const items = all.map((s) => {
-        const have = (col[s.id]?.hatched ?? 0) > 0;
-        const el = document.createElement('div');
-        el.className = `tile card-col${have ? '' : ' unknown'}`;
-        el.innerHTML = `<span class="card-pic"><img alt="" src="${look.portrait(s.id, s.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(s.rarity)}"></i></span><span class="card-name"></span>`;
-        (el.querySelector('.card-name') as HTMLElement).textContent = have ? look.speciesName(s.id) : '?';
-        return el;
-      });
+      const pct = (x: number): number => Math.round(x * 100);
       const sum = document.createElement('p');
       sum.className = 'cards-sum';
-      sum.textContent = look.t('inventory.found', { n: found, all: all.length });
-      list.replaceChildren(sum, ...items);
+      sum.dataset.collected = `${view.have}/${view.all}`;
+      sum.textContent = look.t('inventory.found', { n: view.have, all: view.all });
+      const rows = view.rows.map((row) => {
+        const box = document.createElement('section');
+        box.className = `col-row${row.done ? ' done' : ''}`;
+        box.dataset.row = row.rarity;
+        box.innerHTML =
+          `<h3 class="eggs-title col-head"><i class="rarity-dot" style="background:${look.rarityColor(row.rarity)}"></i><span data-row-name></span><b>${row.have}/${row.all}</b></h3>` +
+          `<p class="card-sub col-bonus" data-row-bonus></p><div class="cards"></div>`;
+        (box.querySelector('[data-row-name]') as HTMLElement).textContent = look.t(`collection.row.${row.rarity}`);
+        (box.querySelector('[data-row-bonus]') as HTMLElement).textContent = row.done
+          ? look.t('collection.rowDone', { p: pct(row.bonus) })
+          : look.t('collection.rowGoal', { p: pct(row.bonus), c: row.crystals });
+        (box.querySelector('.cards') as HTMLElement).replaceChildren(
+          ...row.species.map((x) => {
+            const el = document.createElement('div');
+            el.className = `tile card-col${x.status === 'none' ? ' unknown' : ''}`;
+            el.dataset.species = x.id;
+            el.dataset.status = x.status;
+            el.innerHTML = `<span class="card-pic"><img alt="" src="${look.portrait(x.id, row.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(row.rarity)}"></i></span><span class="card-name"></span><span class="card-sub"></span>`;
+            (el.querySelector('.card-name') as HTMLElement).textContent = x.status === 'none' ? '?' : look.speciesName(x.id);
+            (el.querySelector('.card-sub') as HTMLElement).textContent = look.t(`collection.status.${x.status}`);
+            return el;
+          }),
+        );
+        return box;
+      });
+      list.replaceChildren(sum, ...rows);
     },
   };
   return tab;

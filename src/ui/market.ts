@@ -4,7 +4,6 @@
 
 import type { RarityName } from '../content/schemas.ts';
 import type { Game, LotView } from '../sim/game.ts';
-import { createOverlay } from './overlay.ts';
 import type { Sheet } from './sheet.ts';
 
 export interface MarketLookups {
@@ -31,13 +30,12 @@ export function createMarketTab(sheet: Sheet, game: Game, look: MarketLookups): 
   const root = document.createElement('div');
   root.className = 'market cards';
   sheet.body.appendChild(root);
-  // UB-02: a lot is a detail — a panel from the right with the seller chat; the lots stay in view.
+  // M4-00: a lot is an inner page of the tab with the seller chat — «Back» to the lots.
   const close = (): void => {
     open = null;
     panel.hide();
   };
-  const panel = createOverlay(sheet.root.parentElement as HTMLElement, 'lot', close, { kind: 'panel', dismiss: close });
-  panel.card.classList.add('card-detail');
+  const panel = sheet.detail('lot', close);
   let open: number | null = null;
   let key = '';
 

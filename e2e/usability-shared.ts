@@ -15,8 +15,6 @@ const tap = async (page: Page, p: { x: number; y: number }) => {
 };
 /** Every window a player opens in the first minutes, by its button. */
 const OPENERS: Array<[string, string]> = [
-  ['[data-action=egg-card-egg_basic]', 'egg-card'],
-  ['[data-action=open-upgrades]', 'upgrades'],
   ['[data-action=reputation]', 'reputation'],
   ['[data-action=gifts]', 'gifts'],
   ['[data-action=work]', 'work'],
@@ -46,7 +44,7 @@ export async function oneWindowAtATime(page: Page): Promise<void> {
   await seeded(page);
   await open(page);
   // Real taps one after another on whatever opens a window: never two open at once (settings over pause aside).
-  const spots = ['[data-action=egg-card-egg_basic]', '[data-tab=shop]', '[data-action=reputation]', '[data-action=gifts]', '[data-action=work]', '[data-action=open-upgrades]', '[data-action=pause]', '[data-tab=sales]'];
+  const spots = ['[data-action=egg-card-egg_basic]', '[data-tab=shop]', '[data-action=reputation]', '[data-action=gifts]', '[data-tab=eggs]', '[data-action=work]', '[data-action=open-upgrades]', '[data-action=pause]', '[data-tab=sales]'];
   for (const sel of [...spots, ...spots.reverse()]) {
     const el = page.locator(sel).first();
     if (!(await el.isVisible())) continue;
@@ -120,8 +118,8 @@ export async function gesturesSigned(page: Page): Promise<void> {
   await expect(page.locator('[data-overlay=hatch] .hatch-skip')).toHaveText(await translated(page, 'hatch.skip'));
   await page.locator('[data-overlay=hatch] [data-action=hatch-shop]').click({ timeout: 8000 });
   // «To the shop» opens the price slider (UB-10) — its scale is signed.
-  await expect(page.locator('[data-overlay=sale] .price-scale')).toBeVisible();
-  expect((await page.locator('[data-overlay=sale] .price-scale').innerText()).trim().length).toBeGreaterThan(0);
+  await expect(page.locator('[data-detail=sale] .price-scale')).toBeVisible();
+  expect((await page.locator('[data-detail=sale] .price-scale').innerText()).trim().length).toBeGreaterThan(0);
   // A pet on the shelf: a tap feeds it, the counter says so.
   await page.locator('[data-tab=eggs]').click();
   await expect.poll(async () => (await targets(page)).caption).toBe(await translated(page, 'shop.tapFeed'));
@@ -130,15 +128,18 @@ export async function gesturesSigned(page: Page): Promise<void> {
 
 export async function tabLabels(page: Page): Promise<void> {
   const errors = collectErrors(page);
+  await seeded(page);
   await open(page);
-  const tabs = await page.locator('#nav [data-tab]').evaluateAll((els) =>
+  // Q-026 B: «Season» stays hidden until its update; the six open tabs are all signed.
+  await expect(page.locator('[data-tab=season]')).toBeHidden();
+  const tabs = await page.locator('#nav [data-tab]:not([hidden])').evaluateAll((els) =>
     els.map((el) => {
       const label = [...el.querySelectorAll<HTMLElement>('.nav-label')].find((l) => getComputedStyle(l).display !== 'none');
       const r = label?.getBoundingClientRect();
       return { tab: (el as HTMLElement).dataset.tab, text: label?.innerText.trim() ?? '', size: label ? parseFloat(getComputedStyle(label).fontSize) : 0, fits: Boolean(label && label.scrollWidth <= label.clientWidth + 1 && r && r.width > 0) };
     }),
   );
-  expect(tabs).toHaveLength(7);
+  expect(tabs).toHaveLength(6);
   for (const t of tabs) {
     expect(t.text, t.tab).not.toBe('');
     expect(t.size, t.tab).toBeGreaterThanOrEqual(12);
@@ -154,11 +155,73 @@ export async function noServiceMarks(page: Page): Promise<void> {
   // No build label, no raw i18n keys, no {placeholders}, no NaN / undefined, no dev words — on every screen.
   const bad = /\b[a-z]+\.[a-z][a-zA-Z]+(\.[a-zA-Z]+)?\b|\{[a-z]+\}|\bNaN\b|\bundefined\b|\bnull\b|\bdebug\b|\bTODO\b|\bM\d+ ·/;
   await expect(page.locator('[data-build-label]')).toHaveCount(0);
-  for (const tab of ['eggs', 'market', 'inventory', 'sales', 'chats', 'shop', 'season']) {
+  for (const tab of ['eggs', 'market', 'inventory', 'sales', 'chats', 'shop']) {
+    if (tab !== 'eggs') await page.locator('[data-tab=eggs]').click();
     await page.locator(`[data-tab=${tab}]`).click();
     await page.waitForTimeout(200);
     const text = await page.locator('#ui').innerText();
     expect(text.match(bad)?.[0] ?? '', tab).toBe('');
   }
+  expect(errors).toEqual([]);
+}
+
+/**
+ * M4-00: one panel model for every tab — the same panel as the home «Eggs» (right of the shop on a PC and sideways, above the tab bar
+ * on a phone); ✕, the active tab or a tap on the shop close it to «Eggs»; «Back» only inside; each tab keeps its scroll.
+ */
+export async function onePanelModel(page: Page): Promise<void> {
+  const errors = collectErrors(page);
+  await seeded(page);
+  await open(page);
+  const home = (await page.locator('[data-sheet=eggs]').boundingBox())!;
+  await expect(page.locator('[data-sheet=eggs] [data-action=sheet-close]')).toHaveCount(0);
+  const tabs = ['market', 'inventory', 'sales', 'chats', 'shop'];
+  for (const [i, tab] of tabs.entries()) {
+    await page.locator(`[data-tab=${tab}]`).click();
+    const sheet = page.locator(`[data-sheet=${tab}]`);
+    await expect(sheet).toBeVisible();
+    const box = (await sheet.boundingBox())!;
+    for (const k of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(box[k] - home[k]), `${tab} ${k}`).toBeLessThanOrEqual(1);
+    // No window opens for a tab: tabs are panels, windows are for the top bar and what matters (UB-02).
+    await expect(openWindows(page)).toHaveCount(0);
+    // Close it — ✕, the tab again, the shop — always home «Eggs».
+    if (i % 3 === 0) await sheet.locator('[data-action=sheet-close]').click();
+    else if (i % 3 === 1) await page.locator(`[data-tab=${tab}]`).click();
+    else {
+      const stage = (await page.locator('[data-action=scene-close]').boundingBox())!;
+      await tap(page, { x: stage.x + 12, y: stage.y + stage.height * 0.6 });
+    }
+    await expect(page.locator('[data-sheet=eggs]'), tab).toBeVisible();
+    await expect(page.locator('[data-tab=eggs]')).toHaveAttribute('aria-pressed', 'true');
+  }
+  // The scroll of a tab stays: the eggs list scrolled down, another tab, back — the same place.
+  const body = page.locator('[data-sheet=eggs] .sheet-body');
+  await body.evaluate((el) => (el.scrollTop = 120));
+  const before = await body.evaluate((el) => el.scrollTop);
+  await page.locator('[data-tab=market]').click();
+  await page.locator('[data-tab=eggs]').click();
+  expect(Math.abs((await body.evaluate((el) => el.scrollTop)) - before)).toBeLessThanOrEqual(2);
+  expect(errors).toEqual([]);
+}
+
+/** M4-00: one caption on the shop at a time (docs/01 §1а) — sampled through the first minute: hints, signs, lines, floating words, toasts. */
+export async function oneCaptionAtATime(page: Page): Promise<void> {
+  const errors = collectErrors(page);
+  await open(page);
+  const captions = async () => ((await state(page)) as unknown as { captions: string[] }).captions;
+  let most: string[] = [];
+  const sample = async (ms: number) => {
+    for (let t = 0; t < ms; t += 200) {
+      const c = await captions();
+      if (c.length > most.length) most = c;
+      await page.waitForTimeout(200);
+    }
+  };
+  await sample(1500);
+  await tap(page, (await targets(page)).incubators[0]!);
+  await page.locator('[data-overlay=hatch] [data-action=hatch-shop]').click({ timeout: 10_000 });
+  // The creature on the shelf talks, the first buyer comes, the hints lead to the chat.
+  await sample(16_000);
+  expect(most.length, most.join(' | ')).toBeLessThanOrEqual(1);
   expect(errors).toEqual([]);
 }

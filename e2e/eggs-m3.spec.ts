@@ -14,8 +14,8 @@ test('M3-04 egg card: odds match eggs.json, buy one and ×3', async ({ page }) =
   await page.locator('[data-tab=eggs]').click();
   await page.locator('[data-sheet=eggs] [data-egg=egg_warm]').click();
   const warm = eggsJson.eggs.find((e) => e.id === 'egg_warm')!;
-  await expect(page.locator('[data-overlay=egg-card]')).toBeVisible();
-  const cards = page.locator('[data-overlay=egg-card] .card-odds');
+  await expect(page.locator('[data-detail=egg-card]')).toBeVisible();
+  const cards = page.locator('[data-detail=egg-card] .card-odds');
   const shown = await cards.evaluateAll((els) => els.map((el) => ({ species: (el as HTMLElement).dataset.species!, chance: Number((el as HTMLElement).dataset.chance) })));
   expect(shown.length).toBeGreaterThan(0);
   for (const s of shown) {
@@ -30,7 +30,7 @@ test('M3-04 egg card: odds match eggs.json, buy one and ×3', async ({ page }) =
   await page.locator('[data-action=egg-buy-3]').click();
   await expect.poll(async () => (await state(page)).coins).toBe(before - 4 * warm.price.coins);
   await page.locator('[data-action=egg-back]').click();
-  await expect(page.locator('[data-overlay=egg-card]')).toBeHidden();
+  await expect(page.locator('[data-detail=egg-card]')).toBeHidden();
   await expect(page.locator('[data-sheet=eggs] [data-section=my]')).toBeVisible();
   expect(errors).toEqual([]);
 });

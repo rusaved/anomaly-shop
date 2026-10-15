@@ -1,10 +1,10 @@
-// What: the upgrade shop window (docs/01, section 6; M1-08): the positions of upgrades.json → shop, level, effect, price.
-// Called by: src/main.ts (create once; opened from the panel button, rendered on every commit while open).
-// Keep: the game runs on behind it (idle genre standard); purchases go through game.buyUpgrade; Back and the backdrop close it.
+// What: the Shop tab (docs/01 §6; Q-021 B, M4-00): sections «Upgrades» (the shop upgrades: level, effect, price) and, from M5, «Deals · Currency».
+// Called by: src/main.ts (create once into its sheet; rendered on every commit; the «Upgrades» button on the scene opens this section).
+// Keep: the game runs on behind it (idle genre standard); purchases go through game.buyUpgrade; the sections come from content/nav.json.
 
 import type { UpgradeData } from '../content/schemas.ts';
 import type { Game } from '../sim/game.ts';
-import { button, createOverlay, type Overlay } from './overlay.ts';
+import type { Sheet } from './sheet.ts';
 
 export interface UpgradeLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -12,14 +12,13 @@ export interface UpgradeLookups {
   upgrade(id: string): UpgradeData | undefined;
   /** Tier colors grey to red (Q-022, style.json rarity): the dash under an upgrade shows how far it is levelled. */
   tierColors?: readonly string[];
-  /** After it closes (the Shop tab hands the bar back to the home screen). */
-  onClose?(): void;
+  /** The sections open now (content/nav.json shop.sections). */
+  sections: readonly string[];
 }
 
-export interface UpgradesWindow {
-  overlay: Overlay;
-  open(): void;
-  close(): void;
+export interface ShopTab {
+  /** Opens a section (the scene button opens «upgrades»). */
+  section(id: string): void;
   render(): void;
 }
 
@@ -33,13 +32,20 @@ function effectText(u: UpgradeData, look: UpgradeLookups): string {
   return look.t(key);
 }
 
-export function createUpgradesWindow(parent: HTMLElement, game: Game, look: UpgradeLookups): UpgradesWindow {
-  // UB-04: a panel from the right, the shop stays in view; a tap outside or a tab tap closes it.
-  const overlay = createOverlay(parent, 'upgrades', () => win.close(), { kind: 'panel', dismiss: () => win.close() });
-  overlay.card.classList.add('card-shop');
+export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): ShopTab {
+  let current = look.sections[0] ?? 'upgrades';
+  // The sections bar shows once there are two (M5: «Deals · Currency»); until then the section is a heading over its list.
+  if (look.sections.length > 1) {
+    sheet.head.innerHTML = `<div class="subtabs" role="tablist">${look.sections.map((id) => `<button type="button" class="subtab" data-sub="${id}" data-i18n="shop.section.${id}"></button>`).join('')}</div>`;
+    sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) => b.addEventListener('click', () => tab.section(b.dataset.sub ?? current)));
+  }
+  const box = document.createElement('div');
+  box.className = 'card-shop';
+  box.dataset.section = 'upgrades';
   const head = document.createElement('div');
   head.className = 'shop-head';
-  const title = document.createElement('h2');
+  const title = document.createElement('h3');
+  title.className = 'eggs-title';
   title.dataset.i18n = 'upgrades.title';
   // The wallet stays in sight while the list scrolls (M2 playtest).
   const wallet = document.createElement('span');
@@ -48,11 +54,9 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
   head.append(title, wallet);
   const list = document.createElement('div');
   list.className = 'shop-list';
-  const back = button('back', 'settings.back');
-  overlay.card.append(head, list, back);
-  back.addEventListener('click', () => win.close());
+  box.append(head, list);
+  sheet.body.appendChild(box);
   let built = '';
-
   function build(): void {
     list.replaceChildren();
     // Affordable first, then the rest by price, maxed at the bottom (the nearest goals are what the player looks for).
@@ -78,19 +82,15 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
     }
   }
 
-  const win: UpgradesWindow = {
-    overlay,
-    open() {
-      overlay.show();
-      win.render();
-    },
-    close() {
-      overlay.hide();
-      game.seenShop();
-      look.onClose?.();
+  const tab: ShopTab = {
+    section(id) {
+      if (look.sections.includes(id)) current = id;
+      sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) => b.classList.toggle('active', b.dataset.sub === current));
+      box.hidden = current !== 'upgrades';
     },
     render() {
-      if (!overlay.isOpen() && built) return;
+      sheet.setTitle(look.t('nav.shop'));
+      if (!sheet.shown() && built) return;
       const key = `${look.lang()}|${game.upgradeList().map((u) => `${u.id}:${u.maxed}:${u.affordable}:${u.price}`).join(',')}`;
       if (built !== key) {
         built = key;
@@ -120,5 +120,5 @@ export function createUpgradesWindow(parent: HTMLElement, game: Game, look: Upgr
       }
     },
   };
-  return win;
+  return tab;
 }

@@ -11,6 +11,8 @@ export interface NewsTicker {
   tick(dt: number, active: boolean): void;
   /** Shows a new line now (language switch, a fresh event). */
   refresh(): void;
+  /** M4-23: a line of the day (the mood of the market) — shown once, as soon as the ticker may speak. */
+  announce(text: () => string): void;
 }
 
 export function createNewsTicker(titleRow: HTMLElement, data: NewsData, context: () => NewsContext, lang: () => 'ru' | 'en'): NewsTicker {
@@ -27,6 +29,10 @@ export function createNewsTicker(titleRow: HTMLElement, data: NewsData, context:
   let cooldown = 0;
   let showing = 0;
   let current = -1;
+  /** A line of the day waiting to be shown, and the one on screen (current = ANNOUNCE). */
+  let pending: (() => string) | null = null;
+  let custom: (() => string) | null = null;
+  const ANNOUNCE = -2;
   // What has already been news: the events, the round numbers of deals, the species seen on the showcase.
   const known = { events: new Set<string>(), round: 0, species: new Set<string>(), primed: false };
   const ROUND = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
@@ -63,9 +69,9 @@ export function createNewsTicker(titleRow: HTMLElement, data: NewsData, context:
   }
 
   function paint(): void {
-    const line = data.lines[current];
+    const line = current === ANNOUNCE ? custom?.() : data.lines[current]?.[lang()];
     if (!line) return;
-    text.textContent = line[lang()];
+    text.textContent = line;
     text.classList.remove('news-in', 'news-scroll');
     text.style.removeProperty('--news-shift');
     void text.offsetWidth;
@@ -84,13 +90,23 @@ export function createNewsTicker(titleRow: HTMLElement, data: NewsData, context:
       showing -= dt;
       const c = active ? context() : null;
       const why = c ? reason(c) : false;
-      if (c && why && cooldown <= 0) show(c);
-      const on = active && showing > 0 && current >= 0;
+      if (c && pending && cooldown <= 0) {
+        custom = pending;
+        pending = null;
+        current = ANNOUNCE;
+        paint();
+        showing = (data.showSec ?? 8) + 4;
+        cooldown = data.everySec.min;
+      } else if (c && why && cooldown <= 0) show(c);
+      const on = active && showing > 0 && current !== -1;
       root.hidden = !on;
       titleRow.hidden = on;
     },
     refresh() {
-      if (current >= 0 && showing > 0) paint();
+      if (current !== -1 && showing > 0) paint();
+    },
+    announce(line) {
+      pending = line;
     },
   };
 }

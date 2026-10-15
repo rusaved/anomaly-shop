@@ -18,6 +18,8 @@ export interface ChatsLookups {
   rarityColor(r: RarityName): string;
   /** A color for the buyer's avatar (style.json people outfits). */
   avatarColor(i: number): string;
+  /** M4-23: the market's mood chip for a species ('' when none). */
+  mood(species: string): string;
 }
 
 export interface ChatsTab {
@@ -100,7 +102,7 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
       `<button type="button" class="eggs-back" data-action="chat-back">‹ ${look.t('eggs.back')}</button>` +
       `<div class="chat-head">${avatar(c)}<b class="chat-who"></b></div>` +
       `<div class="chat-item"><span class="card-pic"><img alt="" src="${look.portrait(c.species, rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(rarity)}"></i></span>` +
-      `<span><b class="chat-item-name"></b><br><span class="card-sub">${cr ? look.t('chats.ask', { n: f.format(cr.ask) }) : ''}</span></span></div>` +
+      `<span><b class="chat-item-name"></b><br><span class="card-sub">${cr ? look.t('chats.ask', { n: f.format(cr.ask) }) : ''} ${look.mood(c.species)}</span></span></div>` +
       `<div class="chat-lines">${c.lines.map((l) => `<p class="bubble ${l.from === 'me' ? 'me' : 'them'}"></p>`).join('')}</div>` +
       '<div class="chat-buttons" data-hint-glow></div>';
     (root.querySelector('.chat-who') as HTMLElement).textContent = who(c);

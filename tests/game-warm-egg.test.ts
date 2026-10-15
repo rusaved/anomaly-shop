@@ -50,9 +50,9 @@ describe('M1-10 warm egg', () => {
     expect(Math.abs(t - warm.hatchSec)).toBeLessThan(3 * STEP_SEC);
   });
 
-  it('odd and glowing eggs wait for their districts (M2-05), the ladder top for deals (M3), the daily egg for M4', () => {
+  it('odd and glowing eggs wait for their districts (M2-05), the ladder top for a new city (M4-08), the daily egg for M4', () => {
     expect(setup(19).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm', 'egg_autumn']);
-    expect(setup(500).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm', 'egg_autumn', 'egg_odd', 'egg_glow', 'egg_star']);
+    expect(setup(500).game.eggList().map((e) => e.id)).toEqual(['egg_basic', 'egg_warm', 'egg_autumn', 'egg_odd', 'egg_glow']);
   });
 });
 

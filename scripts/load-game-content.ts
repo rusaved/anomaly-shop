@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import * as v from 'valibot';
-import { CustomersFile, ReputationFile, EggsFile, EventsFile, CodesFile, FtueFile, GiftsFile, MarketFile, SecretsFile, SpeciesFile, UpgradesFile, WorkFile } from '../src/content/schemas.ts';
+import { CollectionFile, CustomersFile, FeelFile, PaceFile, ReputationFile, EggsFile, EventsFile, CodesFile, FtueFile, GiftsFile, MarketFile, SecretsFile, SpeciesFile, UpgradesFile, WorkFile } from '../src/content/schemas.ts';
 import type { GameContent } from '../src/sim/game.ts';
 
 const root = resolve(import.meta.dirname, '..');
@@ -23,5 +23,12 @@ export function loadGameContent(): GameContent {
     work: v.parse(WorkFile, json('work.json')),
     codes: v.parse(CodesFile, json('codes.json')),
     reputation: v.parse(ReputationFile, json('reputation.json')),
+    collection: v.parse(CollectionFile, json('collection.json')),
   };
+}
+
+/** Q-027 B: the live tempo of the balance model — content/pace.json plus the hatch show of feel.json. */
+export type Pace = v.InferOutput<typeof PaceFile> & { hatchSec: number };
+export function loadPace(): Pace {
+  return { ...v.parse(PaceFile, json('pace.json')), hatchSec: v.parse(FeelFile, json('feel.json')).hatchShowSec };
 }

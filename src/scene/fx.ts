@@ -28,10 +28,16 @@ export interface Fx {
   float(x: number, y: number, text: string, color: string, size: number, rise: number): void;
   /** Advances every effect; false when nothing is alive. */
   update(dt: number): boolean;
+  /** M4-00: the floating words alive and in sight now (numbers like «+15» are not words: they are the coins themselves). */
+  words(): string[];
+  /** M4-00: a hint or a toast speaks — the floating words fly on unseen. */
+  quiet(on: boolean): void;
   clear(): void;
 }
 
 const GRAVITY = 900;
+/** A floater that is only a number (+15, +1◆) — not a caption. */
+const NUMBER = /^[+\-−]?[\d\s.,\u00a0\u202f◆]+$/;
 const POOL = 16;
 
 export function createFx(outline: string): Fx {
@@ -41,6 +47,7 @@ export function createFx(outline: string): Fx {
   const particles: Particle[] = [];
   const floaters: Floater[] = [];
   const pool: Text[] = [];
+  let hush = false;
   // A tiny deterministic spread (no Math.random needed for looks either).
   let seed = 1;
   const rnd = (): number => {
@@ -59,6 +66,8 @@ export function createFx(outline: string): Fx {
       }
     },
     float(x, y, text, color, size, rise) {
+      // M4-00: one floating word at a time — a new word takes the place of the old one.
+      if (!NUMBER.test(text)) for (const f of floaters) if (!NUMBER.test(f.text.text)) f.life = Math.min(f.life, 0.001);
       const t = pool.pop() ?? new Text({ text: '', style: { fontFamily: 'Rubik, sans-serif', fontWeight: '700', fill: color, stroke: { color: outline, width: 4 }, align: 'center' } });
       t.text = text;
       t.style.fill = color;
@@ -67,6 +76,7 @@ export function createFx(outline: string): Fx {
       t.anchor.set(0.5);
       t.position.set(x, y);
       t.alpha = 1;
+      t.visible = !hush || NUMBER.test(text);
       t.scale.set(0.6);
       layer.addChild(t);
       const max = 0.9;
@@ -103,6 +113,11 @@ export function createFx(outline: string): Fx {
         f.text.alpha = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
       }
       return particles.length > 0 || floaters.length > 0;
+    },
+    words: () => (hush ? [] : floaters.map((f) => f.text.text).filter((x) => !NUMBER.test(x))),
+    quiet(on) {
+      hush = on;
+      for (const f of floaters) f.text.visible = !on || NUMBER.test(f.text.text);
     },
     clear() {
       particles.length = 0;

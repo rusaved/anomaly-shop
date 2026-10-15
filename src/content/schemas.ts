@@ -31,6 +31,8 @@ export const Unlock = v.variant('type', [
   v.object({ type: v.literal('upgrade'), id: Id }),
   /** UB-08: the seller level of reputation.json. */
   v.object({ type: v.literal('level'), n: Count }),
+  /** M4-08: the city of the shop (1 + rebirths) — the top of the egg ladder opens city by city. */
+  v.object({ type: v.literal('city'), n: Count }),
 ]);
 
 export const Egg = v.object({
@@ -172,7 +174,18 @@ export const Upgrade = v.object({
 export const UpgradesFile = v.object({
   offlineMaxHours: v.pipe(v.number(), v.minValue(0)),
   offlineRate: Share,
-  prestige: v.object({ thresholdCoinsEarned: v.pipe(v.number(), v.minValue(1)), incomeBonusPerPrestige: v.pipe(v.number(), v.minValue(0)) }),
+  /** Q-027 B (M4-00): while the player is away the shop works on without bought helpers — a slower seller and courier (the first night pays). */
+  away: v.object({
+    autoSell: v.object({ type: v.literal('autoSell'), priceShare: v.pipe(v.number(), v.minValue(0)), delaySec: v.pipe(v.number(), v.minValue(0)), offline: v.boolean() }),
+    autoBuyEgg: v.object({ type: v.literal('autoBuyEgg'), egg: Id, everySec: v.pipe(v.number(), v.minValue(0)), offline: v.boolean() }),
+  }),
+  /** M4-06, M4-08: the shop moves to a new city — coins earned in this city ≥ threshold × thresholdGrowth^rebirths; income +bonus per rebirth. */
+  prestige: v.object({
+    thresholdCoinsEarned: v.pipe(v.number(), v.minValue(1)),
+    thresholdGrowth: v.pipe(v.number(), v.minValue(1)),
+    incomeBonusPerPrestige: v.pipe(v.number(), v.minValue(0)),
+    startCoins: v.pipe(v.number(), v.minValue(0)),
+  }),
   shop: v.pipe(v.array(Id), v.minLength(1)),
   upgrades: v.pipe(v.array(Upgrade), v.minLength(1)),
 });
@@ -249,6 +262,10 @@ export const StyleFile = v.object({
 export const MarketFile = v.object({
   refreshSec: v.object({ min: Money, max: Money }),
   lots: Count,
+  /** M4-00: at most this many lots of one species on the market. */
+  perSpecies: Count,
+  /** M4-23: the mood of the market — one species «in fashion» (×hot), one «fed up with» (×cold), by the day and the save. */
+  mood: v.object({ hot: v.pipe(v.number(), v.minValue(1)), cold: v.pipe(v.number(), v.minValue(0.1), v.maxValue(1)) }),
   price: v.object({ min: Money, max: Money }),
   /** Share of lots priced below the market (a deal to find). */
   goodShare: Share,
@@ -278,6 +295,24 @@ export const ReputationFile = v.object({
   levels: v.pipe(v.array(v.pipe(v.number(), v.minValue(0))), v.minLength(2)),
   titles: v.pipe(v.array(v.object({ from: Count, name: Text })), v.minLength(1)),
   future: v.array(v.object({ level: Count, id: Id, name: Text })),
+});
+/** M4-01: the collection by rarity — a full row gives crystals once and a price bonus for that rarity for good. */
+export const CollectionFile = v.object({ rowBonus: PerRarity, rowCrystals: PerRarity });
+/** Q-027 B: a live player's interface time for the balance model (scripts/balance-model.ts): the result, tabs, chats, cards. */
+const UiSec = v.pipe(v.number(), v.minValue(0), v.maxValue(10));
+export const PaceFile = v.object({ resultSec: UiSec, tabSec: UiSec, chatSec: UiSec, cardSec: UiSec, closeSec: UiSec });
+/** M4-00, Q-026 B: tabs open step by step (first hatch, first buyer, seller level, the first affordable upgrade); the Shop sections. */
+const TabUnlock = v.variant('type', [
+  v.object({ type: v.literal('always') }),
+  v.object({ type: v.literal('hatched') }),
+  v.object({ type: v.literal('chat') }),
+  v.object({ type: v.literal('level'), n: Count }),
+  v.object({ type: v.literal('upgrade'), n: Count }),
+  v.object({ type: v.literal('hidden') }),
+]);
+export const NavFile = v.object({
+  tabs: v.object({ market: TabUnlock, inventory: TabUnlock, sales: TabUnlock, eggs: TabUnlock, chats: TabUnlock, shop: TabUnlock, season: TabUnlock }),
+  shop: v.object({ sections: v.pipe(v.array(v.object({ id: Id, enabled: v.boolean() })), v.minLength(1)) }),
 });
 /** Side job (docs/01 §3 p. 15): tapping the bowl feeds the neighbours' pets for coins; the job levels up on a ×growth ladder. */
 export const WorkFile = v.object({
@@ -400,6 +435,10 @@ export type HobbyData = v.InferOutput<typeof Hobby>;
 export type MarketData = v.InferOutput<typeof MarketFile>;
 export type GiftsData = v.InferOutput<typeof GiftsFile>;
 export type WorkData = v.InferOutput<typeof WorkFile>;
+export type NavData = v.InferOutput<typeof NavFile>;
+export type PaceData = v.InferOutput<typeof PaceFile>;
+export type CollectionData = v.InferOutput<typeof CollectionFile>;
+export type TabUnlockData = v.InferOutput<typeof TabUnlock>;
 export type CodesData = v.InferOutput<typeof CodesFile>;
 export type RewardData = v.InferOutput<typeof Reward>;
 export type FtueData = v.InferOutput<typeof FtueFile>;

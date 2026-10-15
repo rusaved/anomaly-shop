@@ -164,6 +164,8 @@ export interface UnlockFacts {
   haggles: number;
   /** Upgrade levels bought. */
   upgrades: Record<string, number>;
+  /** M4-08: the city of the shop, 1 + rebirths (missing: 1). */
+  city?: number;
   /** Open district ids. */
   districts: string[];
 }
@@ -176,6 +178,7 @@ export function unlockMet(u: UnlockData | undefined, f: UnlockFacts): boolean {
   if (u.type === 'upgrade') return (f.upgrades[u.id] ?? 0) > 0;
   if (u.type === 'district') return f.districts.includes(u.id);
   if (u.type === 'level') return f.level >= u.n;
+  if (u.type === 'city') return (f.city ?? 1) >= u.n;
   return false;
 }
 
@@ -203,4 +206,28 @@ export function repLevel(xp: number, levels: readonly number[]): { level: number
   let i = 0;
   while (i + 1 < levels.length && xp + 1e-9 >= (levels[i + 1] ?? Infinity)) i++;
   return { level: i + 1, base: levels[i] ?? 0, next: levels[i + 1] ?? null };
+}
+
+/** M4-06, M4-08: what the next move to a new city needs — coins earned in this city — and the income multiplier it brings. */
+export function rebirthNeed(rebirths: number, p: { thresholdCoinsEarned: number; thresholdGrowth: number }): number {
+  return nicePrice(p.thresholdCoinsEarned * Math.pow(p.thresholdGrowth, Math.max(0, rebirths)));
+}
+export function cityMult(rebirths: number, bonus: number): number {
+  return 1 + bonus * Math.max(0, rebirths);
+}
+
+/**
+ * M4-23: the mood of the market for a day — one species in fashion, another everybody is fed up with; the same day and save
+ * always give the same pair (FNV-1a of «day:seed»), a new day a new pair.
+ */
+export function marketMood(day: string, seed: number, ids: readonly string[]): { hot: string; cold: string } | null {
+  if (!day || ids.length < 2) return null;
+  let h = 0x811c9dc5;
+  for (const ch of `${day}:${Math.floor(seed)}`) {
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  const hot = h % ids.length;
+  const cold = (hot + 1 + ((h >>> 8) % (ids.length - 1))) % ids.length;
+  return { hot: ids[hot]!, cold: ids[cold]! };
 }

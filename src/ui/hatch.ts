@@ -42,7 +42,7 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   overlay.card.innerHTML =
     '<h2 data-hatch-title></h2><div class="hatch-window" data-action="hatch-skip"><div class="hatch-strip" data-hatch-strip></div><i class="hatch-marker" aria-hidden="true"></i></div>' +
     '<p class="hatch-skip" data-hatch-skip data-i18n="hatch.skip"></p>' +
-    '<div class="hatch-result" data-hatch-result hidden><img alt="" data-hatch-pic><h3 data-hatch-name></h3><p class="hatch-rarity"><i class="rarity-dot" data-hatch-dot></i><span data-hatch-rarity></span></p>' +
+    '<div class="hatch-result" data-hatch-result hidden><p class="hatch-big" data-hatch-big></p><img alt="" data-hatch-pic><h3 data-hatch-name></h3><p class="hatch-rarity"><i class="rarity-dot" data-hatch-dot></i><span data-hatch-rarity></span></p>' +
     '<p class="hatch-range"><span data-i18n="hatch.range"></span> <b data-hatch-range></b></p><div class="hatch-buttons"></div></div>';
   const q = <T extends HTMLElement>(sel: string): T => overlay.card.querySelector(sel) as T;
   const title = q('[data-hatch-title]');
@@ -105,9 +105,11 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     q('[data-hatch-name]').textContent = look.speciesName(cr.species);
     q('[data-hatch-rarity]').textContent = look.t(`rarity.${cr.rarity}`);
     q('[data-hatch-dot]').style.background = look.rarityColor(cr.rarity);
-    // UB-10: a valuable one and above is an event — the card glows in its rarity color, the rarity grows, the picture pops.
+    // UB-10, M4-00: a valuable one and above is an event — a flash of its rarity color, a short pause, a big «Valuable!», then the creature pops.
+    const rare = cr.rarity !== 'common' && cr.rarity !== 'good';
     overlay.card.style.setProperty('--rc', look.rarityColor(cr.rarity));
-    overlay.card.classList.toggle('hatch-rare', cr.rarity !== 'common' && cr.rarity !== 'good');
+    overlay.card.classList.toggle('hatch-rare', rare);
+    q('[data-hatch-big]').textContent = rare ? `${look.t(`rarity.${cr.rarity}`)}!` : '';
     q('[data-hatch-range]').textContent = `${fmt.format(cr.low)} – ${fmt.format(cr.high)}`;
     sell.hidden = false;
     sell.textContent = look.t('hatch.sellFor', { n: fmt.format(cr.low) });

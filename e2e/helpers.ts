@@ -78,6 +78,9 @@ export async function expectNoPageScroll(page: Page): Promise<void> {
 }
 
 /** A save past the first minute (M2 e2e): written to the local mirror and the mock cloud before the page loads. */
+/** Q-026 B: the open-tab flags of a game past the first minute. */
+export const TABS_OPEN = { open_market: true, open_inventory: true, open_sales: true, open_chats: true, open_shop: true };
+
 export async function seedSave(page: Page, patch: Record<string, unknown> = {}): Promise<void> {
   const save = {
     v: 1,
@@ -94,9 +97,10 @@ export async function seedSave(page: Page, patch: Record<string, unknown> = {}):
     ],
     upgrades: {},
     stats: { deals: 8, coinsEarned: 300, hatched: 10, taps: 100, levelUps: 3, haggles: 1 },
-    flags: { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true },
     settings: { sound: false, lang: null },
     ...patch,
+    // Q-026 B: tabs open step by step; a seeded game past the first minute has them all open (a patch adds its own flags on top).
+    flags: { ...TABS_OPEN, ...((patch.flags as Record<string, boolean> | undefined) ?? { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true }) },
   };
   await page.addInitScript((text: string) => {
     if (sessionStorage.getItem('e2e-seeded')) return;
@@ -111,7 +115,8 @@ export async function closeHatch(page: Page): Promise<boolean> {
   const overlay = page.locator('[data-overlay=hatch]');
   if (!(await overlay.isVisible())) return false;
   const toShop = overlay.locator('[data-action=hatch-shop]');
-  if (!(await toShop.isVisible())) await overlay.locator('[data-action=hatch-skip]').click();
+  // The strip still runs: a tap skips it. M4-00: a rare one pauses 0.35 s before its buttons — the click waits for them.
+  if (await overlay.locator('[data-hatch-result]').isHidden()) await overlay.locator('[data-action=hatch-skip]').click();
   await toShop.click();
   return true;
 }
@@ -136,7 +141,7 @@ export async function buyEggAtHome(page: Page, egg = 'egg_basic'): Promise<void>
 export async function listFromInventory(page: Page): Promise<void> {
   await page.locator('[data-tab=sales]').click();
   await page.locator('[data-sheet=sales] [data-action=sale-add]').first().click();
-  await page.locator('[data-overlay=sale] [data-action^=sale-list-]').first().click();
+  await page.locator('[data-detail=sale] [data-action^=sale-list-]').first().click();
 }
 
 
@@ -144,9 +149,13 @@ export async function listFromInventory(page: Page): Promise<void> {
  * UB-07: what on screen now is too small to read or to tap — visible text under 12 px, buttons under 44 px on the short side.
  * The debug panel (only with ?debug=1) is not part of the game.
  */
-export function readability(page: Page): Promise<{ small: string[]; tiny: string[]; covered: string[] }> {
+export function readability(page: Page): Promise<{ small: string[]; tiny: string[]; covered: string[]; cut: string[] }> {
   return page.evaluate(() => {
     const small: string[] = [];
+    // M4-00: on a PC (a big screen read from afar) text is 14 px at least and never cut with «…».
+    const pc = innerWidth >= 1000 && innerHeight >= 560;
+    const minFont = pc ? 13.5 : 11.5;
+    const cut: string[] = [];
     const tiny: string[] = [];
     // UB-10: a button in sight (inside every scrolling box around it) that something else lies on — the tab bar over a panel.
     const covered: string[] = [];
@@ -179,7 +188,12 @@ export function readability(page: Page): Promise<{ small: string[]; tiny: string
       const tap = el.matches('button, [role="button"], input[type="range"], select');
       if (!text && !tap) continue;
       if (!shown(el)) continue;
-      if (text && parseFloat(getComputedStyle(el).fontSize) < 11.5) small.push(`${name(el)} ${getComputedStyle(el).fontSize}`);
+      if (text && parseFloat(getComputedStyle(el).fontSize) < minFont) small.push(`${name(el)} ${getComputedStyle(el).fontSize}`);
+      if (pc && text) {
+        const cs = getComputedStyle(el);
+        const h = el as HTMLElement;
+        if ((cs.textOverflow === 'ellipsis' || cs.overflowX === 'hidden') && h.scrollWidth > h.clientWidth + 1) cut.push(name(el));
+      }
       if (tap) {
         const r = el.getBoundingClientRect();
         if (Math.min(r.width, r.height) < 43.5) tiny.push(`${name(el)} ${Math.round(r.width)}×${Math.round(r.height)}`);
@@ -194,6 +208,6 @@ export function readability(page: Page): Promise<{ small: string[]; tiny: string
         }
       }
     }
-    return { small: [...new Set(small)], tiny: [...new Set(tiny)], covered: [...new Set(covered)] };
+    return { small: [...new Set(small)], tiny: [...new Set(tiny)], covered: [...new Set(covered)], cut: [...new Set(cut)] };
   });
 }

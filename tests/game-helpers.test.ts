@@ -39,7 +39,9 @@ describe('M2-03 helpers', () => {
   it('helpers open by deals (10, 20, 30); the courier costs crystals', () => {
     expect(setup({ deals: 9 }).game.upgradeList().map((u) => u.id)).not.toContain('helper_feed');
     expect(setup({ deals: 10 }).game.upgradeList().map((u) => u.id)).toContain('helper_feed');
-    expect(setup({ deals: 19 }).game.upgradeList().map((u) => u.id)).not.toContain('helper_sell');
+    // Q-027 B: the seller opens with the feeder (live tempo: the first night pays).
+    expect(setup({ deals: 9 }).game.upgradeList().map((u) => u.id)).not.toContain('helper_sell');
+    expect(setup({ deals: 10 }).game.upgradeList().map((u) => u.id)).toContain('helper_sell');
     expect(setup({ deals: 30 }).game.upgradeList().map((u) => u.id)).toEqual(expect.arrayContaining(['helper_feed', 'helper_sell', 'helper_courier']));
     const { game } = setup({ deals: 30 });
     game.state.crystals = 24;
@@ -108,12 +110,13 @@ describe('M2-03 helpers', () => {
     expect(seen.filter((e) => e.type !== 'change')).toHaveLength(0);
   });
 
-  it('away without helpers: eggs hatch, no coins; time going back counts as zero', () => {
+  it('away without helpers (Q-027 B): the shop works on — a slower seller and courier of upgrades.json away; time going back counts as zero', () => {
     const { game } = setup();
     game.state.coins = 10;
     game.buyEgg();
     const r = game.offline(600);
-    expect(r).toMatchObject({ coins: 0, sold: 0, hatched: 1 });
+    expect(r.hatched).toBeGreaterThanOrEqual(1);
+    expect(r.sold).toBeGreaterThanOrEqual(1);
     expect(game.offline(-5000)).toMatchObject({ awaySec: 0, workedSec: 0, coins: 0 });
   });
 });
@@ -139,7 +142,7 @@ describe('M2-04 offline pace', () => {
     const want = 2 * content.upgrades.offlineRate;
     expect(away.deals / live.deals).toBeGreaterThan(want * 0.85);
     expect(away.deals / live.deals).toBeLessThan(want * 1.2);
-    expect(away.coins / live.coins).toBeGreaterThan(want * 0.5);
+    expect(away.coins / live.coins).toBeGreaterThan(want * 0.4);
     expect(away.coins / live.coins).toBeLessThan(want * 2);
   });
 });

@@ -1,8 +1,9 @@
-// What: the first-minute script (docs/01, section 4): which hint shows now and what it points at; the first hint of each tab (UB-06).
+// What: the first-minute script (docs/01, section 4): which hint shows now and what it points at; the first hint of each tab (UB-06); which tabs are open (Q-026 B).
 // Called by: src/main.ts every frame (to src/ui/hints.ts), src/test-api (state), tests/ftue.test.ts.
 // Keep: pure functions; the hint texts are ftue.<step> / ftue.tab.<tab> keys in i18n (6 words at most, validate:content).
 
 import type { SaveData } from './state.ts';
+import type { TabUnlockData } from '../content/schemas.ts';
 import { FLAGS, type GameView } from './game.ts';
 
 export type FtueStep = 'tapEgg' | 'list' | 'feed' | 'waitCustomer' | 'sell' | 'buyEgg' | 'hatchRare' | 'tab';
@@ -22,7 +23,7 @@ export interface FtueHint {
 
 /** UB-06: the steps that lead the player through a tab (the open chat, the sell button; the free place of «My sales»). */
 const SELL: FtueTarget = { kind: 'el', selectors: ['[data-action="chat-sell"]', '[data-sheet="chats"] .chat-row:not(.closed)', '[data-action="tab-chats"]'] };
-const LIST: FtueTarget = { kind: 'el', selectors: ['[data-overlay="sale"] [data-action^="sale-list-"]', '[data-sheet="sales"] [data-action="sale-add"]', '[data-action="tab-sales"]'] };
+const LIST: FtueTarget = { kind: 'el', selectors: ['[data-detail="sale"] [data-action^="sale-list-"]', '[data-sheet="sales"] [data-action="sale-add"]', '[data-action="tab-sales"]'] };
 
 export function ftueHint(state: SaveData, view: GameView): FtueHint | null {
   if (state.flags[FLAGS.done]) return null;
@@ -53,13 +54,33 @@ export const TAB_HINTS: Record<string, string[]> = {
   inventory: ['[data-sheet="inventory"] [data-action^="inv-list-"]', '[data-sheet="inventory"] .tile'],
   sales: ['[data-sheet="sales"] [data-action="sale-add"]', '[data-sheet="sales"] [data-action^="sale-"]'],
   chats: ['[data-sheet="chats"] .chat-row:not(.closed)'],
-  shop: ['[data-overlay="upgrades"] [data-action="buy-upgrade"]'],
+  shop: ['[data-sheet="shop"] [data-action="buy-upgrade"]'],
   season: [],
 };
 
 export function tabHint(tab: string): FtueHint | null {
   const selectors = TAB_HINTS[tab];
   if (!selectors) return null;
-  const title = tab === 'shop' ? '[data-overlay="upgrades"] h2' : `[data-sheet="${tab}"] .sheet-title`;
+  const title = `[data-sheet="${tab}"] .sheet-title`;
   return { step: 'tab', key: `ftue.tab.${tab}`, target: { kind: 'el', selectors: [...selectors, title] } };
+}
+
+/** What a tab's unlock (Q-026 B, content/nav.json) looks at. */
+export interface TabFacts {
+  hatched: number;
+  /** Buyers that ever wrote (open or closed chats). */
+  chats: number;
+  level: number;
+  /** Some upgrade is affordable now. */
+  upgrade: boolean;
+}
+
+/** M4-00, Q-026 B: tabs open step by step; once open a tab stays open (the caller keeps a flag). */
+export function tabUnlocked(u: TabUnlockData, f: TabFacts): boolean {
+  if (u.type === 'always') return true;
+  if (u.type === 'hatched') return f.hatched > 0;
+  if (u.type === 'chat') return f.chats > 0;
+  if (u.type === 'level') return f.level >= u.n;
+  if (u.type === 'upgrade') return f.upgrade || f.level >= u.n;
+  return false;
 }

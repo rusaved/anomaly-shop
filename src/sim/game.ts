@@ -2,13 +2,13 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { CodesData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { CodesData, CollectionData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
 import { emptyIncubator, type Chat, type Creature, type Incubator, type Lot, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, coins, priceRange, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, cityMult, coins, marketMood, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -23,6 +23,7 @@ export interface GameContent {
   work: WorkData;
   codes: CodesData;
   reputation: ReputationData;
+  collection: CollectionData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -72,7 +73,26 @@ export interface OfflineReport {
 
 export type DenyReason = 'coins' | 'busy' | 'full' | 'locked' | 'noCreature' | 'max';
 
+export type CollectionStatus = 'none' | 'shop' | 'sold';
+export interface CollectionView {
+  have: number;
+  all: number;
+  rows: Array<{ rarity: RarityName; have: number; all: number; done: boolean; bonus: number; crystals: number; species: Array<{ id: string; status: CollectionStatus }> }>;
+}
+
+export interface RebirthView {
+  /** The city the shop is in: 1 + moves. */
+  city: number;
+  have: number;
+  need: number;
+  ready: boolean;
+  mult: number;
+  nextMult: number;
+}
+
 export type GameEvent =
+  | { type: 'rebirth'; city: number }
+  | { type: 'rowDone'; rarity: RarityName; crystals: number; bonus: number }
   | { type: 'eggBought'; incubator: number; egg: string; price: number; by: 'player' | 'helper' | 'gift' | 'merchant' }
   | { type: 'eggTap'; incubator: number; started: boolean }
   | { type: 'eggReady'; incubator: number }
@@ -90,7 +110,7 @@ export type GameEvent =
   | { type: 'fed'; uid: string; level: number; levelUp: boolean; maxed: boolean; price: number; gain: number; by: FeedBy }
   | { type: 'customerArrived'; id: number; customer: string }
   | { type: 'customerLeft'; id: number; reason: 'sold' | 'wait' }
-  | { type: 'denied'; action: 'buyEgg' | 'list' | 'upgrade'; reason: DenyReason }
+  | { type: 'denied'; action: 'buyEgg' | 'list' | 'upgrade' | 'rebirth'; reason: DenyReason }
   | { type: 'upgradeBought'; id: string; level: number; price: number }
   | { type: 'ftueDone' }
   | { type: 'eggUnlocked'; egg: string }
@@ -333,6 +353,16 @@ export interface Game {
   tapThing(target: SecretTarget): void;
   /** The nearest goal not reached yet: the one with the largest share done (shop positions, the next seller level, deal goals; rebirth when all is bought). */
   nextGoal(): GoalView;
+  /** M4-06: the move to a new city — coins earned here against what it needs, the income multiplier now and after. */
+  rebirthView(): RebirthView;
+  /** M4-06: moves the shop to a new city when ready (false: not yet). */
+  rebirth(): boolean;
+  /** M4-01: the collection by rarity — every species with its status, «N of M» per row and in all. */
+  collection(): CollectionView;
+  /** M4-23: the device's day (YYYY-MM-DD) — the mood of the market follows it. */
+  setDay(day: string): void;
+  /** M4-23: the species in fashion and the one everybody is fed up with today, with their price multipliers (null: no day yet). */
+  mood(): { hot: string; cold: string; hotMult: number; coldMult: number } | null;
   /** UB-08: the seller level of reputation.json. */
   reputation(): ReputationView;
   /** Free showcase places (eggs in incubators take none since UB-05). */
@@ -404,7 +434,26 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const effectSum = (type: string): number =>
     content.upgrades.upgrades.reduce((sum, u) => (u.effect.type === type && 'perLevel' in u.effect ? sum + upgradeLevel(u.id) * u.effect.perLevel : sum), 0);
   /** Price-tag multiplier of a creature: shelf growth (radio speeds it up) and price tags (docs/01, section 3.5; docs/01b, section 5.1). */
-  const valueMult = (cr: Creature): number => (cr.mult ?? 1) * (1 + shelfBonus(cr.age ?? 0, species.shelf, 1 + effectSum('shelfGrowth'))) * (1 + effectSum('appraisal'));
+  // M4-06: every move to a new city adds to the price of every creature (prestige.incomeBonusPerPrestige).
+  // M4-23: the mood of the market by the device's day (set from outside: the sim has no clock) and the save's seed.
+  let today = '';
+  const mood = (): { hot: string; cold: string } | null => marketMood(today, s().createdAt, species.species.map((x) => x.id));
+  const moodMult = (id: string): number => {
+    const m = mood();
+    return m?.hot === id ? content.market.mood.hot : m?.cold === id ? content.market.mood.cold : 1;
+  };
+  // M4-01: a full row of the collection adds to the price of its rarity for good.
+  const rowBonus = (cr: Creature): number => {
+    const r = speciesData(cr.species)?.rarity;
+    return r && s().flags[`row_${r}`] ? content.collection.rowBonus[r] : 0;
+  };
+  const valueMult = (cr: Creature): number =>
+    (cr.mult ?? 1) *
+    (1 + shelfBonus(cr.age ?? 0, species.shelf, 1 + effectSum('shelfGrowth'))) *
+    (1 + effectSum('appraisal')) *
+    (1 + rowBonus(cr)) *
+    moodMult(cr.species) *
+    cityMult(s().prestige, content.upgrades.prestige.incomeBonusPerPrestige);
   /** The price tag in whole coins: level price × valueMult. */
   const appraisal = (cr: Creature): number => {
     const spec = speciesData(cr.species);
@@ -416,7 +465,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const sellerLevel = (): number => repLevel(repXp(), content.reputation.levels).level;
   const baseFacts = (): UnlockFacts => {
     const st = s().stats;
-    return { deals: st.deals, level: sellerLevel(), hatched: st.hatched, levelUps: st.levelUps ?? 0, haggles: st.haggles ?? 0, upgrades: s().upgrades, districts: [] };
+    return { deals: st.deals, level: sellerLevel(), hatched: st.hatched, levelUps: st.levelUps ?? 0, haggles: st.haggles ?? 0, upgrades: s().upgrades, districts: [], city: s().prestige + 1 };
   };
   /** Districts open by deals (docs/01a, section 4); a district never waits for another district (validate:content). */
   const openDistricts = (): DistrictData[] => content.customers.districts.filter((d) => unlockMet(d.unlock, baseFacts()));
@@ -530,7 +579,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const u = content.upgrades.upgrades.find((x) => x.effect.type === type && upgradeLevel(x.id) > 0);
     return u ? (u.effect as Extract<Effect, { type: T }>) : null;
   }
-  const helperSellShare = (): number => owned('autoSell')?.priceShare ?? 1;
+  const helperSellShare = (): number => owned('autoSell')?.priceShare ?? (quiet ? content.upgrades.away.autoSell.priceShare : 1);
   let feedAcc = 0;
   let courierIn = 0;
   /** Seconds until the seller helper answers the next buyer. */
@@ -691,7 +740,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       }
     }
     // The seller answers one buyer every delaySec, a chat that waited that long, while nobody plays (UB-05: buyers only write).
-    const seller = owned('autoSell');
+    // Q-027 B: away, the shop works on without bought helpers too (upgrades.json away) — the first night pays.
+    const seller = owned('autoSell') ?? (quiet ? content.upgrades.away.autoSell : null);
     sellerIn = Math.max(0, sellerIn - dt);
     if (seller && sellerIn <= 0 && idleSec >= seller.delaySec) {
       const chat = s().chats.find((c) => c.state === 'open' && (c.age ?? 0) >= seller.delaySec);
@@ -700,7 +750,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         sellChat(chat, chat.order ? 1 : helperSellShare(), 'helper');
       }
     }
-    const courier = owned('autoBuyEgg');
+    const courier = owned('autoBuyEgg') ?? (quiet ? content.upgrades.away.autoBuyEgg : null);
     if (courier) {
       courierIn -= dt;
       if (courierIn <= 0) {
@@ -742,6 +792,19 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     emit({ type: 'fed', uid: cr.uid, level: cr.level, levelUp, maxed: cr.level >= spec.maxLevel, price, gain: price - before, by });
     if (chat && raised === chat.offer) emit({ type: 'chatReply', id: chat.id, ctx: 'offer' });
     return levelUp;
+  }
+
+  /** M4-01: a row of the collection just filled — crystals once, the price bonus from now on (flag row_<rarity>, kept by a move). */
+  function checkRows(): void {
+    const st = s();
+    for (const r of RARITIES) {
+      if (st.flags[`row_${r}`]) continue;
+      const row = species.species.filter((x) => x.rarity === r);
+      if (!row.length || !row.every((x) => (st.collection[x.id]?.seen ?? 0) > 0)) continue;
+      st.flags[`row_${r}`] = true;
+      st.crystals += content.collection.rowCrystals[r];
+      emit({ type: 'rowDone', rarity: r, crystals: content.collection.rowCrystals[r], bonus: content.collection.rowBonus[r] });
+    }
   }
 
   /** One deal (UB-05, one path: a chat answered by the player or the seller, or «sell now»): coins, crystals, counts, collection, order. */
@@ -959,9 +1022,17 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const m = content.market;
     const open = eggs.eggs.filter(eggOpen);
     const lots: Lot[] = [];
+    // M4-00: at most perSpecies lots of one kind (the usability reviewer: three kettles in a row read as a bug); a few retries, then the lot is skipped.
+    const count = new Map<string, number>();
     for (let i = 0; i < m.lots && open.length; i++) {
-      const egg = open[side.int(open.length)]!;
-      const kind = pickSpecies(species, pickRarity(egg.chances, side.next()), side.next());
+      let kind: ReturnType<typeof pickSpecies> | undefined;
+      for (let tries = 0; tries < 8 && !kind; tries++) {
+        const egg = open[side.int(open.length)]!;
+        const k = pickSpecies(species, pickRarity(egg.chances, side.next()), side.next());
+        if ((count.get(k.id) ?? 0) < m.perSpecies) kind = k;
+      }
+      if (!kind) continue;
+      count.set(kind.id, (count.get(kind.id) ?? 0) + 1);
       const level = m.level.min + side.int(Math.max(1, Math.min(m.level.max, kind.maxLevel) - m.level.min + 1));
       const value = lotValue({ species: kind.id, level });
       const factor = side.next() < m.goodShare ? side.range(m.price.min, 0.94) : side.range(0.96, m.price.max);
@@ -1048,6 +1119,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const entry = (st.collection[kind.id] ??= { seen: 0, hatched: 0, sold: 0 });
     entry.seen += 1;
     entry.hatched += 1;
+    checkRows();
     const done = st.stats.hatched >= 2 && !st.flags[FLAGS.done];
     if (done) st.flags[FLAGS.done] = true;
     commit({ flush: true });
@@ -1142,6 +1214,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const uid = `m${lot.id.toString(36)}${side.int(1296).toString(36)}`;
       st.creatures.push({ uid, species: lot.species, level: lot.level, fed: 0, hatchedAt: st.savedAt, age: 0 });
       (st.collection[lot.species] ??= { seen: 0, hatched: 0, sold: 0 }).seen += 1;
+      checkRows();
       listIfRoom(uid);
       commit({ flush: true });
       emit({ type: 'lotBought', id, uid, price: pay });
@@ -1650,13 +1723,77 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       }
       for (const e of eggs.eggs) {
         if (e.section === 'ladder' && !e.special && e.unlock.type === 'deals' && st.stats.deals < e.unlock.count) goals.push({ kind: 'egg', id: e.id, have: st.stats.deals, need: e.unlock.count, unit: 'deals' });
+        // M4-08: an open ladder egg not bought yet («New!») is a goal of its own — the top of the ladder is the week goal of a city.
+        if (e.section === 'ladder' && st.flags[`egg_new_${e.id}`] && eggOpen(e) && st.coins < e.price.coins) goals.push({ kind: 'egg', id: e.id, have: st.coins, need: e.price.coins, unit: 'coins' });
       }
       // UB-08: the next seller level opens eggs, districts and upgrades.
       const rep = game.reputation();
       if (rep.next !== null) goals.push({ kind: 'level', id: String(rep.level + 1), have: rep.xp, need: rep.next, unit: 'xp' });
       const share = (g: GoalView): number => (g.need > 0 ? g.have / g.need : 1);
       const best = goals.reduce<GoalView | null>((a, g) => (!a || share(g) > share(a) + 1e-9 ? g : a), null);
-      return best ?? { kind: 'rebirth', id: 'rebirth', have: st.stats.coinsEarned, need: content.upgrades.prestige.thresholdCoinsEarned, unit: 'coins' };
+      const city = game.rebirthView();
+      return best ?? { kind: 'rebirth', id: 'rebirth', have: city.have, need: city.need, unit: 'coins' };
+    },
+    setDay(day) {
+      if (day === today) return;
+      today = day;
+      emit({ type: 'change' });
+    },
+    mood() {
+      const m = mood();
+      return m ? { ...m, hotMult: content.market.mood.hot, coldMult: content.market.mood.cold } : null;
+    },
+    collection() {
+      const st = s();
+      const inShop = new Set(st.creatures.map((c) => c.species));
+      const rows = RARITIES.map((r) => {
+        const list = species.species
+          .filter((x) => x.rarity === r)
+          .map((x) => ({ id: x.id, status: (inShop.has(x.id) ? 'shop' : (st.collection[x.id]?.seen ?? 0) > 0 ? 'sold' : 'none') as CollectionStatus }));
+        const have = list.filter((x) => x.status !== 'none').length;
+        return { rarity: r, have, all: list.length, done: Boolean(st.flags[`row_${r}`]), bonus: content.collection.rowBonus[r], crystals: content.collection.rowCrystals[r], species: list };
+      }).filter((row) => row.all > 0);
+      return { have: rows.reduce((n, r) => n + r.have, 0), all: rows.reduce((n, r) => n + r.all, 0), rows };
+    },
+    rebirthView() {
+      const st = s();
+      const p = content.upgrades.prestige;
+      const need = rebirthNeed(st.prestige, p);
+      const have = Math.max(0, st.stats.coinsEarned - st.cityEarnedAt);
+      return { city: st.prestige + 1, have, need, ready: have >= need, mult: cityMult(st.prestige, p.incomeBonusPerPrestige), nextMult: cityMult(st.prestige + 1, p.incomeBonusPerPrestige) };
+    },
+    rebirth() {
+      if (!game.rebirthView().ready) {
+        emit({ type: 'denied', action: 'rebirth', reason: 'locked' });
+        return false;
+      }
+      const st = s();
+      // M4-06: the shop moves to a new city — coins, upgrades, creatures, eggs, buyers and the seller level start over;
+      // the collection, crystals, finds, gifts, the side job and settings stay; every creature is worth more from now on.
+      st.prestige += 1;
+      st.cityEarnedAt = st.stats.coinsEarned;
+      st.coins = content.upgrades.prestige.startCoins;
+      st.upgrades = {};
+      st.helpers = {};
+      st.creatures = [];
+      st.showcase = [];
+      st.myEggs = {};
+      st.chats = [];
+      st.chatIn = {};
+      st.order = null;
+      st.stats.deals = 0;
+      st.stats.xp = 0;
+      st.incubators = [emptyIncubator()];
+      for (const k of Object.keys(st.flags)) if (k.startsWith('egg_new_')) delete st.flags[k];
+      syncIncubators();
+      // The new city greets with an egg on the counter and its own new egg of the ladder top («New!»).
+      placeEgg(0, basicEgg, false);
+      for (const e of eggs.eggs) if (e.unlock.type === 'city' && eggOpen(e)) st.flags[`egg_new_${e.id}`] = true;
+      stockMarket();
+      commit({ flush: true });
+      emit({ type: 'rebirth', city: st.prestige + 1 });
+      emit({ type: 'change' });
+      return true;
     },
     reputation() {
       const xp = repXp();

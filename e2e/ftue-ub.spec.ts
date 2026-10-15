@@ -54,18 +54,14 @@ test('UB-06 each tab gets one hint on its first visit, none on the next; never a
   const errors = collectErrors(page);
   await seedSave(page);
   await open(page, '?mock_device=mobile');
-  for (const tab of ['market', 'inventory', 'sales', 'chats', 'shop', 'season']) {
+  // M4-00: the Shop is a tab like the others (its «Upgrades» in the one panel); Q-026 B: «Season» is hidden until its update.
+  await expect(page.locator('[data-tab=season]')).toBeHidden();
+  for (const tab of ['market', 'inventory', 'sales', 'chats', 'shop']) {
     await page.locator(`[data-tab=${tab}]`).click();
-    if (tab === 'shop') {
-      // Inside a window the hint does not cover its text: the target glows (UB-10).
-      await expect(page.locator('[data-overlay=upgrades] .is-hinted'), tab).toHaveCount(1);
-      await expect(page.locator('.hint'), tab).toBeHidden();
-    } else {
-      await expect(page.locator('.hint:not([hidden]) [data-hint-text]'), tab).toHaveText(await translated(page, `ftue.tab.${tab}`));
-      const p = await pointed(page);
-      expect(p.count, tab).toBe(1);
-      expect(p.locked, tab).toBe(false);
-    }
+    await expect(page.locator('.hint:not([hidden]) [data-hint-text]'), tab).toHaveText(await translated(page, `ftue.tab.${tab}`));
+    const p = await pointed(page);
+    expect(p.count, tab).toBe(1);
+    expect(p.locked, tab).toBe(false);
     await page.waitForTimeout(350);
     await page.locator('[data-tab=eggs]').click();
     await expect(page.locator('.hint')).toBeHidden();
@@ -78,7 +74,7 @@ test('UB-06 each tab gets one hint on its first visit, none on the next; never a
   const next = page.locator('[data-action=next]');
   const kind = await next.getAttribute('data-kind');
   await next.click();
-  const where = kind === 'egg' ? '[data-overlay=egg-card]' : kind === 'level' || kind === 'district' ? '[data-sheet=sales]' : '[data-overlay=upgrades]';
+  const where = kind === 'egg' ? '[data-detail=egg-card]' : kind === 'level' || kind === 'district' ? '[data-sheet=sales]' : '[data-sheet=shop]';
   await expect(page.locator(where), `next ${kind}`).toBeVisible();
   expect(errors).toEqual([]);
 });

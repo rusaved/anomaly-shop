@@ -1,11 +1,10 @@
-// What: the Eggs tab, the home panel (docs/01 §3 p. 12, §6; M3-04, UB-01): incubating eggs, my eggs, free, seasonal, the ×10 ladder; a card panel shows the odds, buys ×1/×3/×5.
+// What: the Eggs tab, the home panel (docs/01 §3 p. 12, §6; M3-04, UB-01): incubating eggs, my eggs, free, seasonal, the ×10 ladder; an inner page shows the odds, buys ×1/×3/×5.
 // Called by: src/main.ts (create once into its sheet; render on every commit while the sheet is open, and each second for timers).
 // Keep: commands only through the game (buyEggs, claimFree, feedEgg); odds come from rules.eggOdds over eggs.json, so the card matches the data.
 
 import type { EggData, RarityName, SpeciesData, UnlockData } from '../content/schemas.ts';
 import type { EggCardView, Game } from '../sim/game.ts';
 import { eggOdds } from '../sim/rules.ts';
-import { createOverlay } from './overlay.ts';
 import type { Sheet } from './sheet.ts';
 
 export interface EggsLookups {
@@ -35,9 +34,8 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
   const root = document.createElement('div');
   root.className = 'eggs';
   sheet.body.appendChild(root);
-  // UB-02: the egg card is a detail — a panel from the right; the list stays in view (landscape) or above it (portrait).
-  const panel = createOverlay(sheet.root.parentElement as HTMLElement, 'egg-card', () => tab.show(null), { kind: 'panel', dismiss: () => tab.show(null) });
-  panel.card.classList.add('card-detail');
+  // M4-00: the egg card is an inner page of the tab — «Back» to the eggs, the ✕ home.
+  const panel = sheet.detail('egg-card', () => tab.show(null));
   let card: string | null = null;
   let key = '';
   let cardKey = '';
@@ -54,6 +52,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
     if (u.type === 'deals') return look.t('eggs.lock.deals', { n: u.count });
     if (u.type === 'district') return look.t('eggs.lock.district', { name: look.districtName(u.id) });
     if (u.type === 'level') return look.t('eggs.lock.level', { n: u.n });
+    if (u.type === 'city') return look.t('eggs.lock.city', { n: u.n });
     return look.t('eggs.lock.later');
   };
   const coinsHtml = (n: number, fmt: Intl.NumberFormat): string => `<span class="coin coin-sm" aria-hidden="true"></span><b>${fmt.format(n)}</b>`;
@@ -196,10 +195,8 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
     show(eggId) {
       card = eggId;
       cardKey = '';
-      if (eggId) {
-        panel.show();
-        panel.card.scrollTop = 0;
-      } else panel.hide();
+      if (eggId) panel.show();
+      else panel.hide();
       tab.render();
     },
   };

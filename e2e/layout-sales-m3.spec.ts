@@ -12,6 +12,8 @@ test('M3-06 phone: the price slider works by tap and by drag', async ({ page }) 
   await page.locator('[data-sheet=sales] .card-sale').first().tap();
   const range = page.locator('[data-action=price-slider]');
   await expect(range).toBeVisible();
+  // M4-00: the card is an inner page of the tab's panel — on a low landscape phone it scrolls to the slider.
+  await range.scrollIntoViewIfNeeded();
   const box = (await range.boundingBox())!;
   const share = async (): Promise<number> => ((await state(page)).creatures as C[]).find((c) => c.askShare !== undefined)?.askShare ?? 1;
   // A tap near the left end: far below the market (zone 0).

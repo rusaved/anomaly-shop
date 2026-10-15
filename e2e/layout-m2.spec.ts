@@ -18,7 +18,7 @@ test('M2-13 the Next card: inside the viewport, one goal, a flash and the next o
   await expect(card).toHaveClass(/flash/);
   await expect(card.locator('b')).not.toHaveText(before ?? '');
   await card.tap();
-  await expect(page.locator('[data-overlay=upgrades], [data-sheet=eggs]').first()).toBeVisible();
+  await expect(page.locator('[data-sheet=shop]:visible, [data-sheet=eggs]:visible')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 

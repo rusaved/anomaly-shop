@@ -19,6 +19,9 @@ import {
   MarketFile,
   GiftsFile,
   WorkFile,
+  NavFile,
+  PaceFile,
+  CollectionFile,
   CodesFile,
   ReputationFile,
   RARITIES,
@@ -43,10 +46,11 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json'] as const;
-/** The egg price ladder (docs/01 §3 p. 12): eight steps, each ×10 the one before. */
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json', 'nav.json', 'pace.json', 'collection.json'] as const;
+/** The egg price ladder (docs/01 §3 p. 12): eight steps, each ×10 the one before; M4-08 (Q-029): the top that opens city by city goes ×3. */
 const LADDER_STEPS = 8;
 const LADDER_STEP = 10;
+const CITY_STEP = 3;
 /** Lines players read in the scene and the panel (news, creature and customer lines): no full stop at the end (docs/01a, section 8). */
 const TRAILING_STOP = /[.。]$/;
 /** Long dashes stay out of player texts (producer's style rule). */
@@ -96,7 +100,10 @@ function checkEggs(eggs: EggsData, customers: CustomersData | null, errors: stri
   if (ladder.length !== LADDER_STEPS) errors.push(`eggs.json: eggs — ${ladder.length} eggs on the ladder, expected ${LADDER_STEPS}`);
   ladder.forEach((e, i) => {
     const prev = ladder[i - 1];
-    if (prev && Math.abs(e.price.coins / prev.price.coins - LADDER_STEP) > 1e-9) errors.push(`eggs.json: ${e.id}.price — expected ×${LADDER_STEP} the price of ${prev.id}`);
+    const step = e.unlock.type === 'city' && prev?.unlock.type === 'city' ? CITY_STEP : LADDER_STEP;
+    // The first egg of the city top follows the glowing one at ×5 (half the old step: reachable in the second city, model F18).
+    const want = e.unlock.type === 'city' && prev?.unlock.type !== 'city' ? LADDER_STEP / 2 : step;
+    if (prev && Math.abs(e.price.coins / prev.price.coins - want) > 1e-9) errors.push(`eggs.json: ${e.id}.price — expected ×${want} the price of ${prev.id}`);
   });
   const care = eggs.care;
   if (care.warm.steps * care.warm.bonus + care.feed.steps * care.feed.bonus + care.ripe.bonus < care.maxBonus - 1e-9) errors.push('eggs.json: care.maxBonus — above what warmth, food and ripening can give');
@@ -297,6 +304,10 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   const market = parseFile('market.json', MarketFile, data(files['market.json']), errors);
   const gifts = parseFile('gifts.json', GiftsFile, data(files['gifts.json']), errors);
   parseFile('work.json', WorkFile, data(files['work.json']), errors);
+  parseFile('pace.json', PaceFile, data(files['pace.json']), errors);
+  parseFile('collection.json', CollectionFile, data(files['collection.json']), errors);
+  const nav = parseFile('nav.json', NavFile, data(files['nav.json']), errors);
+  if (nav && nav.tabs.eggs.type !== 'always') errors.push('nav.json: tabs.eggs — the home tab is always open');
   const codes = parseFile('codes.json', CodesFile, data(files['codes.json']), errors);
   if (codes) {
     duplicates('codes.json', 'codes', codes.codes.map((c) => c.code), errors);

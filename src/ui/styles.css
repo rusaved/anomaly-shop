@@ -6,6 +6,15 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
+  /* UB-07: the smallest text 12 px on a phone; M4-00: 14 px at least on a PC (a big screen read from afar). */
+  --fs-s: 12px;
+  --fs-m: 13px;
+}
+@media (min-width: 1000px) and (min-height: 560px) {
+  :root {
+    --fs-s: 14px;
+    --fs-m: 14px;
+  }
 }
 #ui {
   font-family: var(--font);
@@ -28,9 +37,10 @@
   touch-action: manipulation;
 }
 
-/* HUD strip over the scene */
+/* HUD strip over the scene (M4-00: above the shop's tap-to-close layer and the tab panels) */
 .hud {
   position: absolute;
+  z-index: 6;
   left: 0;
   right: 0;
   top: 0;
@@ -197,7 +207,7 @@
   font-size: 14px;
 }
 .community-compact .community-caption {
-  font-size: 12px;
+  font-size: var(--fs-s);
   text-align: right;
 }
 
@@ -210,7 +220,7 @@
   border-radius: 8px;
   background: var(--c-uiOverlay);
   color: var(--c-uiMuted);
-  font-size: 12px;
+  font-size: var(--fs-s);
   pointer-events: none;
 }
 
@@ -334,9 +344,6 @@
     transform: scale(1.25);
   }
 }
-.card-shop {
-  width: min(100%, 400px);
-}
 .shop-list {
   display: flex;
   flex-direction: column;
@@ -373,7 +380,7 @@
   font-size: 16px;
 }
 .shop-text small {
-  font-size: 13px;
+  font-size: var(--fs-m);
   color: var(--c-uiMuted);
 }
 .btn-buy {
@@ -555,7 +562,7 @@
   border-radius: 10px;
   background: var(--c-uiGood);
   color: var(--c-outline);
-  font-size: 12px;
+  font-size: var(--fs-s);
   font-weight: 700;
 }
 .shop-new[hidden] {
@@ -625,7 +632,7 @@
   line-height: 1.1;
 }
 .next-text small {
-  font-size: 12px;
+  font-size: var(--fs-s);
   color: var(--c-uiMuted);
 }
 .next-text b {
@@ -636,7 +643,7 @@
 }
 .next-left {
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: var(--fs-s);
   font-weight: 700;
   color: var(--c-uiAccent);
   white-space: nowrap;
@@ -681,7 +688,7 @@
   }
 }
 .next-left {
-  font-size: 12px;
+  font-size: var(--fs-s);
 }
 
 /* Four eggs in a narrow row (landscape phones, SE): tighter buttons */
@@ -699,7 +706,7 @@
   align-items: center;
   gap: 8px;
   min-height: 18px;
-  font-size: 12px;
+  font-size: var(--fs-s);
   line-height: 1.2;
   color: var(--c-uiMuted);
 }
@@ -769,18 +776,11 @@
   margin: 0 5px;
 }
 /* M2 playtest: the upgrade shop keeps its head (title, wallet) and Back in sight; only the list scrolls */
-.card-shop {
-  overflow: hidden;
-}
 .card-shop .shop-list {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   padding: 6px 2px 2px;
 }
-.card-shop > .btn {
-  flex: 0 0 auto;
+.card-shop[hidden] {
+  display: none;
 }
 .shop-head {
   display: flex;
@@ -845,7 +845,7 @@
   display: block;
 }
 .nav-label {
-  font-size: 12px;
+  font-size: var(--fs-s);
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.3px;
@@ -893,7 +893,7 @@
   border-radius: 9px;
   background: var(--c-uiGood);
   color: var(--c-uiAccentText);
-  font-size: 12px;
+  font-size: var(--fs-s);
   font-weight: 700;
   line-height: 18px;
   text-align: center;
@@ -922,38 +922,83 @@
 .sheet[hidden] {
   display: none;
 }
-/* UB-01: «Eggs» is the home panel next to the shop (below in portrait, right in landscape); another tab is a screen of its own. */
-.sheet[data-kind='home'] {
+/* M4-00: one panel for every tab — right of the shop on a PC and sideways, under it on a phone (above the tab bar). */
+.sheet[data-kind='dock'] {
   left: var(--panel-x, 0px);
   top: var(--panel-y, 50%);
   width: var(--panel-w, 100%);
   height: var(--panel-h, 50%);
 }
-.portrait .sheet[data-kind='home'] {
+.portrait .sheet[data-kind='dock'] {
   border-radius: 22px 22px 0 0;
   box-shadow: 0 -2px 0 var(--c-outline);
   padding: 10px calc(12px + var(--safe-right)) 8px calc(12px + var(--safe-left));
 }
-.landscape .sheet[data-kind='home'] {
+.landscape .sheet[data-kind='dock'] {
   border-radius: 22px 0 0 0;
   box-shadow: -2px -2px 0 var(--c-outline);
   padding: 10px calc(12px + var(--safe-right)) 8px 12px;
 }
-.sheet[data-kind='screen'] {
-  left: 0;
-  right: 0;
-  top: var(--hud-height, 56px);
-  bottom: var(--nav-size, 62px);
-  border-radius: 22px 22px 0 0;
-  box-shadow: 0 -2px 0 var(--c-outline);
-  padding: 10px calc(12px + var(--safe-right)) 8px calc(12px + var(--safe-left));
+/* ✕ closes a tab to the home «Eggs». */
+.sheet-close {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  margin: -6px -4px -6px 0;
+  border-radius: 50%;
+  background: var(--c-uiPanelAlt);
+  color: var(--c-uiText);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
 }
-/* A screen on a wide display keeps its lines readable: the content is centred, not stretched. */
-.sheet[data-kind='screen'] > * {
-  width: 100%;
-  max-width: 760px;
-  margin-left: auto;
-  margin-right: auto;
+/* An inner page of a tab (a lot, a creature's price, an egg's odds) takes the place of the list; «Back» on it returns to the list. */
+.sheet.has-detail > .sheet-head,
+.sheet.has-detail > .sheet-body {
+  display: none;
+}
+.sheet-detail {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 8px;
+  overscroll-behavior: contain;
+}
+.sheet-detail[hidden] {
+  display: none;
+}
+.detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100%;
+}
+.detail-page .eggs-back {
+  align-self: flex-start;
+}
+/* A tap on the shop while another tab is open closes that tab (the home screen comes back). */
+.scene-catcher {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  top: 0;
+  width: var(--stage-w, 100%);
+  height: var(--stage-h, 50%);
+  pointer-events: auto;
+}
+.scene-catcher[hidden] {
+  display: none;
+}
+/* Q-026 B: a tab that just opened pulses once. */
+.nav-tab[hidden] {
+  display: none;
+}
+.nav-tab.nav-new .nav-icon {
+  animation: nav-new 0.9s ease-out 2;
+}
+@keyframes nav-new {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.3); }
 }
 .sheet-top {
   display: flex;
@@ -1039,6 +1084,25 @@
   width: 64px;
   height: 64px;
 }
+/* M4-01: the collection by rarity — a row heading with «N/M», its bonus line, a done row glows softly. */
+.col-row {
+  margin-top: 12px;
+}
+.col-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.col-head b {
+  margin-left: auto;
+}
+.col-bonus {
+  margin: 0 0 6px;
+}
+.col-row.done .col-bonus {
+  color: var(--c-uiGood);
+  font-weight: 700;
+}
 .card-col.unknown .card-pic img {
   filter: brightness(0);
   opacity: 0.25;
@@ -1053,7 +1117,7 @@
 }
 .card-name {
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fs-m);
   max-width: 100%;
   overflow: hidden;
   /* UB-10: a long name takes two lines instead of an ellipsis. */
@@ -1065,7 +1129,7 @@
   text-align: center;
 }
 .card-sub {
-  font-size: 12px;
+  font-size: var(--fs-s);
   color: var(--c-uiMuted);
 }
 .card-price {
@@ -1120,7 +1184,7 @@
   background: var(--c-uiAccent);
   color: var(--c-uiAccentText);
   font-style: normal;
-  font-size: 12px;
+  font-size: var(--fs-s);
   font-weight: 700;
 }
 .card-egg .dot {
@@ -1135,7 +1199,7 @@
   border-radius: 16px;
   background: var(--c-uiAccent);
   color: var(--c-uiAccentText);
-  font-size: 13px;
+  font-size: var(--fs-m);
   font-weight: 700;
   display: inline-flex;
   flex-wrap: wrap;
@@ -1263,17 +1327,50 @@
   gap: 6px;
   color: var(--c-uiMuted);
 }
-/* UB-10: a rare hatch is an event. */
+/* UB-10, M4-00: a rare hatch is an event — a flash of the rarity color, a pause of 0.35 s, a big «Valuable!», then the creature pops. */
+.card-hatch {
+  position: relative;
+}
 .card.hatch-rare {
   box-shadow: 0 0 0 4px var(--rc), 0 0 40px var(--rc);
 }
-.card.hatch-rare .hatch-rarity {
-  font-size: 22px;
+.card.hatch-rare::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--rc);
+  pointer-events: none;
+  animation: hatch-flash 0.6s ease-out forwards;
+}
+.hatch-big {
+  display: none;
+  margin: 0;
+  font-size: 30px;
   font-weight: 800;
   color: var(--rc);
+  text-shadow: 0 2px 0 var(--c-outline);
+}
+.card.hatch-rare .hatch-big {
+  display: block;
+  animation: hatch-pop 0.5s ease-out;
+}
+.card.hatch-rare .hatch-rarity {
+  display: none;
+}
+.card.hatch-rare .hatch-result > :not(.hatch-big) {
+  animation: hatch-wait 0.35s steps(1, end);
 }
 .card.hatch-rare .hatch-result img {
-  animation: hatch-pop 0.55s ease-out;
+  animation: hatch-wait 0.35s steps(1, end), hatch-pop 0.55s ease-out 0.35s;
+}
+@keyframes hatch-flash {
+  0% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+@keyframes hatch-wait {
+  0% { visibility: hidden; }
+  100% { visibility: visible; }
 }
 @keyframes hatch-pop {
   0% { transform: scale(0.5); }
@@ -1291,7 +1388,7 @@
 /* UB-03: a small caption under the running strip: a tap shows the result at once. */
 .hatch-skip {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--fs-s);
   color: var(--c-uiMuted);
   text-align: center;
 }
@@ -1411,7 +1508,7 @@
 .price-scale {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: var(--fs-s);
   color: var(--c-uiMuted);
 }
 .price-hint {
@@ -1471,7 +1568,7 @@
   font-size: 14px;
 }
 .chat-last {
-  font-size: 13px;
+  font-size: var(--fs-m);
   color: var(--c-uiMuted);
   white-space: nowrap;
   overflow: hidden;
@@ -1534,20 +1631,33 @@
   flex: 1 1 40%;
   font-size: 15px;
 }
+/* M4-00: on a short screen (a phone sideways) the answers are one row that scrolls sideways: the item and the lines stay in view above. */
+@media (max-height: 480px) {
+  .chat-buttons {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior: contain;
+  }
+  .chat-buttons .btn {
+    flex: 0 0 auto;
+    padding: 0 14px;
+    white-space: nowrap;
+  }
+}
 /* M3-09: the Market */
 .market-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-m);
   color: var(--c-uiMuted);
 }
 .card-lot.sold {
   opacity: 0.45;
 }
 .verdict {
-  font-size: 12px;
+  font-size: var(--fs-s);
   font-weight: 700;
 }
 .v-below {
@@ -1626,7 +1736,7 @@
   padding: 4px 2px;
   border-radius: 10px;
   background: var(--c-uiPanelAlt);
-  font-size: 12px;
+  font-size: var(--fs-s);
   text-align: center;
 }
 .day img {
@@ -1634,11 +1744,11 @@
   height: 28px;
 }
 .day small {
-  font-size: 12px;
+  font-size: var(--fs-s);
 }
 .day b {
   max-width: 100%;
-  font-size: 12px;
+  font-size: var(--fs-s);
   line-height: 1.1;
   white-space: nowrap;
   overflow: hidden;
@@ -1761,7 +1871,7 @@
 }
 /* UB-10: on a portrait phone a detail panel stands on the tab bar and grows up to fit its buttons (up to the top bar);
    the upgrades keep the home panel height so the shop stays in view (UB-04), their list scrolls. */
-.portrait .overlay[data-kind='panel']:not([data-overlay='upgrades']) > .card {
+.portrait .overlay[data-kind='panel'] > .card {
   top: auto;
   bottom: var(--nav-size, 62px);
   height: auto;
@@ -1771,9 +1881,6 @@
 .landscape .overlay[data-kind='panel'] > .card {
   border-radius: 22px 0 0 0;
   box-shadow: -3px -3px 0 var(--c-uiAccent), -14px 0 28px var(--c-uiOverlay);
-}
-.card-detail .eggs-back {
-  align-self: flex-start;
 }
 /* Settings open over the pause: the pause stays open underneath, out of sight. */
 .overlay.under {
@@ -1869,7 +1976,7 @@
 .hud-level-star {
   position: absolute;
   top: -6px;
-  font-size: 13px;
+  font-size: var(--fs-m);
   color: var(--c-uiAccent);
 }
 .hud-level b {
@@ -1945,4 +2052,19 @@
     padding: 0 10px 0 8px;
     gap: 6px;
   }
+}
+
+/* M4-23: the mood of the market next to a price — plain text with an edge in the good / warn color (no new colors). */
+.mood-chip {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 2px solid var(--c-uiGood);
+  font-size: var(--fs-s);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.mood-chip.mood-cold {
+  border-color: var(--c-uiMuted);
 }

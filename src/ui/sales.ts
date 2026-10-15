@@ -4,7 +4,6 @@
 
 import type { RarityName } from '../content/schemas.ts';
 import type { CreatureView, Game } from '../sim/game.ts';
-import { createOverlay } from './overlay.ts';
 import { createPriceSlider, type SliderData } from './price-slider.ts';
 import type { Sheet } from './sheet.ts';
 
@@ -16,6 +15,8 @@ export interface SalesLookups {
   rarityColor(r: RarityName): string;
   slider: SliderData;
   zoneColors: readonly string[];
+  /** M4-23: the market's mood chip for a species ('' when none). */
+  mood(species: string): string;
   /** Opens the chat about a creature a buyer is writing about (Q-025: it is off the shelf meanwhile). */
   openChat(uid: string): void;
 }
@@ -32,9 +33,8 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
   const root = document.createElement('div');
   root.className = 'sales';
   sheet.body.appendChild(root);
-  // UB-02: a creature's card (the price slider) and the pick for a free place are details — a panel from the right.
-  const panel = createOverlay(sheet.root.parentElement as HTMLElement, 'sale', () => tab.show(null), { kind: 'panel', dismiss: () => tab.show(null) });
-  panel.card.classList.add('card-detail');
+  // M4-00: a creature's card (the price slider) and the pick for a free place are inner pages of the tab — «Back» to the slots.
+  const panel = sheet.detail('sale', () => tab.show(null));
   let open: string | null = null;
   let key = '';
   let panelKey = '';
@@ -129,7 +129,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
       return;
     }
     const fmt = new Intl.NumberFormat(look.lang());
-    const next = `c:${uid}:${look.lang()}:${c.price}:${c.level}`;
+    const next = `c:${uid}:${look.lang()}:${c.price}:${c.level}:${look.mood(c.species)}`;
     if (next === panelKey) {
       slider?.set(c.askShare, c.price);
       return;
@@ -140,7 +140,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
       `<button type="button" class="eggs-back" data-action="sale-back">‹ ${look.t('eggs.back')}</button>` +
       `<div class="egg-hero"><img alt="" src="${look.portrait(c.species, c.rarity)}"><div><h3 class="egg-name"></h3>` +
       `<p class="card-sub"><i class="rarity-dot" style="background:${look.rarityColor(c.rarity)}"></i> ${look.t(`rarity.${c.rarity}`)} · ${look.t('card.level', { n: c.level })}</p>` +
-      `<p class="card-sub">${look.t('price.marketIs', { n: fmt.format(c.price) })}</p></div></div>` +
+      `<p class="card-sub">${look.t('price.marketIs', { n: fmt.format(c.price) })} ${look.mood(c.species)}</p></div></div>` +
       '<div data-slider></div>' +
       `<div class="egg-buy"><button type="button" class="btn btn-alt" data-action="sale-off">${look.t('sales.off')}</button></div>`;
     root.querySelector('[data-action="sale-off"]')?.addEventListener('click', () => {

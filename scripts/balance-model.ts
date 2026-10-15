@@ -1,12 +1,17 @@
 // `npm run sim:balance` (docs/01a, section 9): the real game (src/sim) played headless by bots with human pace,
 // many seeds per bot; time checks on the slowest 10% of runs (p90), pace checks on the median. Exit 1 when a check fails.
 //   Short run (10 min, every bot): F1 first deal ≤ 40 s · F2 100 coins earned ≤ 2 min · F3 first upgrade ≤ 3 min · F4 first rare ≤ 5 min
-//     · F5 income per minute at 8–10 min ≥ 1.5 × at 1–3 min · F10 no stall (a deal every minute after the first) without ads
-//     · F11 (M2-12) in minutes 3–10 a shop goal (an upgrade or, from M3, a new egg) within 2 minutes of current income at every check
+//     · F5 income per minute at 8–10 min ≥ 1.3 × at 1–3 min (Q-027 B: 1.5 at the bot pace; live, the first minutes carry the
+//       first-minute script's rare sale and deals wait for buyers) · F10 no stall (a deal every minute after the first) without ads
+//     · F11 (M2-12) in minutes 3–10 a shop goal (an upgrade or, from M3, a new egg) within 3 minutes of income (Q-027 B: the last
+//       two minutes, live tempo) at every check
 //     · F13–F15 (M3-14): a chat deal within 60 s after the first minute, a market buy resold at a profit by 5 min, the second ladder egg by 10 min
-//     · F16 (UB-08): seller levels 2–5 by 1, 2, 3 and 4.5 minutes
+//     · F16 (UB-08, Q-027 B): seller levels 2–5 by 1.5, 3, 4.5 and 6 minutes
+//   Q-027 B (M4-00): the bots play at a live tempo — the hatch show and its result, tab switches, chats and cards cost the
+//     seconds of content/pace.json and feel.json hatchShowSec; the limits of F1–F3, F11, F16 are for that tempo.
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
 //     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
+//   Week (M4-08, casual): F17 something new opens every day of 7 · F18 the second city 1–3 days after the first, its egg bought.
 //   Keeper (feeds every creature to the top before selling): F12 earns at most ×2 of the casual player in 10 min and
 //     crosses the rebirth threshold no earlier than the first night (feeding pays, never breaks the economy).
 // Usage: node scripts/balance-model.ts [--seeds 24] [--out docs/evidence/M2/balance.txt]
@@ -18,7 +23,7 @@ import { createGame, type Game, type GameContent, type GameEvent } from '../src/
 import { ftueHint } from '../src/sim/ftue.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
-import { loadGameContent } from './load-game-content.ts';
+import { loadGameContent, loadPace, type Pace } from './load-game-content.ts';
 
 export interface Bot {
   name: string;
@@ -32,6 +37,8 @@ export interface Bot {
   haggleRisk: number;
   /** Buys the dearest open egg it can afford twice over (false: basic eggs only). */
   bestEggs: boolean;
+  /** Never taps a creature (the «feeding pays» check, Q-027 B). */
+  noFeed?: boolean;
 }
 
 export const BOTS: Bot[] = [
@@ -57,24 +64,30 @@ export const CHECKS: Check[] = [
   { id: 'F4', title: 'first rare', limitSec: 300 },
   // M3 (docs/01 §3 p. 13–14): the genre-standard frame pays early.
   { id: 'F13', title: 'first deal through a chat, after the first minute', limitSec: 60 },
-  { id: 'F14', title: 'a market buy resold at a profit', limitSec: 300 },
+  // Q-026 B, Q-027 B: the Market opens at seller level 3 (2–3 minutes live) — the first resale within 10 minutes.
+  { id: 'F14', title: 'a market buy resold at a profit', limitSec: 600 },
   { id: 'F15', title: 'an egg of the second ladder step', limitSec: 600 },
-  // UB-08: the seller level grows from deals — level 2 within the first minute, then a new one about every minute.
-  { id: 'F16.2', title: 'seller level 2', limitSec: 60 },
-  { id: 'F16.3', title: 'seller level 3', limitSec: 120 },
-  { id: 'F16.4', title: 'seller level 4', limitSec: 180 },
-  { id: 'F16.5', title: 'seller level 5', limitSec: 270 },
+  // UB-08, Q-027 B: the seller level grows from deals — at a live tempo a new level every 1–1.5 minutes
+  // (the UB game designer: do not lower the level thresholds for F16, live it is already one a minute or so).
+  { id: 'F16.2', title: 'seller level 2', limitSec: 90 },
+  { id: 'F16.3', title: 'seller level 3', limitSec: 180 },
+  { id: 'F16.4', title: 'seller level 4', limitSec: 270 },
+  { id: 'F16.5', title: 'seller level 5', limitSec: 360 },
 ];
 
 /** Pace and long-run limits of docs/01a, section 9 (F11 from docs/01b, section 5.1). */
 export const LIMITS = {
-  F5growth: 1.5,
+  F5growth: 1.3,
   F6minutes: [30, 60] as const,
   F7days: [2, 3] as const,
   F8street: 600,
   F8square: 2400,
-  F11goalMinutes: 2,
+  F11goalMinutes: 3,
   F12keeperMax: 2,
+  /** M4-08: F17 — at least this many new things a day (opened or first bought: eggs, districts, upgrades; a city) in each of 7 days. */
+  F17opensPerDay: 1,
+  /** M4-08: F18 — days from the first move to the second. */
+  F18gapDays: [1, 3] as const,
   /** F11 is the criterion of M2-12 (the ladder of 8 things): reported from M2-09, failing the run from M2-12. */
   F11enforced: true,
 };
@@ -84,6 +97,7 @@ const STEP = 1 / 30;
 const SHORT_SEC = 600;
 const DAY_ACTIVE_SEC = 30 * 60;
 const AWAY_SEC = 8 * 3600;
+const WEEK_DAYS = 7;
 
 export interface RunResult {
   times: Record<string, number>;
@@ -97,12 +111,43 @@ export interface RunResult {
   stalled: boolean;
 }
 
-/** One bot plays a game: returns the act function that makes one decision and says how long it took. */
-export function botPlayer(bot: Bot, game: Game): () => number {
+/** One bot plays a game: returns the act function that makes one decision and says how long it took (Q-027 B: with the interface). */
+export function botPlayer(bot: Bot, game: Game, pace: Pace = loadPace()): () => number {
   let lastHint = '';
   const tap = 1 / bot.tapsPerSec;
-  return () => {
+  /** The tab the bot is on: another one costs a tab switch, home «Eggs» (the shop and its eggs) a close (M4-00: ✕, the tab, the shop). */
+  let at = 'eggs';
+  const go = (tab: string): number => {
+    if (tab === at) return 0;
+    at = tab;
+    return tab === 'eggs' ? pace.closeSec : pace.tabSec;
+  };
+  /** Opening an egg: the strip runs, the result shows, a button; the creature goes to the shop from the result («To the shop»). */
+  const hatchCost = (): number => {
+    const v = game.view();
+    const fresh = v.inventory[v.inventory.length - 1];
+    if (fresh && game.freeSlots() > 0) game.list(fresh.uid);
+    return tap + pace.hatchSec + pace.resultSec;
+  };
+  const ladder = new Set(game.content.eggs.eggs.filter((e) => e.section === 'ladder').map((e) => e.id));
+  const cityEggs = new Set(game.content.eggs.eggs.filter((e) => e.unlock.type === 'city').map((e) => e.id));
+  /** The bot's own clock (the sum of its action times) and what it earned a minute ago: its sense of income. */
+  let clock = 0;
+  const seen: Array<{ at: number; earned: number }> = [];
+  const perMin = (): number => {
+    const earned = game.state.stats.coinsEarned;
+    seen.push({ at: clock, earned });
+    while (seen.length > 1 && clock - seen[1]!.at >= 60) seen.shift();
+    const first = seen[0]!;
+    return clock - first.at >= 30 ? ((earned - first.earned) * 60) / (clock - first.at) : 0;
+  };
+  const decide = (): number => {
     const st = game.state;
+    // M4-06: a live player moves to the new city once the «Next» card says it is ready (the card, then «Move»).
+    if (game.rebirthView().ready && game.rebirth()) {
+      at = 'eggs';
+      return pace.cardSec * 2;
+    }
     const view = game.view();
     const hint = ftueHint(st, view);
     if (hint) {
@@ -110,83 +155,115 @@ export function botPlayer(bot: Bot, game: Game): () => number {
         lastHint = hint.step;
         return bot.reactSec;
       }
-      if (hint.step === 'tapEgg' || hint.step === 'hatchRare') game.tapIncubator(hint.target.kind === 'incubator' ? hint.target.index : 0);
-      else if (hint.step === 'feed' && view.creatures[0]) game.tapCreature(view.creatures[0].uid);
-      else if (hint.step === 'list' && view.inventory[0]) game.list(view.inventory[0].uid);
-      else if (hint.step === 'sell') {
+      if (hint.step === 'tapEgg' || hint.step === 'hatchRare') {
+        const before = st.stats.hatched;
+        game.tapIncubator(hint.target.kind === 'incubator' ? hint.target.index : 0);
+        return game.state.stats.hatched > before ? go('eggs') + hatchCost() : tap;
+      }
+      if (hint.step === 'feed' && view.creatures[0]) game.tapCreature(view.creatures[0].uid);
+      else if (hint.step === 'list' && view.inventory[0]) {
+        game.list(view.inventory[0].uid);
+        return go('sales') + pace.cardSec;
+      } else if (hint.step === 'sell') {
         const open = game.chats().find((c) => c.state === 'open');
         if (open) game.chatSell(open.id);
+        return go('chats') + pace.chatSec;
+      } else if (hint.step === 'buyEgg') {
+        game.buyEgg();
+        return go('eggs') + pace.cardSec;
       }
-      else if (hint.step === 'buyEgg') game.buyEgg();
       return tap;
     }
     // UB-05: buyers only write — answer (a counter once when the offer is below the asking price, then sell).
     // Only about a creature the bot would sell anyway (its sell level): the rest it keeps feeding, the buyer waits.
-    const chat = game.chats().find((c) => c.state === 'open' && view.talking.some((x) => x.uid === c.uid && x.level >= Math.min(bot.sellLevel, x.maxLevel)));
+    // Q-027 B: a live player does not keep a buyer waiting long — after 15 s, or with two letters waiting, the creature goes as it is.
+    const open = game.chats().filter((c) => c.state === 'open');
+    const chat = open.find((c) => open.length >= 2 || (c.age ?? 0) >= 15 || view.talking.some((x) => x.uid === c.uid && x.level >= Math.min(bot.sellLevel, x.maxLevel)));
     if (chat) {
       const ask = view.talking.find((c) => c.uid === chat.uid)?.ask ?? 0;
       if (bot.haggleRisk > 0 && chat.offer < ask && game.canCounter(chat.id)) game.chatCounter(chat.id);
       else game.chatSell(chat.id);
-      // Two taps: the chat, then «Sell» (the Chats tab carries the count, nothing to notice).
-      return tap * 2;
+      // The Chats tab (its count is in view), the letter, «Sell».
+      return go('chats') + pace.chatSec;
     }
     const lot = game.market().lots.find((l) => !l.sold && l.verdict === 'below' && st.coins >= l.price * 3);
     // UB-05: a bought lot waits in the inventory when the shelf is full, like a hatched one.
     if (lot) {
       game.buyLot(lot.id);
-      return tap + bot.reactSec;
+      return go('market') + pace.cardSec + bot.reactSec;
     }
     // A new egg with the «New!» badge: tried once as soon as it is affordable (players react to the badge like to the upgrade dot;
     // UB-01: the egg screen is the home screen, the badge is in view all the time).
-    const freshEgg = game.eggList().find((e) => e.fresh && e.check.ok && st.coins >= e.check.price * 1.25);
+    const freshEgg = game.eggList().find((e) => e.fresh && e.check.ok && st.coins >= e.check.price * (cityEggs.has(e.id) ? 1 : 1.25));
     if (freshEgg) {
       game.buyEgg(freshEgg.id);
-      return tap + bot.reactSec;
+      return go('eggs') + pace.cardSec + bot.reactSec;
     }
-    // Upgrades as soon as the dot shows (cheapest first).
-    const upgrade = game.upgradeList().filter((u) => u.affordable).sort((a, b) => a.price - b.price)[0];
+    // Q-027 B: a new egg of the ladder with its «New!» badge is what a live player saves for (eggs are the main sink of the genre
+    // standard): the upgrades wait until it is bought. Upgrades as soon as the dot shows otherwise (cheapest first).
+    // Within reach: the egg costs at most 3 minutes of the income of the last minute; the egg a new city opens (the top of
+    // the ladder, M4-08: the «Next» card shows it) is worth a whole session of saving.
+    const income = perMin();
+    const saving = game.eggList().some((e) => e.fresh && ladder.has(e.id) && e.check.price <= st.coins + income * (cityEggs.has(e.id) ? 30 : 3));
+    // Helpers first (the shop works while the player is away — the idle goal a player aims at once it shows).
+    const helper = (id: string): number => (id.startsWith('helper_') ? 0 : 1);
+    const upgrade = saving ? undefined : game.upgradeList().filter((u) => u.affordable).sort((a, b) => helper(a.id) - helper(b.id) || a.price - b.price)[0];
     if (upgrade) {
       game.buyUpgrade(upgrade.id);
-      return tap + bot.reactSec;
+      return go('shop') + tap + bot.reactSec;
     }
     // A ready egg waits for a tap (M3-02): a player opens it at once.
     const readyEgg = view.incubators.findIndex((i) => i.ready);
     if (readyEgg >= 0) {
+      const before = st.stats.hatched;
       game.tapIncubator(readyEgg);
-      return tap;
+      return game.state.stats.hatched > before ? go('eggs') + hatchCost() : tap;
     }
     // A hatched creature waits in the inventory: on the shelf it goes while there is room (UB-03: the result's «To the shop»).
     if (view.inventory[0] && game.freeSlots() > 0) {
       game.list(view.inventory[0].uid);
-      return tap;
+      // From the hatch result «To the shop» opens the price card (UB-10): a look at the slider, then back.
+      return go('sales') + pace.cardSec;
     }
-    // Keep the incubators busy: the dearest egg affordable twice over, else a basic one; a player with a pile to sell
+    // The creature on the shelf is right there in the shop: a live player taps it while the buyer is on the way (its price grows,
+    // the buyer's offer follows the level it has when the buyer writes).
+    const onShelf = bot.noFeed ? undefined : view.creatures.filter((c) => c.level < Math.min(bot.sellLevel, c.maxLevel)).sort((a, b) => a.price - b.price)[0];
+    if (onShelf) {
+      game.tapCreature(onShelf.uid);
+      return go('eggs') + tap;
+    }
+    // Keep the incubators busy: the dearest egg affordable 1.5 times over (Q-027 B), else a basic one; a player with a pile to sell
     // sells first (UB-05: eggs take no shelf place, so nothing else stops the pile).
     const eggs = view.inventory.length < 2 + view.slots ? game.eggList().filter((e) => e.check.ok) : [];
-    const best = bot.bestEggs ? eggs.filter((e) => st.coins >= e.check.price * 2).sort((a, b) => b.check.price - a.check.price)[0] : undefined;
+    const best = bot.bestEggs ? eggs.filter((e) => st.coins >= e.check.price * 1.5).sort((a, b) => b.check.price - a.check.price)[0] : undefined;
     const pick = best ?? eggs.find((e) => e.id === eggs[0]?.id);
     if (pick && (best || game.canBuyEgg().ok)) {
       game.buyEgg(pick.id);
-      return tap;
+      return go('eggs') + pace.cardSec;
     }
     // Feed the cheapest creature still below the sale level, else speed up an egg.
-    const hungry = [...view.talking, ...view.creatures].filter((c) => c.level < Math.min(bot.sellLevel, c.maxLevel)).sort((a, b) => a.price - b.price)[0];
+    const hungry = bot.noFeed ? undefined : [...view.talking, ...view.creatures].filter((c) => c.level < Math.min(bot.sellLevel, c.maxLevel)).sort((a, b) => a.price - b.price)[0];
     if (hungry) {
       game.tapCreature(hungry.uid);
-      return tap;
+      return go('eggs') + tap;
     }
     const egg = view.incubators.findIndex((i) => i.egg && !i.waiting);
     if (egg >= 0) {
       game.tapIncubator(egg);
-      return tap;
+      return go('eggs') + tap;
     }
     // Nothing to sell yet: feed what is there (raises the price).
-    const any = view.creatures.find((c) => c.level < c.maxLevel);
+    const any = bot.noFeed ? undefined : view.creatures.find((c) => c.level < c.maxLevel);
     if (any) {
       game.tapCreature(any.uid);
       return tap;
     }
     return tap;
+  };
+  return () => {
+    const d = decide();
+    clock += d;
+    return d;
   };
 }
 
@@ -246,7 +323,9 @@ export function playOnce(bot: Bot, seed: number, content: GameContent = loadGame
     if (t >= nextGoalCheck) {
       nextGoalCheck += 10;
       const m = earned.length;
-      const perMin = m >= 1 ? (earned[m - 1]! - (m >= 2 ? earned[m - 2]! : 0)) : 0;
+      // Q-027 B: the income of the last two minutes — a live player feels the pace over a couple of minutes, not one dip.
+      const back = Math.min(2, m);
+      const perMin = m >= 1 ? (earned[m - 1]! - (m > back ? earned[m - 1 - back]! : 0)) / back : 0;
       if (!goalWithin(game, perMin, LIMITS.F11goalMinutes)) goalMisses += 1;
     }
   }
@@ -297,6 +376,52 @@ export function playDays(bot: Bot, seed: number, content: GameContent = loadGame
     if (rebirthDay === Infinity && game.state.stats.coinsEarned >= threshold && before < threshold) rebirthDay = day + 0.0;
   }
   return { street, square, awayMinutes, rebirthDay };
+}
+
+export interface WeekResult {
+  /** Days (fractional, 1-based) of every move to a new city. */
+  moves: number[];
+  /** Day the egg that opens in the second city was bought (Infinity: never). */
+  cityEgg: number;
+  /** New things each day 1–7: an egg, a district or an upgrade opens or is bought for the first time here, a new city. */
+  opens: number[];
+}
+
+/** M4-08: a week of a player — 30 active minutes and 8 hours away a day, moving to a new city whenever it is ready. */
+export function playWeek(bot: Bot, seed: number, content: GameContent = loadGameContent()): WeekResult {
+  const game = freshGame(content, seed);
+  const act = botPlayer(bot, game);
+  const cityEggs = new Set(content.eggs.eggs.filter((e) => e.unlock.type === 'city' && e.unlock.n === 2).map((e) => e.id));
+  const moves: number[] = [];
+  const opens = Array.from({ length: WEEK_DAYS }, () => 0);
+  let cityEgg = Infinity;
+  const boughtHere = new Set<string>();
+  let day = 1;
+  let part = 0;
+  game.events.on((e: GameEvent) => {
+    const when = day - 1 + part;
+    if (e.type === 'rebirth') moves.push(when);
+    if (e.type === 'eggBought' && cityEggs.has(e.egg) && e.by === 'player' && cityEgg === Infinity) cityEgg = when;
+    // Something new: a thing opens, an upgrade level, an egg kind bought for the first time in this city, a new city.
+    const first = e.type === 'eggBought' && e.by === 'player' && !boughtHere.has(e.egg);
+    if (first) boughtHere.add(e.egg);
+    if (e.type === 'rebirth') boughtHere.clear();
+    if (first || e.type === 'eggUnlocked' || e.type === 'districtOpened' || e.type === 'upgradeUnlocked' || e.type === 'upgradeBought' || e.type === 'rebirth') opens[day - 1] = (opens[day - 1] ?? 0) + 1;
+  });
+  let active = 0;
+  for (day = 1; day <= WEEK_DAYS; day++) {
+    let busyUntil = active + 1.5;
+    const start = active;
+    while (active < start + DAY_ACTIVE_SEC) {
+      if (active >= busyUntil) busyUntil = active + act();
+      game.tick(STEP);
+      active += STEP;
+      part = (active - start) / DAY_ACTIVE_SEC;
+    }
+    part = 1;
+    if (day < WEEK_DAYS) game.offline(AWAY_SEC);
+  }
+  return { moves, cityEgg, opens };
 }
 
 const quantile = (xs: number[], q: number): number => {
@@ -380,8 +505,26 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     if (!f12) failures.push(`keeper F12 ×${ratio.toFixed(2)} of casual in 10 min (≤ ×${LIMITS.F12keeperMax}), rebirth threshold on day ${fmt(day, 1)} (not before the first night)`);
     lines.push(`keeper  F12 10 min = ×${ratio.toFixed(2)} of casual (≤ ×${LIMITS.F12keeperMax}) · rebirth threshold on day ${fmt(day, 1)} (≥ 1.0) ${f12 ? 'ok' : 'FAIL'}`);
   }
+  // F17, F18 (M4-08): a week of a casual player — something new opens every day; the second city comes 1–3 days after the first
+  // (the economy after a move: income ×1.25, the threshold ×3) and the egg the second city opens is bought there.
+  {
+    const casual = BOTS.find((b) => b.name === 'casual')!;
+    const runs = Array.from({ length: longSeeds }, (_, i) => playWeek(casual, 5000 + i * 104729, content));
+    const daily = Array.from({ length: WEEK_DAYS }, (_, d) => quantile(runs.map((r) => r.opens[d] ?? 0), 0.5));
+    const f17 = daily.every((n) => n >= LIMITS.F17opensPerDay);
+    const first = quantile(runs.map((r) => r.moves[0] ?? Infinity), 0.5);
+    const gap = quantile(runs.map((r) => (r.moves[1] ?? Infinity) - (r.moves[0] ?? Infinity)), 0.5);
+    const egg = quantile(runs.map((r) => r.cityEgg), 0.5);
+    const f18 = gap >= LIMITS.F18gapDays[0] && gap <= LIMITS.F18gapDays[1] && egg <= WEEK_DAYS;
+    if (!f17) failures.push(`casual F17 a day without anything new: ${daily.join(' / ')}`);
+    if (!f18) failures.push(`casual F18 the second city ${fmt(gap, 1)} days after the first (want ${LIMITS.F18gapDays.join('–')}), its egg on day ${fmt(egg, 1)} (want ≤ ${WEEK_DAYS})`);
+    lines.push(
+      `week    F17 new things by day ${daily.join(' / ')} (≥ ${LIMITS.F17opensPerDay} a day) ${f17 ? 'ok' : 'FAIL'}` +
+        ` · F18 moves on day ${fmt(first, 1)}, the next ${fmt(gap, 1)} days later (${LIMITS.F18gapDays.join('–')}), the city egg on day ${fmt(egg, 1)} ${f18 ? 'ok' : 'FAIL'}`,
+    );
+  }
   lines.push('F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)');
-  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F16: all green`);
+  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F18: all green`);
   return { ok: failures.length === 0, lines, failures };
 }
 

@@ -1,6 +1,6 @@
 // What: the bottom tab bar of the genre standard (docs/01 §1а, §6; UB-01): Market · Inventory · My sales · Eggs (center, home) · Chats · Shop · Season.
-// Called by: src/main.ts (create once; badges on every commit); a tap always selects its tab (one is always active, «Eggs» at the start).
-// Keep: tab ids are stable data-tab hooks for e2e; labels are nav.<id> keys in i18n; icons are inline SVG in currentColor (no files, no links).
+// Called by: src/main.ts (create once; badges and open tabs on every commit); a tap selects its tab, a tap on the active one says so (M4-00: it closes home).
+// Keep: tab ids are stable data-tab hooks for e2e; labels are nav.<id> keys in i18n; icons are inline SVG (no files, no links); a closed tab (Q-026 B) has no button.
 
 export const TABS = ['market', 'inventory', 'sales', 'eggs', 'chats', 'shop', 'season'] as const;
 export type TabId = (typeof TABS)[number];
@@ -25,9 +25,11 @@ export interface Nav {
   mark(tab: TabId): void;
   /** A dot (true) or a number on the tab; false or 0 hides it. */
   badge(tab: TabId, value: boolean | number): void;
+  /** Shows or hides a tab button (Q-026 B); fresh — it opens now, in play: a pulse draws the eye. */
+  setOpen(tab: TabId, open: boolean, fresh?: boolean): void;
 }
 
-export function createNav(parent: HTMLElement, onSelect: (tab: TabId) => void): Nav {
+export function createNav(parent: HTMLElement, onSelect: (tab: TabId, again: boolean) => void): Nav {
   const root = document.createElement('nav');
   root.id = 'nav';
   root.className = 'nav';
@@ -58,11 +60,22 @@ export function createNav(parent: HTMLElement, onSelect: (tab: TabId) => void): 
       if (b.textContent !== text) b.textContent = text;
       b.classList.toggle('nav-dot', value === true);
     },
+    setOpen(tab, open, fresh = false) {
+      const b = button(tab);
+      if (b.hidden === !open) return;
+      b.hidden = !open;
+      if (open && fresh) {
+        b.classList.remove('nav-new');
+        void b.offsetWidth;
+        b.classList.add('nav-new');
+      }
+    },
   };
   for (const id of TABS)
     button(id).addEventListener('click', () => {
+      const again = current === id;
       nav.mark(id);
-      onSelect(id);
+      onSelect(id, again);
     });
   nav.mark(current);
   return nav;

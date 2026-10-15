@@ -234,7 +234,7 @@ export const FtueFile = v.object({
 
 const IsoDate = v.pipe(v.string(), v.isoDate());
 export const CalendarFile = v.object({
-  daily: v.object({ eggId: Id, holdMinutes: Money, priceMultiplier: v.pipe(v.number(), v.minValue(1)) }),
+  daily: v.object({ eggId: Id, holdMinutes: Money, priceMultiplier: v.pipe(v.number(), v.minValue(1)), rarities: v.pipe(v.array(Rarity), v.minLength(1)) }),
   tasks: v.object({
     perDay: Count,
     pool: v.pipe(v.array(v.object({ id: Id, type: v.picklist(['deals', 'hatch', 'feed', 'earn', 'haggle']), count: Count, name: Text, reward: Reward })), v.minLength(1)),

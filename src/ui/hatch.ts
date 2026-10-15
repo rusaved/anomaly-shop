@@ -111,7 +111,8 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     overlay.card.classList.toggle('hatch-rare', rare);
     q('[data-hatch-big]').textContent = rare ? `${look.t(`rarity.${cr.rarity}`)}!` : '';
     q('[data-hatch-range]').textContent = `${fmt.format(cr.low)} – ${fmt.format(cr.high)}`;
-    sell.hidden = false;
+    // M4-07: the anomaly of the day settles in first — no «sell now».
+    sell.hidden = cr.hold > 0;
     sell.textContent = look.t('hatch.sellFor', { n: fmt.format(cr.low) });
     sell.dataset.price = String(cr.low);
   }

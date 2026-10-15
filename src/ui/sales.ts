@@ -140,7 +140,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
       `<button type="button" class="eggs-back" data-action="sale-back">‹ ${look.t('eggs.back')}</button>` +
       `<div class="egg-hero"><img alt="" src="${look.portrait(c.species, c.rarity)}"><div><h3 class="egg-name"></h3>` +
       `<p class="card-sub"><i class="rarity-dot" style="background:${look.rarityColor(c.rarity)}"></i> ${look.t(`rarity.${c.rarity}`)} · ${look.t('card.level', { n: c.level })}</p>` +
-      `<p class="card-sub">${look.t('price.marketIs', { n: fmt.format(c.price) })} ${look.mood(c.species)}</p></div></div>` +
+      `<p class="card-sub">${look.t('price.marketIs', { n: fmt.format(c.price) })} ${look.mood(c.species)}</p>${c.hold ? `<p class="card-sub">${look.t('day.hold', { n: c.hold })}</p>` : ''}</div></div>` +
       '<div data-slider></div>' +
       `<div class="egg-buy"><button type="button" class="btn btn-alt" data-action="sale-off">${look.t('sales.off')}</button></div>`;
     root.querySelector('[data-action="sale-off"]')?.addEventListener('click', () => {

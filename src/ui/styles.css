@@ -1768,6 +1768,21 @@
   padding: 6px 0;
   font-size: 14px;
 }
+/* M4-07: today's anomaly and goals */
+.day-anomaly img {
+  width: 48px;
+  height: 48px;
+  flex: none;
+}
+.day-anomaly > span,
+.day-goal > span {
+  flex: 1;
+  text-align: left;
+}
+.gift-row small {
+  font-size: var(--fs-s);
+  opacity: 0.8;
+}
 /* M3-12: Side job */
 .card-work {
   width: min(92vw, 400px);

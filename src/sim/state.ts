@@ -21,6 +21,8 @@ export interface Creature {
   mult?: number;
   /** The asking price on the price slider as a share of the appraisal (M3-06); missing = the market price (1). */
   askShare?: number;
+  /** M4-07: game seconds the anomaly of the day still settles in (no buyers, no «sell now»); missing = none. */
+  hold?: number;
 }
 
 export interface Incubator {
@@ -64,6 +66,8 @@ export interface SaveData {
   prestige: number;
   /** M4-06: coins earned when the shop moved to its current city (the next move counts from here). */
   cityEarnedAt: number;
+  /** M4-07: the day of the device and its goals: the stats at the day's start, the goals picked, what is claimed, the daily egg taken. */
+  daily: { day: string; base: Record<string, number>; goals: string[]; claimed: string[]; egg: boolean };
   /** M4-05: the guest zone of the pickup point — decorations standing; unpaid: the upkeep failed (the bonus waits); due: upkeep owed (< 1 coin). */
   guest: { items: string[]; unpaid: boolean; due: number };
   /** xp — reputation points of the seller level (UB-08); saves made before it count their deals. */
@@ -167,6 +171,7 @@ export function newSave(now: number): SaveData {
     prestige: 0,
     cityEarnedAt: 0,
     guest: { items: [], unpaid: false, due: 0 },
+    daily: { day: '', base: {}, goals: [], claimed: [], egg: false },
     stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0, xp: 0, dealsAll: 0 },
     settings: { sound: true, lang: null },
     flags: {},
@@ -244,6 +249,10 @@ export function normalize(raw: unknown, now: number): SaveData {
     calendar: { lastDailyAt: num(cal.lastDailyAt, 0), streak: num(cal.streak, 0), lastLoginDay: str(cal.lastLoginDay, '') },
     prestige: Math.max(0, num(r.prestige, 0)),
     cityEarnedAt: Math.max(0, num(r.cityEarnedAt, 0)),
+    daily: (() => {
+      const d = rec(r.daily);
+      return { day: str(d.day, ''), base: numberMap(d.base), goals: arr(d.goals).filter((x): x is string => typeof x === 'string'), claimed: arr(d.claimed).filter((x): x is string => typeof x === 'string'), egg: bool(d.egg, false) };
+    })(),
     guest: {
       items: arr(rec(r.guest).items).filter((x): x is string => typeof x === 'string'),
       unpaid: bool(rec(r.guest).unpaid, false),

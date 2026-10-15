@@ -2,13 +2,13 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { AchievementsData, CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { AchievementsData, CalendarData, CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
 import { emptyIncubator, type Chat, type Creature, type Incubator, type Lot, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, cityMult, coins, marketMood, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, cityMult, coins, dayHash, marketMood, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -26,6 +26,7 @@ export interface GameContent {
   collection: CollectionData;
   decor: DecorData;
   achievements: AchievementsData;
+  calendar: CalendarData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -183,6 +184,19 @@ export interface CreatureView {
   /** Feeding taps done toward the next level and taps it needs. */
   fed: number;
   need: number;
+  /** M4-07: whole minutes the anomaly of the day still settles in (0 = free to sell). */
+  hold: number;
+}
+
+/** M4-07: the anomaly of the day and the goals of the day (calendar.json) for a device date. */
+export interface DayView {
+  species: string;
+  rarity: RarityName;
+  egg: string;
+  eggTaken: boolean;
+  mult: number;
+  holdMin: number;
+  goals: Array<{ id: string; have: number; need: number; done: boolean; claimed: boolean; reward: RewardData }>;
 }
 
 /** A buyer of the scene queue (UB-05): the person of an open chat, oldest first; id is the chat id. */
@@ -391,6 +405,10 @@ export interface Game {
   removeGuest(id: string): boolean;
   /** M4-23: the device's day (YYYY-MM-DD) — the mood of the market follows it. */
   setDay(day: string): void;
+  /** M4-07: today's anomaly and goals (rolled once per device date); the egg goes to «my eggs», a done goal pays once. */
+  dayView(day: string): DayView;
+  claimDayEgg(day: string): boolean;
+  claimDayGoal(day: string, id: string): boolean;
   /** M4-23: the species in fashion and the one everybody is fed up with today, with their price multipliers (null: no day yet). */
   mood(): { hot: string; cold: string; hotMult: number; coldMult: number } | null;
   /** UB-08: the seller level of reputation.json. */
@@ -605,6 +623,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       zone: priceZone(x.askShare ?? 1, content.market.slider),
       fed: x.fed,
       need: tapsForLevel(x.level, species.tapsPerLevelBase, species.tapGrowth),
+      hold: Math.ceil((x.hold ?? 0) / 60),
     };
   }
 
@@ -963,7 +982,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   /** «Sell now» (M3-05): no buyer, the low end of the price range; a deal like any other (counts, crystals, unlocks). */
   function sellNow(uid: string): boolean {
     const cr = s().creatures.find((x) => x.uid === uid);
-    if (!cr || talkingAbout(uid)) return false;
+    if (!cr || talkingAbout(uid) || cr.hold) return false;
     closeDeal(cr, priceRange(appraisal(cr), content.market.range).low, 'now');
     return true;
   }
@@ -1107,7 +1126,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     for (const uid of Object.keys(st.chatIn)) if (!listed.has(uid)) delete st.chatIn[uid];
     let room = queueSize() - openChats().length;
     for (const cr of onSale()) {
-      if (talkingAbout(cr.uid)) continue;
+      if (talkingAbout(cr.uid) || cr.hold) continue;
       const left = (st.chatIn[cr.uid] ??= writeIn(cr)) - dt;
       st.chatIn[cr.uid] = left;
       if (left <= 0 && room > 0) {
@@ -1132,6 +1151,37 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (r.egg) placeMine();
     emit({ type: 'change' });
   }
+  // ---- M4-07: the anomaly of the day and the goals of the day — by the device date (calendar.json daily and tasks).
+  const TASK_STAT = { deals: 'dealsAll', hatch: 'hatched', feed: 'taps', earn: 'coinsEarned', haggle: 'haggles' } as const;
+  /** The species of the day: one of the rarer kinds (calendar.json daily.rarities), the same all day for this save. */
+  function daySpecies(day: string): (typeof species.species)[number] | undefined {
+    const pool = species.species.filter((x) => content.calendar.daily.rarities.includes(x.rarity));
+    return day && pool.length ? pool[dayHash(day, s().createdAt) % pool.length] : undefined;
+  }
+  /** ×priceMultiplier over the best open ladder egg: in a dear city the anomaly is still an event. */
+  const dayMult = (): number => content.calendar.daily.priceMultiplier * Math.max(1, ...eggs.eggs.filter((e) => e.section === 'ladder' && eggOpen(e)).map((e) => e.valueMult ?? 1));
+  /** A new device date: three goals from the pool (stable for the day and save), progress counts from here, the egg waits again. */
+  function rollDay(day: string): void {
+    const st = s();
+    if (!day || st.daily.day === day) return;
+    const t = content.calendar.tasks;
+    const order = (id: string): number => dayHash(`${day}:${id}`, st.createdAt);
+    const goals = [...t.pool].sort((a, b) => order(a.id) - order(b.id)).slice(0, t.perDay).map((x) => x.id);
+    st.daily = { day, base: { ...st.stats }, goals, claimed: [], egg: false };
+    commit({ flush: true });
+  }
+  function dayGoals(): DayView['goals'] {
+    const st = s();
+    return st.daily.goals.flatMap((id) => {
+      const g = content.calendar.tasks.pool.find((x) => x.id === id);
+      if (!g) return [];
+      const stat = TASK_STAT[g.type];
+      const now = st.stats[stat] ?? 0;
+      const have = Math.max(0, Math.floor(now - (st.daily.base[stat] ?? now)));
+      return [{ id, have: Math.min(have, g.count), need: g.count, done: have >= g.count, claimed: st.daily.claimed.includes(id), reward: g.reward }];
+    });
+  }
+
   function stockMarket(): void {
     const st = s();
     const m = content.market;
@@ -1224,10 +1274,12 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (egg.firstRarity) st.flags[`first_${egg.id}`] = true;
     let rarity = forced ?? pickRarity(careChances(egg.chances, careOf(inc)), rng.next());
     if (!forced && firstOf && RARITY_RANK[rarity] < RARITY_RANK[firstOf]) rarity = firstOf;
-    const kind = pickSpecies(species, rarity, rng.next());
+    // M4-07: the egg of the day hatches the species of the day, dearer and settling in for a while.
+    const dayKind = egg.special === 'daily' ? daySpecies(st.daily.day) : undefined;
+    const kind = dayKind ?? pickSpecies(species, rarity, rng.next());
     st.stats.hatched += 1;
     const uid = `c${st.stats.hatched.toString(36)}${rng.int(1296).toString(36)}`;
-    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: egg.valueMult ?? 1 });
+    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: dayKind ? dayMult() : (egg.valueMult ?? 1), ...(dayKind ? { hold: content.calendar.daily.holdMinutes * 60 } : {}) });
     // M4-21: twins — the egg of the event gives two of a kind (the second waits in the inventory).
     if (activeOf('twins')) {
       st.creatures.push({ uid: `${uid}t`, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: egg.valueMult ?? 1 });
@@ -1657,6 +1709,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         checkFinds();
       }
       for (const cr of onSale()) cr.age = (cr.age ?? 0) + dt;
+      for (const cr of st.creatures) if (cr.hold && (cr.hold = Math.max(0, cr.hold - dt)) === 0) delete cr.hold;
       // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free.
       if (st.creatures.length === 0 && st.incubators[0] && !st.incubators.some((i) => i.egg) && !Object.keys(st.myEggs).length && st.stats.hatched > 0) {
         const cheapest = Math.min(...eggs.eggs.filter(eggOpen).map((e) => e.price.coins));
@@ -1961,7 +2014,31 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     setDay(day) {
       if (day === today) return;
       today = day;
+      rollDay(day);
       emit({ type: 'change' });
+    },
+    dayView(day) {
+      rollDay(day);
+      const st = s();
+      const kind = daySpecies(st.daily.day);
+      return { species: kind?.id ?? '', rarity: kind?.rarity ?? 'common', egg: content.calendar.daily.eggId, eggTaken: st.daily.egg, mult: content.calendar.daily.priceMultiplier, holdMin: content.calendar.daily.holdMinutes, goals: dayGoals() };
+    },
+    claimDayEgg(day) {
+      rollDay(day);
+      const st = s();
+      if (st.daily.egg || !daySpecies(st.daily.day) || !eggData(content.calendar.daily.eggId)) return false;
+      st.daily.egg = true;
+      giveReward({ egg: content.calendar.daily.eggId }, 'daily');
+      return true;
+    },
+    claimDayGoal(day, id) {
+      rollDay(day);
+      const st = s();
+      const g = dayGoals().find((x) => x.id === id);
+      if (!g?.done || g.claimed) return false;
+      st.daily.claimed.push(id);
+      giveReward(g.reward, 'daily');
+      return true;
     },
     mood() {
       const m = mood();

@@ -1,4 +1,4 @@
-// What: the ?debug=1 panel (lil-gui): coins, a test creature, time scale, save reset; dev, playtest and the producer link only.
+// What: the ?debug=1 panel (lil-gui): coins, a test creature, the next city ready, time scale, save reset; dev, playtest and the producer link only.
 // Called by: src/main.ts behind __DEBUG_TOOLS__ (dynamic import, dropped from releases).
 // Keep: the panel talks to the store and runtime like a player action would; labels are developer English, never shown to players.
 
@@ -15,6 +15,8 @@ export interface DebugHooks {
   feel: Record<string, number>;
   fps(): number;
   fresh(): SaveData;
+  /** M4-09: coins earned up to the next move, so the producer can check the move without a day of play. */
+  cityReady(): void;
 }
 
 let counter = 0;
@@ -42,9 +44,11 @@ export function installDebugPanel(h: DebugHooks): GUI {
       h.store.commit({ flush: true });
     },
     reset: () => h.store.replace(h.fresh()),
+    city: () => h.cityReady(),
   };
   gui.add(actions, 'coins100').name('+100 coins');
   gui.add(actions, 'creature').name('+ creature');
+  gui.add(actions, 'city').name('city ready');
   gui.add(h.runtime, 'timeScale', 0.25, 8, 0.25).name('time scale');
   gui.add(actions, 'reset').name('reset save');
   // Feel sliders: the producer tunes them, presses «copy feel JSON» and sends the text; it goes to content/feel.json.

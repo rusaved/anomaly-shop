@@ -147,20 +147,3 @@ test('SCR-01 1280×720: HUD, home panel, community buttons, pause and settings w
   await page.locator('[data-overlay=pause] [data-action=settings]').click();
   await expectInsideViewport(page, ['[data-overlay=settings] .card', '[data-overlay=settings] [data-action=back]', '[data-overlay=settings] [data-action=lang-en]']);
 });
-
-test('perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU', async ({ page }) => {
-  const session = await page.context().newCDPSession(page);
-  await session.send('Emulation.setCPUThrottlingRate', { rate: 4 });
-  let bytes = 0;
-  page.on('response', (r) => {
-    void r.body().then((b) => {
-      bytes += b.length;
-    }, () => undefined);
-  });
-  await open(page);
-  const ready = (await events(page)).find((e) => e.name === 'gameReady')!;
-  await page.waitForTimeout(300);
-  expect(ready.t).toBeLessThan(5000);
-  expect(bytes).toBeLessThan(5 * 1024 * 1024);
-  await session.send('Emulation.setCPUThrottlingRate', { rate: 1 });
-});

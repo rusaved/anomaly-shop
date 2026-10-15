@@ -7,6 +7,8 @@ import { resolve } from 'node:path';
 const dist = process.env.E2E_DIST || 'dist-e2e';
 const STATIC_SPECS = /(smoke-release|pages)\.spec\.ts$/;
 const PHONE_SPECS = /(touch|layout|ftue)[^/]*\.spec\.ts$/;
+// M4-09: the load budget on a slow CPU runs alone, after every other project (a busy neighbour skews it).
+const PERF_SPECS = /perf\.spec\.ts$/;
 const port = Number(process.env.E2E_PORT || 4173);
 const markerFile = resolve(import.meta.dirname, '.cache/chromium-path');
 const executablePath =
@@ -35,7 +37,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'desktop', testIgnore: [PHONE_SPECS, STATIC_SPECS] },
+    { name: 'desktop', testIgnore: [PHONE_SPECS, STATIC_SPECS, PERF_SPECS] },
     {
       name: 'phone',
       testMatch: PHONE_SPECS,
@@ -46,6 +48,7 @@ export default defineConfig({
       testMatch: PHONE_SPECS,
       use: { viewport: { width: 812, height: 375 }, hasTouch: true, isMobile: true },
     },
+    { name: 'perf', testMatch: PERF_SPECS, dependencies: ['desktop', 'phone', 'phone-landscape'] },
   ],
   webServer: {
     command: `npx vite preview --outDir ${dist} --port ${port} --strictPort --host 127.0.0.1`,

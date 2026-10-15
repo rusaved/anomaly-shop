@@ -1,0 +1,14 @@
+
+  ✓  1 [perf] › e2e/perf.spec.ts:8:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU (6.2s)
+
+  1 passed (8.6s)
+
+  ✓  1 e2e/smoke-release.spec.ts:4:1 › BLD-04 release boots on the mock, ready once, no console errors, no debug or test API (3.3s)
+
+  1 passed (5.3s)
+EXIT=0
+
+# 15.10 13:31–13:39 · весь e2e на финальном коде (npx playwright test e2e/smoke.spec.ts e2e/perf.spec.ts:
+# проект perf зависит от desktop, phone и phone-landscape, поэтому Playwright прогнал их целиком, perf — последним)
+  ✓  93 [perf] › e2e/perf.spec.ts:8:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU (5.5s)
+  93 passed (7.7m)

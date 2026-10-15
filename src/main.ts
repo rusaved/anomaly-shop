@@ -735,7 +735,18 @@ async function boot(): Promise<void> {
 
   if (__DEBUG_TOOLS__ && new URLSearchParams(location.search).has('debug')) {
     const { installDebugPanel } = await import('./debug/panel.ts');
-    installDebugPanel({ store, runtime, feel, fps: () => scene.app.ticker.FPS, fresh: () => newSave(platform.now()) });
+    installDebugPanel({
+      store,
+      runtime,
+      feel,
+      fps: () => scene.app.ticker.FPS,
+      fresh: () => newSave(platform.now()),
+      cityReady: () => {
+        const r = play.rebirthView();
+        store.state.stats.coinsEarned += Math.max(0, r.need - r.have);
+        store.commit({ flush: true });
+      },
+    });
   }
   if (__TEST_API__) {
     const { installTestApi } = await import('./test-api/index.ts');

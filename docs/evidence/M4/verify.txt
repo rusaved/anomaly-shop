@@ -75,3 +75,133 @@ ok   build:e2e 2.3 s
 
 Running 93 tests using 2 workers
 
+  ✓   2 [desktop] › e2e/eggs-m3.spec.ts:10:1 › M3-04 egg card: odds match eggs.json, buy one and ×3 (10.9s)
+  ✓   1 [desktop] › e2e/gifts-m3.spec.ts:7:1 › M3-11 gifts: the daily gift and the review egg once, kept after a reload (16.0s)
+  ✓   3 [desktop] › e2e/hatch-ub.spec.ts:10:1 › UB-03 the first egg opens with one tap; the creature is nowhere until the strip stops; a tap skips; three choices (6.9s)
+  ✓   5 [desktop] › e2e/leaders-m4.spec.ts:5:1 › M4-04 leaders: sign in by the button, the score on the board, no SDK violations (4.9s)
+  ✓   4 [desktop] › e2e/hatch-ub.spec.ts:38:1 › M3-05 hatch show: 4–5 s, the roll on the card, sell now = the low end (10.2s)
+  ✓   7 [desktop] › e2e/loop.spec.ts:46:1 › M1-08 the upgrade shop: buying the second incubator changes the shop and survives F5 (11.6s)
+  ✓   6 [desktop] › e2e/loop.spec.ts:26:1 › SAV-01 F5 after a deal: coins, the deal count and the creatures come back (33.3s)
+  ✓   9 [desktop] › e2e/market-m3.spec.ts:5:1 › M3-09 market: lots, timer, don't wait, a lot card opens (6.0s)
+  ✓   8 [desktop] › e2e/loop.spec.ts:66:1 › LOC-03 English: the home screen, the chats, the tab bar and the upgrade shop have no Russian text (28.4s)
+  ✓  10 [desktop] › e2e/nav-ub.spec.ts:5:1 › UB-01 PC: one tab bar at the bottom, Eggs is home, every tab opens its screen (8.7s)
+  ✓  12 [desktop] › e2e/rebirth-m4.spec.ts:6:1 › M4-06 rebirth: ready → the popup asks → a new city, the collection stays (8.9s)
+  ✓  13 [desktop] › e2e/reputation-ub.spec.ts:7:1 › UB-08 a deal brings the seller level up: the chip flashes, a toast, the panel lists what opens (8.7s)
+  ✓  14 [desktop] › e2e/sales-ub.spec.ts:8:1 › UB-05 one path: listed with the slider, a buyer writes, the creature is off the shelf meanwhile, sold from the chat (7.2s)
+  ✓  15 [desktop] › e2e/seller-m3.spec.ts:7:1 › M3-10 bought below the market → on sale → sold dearer (9.0s)
+  ✓  11 [desktop] › e2e/noise-m3.spec.ts:5:1 › M3-18 one text at a time; the ticker is quiet without a reason (40.9s)
+  ✓  16 [desktop] › e2e/smoke.spec.ts:9:1 › environment: the game boots on the mock, WebGL renders, the test API answers (5.0s)
+  ✓  17 [desktop] › e2e/smoke.spec.ts:19:1 › SDK-02 ready() once, after the shop is drawn, within 4 s; the loading screen is gone (4.5s)
+  ✓  19 [desktop] › e2e/smoke.spec.ts:43:1 › SDK-03 startup ad: pause before ready, gameplay starts only after the resume (4.5s)
+  ✓  18 [desktop] › e2e/smoke.spec.ts:31:1 › SCR-09 zero console errors, page errors and dialogs through pause, settings and a reload (11.0s)
+  ✓  20 [desktop] › e2e/smoke.spec.ts:56:1 › SDK-04 GameplayAPI stop on pause and start on resume, only on transitions (7.0s)
+  ✓  22 [desktop] › e2e/smoke.spec.ts:83:1 › SAV-05 a corrupted save gives a fresh profile, no crash (4.5s)
+  ✓  23 [desktop] › e2e/smoke.spec.ts:97:1 › SDK-05 LOC-03 language from the SDK: en → English UI, uk → Russian (8.7s)
+  ✓  21 [desktop] › e2e/smoke.spec.ts:67:1 › SAV-01 coins and a creature survive F5 (debug panel actions) (15.8s)
+  ✓  25 [desktop] › e2e/smoke.spec.ts:122:1 › CNT-08 community buttons open the game.json addresses in a new tab, no reward, game paused (6.5s)
+  ✓  24 [desktop] › e2e/smoke.spec.ts:110:1 › LOC-05 manual language choice wins over the platform language and survives F5 (10.8s)
+  ✓  26 [desktop] › e2e/smoke.spec.ts:140:1 › SCR-01 1280×720: HUD, home panel, community buttons, pause and settings windows fit the screen (6.5s)
+  ✓  28 [desktop] › e2e/upgrades-ub.spec.ts:5:1 › UB-04 upgrades: a panel from the right by a button, the shop in view, the purchase shines (6.2s)
+  ✘  27 [desktop] › e2e/smoke.spec.ts:151:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU (10.0s)
+  ✓  29 [desktop] › e2e/usability-ub.spec.ts:6:1 › UB-09 PC: a tab tap closes any window (7.5s)
+  ✓  30 [desktop] › e2e/usability-ub.spec.ts:7:1 › UB-09 PC: one window at a time (13.7s)
+  ✓  31 [desktop] › e2e/usability-ub.spec.ts:8:1 › UB-09 PC: hints never lie over a window (12.6s)
+  ✓  32 [desktop] › e2e/usability-ub.spec.ts:9:1 › UB-09 PC: the hatch reward only after the strip (8.9s)
+  ✓  33 [desktop] › e2e/usability-ub.spec.ts:10:1 › UB-09 PC: hidden gestures are signed (15.2s)
+  ✓  35 [desktop] › e2e/usability-ub.spec.ts:12:1 › UB-09 PC: every tab has its label (4.5s)
+  ✓  36 [desktop] › e2e/usability-ub.spec.ts:13:1 › UB-09 PC: no service marks (7.8s)
+  ✓  34 [desktop] › e2e/usability-ub.spec.ts:11:1 › UB-09 PC: text 12 px and up (14 px and no cut text on a PC, M4-00), buttons 44 px and up on every screen (27.2s)
+  ✓  37 [desktop] › e2e/usability-ub.spec.ts:14:1 › M4-00 PC: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (8.1s)
+  ✓  39 [desktop] › e2e/windows-ub.spec.ts:4:1 › UB-02 PC: one window at a time, a tab works from any window, a tap outside closes it (10.9s)
+  ✓  40 [desktop] › e2e/windows-ub.spec.ts:5:1 › UB-02 PC: hints never lie over a window or another screen (6.8s)
+  ✓  41 [desktop] › e2e/work-m3.spec.ts:5:1 › M3-12 side job: a tap gives +N (5.2s)
+  ✓  38 [desktop] › e2e/usability-ub.spec.ts:15:1 › M4-00 PC: one caption on the shop at a time (32.3s)
+  ✓  43 [phone] › e2e/ftue-ub.spec.ts:53:1 › UB-06 each tab gets one hint on its first visit, none on the next; never at a closed thing (14.3s)
+  ✓  42 [phone] › e2e/ftue-ub.spec.ts:16:1 › UB-06 first minute by taps only: egg → To the shop → a letter → Sell with no counter → a new egg, within 60 s; no hint at a closed thing (25.4s)
+  ✓  45 [phone] › e2e/layout-collection-m4.spec.ts:7:1 › M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold (4.7s)
+  ✓  46 [phone] › e2e/layout-collection-m4.spec.ts:32:1 › M4-23 market mood: the chip in the sale card of the species in fashion (3.3s)
+  ✓  47 [phone] › e2e/layout-collection-m4.spec.ts:46:1 › M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked (4.1s)
+  ✓  48 [phone] › e2e/layout-m2.spec.ts:5:1 › M2-13 the Next card: inside the viewport, one goal, a flash and the next one when reached (3.7s)
+  ✓  49 [phone] › e2e/layout-m2.spec.ts:26:1 › M2-04 away window after two hours with the helpers (3.7s)
+  ✓  44 [phone] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (27.2s)
+  ✓  50 [phone] › e2e/layout-nav-ub.spec.ts:5:1 › UB-01 phone: one tab bar at the bottom, Eggs is home, every tab opens its screen (7.8s)
+  ✓  51 [phone] › e2e/layout-sales-m3.spec.ts:7:1 › M3-06 phone: the price slider works by tap and by drag (6.3s)
+  ✓  52 [phone] › e2e/layout-upgrades-ub.spec.ts:5:1 › UB-04 phone: the upgrades panel from the right keeps the shop in view (3.9s)
+  ✓  53 [phone] › e2e/layout-usability-ub.spec.ts:7:1 › UB-09 phone: a tab tap closes any window (6.0s)
+  ✓  54 [phone] › e2e/layout-usability-ub.spec.ts:8:1 › UB-09 phone: one window at a time (8.3s)
+  ✓  55 [phone] › e2e/layout-usability-ub.spec.ts:9:1 › UB-09 phone: hints never lie over a window (7.7s)
+  ✓  56 [phone] › e2e/layout-usability-ub.spec.ts:10:1 › UB-09 phone: the hatch reward only after the strip (8.6s)
+  ✓  57 [phone] › e2e/layout-usability-ub.spec.ts:11:1 › UB-09 phone: hidden gestures are signed (11.1s)
+  ✓  59 [phone] › e2e/layout-usability-ub.spec.ts:13:1 › UB-09 phone: every tab has its label (2.6s)
+  ✓  60 [phone] › e2e/layout-usability-ub.spec.ts:14:1 › UB-09 phone: no service marks (4.9s)
+  ✓  61 [phone] › e2e/layout-usability-ub.spec.ts:15:1 › M4-00 phone: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (4.8s)
+  ✓  58 [phone] › e2e/layout-usability-ub.spec.ts:12:1 › UB-09 phone: text 12 px and up (M4-00: 14 px on a PC), buttons 44 px and up on every screen (18.6s)
+  ✓  63 [phone] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it (6.7s)
+  ✓  64 [phone] › e2e/layout-windows-ub.spec.ts:5:1 › UB-02 phone: hints never lie over a window or another screen (3.9s)
+  ✓  65 [phone] › e2e/layout.spec.ts:5:1 › SCR-01 phone: HUD, home panel, tab bar and community buttons inside the viewport, no scroll (4.2s)
+  ✓  66 [phone] › e2e/layout.spec.ts:31:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (6.2s)
+  ✓  67 [phone] › e2e/layout.spec.ts:44:1 › SAV-03 rotation keeps the state and the layout follows (5.8s)
+  ✓  62 [phone] › e2e/layout-usability-ub.spec.ts:16:1 › M4-00 phone: one caption on the shop at a time (30.0s)
+  ✓  69 [phone-landscape] › e2e/ftue-ub.spec.ts:53:1 › UB-06 each tab gets one hint on its first visit, none on the next; never at a closed thing (14.3s)
+  ✓  68 [phone-landscape] › e2e/ftue-ub.spec.ts:16:1 › UB-06 first minute by taps only: egg → To the shop → a letter → Sell with no counter → a new egg, within 60 s; no hint at a closed thing (26.1s)
+  ✓  71 [phone-landscape] › e2e/layout-collection-m4.spec.ts:7:1 › M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold (4.8s)
+  ✓  72 [phone-landscape] › e2e/layout-collection-m4.spec.ts:32:1 › M4-23 market mood: the chip in the sale card of the species in fashion (3.6s)
+  ✓  73 [phone-landscape] › e2e/layout-collection-m4.spec.ts:46:1 › M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked (3.8s)
+  ✓  74 [phone-landscape] › e2e/layout-m2.spec.ts:5:1 › M2-13 the Next card: inside the viewport, one goal, a flash and the next one when reached (3.5s)
+  ✓  70 [phone-landscape] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (26.5s)
+  ✓  75 [phone-landscape] › e2e/layout-m2.spec.ts:26:1 › M2-04 away window after two hours with the helpers (3.7s)
+  ✓  76 [phone-landscape] › e2e/layout-nav-ub.spec.ts:5:1 › UB-01 phone: one tab bar at the bottom, Eggs is home, every tab opens its screen (6.4s)
+  ✓  77 [phone-landscape] › e2e/layout-sales-m3.spec.ts:7:1 › M3-06 phone: the price slider works by tap and by drag (5.5s)
+  ✓  78 [phone-landscape] › e2e/layout-upgrades-ub.spec.ts:5:1 › UB-04 phone: the upgrades panel from the right keeps the shop in view (3.9s)
+  ✓  79 [phone-landscape] › e2e/layout-usability-ub.spec.ts:7:1 › UB-09 phone: a tab tap closes any window (6.5s)
+  ✓  80 [phone-landscape] › e2e/layout-usability-ub.spec.ts:8:1 › UB-09 phone: one window at a time (9.0s)
+  ✓  81 [phone-landscape] › e2e/layout-usability-ub.spec.ts:9:1 › UB-09 phone: hints never lie over a window (7.0s)
+  ✓  82 [phone-landscape] › e2e/layout-usability-ub.spec.ts:10:1 › UB-09 phone: the hatch reward only after the strip (8.2s)
+  ✓  83 [phone-landscape] › e2e/layout-usability-ub.spec.ts:11:1 › UB-09 phone: hidden gestures are signed (11.9s)
+  ✓  85 [phone-landscape] › e2e/layout-usability-ub.spec.ts:13:1 › UB-09 phone: every tab has its label (3.6s)
+  ✓  86 [phone-landscape] › e2e/layout-usability-ub.spec.ts:14:1 › UB-09 phone: no service marks (5.7s)
+  ✓  84 [phone-landscape] › e2e/layout-usability-ub.spec.ts:12:1 › UB-09 phone: text 12 px and up (M4-00: 14 px on a PC), buttons 44 px and up on every screen (19.9s)
+  ✓  87 [phone-landscape] › e2e/layout-usability-ub.spec.ts:15:1 › M4-00 phone: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (6.2s)
+  ✓  89 [phone-landscape] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it (7.4s)
+  ✓  90 [phone-landscape] › e2e/layout-windows-ub.spec.ts:5:1 › UB-02 phone: hints never lie over a window or another screen (4.1s)
+  ✓  91 [phone-landscape] › e2e/layout.spec.ts:5:1 › SCR-01 phone: HUD, home panel, tab bar and community buttons inside the viewport, no scroll (4.0s)
+  ✓  92 [phone-landscape] › e2e/layout.spec.ts:31:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (5.7s)
+  ✓  93 [phone-landscape] › e2e/layout.spec.ts:44:1 › SAV-03 rotation keeps the state and the layout follows (5.0s)
+  ✓  88 [phone-landscape] › e2e/layout-usability-ub.spec.ts:16:1 › M4-00 phone: one caption on the shop at a time (29.8s)
+
+
+  1) [desktop] › e2e/smoke.spec.ts:151:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU 
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 5000
+    Received:   6074
+
+      161 |   const ready = (await events(page)).find((e) => e.name === 'gameReady')!;
+      162 |   await page.waitForTimeout(300);
+    > 163 |   expect(ready.t).toBeLessThan(5000);
+          |                   ^
+      164 |   expect(bytes).toBeLessThan(5 * 1024 * 1024);
+      165 |   await session.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+      166 | });
+        at /home/user/anomaly-shop/e2e/smoke.spec.ts:163:19
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/smoke-perf-ready-within-5--e3510-wnloaded-on-a-4×-slower-CPU-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/smoke-perf-ready-within-5--e3510-wnloaded-on-a-4×-slower-CPU-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/smoke-perf-ready-within-5--e3510-wnloaded-on-a-4×-slower-CPU-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/smoke-perf-ready-within-5--e3510-wnloaded-on-a-4×-slower-CPU-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › e2e/smoke.spec.ts:151:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU 
+  92 passed (8.1m)
+FAIL e2e [e2e: end of milestone only] after 484.8 s (exit 1)
+EXIT=1

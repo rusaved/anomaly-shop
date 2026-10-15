@@ -38,7 +38,13 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
   lines.push({ me: false, text: say('greet') }, { me: false, text: look.t('seller.ask', { n: new Intl.NumberFormat(look.lang()).format(first.price) }) });
 
   const lot = (): LotView | undefined => game.market().lots.find((l) => l.id === first.id);
+  // M4-09: like a buyer's chat (UB-10), the seller's opens on its latest lines — above the answers, not under them.
   function draw(): void {
+    drawPage();
+    const scroller = body.closest<HTMLElement>('.sheet-detail') ?? body;
+    scroller.scrollTop = scroller.scrollHeight;
+  }
+  function drawPage(): void {
     const l = lot() ?? first;
     const fmt = new Intl.NumberFormat(look.lang());
     const p = look.person(l.person);

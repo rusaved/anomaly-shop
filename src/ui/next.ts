@@ -64,7 +64,8 @@ export function createNextCard(parent: HTMLElement, game: Game, look: NextLookup
       root.dataset.unit = goal.unit;
       label.textContent = look.t('next.label');
       name.textContent = look.name(goal);
-      left.textContent = look.t(leftKey(look.lang(), goal.unit, n), { n: fmt.format(n) });
+      // M4-09: a reached goal (a move ready, an egg affordable) says so instead of «0 more coins».
+      left.textContent = n > 0 ? look.t(leftKey(look.lang(), goal.unit, n), { n: fmt.format(n) }) : look.t('next.ready');
     },
   };
 }

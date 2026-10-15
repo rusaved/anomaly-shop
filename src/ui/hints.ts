@@ -22,6 +22,8 @@ export interface Hints {
   update(hint: FtueHint | null): void;
   /** The text on screen now ('' when hidden): test API. */
   text(): string;
+  /** M4-09: the bubble of a tab's target stands outside the tab, over the shop (the shop's own captions keep quiet). */
+  outside(): boolean;
 }
 
 export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
@@ -36,6 +38,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
   const label = root.querySelector('[data-hint-text]') as HTMLElement;
   let lastKey = '';
   let glow: HTMLElement | null = null;
+  let outside = false;
 
   const setGlow = (el: HTMLElement | null): void => {
     if (glow === el) return;
@@ -47,6 +50,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
   const hide = (): void => {
     if (lastKey === '') return;
     lastKey = '';
+    outside = false;
     root.hidden = true;
     ring.hidden = true;
     setGlow(null);
@@ -55,6 +59,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
   return {
     root,
     text: () => (root.hidden ? '' : label.textContent ?? ''),
+    outside: () => outside && !root.hidden,
     update(hint) {
       if (!hint) {
         hide();
@@ -122,9 +127,47 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         ring.hidden = true;
         root.dataset.hint = hint.step;
         label.textContent = text;
+        outside = false;
         setGlow(button);
         return;
       }
+      // M4-09: a target inside an open tab glows, and its bubble stands outside the tab — over the shop above the tab
+      // (a phone upright) or to its left (sideways, a PC): inside it covered the title, prices and subsections.
+      const sheet = button?.closest<HTMLElement>('.sheet') ?? null;
+      if (button && sheet) {
+        const s = sheet.getBoundingClientRect();
+        const b = button.getBoundingClientRect();
+        const side = s.left - base.left > 40;
+        const key = `tab:${hint.key ?? hint.step}:${Math.round(s.left)}:${Math.round(s.top)}:${Math.round(b.top)}:${Math.round(b.left)}:${text}`;
+        setGlow(button);
+        if (key === lastKey) return;
+        lastKey = key;
+        outside = true;
+        label.textContent = text;
+        root.hidden = false;
+        ring.hidden = true;
+        root.dataset.hint = hint.step;
+        root.classList.remove('below');
+        root.classList.toggle('side', side);
+        const w = root.offsetWidth;
+        const hh = root.offsetHeight;
+        if (side) {
+          const cy = b.top + b.height / 2 - base.top;
+          const top = Math.max(deps.topInset() + 8, Math.min(base.height - hh - 8, cy - hh / 2));
+          root.style.left = `${Math.max(8, s.left - base.left - w - 14)}px`;
+          root.style.top = `${top}px`;
+          root.style.setProperty('--arrow-y', `${Math.max(14, Math.min(hh - 14, cy - top))}px`);
+        } else {
+          const tx = Math.max(s.left + 20, Math.min(s.right - 20, b.left + b.width / 2)) - base.left;
+          const left = Math.max(8, Math.min(base.width - w - 8, tx - w / 2));
+          root.style.left = `${left}px`;
+          root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, tx - left))}px`);
+          root.style.top = `${Math.max(deps.topInset() + 4, s.top - base.top - 12 - hh)}px`;
+        }
+        return;
+      }
+      outside = false;
+      root.classList.remove('side');
       // Above the target; below it when the HUD is in the way. A button in the upper half of a screen (the first card under
       // a tab title, UB-06) gets its bubble below, so the title stays readable; a tab of the bar — above.
       const inBar = button !== null && button.closest('#nav') !== null;

@@ -426,6 +426,16 @@
   border-right: 9px solid transparent;
   border-top: 10px solid var(--c-uiText);
 }
+.hint.side .hint-arrow {
+  left: auto;
+  right: -9px;
+  bottom: auto;
+  top: calc(var(--arrow-y, 50%) - 9px);
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 10px solid var(--c-uiText);
+  border-right: 0;
+}
 .hint.below .hint-arrow {
   bottom: auto;
   top: -9px;
@@ -983,6 +993,14 @@
 }
 .detail-page .eggs-back {
   align-self: flex-start;
+}
+/* M4-09: «Back» inside a tab stays at the top while the page scrolls (a chat opens on its latest lines). */
+.sheet .eggs-back {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--c-uiPanel);
+  border-radius: 12px;
 }
 /* A tap on the shop while another tab is open closes that tab (the home screen comes back). */
 .scene-catcher {
@@ -2221,4 +2239,11 @@
 }
 .rep-head {
   padding-right: 48px;
+}
+/* M4-09: «Done» of the Gifts window stays in view while its list scrolls (a phone upright). */
+.card-gifts > [data-action='gifts-close'] {
+  position: sticky;
+  bottom: 0;
+  flex: none;
+  box-shadow: 0 -10px 12px var(--c-uiPanel);
 }

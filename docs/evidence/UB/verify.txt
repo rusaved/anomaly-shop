@@ -1,0 +1,33 @@
+# UB · повтор полного verify (13 ступеней): e2e зелёный (79 тестов), check-release FAIL пункт 7 — «скоро» в двух текстах
+verify (milestone): 13 stages, full log /home/user/anomaly-shop/.cache/verify.log
+ok   typecheck 1.2 s
+ok   test 17.9 s
+ok   validate:content 0.3 s
+ok   sim:balance 72.7 s
+ok   build:e2e 1.2 s
+ok   e2e [e2e: end of milestone only] 304.4 s
+ok   build 1.2 s
+ok   size 0.3 s
+ok   pack 0.2 s
+FAIL check-release after 0.5 s (exit 1)
+FAIL  7. no development or stop-list words in shipped texts
+        content/i18n/ru.json: "Сезон откроется совсем скоро" contains "скоро"
+        content/i18n/ru.json: "скоро" contains "скоро"
+
+
+# правка текстов «скоро» → «в обновлении» (i18n ftue.tab.season, rep.soon); третий полный прогон не запускал (лимит: один повтор) — все ступени, кроме e2e, и смоук релизного архива:
+verify (no-e2e): 11 stages, full log /home/user/anomaly-shop/.cache/verify.log
+ok   typecheck 1.2 s
+ok   test 18.0 s
+ok   validate:content 0.3 s
+ok   sim:balance 74.1 s
+ok   build:e2e 1.2 s
+ok   build 0.7 s
+ok   size 0.3 s
+ok   pack 0.3 s
+ok   check-release 0.5 s
+ok   build:youtube 1.0 s
+ok   check:youtube 0.2 s
+verify (no-e2e): all 11 stages green in 98 s
+ok   e2e:release (BLD-04 smoke on the unpacked release zip) — 1 passed
+EXIT=0

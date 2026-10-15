@@ -23,3 +23,55 @@ validate:content: game.json and 25 content files — ok
 ok   validate:content 0.3 s
 
 == verify: sim:balance
+sim:balance — 4 bots × 24 seeds × 10 min; p50 / p90 of game seconds (limit in brackets)
+casual  F1 16/16 (40) ok · F2 36/37 (120) ok · F3 44/49 (180) ok · F4 24/24 (300) ok · F13 11/12 (60) ok · F14 53/259 (600) ok · F15 237/334 (600) ok · F16.2 35/36 (90) ok · F16.3 84/90 (180) ok · F16.4 147/154 (270) ok · F16.5 216/233 (360) ok · F5 ×2.6 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 534 coins; 10 min: 1685 coins (p50)
+rusher  F1 17/17 (40) ok · F2 38/58 (120) ok · F3 45/55 (180) ok · F4 25/25 (300) ok · F13 12/12 (60) ok · F14 51/422 (600) ok · F15 284/399 (600) ok · F16.2 37/38 (90) ok · F16.3 84/89 (180) ok · F16.4 143/151 (270) ok · F16.5 207/227 (360) ok · F5 ×2.9 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 491 coins; 10 min: 1530 coins (p50)
+tapper  F1 15/15 (40) ok · F2 37/39 (120) ok · F3 44/54 (180) ok · F4 23/23 (300) ok · F13 15/16 (60) ok · F14 56/106 (600) ok · F15 215/279 (600) ok · F16.2 37/39 (90) ok · F16.3 90/102 (180) ok · F16.4 160/174 (270) ok · F16.5 235/250 (360) ok · F5 ×1.8 ok · F10 ok · F11 0/24 ok · 5 min: 18 deals, 697 coins; 10 min: 1619 coins (p50)
+slow    F1 20/20 (40) ok · F2 45/60 (120) ok · F3 59/61 (180) ok · F4 32/32 (300) ok · F13 12/12 (60) ok · F14 72/261 (600) ok · F15 225/400 (600) ok · F16.2 43/44 (90) ok · F16.3 94/102 (180) ok · F16.4 154/168 (270) ok · F16.5 228/241 (360) ok · F5 ×2.8 ok · F10 ok · F11 0/24 ok · 5 min: 18 deals, 481 coins; 10 min: 1347 coins (p50)
+long run — casual and slow × 8 seeds: 3 days of 30 active minutes + 8 h away
+casual  F6 8 h away = 46 min of play (30–60) ok · F7 rebirth threshold on day 1.8 (2–3) ok · F8 street 298 s, square 1049 s p90 (600 / 2400) ok
+slow    F6 8 h away = 56 min of play (30–60) info · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 309 s, square 1131 s p90 (600 / 2400) ok
+keeper  F12 10 min = ×0.86 of casual (≤ ×2) · rebirth threshold on day 1.4 (≥ 1.0) ok
+week    F17 new things by day 40 / 38 / 51 / 20 / 59 / 38 / 53 (≥ 1 a day) ok · guest zone pays back ×7.87 (≥ 1) ok · F18 moves on day 2.0, the next 2.3 days later (1–3), the city egg on day 5.6 ok
+F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)
+F1–F8, F10, F11, F12–F18: all green
+(73.3 s)
+ok   sim:balance 73.7 s
+
+== verify: build:e2e
+vite v8.3.2 building client environment for e2e...
+transforming...
+✓ 814 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-e2e/index.html                                         2.18 kB │ gzip:   1.06 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-e2e/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-e2e/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-e2e/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-e2e/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-e2e/assets/index-YAlR9SiJ.css                         34.27 kB │ gzip:   7.48 kB
+dist-e2e/assets/webworkerAll-BZ4dQZMv.js                    0.05 kB │ gzip:   0.06 kB
+dist-e2e/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-e2e/assets/test-api-VciuaI9t.js                        1.18 kB │ gzip:   0.58 kB
+dist-e2e/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-e2e/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-e2e/assets/yandex-D5b4cFzf.js                          8.55 kB │ gzip:   2.97 kB
+dist-e2e/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-e2e/assets/init-BB7ESquK.js                           15.31 kB │ gzip:   4.80 kB
+dist-e2e/assets/panel-CIOSUQ6g.js                          31.89 kB │ gzip:   8.59 kB
+dist-e2e/assets/browserAll-BV7iembQ.js                     42.64 kB │ gzip:  11.19 kB
+dist-e2e/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-e2e/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-e2e/assets/index-BlyF2T_B.js                         623.11 kB │ gzip: 194.02 kB
+
+✓ built in 1.18s
+ok   build:e2e 1.8 s
+
+== verify: e2e [e2e: end of milestone only]
+
+Running 93 tests using 2 workers
+

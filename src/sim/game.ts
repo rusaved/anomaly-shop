@@ -186,6 +186,9 @@ export interface CreatureView {
   need: number;
   /** M4-07: whole minutes the anomaly of the day still settles in (0 = free to sell). */
   hold: number;
+  /** M4-25: the mark id and its scene tint ('' when none). */
+  mark: string;
+  tint: string;
 }
 
 /** M4-07: the anomaly of the day and the goals of the day (calendar.json) for a device date. */
@@ -530,8 +533,19 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const r = speciesData(cr.species)?.rarity;
     return r && s().flags[`row_${r}`] ? content.collection.rowBonus[r] : 0;
   };
+  /** M4-25: the mark of a creature (species.json marks). */
+  const markOf = (cr: Creature) => (cr.mark ? species.marks.list.find((m) => m.id === cr.mark) : undefined);
+  /** Feeding taps a level needs: the sleepy one eats slower. */
+  const needOf = (cr: Creature): number => Math.ceil(tapsForLevel(cr.level, species.tapsPerLevelBase, species.tapGrowth) * (markOf(cr)?.feedMult ?? 1));
+  /** A mark at hatching from the creature's id (no extra roll: the rest of the game stays as it was for a seed). */
+  const markFor = (uid: string): string | undefined => {
+    const roll = dayHash(uid, s().createdAt) / 0x100000000;
+    const m = species.marks;
+    return roll < m.chance ? pickWeighted(m.list, roll / m.chance)?.id : undefined;
+  };
   const valueMult = (cr: Creature): number =>
     (cr.mult ?? 1) *
+    (markOf(cr)?.priceMult ?? 1) *
     (1 + shelfBonus(cr.age ?? 0, species.shelf, 1 + effectSum('shelfGrowth'))) *
     (1 + effectSum('appraisal')) *
     (1 + rowBonus(cr)) *
@@ -622,8 +636,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       askShare: x.askShare ?? 1,
       zone: priceZone(x.askShare ?? 1, content.market.slider),
       fed: x.fed,
-      need: tapsForLevel(x.level, species.tapsPerLevelBase, species.tapGrowth),
+      need: needOf(x),
       hold: Math.ceil((x.hold ?? 0) / 60),
+      mark: x.mark ?? '',
+      tint: markOf(x)?.tint ?? '',
     };
   }
 
@@ -869,7 +885,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const before = appraisal(cr);
     if (!maxed) {
       cr.fed += food;
-      if (cr.fed >= tapsForLevel(cr.level, species.tapsPerLevelBase, species.tapGrowth)) {
+      if (cr.fed >= needOf(cr)) {
         cr.fed = 0;
         cr.level += 1;
         levelUp = true;
@@ -1045,6 +1061,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       : spec
         ? offerFor(spec, cr.level, { share, mult: 1, rarityBonus: c?.rarityBonus, levelBonusPerLevel: c?.levelBonusPerLevel, cashBonus: effectSum('bargain') + guestBonus(), valueMult: valueMult(cr) })
         : 1;
+    // M4-25: collectors love a singing one.
+    if (!golden) offer = coins(offer * (markOf(cr)?.offerMult ?? 1));
     const order = !golden && orderFits(cr);
     if (order && st.order) offer = Math.max(offer, st.order.reward);
     offer = Math.max(1, offer);
@@ -1279,7 +1297,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const kind = dayKind ?? pickSpecies(species, rarity, rng.next());
     st.stats.hatched += 1;
     const uid = `c${st.stats.hatched.toString(36)}${rng.int(1296).toString(36)}`;
-    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: dayKind ? dayMult() : (egg.valueMult ?? 1), ...(dayKind ? { hold: content.calendar.daily.holdMinutes * 60 } : {}) });
+    // M4-25: a mark now and then — not on the first two (the first minute is the same for everyone) nor on the anomaly of the day.
+    const mark = forced || dayKind ? undefined : markFor(uid);
+    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: dayKind ? dayMult() : (egg.valueMult ?? 1), ...(dayKind ? { hold: content.calendar.daily.holdMinutes * 60 } : {}), ...(mark ? { mark } : {}) });
     // M4-21: twins — the egg of the event gives two of a kind (the second waits in the inventory).
     if (activeOf('twins')) {
       st.creatures.push({ uid: `${uid}t`, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: egg.valueMult ?? 1 });

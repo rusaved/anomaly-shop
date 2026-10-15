@@ -103,7 +103,7 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     const fmt = new Intl.NumberFormat(look.lang());
     q<HTMLImageElement>('[data-hatch-pic]').src = look.portrait(cr.species, cr.rarity);
     q('[data-hatch-name]').textContent = look.speciesName(cr.species);
-    q('[data-hatch-rarity]').textContent = look.t(`rarity.${cr.rarity}`);
+    q('[data-hatch-rarity]').textContent = `${look.t(`rarity.${cr.rarity}`)}${cr.mark ? ` · ${look.t(`mark.${cr.mark}`)}` : ''}`;
     q('[data-hatch-dot]').style.background = look.rarityColor(cr.rarity);
     // UB-10, M4-00: a valuable one and above is an event — a flash of its rarity color, a short pause, a big «Valuable!», then the creature pops.
     const rare = cr.rarity !== 'common' && cr.rarity !== 'good';

@@ -695,11 +695,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         creatures.set(cv.uid, node);
         moving = true;
       }
-      const key = `${cv.species}:${at.r.toFixed(1)}`;
+      const key = `${cv.species}:${at.r.toFixed(1)}:${cv.tint}`;
       if (node.key !== key) {
         node.key = key;
         node.shown = '';
         drawCreature(node.art, style.creatures[cv.species] ?? FALLBACK_LOOK, cv.rarity, at.r, c, l.outline * 0.8);
+        // M4-25: a marked one wears its tint (species.json marks); particles come in M5.
+        node.art.tint = cv.tint || 0xffffff;
       }
       const picked = false;
       const order = view.order && view.order.species === cv.species ? (cv.level >= view.order.level ? 'ready' : 'wanted') : 'none';

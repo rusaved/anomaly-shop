@@ -69,7 +69,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
               `<span class="card-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(c.rarity)}"></i></span>` +
               `<span class="card-name"></span><span class="card-sub"></span><span class="card-price"><span class="coin coin-sm" aria-hidden="true"></span><b></b></span>`;
             (b.querySelector('.card-name') as HTMLElement).textContent = look.speciesName(c.species);
-            (b.querySelector('.card-sub') as HTMLElement).textContent = `${look.t(`rarity.${c.rarity}`)} · ${look.t('card.level', { n: c.level })}`;
+            (b.querySelector('.card-sub') as HTMLElement).textContent = `${look.t(`rarity.${c.rarity}`)}${c.mark ? ` · ${look.t(`mark.${c.mark}`)}` : ''} · ${look.t('card.level', { n: c.level })}`;
             (b.querySelector('.card-price b') as HTMLElement).textContent = fmt.format(c.price);
             b.querySelector('.card-price')?.insertAdjacentHTML('afterend', look.mood(c.species));
             const chip = document.createElement('span');

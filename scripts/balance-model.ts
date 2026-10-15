@@ -89,7 +89,7 @@ export const LIMITS = {
   F12keeperMax: 2,
   /** M4-08: F17 — at least this many new things a day (opened or first bought: eggs, districts, upgrades; a city) in each of 7 days. */
   F17opensPerDay: 1,
-  /** M4-05: F17 — a week with the guest zone earns at least this share of a week without it (the upkeep never eats the bonus). */
+  /** M4-05: F17 — in a week the guest zone adds to the deals at least this share of what it costs (decorations and upkeep). */
   F17decorMin: 1,
   /** M4-08: F18 — days from the first move to the second. */
   F18gapDays: [1, 3] as const,
@@ -396,8 +396,11 @@ export interface WeekResult {
   cityEgg: number;
   /** New things each day 1–7: an egg, a district or an upgrade opens or is bought for the first time here, a new city. */
   opens: number[];
-  /** Coins earned in the week (M4-05: with the guest zone against without). */
+  /** Coins earned in the week. */
   earned: number;
+  /** M4-05: what the guest zone added to the deals (its share of each offer) against what it cost (decorations and upkeep). */
+  zoneGain: number;
+  zoneCost: number;
 }
 
 /** M4-08: a week of a player — 30 active minutes and 8 hours away a day, moving to a new city whenever it is ready. */
@@ -411,7 +414,16 @@ export function playWeek(bot: Bot, seed: number, content: GameContent = loadGame
   const boughtHere = new Set<string>();
   let day = 1;
   let part = 0;
+  let zoneGain = 0;
+  let zoneCost = 0;
+  const decor = new Map<string, { price: number; upkeep: number }>(content.decor.items.map((x) => [x.id, x]));
+  const upkeep = (): number => (game.state.guest.unpaid ? 0 : game.state.guest.items.reduce((n, id) => n + (decor.get(id)?.upkeep ?? 0), 0));
   game.events.on((e: GameEvent) => {
+    // The zone's bonus is a share of the buyer's offer (cashBonus): its part of the price, other bonuses left aside (a little in its favor).
+    if (e.type === 'sold' && e.by !== 'now') {
+      const b = game.guestZone().bonus;
+      zoneGain += (e.price * b) / (1 + b);
+    }
     const when = day - 1 + part;
     if (e.type === 'rebirth') moves.push(when);
     if (e.type === 'eggBought' && cityEggs.has(e.egg) && e.by === 'player' && cityEgg === Infinity) cityEgg = when;
@@ -426,15 +438,23 @@ export function playWeek(bot: Bot, seed: number, content: GameContent = loadGame
     let busyUntil = active + 1.5;
     const start = active;
     while (active < start + DAY_ACTIVE_SEC) {
-      if (active >= busyUntil) busyUntil = active + act();
+      if (active >= busyUntil) {
+        const had = new Set(game.state.guest.items);
+        busyUntil = active + act();
+        for (const id of game.state.guest.items) if (!had.has(id)) zoneCost += decor.get(id)?.price ?? 0;
+      }
+      zoneCost += (upkeep() * STEP) / 60;
       game.tick(STEP);
       active += STEP;
       part = (active - start) / DAY_ACTIVE_SEC;
     }
     part = 1;
-    if (day < WEEK_DAYS) game.offline(AWAY_SEC);
+    if (day < WEEK_DAYS) {
+      zoneCost += (upkeep() * AWAY_SEC) / 60;
+      game.offline(AWAY_SEC);
+    }
   }
-  return { moves, cityEgg, opens, earned: game.state.stats.coinsEarned };
+  return { moves, cityEgg, opens, earned: game.state.stats.coinsEarned, zoneGain, zoneCost };
 }
 
 const quantile = (xs: number[], q: number): number => {
@@ -529,16 +549,16 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     const gap = quantile(runs.map((r) => (r.moves[1] ?? Infinity) - (r.moves[0] ?? Infinity)), 0.5);
     const egg = quantile(runs.map((r) => r.cityEgg), 0.5);
     const f18 = gap >= LIMITS.F18gapDays[0] && gap <= LIMITS.F18gapDays[1] && egg <= WEEK_DAYS;
-    // M4-05 (F17): the guest zone pays its upkeep — a week with decorations earns at least as much as one without.
-    const plain = Array.from({ length: longSeeds }, (_, i) => playWeek({ ...casual, noDecor: true }, 5000 + i * 104729, content));
-    const decorRatio = quantile(runs.map((r) => r.earned), 0.5) / Math.max(1, quantile(plain.map((r) => r.earned), 0.5));
+    // M4-05 (F17): the guest zone pays for itself within the week — what it added to the deals against its decorations and upkeep
+    // (counted in the same week: comparing two different weeks was noise, ×0.99…×1.30 between runs).
+    const decorRatio = quantile(runs.map((r) => (r.zoneCost > 0 ? r.zoneGain / r.zoneCost : 0)), 0.5);
     const fDecor = decorRatio >= LIMITS.F17decorMin;
-    if (!fDecor) failures.push(`casual F17 the guest zone costs more than it brings: ×${decorRatio.toFixed(2)} of a week without it`);
+    if (!fDecor) failures.push(`casual F17 the guest zone costs more than it brings: it adds ×${decorRatio.toFixed(2)} of its cost in a week`);
     if (!f17) failures.push(`casual F17 a day without anything new: ${daily.join(' / ')}`);
     if (!f18) failures.push(`casual F18 the second city ${fmt(gap, 1)} days after the first (want ${LIMITS.F18gapDays.join('–')}), its egg on day ${fmt(egg, 1)} (want ≤ ${WEEK_DAYS})`);
     lines.push(
       `week    F17 new things by day ${daily.join(' / ')} (≥ ${LIMITS.F17opensPerDay} a day) ${f17 ? 'ok' : 'FAIL'}` +
-        ` · guest zone ×${decorRatio.toFixed(2)} (≥ ${LIMITS.F17decorMin}) ${fDecor ? 'ok' : 'FAIL'}` +
+        ` · guest zone pays back ×${decorRatio.toFixed(2)} (≥ ${LIMITS.F17decorMin}) ${fDecor ? 'ok' : 'FAIL'}` +
         ` · F18 moves on day ${fmt(first, 1)}, the next ${fmt(gap, 1)} days later (${LIMITS.F18gapDays.join('–')}), the city egg on day ${fmt(egg, 1)} ${f18 ? 'ok' : 'FAIL'}`,
     );
   }

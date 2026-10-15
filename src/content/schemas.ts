@@ -78,7 +78,16 @@ export const Species = v.object({
 /** Showcase growth (docs/01, section 3.5): a creature gains growthPerMin of its price per minute on the shelf, up to maxBonus. */
 export const Shelf = v.object({ growthPerMin: v.pipe(v.number(), v.minValue(0)), maxBonus: v.pipe(v.number(), v.minValue(0)) });
 const PerRarity = v.object(Object.fromEntries(RARITIES.map((r) => [r, Money])) as Record<(typeof RARITIES)[number], typeof Money>);
-export const SpeciesFile = v.object({ tapsPerLevelBase: Count, tapGrowth: v.pipe(v.number(), v.minValue(1)), shelf: Shelf, crystalsPerSale: PerRarity, species: v.pipe(v.array(Species), v.minLength(1)) });
+/** M4-25: marks at hatching — a chance, then one by weight; each changes the price, the feeding and the offers, and tints the creature. */
+const Mark = v.object({ id: Id, weight: v.pipe(v.number(), v.minValue(0)), priceMult: v.pipe(v.number(), v.minValue(1)), feedMult: v.pipe(v.number(), v.minValue(1)), offerMult: v.pipe(v.number(), v.minValue(1)), tint: Color });
+export const SpeciesFile = v.object({
+  tapsPerLevelBase: Count,
+  tapGrowth: v.pipe(v.number(), v.minValue(1)),
+  shelf: Shelf,
+  crystalsPerSale: PerRarity,
+  marks: v.object({ note: v.optional(v.string()), chance: Share, list: v.pipe(v.array(Mark), v.minLength(1)) }),
+  species: v.pipe(v.array(Species), v.minLength(1)),
+});
 
 export const Customer = v.object({
   id: Id,

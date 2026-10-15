@@ -952,6 +952,14 @@
   font-weight: 700;
   line-height: 1;
 }
+/* M4-00: the ✕ of a top bar panel (seller level, leaders) — the same as a tab's, in the top right corner. */
+.panel-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  margin: 0;
+  z-index: 1;
+}
 /* An inner page of a tab (a lot, a creature's price, an egg's odds) takes the place of the list; «Back» on it returns to the list. */
 .sheet.has-detail > .sheet-head,
 .sheet.has-detail > .sheet-body {
@@ -2206,4 +2214,11 @@
 }
 .cards > .finds {
   grid-column: 1 / -1;
+}
+/* M4-00: room for the ✕ of a top bar panel. */
+.card-leaders > h2 {
+  padding: 0 48px;
+}
+.rep-head {
+  padding-right: 48px;
 }

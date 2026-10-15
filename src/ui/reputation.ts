@@ -83,7 +83,7 @@ export function createReputation(hudBalance: HTMLElement, parent: HTMLElement, g
         rows.push(`<li class="rep-row" data-rep-level="${l}"><b>${look.t('rep.level', { n: l })}</b><span>${what.length ? what.map((w) => w.replace(/</g, '')).join(' · ') : look.t('rep.nothing')}</span></li>`);
       }
       panel.card.innerHTML =
-        `<button type="button" class="eggs-back" data-action="rep-back">‹ ${look.t('eggs.back')}</button>` +
+        `<button type="button" class="sheet-close panel-close" data-action="rep-back" aria-label="✕">✕</button>` +
         `<div class="rep-head"><span class="hud-level rep-big" style="--p:${chip.style.getPropertyValue('--p')}"><span class="hud-level-ring" aria-hidden="true"></span><span class="hud-level-star" aria-hidden="true">★</span><b>${r.level}</b></span>` +
         `<div><h2 class="rep-title"></h2><p class="card-sub rep-name"></p></div></div>` +
         `<div class="rep-bar" aria-hidden="true"><i style="width:${Math.round(share * 100)}%"></i></div>` +

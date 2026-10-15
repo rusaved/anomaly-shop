@@ -27,7 +27,8 @@ export function createLeadersWindow(parent: HTMLElement, leaders: Leaders, look:
   const overlay = createOverlay(parent, 'leaders', () => overlay.hide(), { kind: 'panel' });
   overlay.card.classList.add('card-detail', 'card-leaders');
   overlay.card.innerHTML =
-    `<button type="button" class="eggs-back" data-action="leaders-back"></button><h2 data-i18n="leaders.title"></h2>` +
+    // M4-00: one panel model — a panel of the top bar closes with ✕ (a tab or a tap on the shop close it too); «Back» lives only inside a tab.
+    `<button type="button" class="sheet-close panel-close" data-action="leaders-back" aria-label="✕">✕</button><h2 data-i18n="leaders.title"></h2>` +
     '<p class="card-sub" data-leaders-note></p><div data-leaders-login></div><ol class="leaders-list" data-leaders-list></ol>';
   const back = overlay.card.querySelector('[data-action="leaders-back"]') as HTMLElement;
   back.addEventListener('click', () => overlay.hide());
@@ -51,7 +52,6 @@ export function createLeadersWindow(parent: HTMLElement, leaders: Leaders, look:
       await leaders.submit(score);
     }
     if (!overlay.isOpen()) return;
-    back.textContent = `‹ ${look.t('eggs.back')}`;
     const lite = leaders.needsLogin();
     note.textContent = look.t(lite ? 'leaders.lite' : 'leaders.note');
     loginBox.replaceChildren(...(lite ? [login] : []));

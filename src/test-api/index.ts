@@ -33,6 +33,8 @@ export interface TestHooks {
   grant(coins: number): void;
   /** e2e only: a toast through the same queue as the game's (M3-18). */
   toast?(text: string): void;
+  /** e2e only (M4-21): starts a random event by its id now, when it may come. */
+  event?(id: string): boolean;
 }
 
 export function installTestApi(hooks: TestHooks): void {
@@ -79,6 +81,9 @@ export function installTestApi(hooks: TestHooks): void {
     },
     grant(coins: number): void {
       hooks.grant(coins);
+    },
+    event(id: string): boolean {
+      return hooks.event?.(id) ?? false;
     },
     toast(text: string): void {
       hooks.toast?.(text);

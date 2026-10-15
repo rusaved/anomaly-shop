@@ -362,6 +362,15 @@ export const RandomEvent = v.variant('kind', [
   v.object({ ...EventBase, kind: v.literal('sneeze'), coins: IntRange, coinValue: IntRange, saleShare: Share }),
   v.object({ ...EventBase, kind: v.literal('doorEgg') }),
   v.object({ ...EventBase, kind: v.literal('merchant'), discount: Share, mysteryPriceOf: Id, mysteryEgg: Id }),
+  // M4-21 (docs/01b §3): events 5–12; needs — a species that has to be on the shelf for the event to come.
+  v.object({ ...EventBase, kind: v.literal('excursion'), writeMult: Share, offerShare: Share }),
+  v.object({ ...EventBase, kind: v.literal('inspector'), perCreature: Count }),
+  v.object({ ...EventBase, kind: v.literal('photo'), share: Share }),
+  v.object({ ...EventBase, kind: v.literal('pie'), coins: IntRange }),
+  v.object({ ...EventBase, kind: v.literal('twins') }),
+  v.object({ ...EventBase, kind: v.literal('kettle'), needs: Id, fedTaps: Count }),
+  v.object({ ...EventBase, kind: v.literal('blink'), needs: Id, coinsPerLevel: Count }),
+  v.object({ ...EventBase, kind: v.literal('catWalk'), needs: Id, coins: IntRange, crystalChance: Share }),
 ]);
 const SecRange = v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(v.number(), v.minValue(1)) });
 export const EventsFile = v.object({ firstAfterSec: SecRange, everySec: SecRange, events: v.pipe(v.array(RandomEvent), v.minLength(1)) });

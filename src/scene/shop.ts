@@ -791,8 +791,12 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         eventLayer.addChild(box);
         eventCoins.set(coin.id, box);
       }
-    } else if (ev.kind === 'doorEgg' || ev.kind === 'merchant') {
-      const spot: Spot = { x: Math.max(l.stage.x + l.unit, l.door.x - l.unit * 0.75), y: l.floor.y + l.unit * 0.35, r: l.unit * 0.55 };
+    } else if (ev.kind === 'doorEgg' || ev.kind === 'merchant' || ev.kind === 'inspector' || ev.kind === 'photo' || ev.kind === 'pie' || ev.kind === 'blink' || ev.kind === 'catWalk') {
+      // M4-21: the cat sits on the sign; the rest wait at the door.
+      const spot: Spot =
+        ev.kind === 'catWalk'
+          ? { x: l.decor.sign.x + l.decor.sign.w * 0.75, y: l.decor.sign.y - l.unit * 0.1, r: l.unit * 0.45 }
+          : { x: Math.max(l.stage.x + l.unit, l.door.x - l.unit * 0.75), y: l.floor.y + l.unit * 0.35, r: l.unit * 0.55 };
       const box = new Container();
       const g = new Graphics();
       const r = spot.r;
@@ -802,6 +806,33 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         g.roundRect(-r * 0.75, r * 0.1, r * 1.5, r * 0.6, r * 0.2).fill(c.counter).stroke({ width: l.outline * 0.7, color: c.outline });
         g.roundRect(r * 0.35, -r * 0.65, r * 0.55, r * 0.42, r * 0.06).fill(c.eyeWhite).stroke({ width: l.outline * 0.5, color: c.outline });
         g.rect(r * 0.43, -r * 0.5, r * 0.38, l.outline * 0.4).fill(c.uiMuted);
+      } else if (ev.kind === 'inspector') {
+        // The inspector's note: a paper with lines and a stamp.
+        g.roundRect(-r * 0.6, -r * 0.8, r * 1.2, r * 1.5, r * 0.08).fill(c.eyeWhite).stroke({ width: l.outline * 0.7, color: c.outline });
+        for (let i = 0; i < 3; i++) g.rect(-r * 0.4, -r * 0.5 + i * r * 0.3, r * 0.8, l.outline * 0.45).fill(c.uiMuted);
+        g.circle(r * 0.3, r * 0.4, r * 0.22).stroke({ width: l.outline * 0.6, color: c.blush });
+      } else if (ev.kind === 'photo') {
+        // A camera on a tripod.
+        g.moveTo(0, 0).lineTo(-r * 0.5, r * 0.8).moveTo(0, 0).lineTo(r * 0.5, r * 0.8).stroke({ width: l.outline * 0.7, color: c.outline });
+        g.roundRect(-r * 0.7, -r * 0.7, r * 1.4, r * 0.8, r * 0.15).fill(c.uiPanelAlt).stroke({ width: l.outline * 0.7, color: c.outline });
+        g.circle(0, -r * 0.3, r * 0.28).fill(c.incubatorGlass).stroke({ width: l.outline * 0.6, color: c.outline });
+        g.rect(r * 0.3, -r * 0.85, r * 0.3, r * 0.15).fill(c.uiAccent);
+      } else if (ev.kind === 'pie') {
+        // A pie on a plate.
+        g.ellipse(0, r * 0.35, r * 0.8, r * 0.22).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+        g.moveTo(-r * 0.6, r * 0.25).quadraticCurveTo(0, -r * 0.6, r * 0.6, r * 0.25).closePath().fill(c.counterTop).stroke({ width: l.outline * 0.7, color: c.outline });
+        for (const dx of [-0.25, 0, 0.25]) g.rect(r * dx - l.outline * 0.2, -r * 0.1, l.outline * 0.4, r * 0.2).fill(c.counter);
+      } else if (ev.kind === 'blink') {
+        // A glow: the lampbug's light that blinked in.
+        g.circle(0, 0, r * 1.1).fill({ color: c.counterTop, alpha: 0.35 });
+        g.circle(0, 0, r * 0.55).fill(c.counterTop).stroke({ width: l.outline * 0.6, color: c.outline });
+        g.rect(-r * 0.2, r * 0.5, r * 0.4, r * 0.25).fill(c.uiMuted).stroke({ width: l.outline * 0.5, color: c.outline });
+      } else if (ev.kind === 'catWalk') {
+        // The cloud cat: a puffy head with ears.
+        g.poly([-r * 0.6, -r * 0.2, -r * 0.45, -r * 0.9, -r * 0.1, -r * 0.45]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+        g.poly([r * 0.6, -r * 0.2, r * 0.45, -r * 0.9, r * 0.1, -r * 0.45]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+        g.ellipse(0, 0, r * 0.75, r * 0.55).fill(c.eyeWhite).stroke({ width: l.outline * 0.7, color: c.outline });
+        for (const dx of [-0.25, 0.25]) g.circle(r * dx, -r * 0.05, r * 0.08).fill(c.outline);
       } else {
         // The merchant's cart with an awning and two eggs.
         g.roundRect(-r * 1.0, -r * 0.45, r * 2.0, r * 0.75, r * 0.15).fill(c.counter).stroke({ width: l.outline * 0.7, color: c.outline });

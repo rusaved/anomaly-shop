@@ -231,3 +231,12 @@ export function marketMood(day: string, seed: number, ids: readonly string[]): {
   const cold = (hot + 1 + ((h >>> 8) % (ids.length - 1))) % ids.length;
   return { hot: ids[hot]!, cold: ids[cold]! };
 }
+
+/** M4-21: a weighted pick — roll in [0, 1) over the weights; the events (and anything else by weight) choose this way. */
+export function pickWeighted<T extends { weight: number }>(items: readonly T[], roll: number): T | undefined {
+  const total = items.reduce((n, x) => n + Math.max(0, x.weight), 0);
+  if (!items.length || total <= 0) return undefined;
+  let r = Math.min(0.999999, Math.max(0, roll)) * total;
+  for (const x of items) if ((r -= Math.max(0, x.weight)) < 0) return x;
+  return items[items.length - 1];
+}

@@ -2,15 +2,15 @@
   "note": "M4-05, Q-019 (решение продюсера 14.10): зона гостей пункта продаж. Украшения ставятся в зону гостей у двери, когда арендован ПВЗ (улучшение point_rent). Каждое даёт бонус к торгу bargain (покупатели в зоне гостей предлагают больше) и стоит upkeep монет в минуту (расходы, и офлайн тоже). Не хватает монет на расходы — гости скучают: бонус выключается, пока не появятся монеты. Набор темы (все украшения одной темы) даёт ещё sets.bonus — комбинаторика: выгоднее собрать тему, чем скупать всё подряд. Убрать украшение можно в любой момент — расходы прекращаются, монеты не возвращаются. Переезд в новый город зону сбрасывает.",
   "unlock": {"type": "upgrade", "id": "point_rent"},
   "items": [
-    {"id": "rug", "name": {"ru": "Коврик", "en": "Rug"}, "price": 200, "bargain": 0.03, "upkeep": 2, "theme": "cozy"},
-    {"id": "plant", "name": {"ru": "Фикус", "en": "Ficus"}, "price": 300, "bargain": 0.03, "upkeep": 2, "theme": "green"},
-    {"id": "poster", "name": {"ru": "Плакат с котом", "en": "Cat poster"}, "price": 400, "bargain": 0.04, "upkeep": 3, "theme": "green"},
-    {"id": "bench", "name": {"ru": "Скамейка", "en": "Bench"}, "price": 600, "bargain": 0.05, "upkeep": 4, "theme": "cozy"},
-    {"id": "floorlamp", "name": {"ru": "Торшер", "en": "Floor lamp"}, "price": 800, "bargain": 0.06, "upkeep": 5, "theme": "cozy"},
-    {"id": "aquarium", "name": {"ru": "Аквариум", "en": "Aquarium"}, "price": 1200, "bargain": 0.08, "upkeep": 8, "theme": "green"}
+    {"id": "rug", "name": {"ru": "Коврик", "en": "Rug"}, "price": 200, "bargain": 0.04, "upkeep": 2, "theme": "cozy"},
+    {"id": "plant", "name": {"ru": "Фикус", "en": "Ficus"}, "price": 300, "bargain": 0.04, "upkeep": 2, "theme": "green"},
+    {"id": "poster", "name": {"ru": "Плакат с котом", "en": "Cat poster"}, "price": 400, "bargain": 0.05, "upkeep": 3, "theme": "green"},
+    {"id": "bench", "name": {"ru": "Скамейка", "en": "Bench"}, "price": 600, "bargain": 0.06, "upkeep": 4, "theme": "cozy"},
+    {"id": "floorlamp", "name": {"ru": "Торшер", "en": "Floor lamp"}, "price": 800, "bargain": 0.08, "upkeep": 5, "theme": "cozy"},
+    {"id": "aquarium", "name": {"ru": "Аквариум", "en": "Aquarium"}, "price": 1200, "bargain": 0.1, "upkeep": 8, "theme": "green"}
   ],
   "sets": [
-    {"theme": "cozy", "name": {"ru": "Уют", "en": "Cozy"}, "bonus": 0.05},
-    {"theme": "green", "name": {"ru": "Зелень", "en": "Green"}, "bonus": 0.05}
+    {"theme": "cozy", "name": {"ru": "Уют", "en": "Cozy"}, "bonus": 0.06},
+    {"theme": "green", "name": {"ru": "Зелень", "en": "Green"}, "bonus": 0.06}
   ]
 }

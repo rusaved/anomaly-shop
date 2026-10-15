@@ -8,7 +8,7 @@ import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
 import { emptyIncubator, type Chat, type Creature, type Incubator, type Lot, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, cityMult, coins, marketMood, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, cityMult, coins, marketMood, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -106,6 +106,7 @@ export type GameEvent =
   | { type: 'rowDone'; rarity: RarityName; crystals: number; bonus: number }
   | { type: 'guestUnpaid' }
   | { type: 'find'; id: string; coins: number; crystals: number }
+  | { type: 'twins'; species: string }
   | { type: 'findClaimed'; id: string; coins: number; crystals: number }
   | { type: 'guestBought'; id: string }
   | { type: 'eggBought'; incubator: number; egg: string; price: number; by: 'player' | 'helper' | 'gift' | 'merchant' }
@@ -135,7 +136,7 @@ export type GameEvent =
   | { type: 'eventStarted'; id: string; kind: EventKind; uid?: string | undefined }
   | { type: 'eventEnded'; id: string; kind: EventKind; outcome: 'done' | 'missed' }
   | { type: 'eventCoin'; id: number; value: number }
-  | { type: 'eventGift'; coins: number }
+  | { type: 'eventGift'; coins: number; crystals?: number }
   | { type: 'merchantOpen' }
   | { type: 'orderNew'; species: string; level: number; reward: number }
   | { type: 'orderDone'; species: string; reward: number }
@@ -376,6 +377,10 @@ export interface Game {
   collection(): CollectionView;
   /** M4-05: the guest zone of the pickup point — the decorations, their bonus and upkeep, the full themes. */
   guestZone(): GuestZoneView;
+  /** M4-21: the ids of the events that may come now (weights and the species on the shelf decide). */
+  eventsPossible(): string[];
+  /** e2e and screenshots only (the test API): starts one event now if it may come. */
+  startEventNow(id: string): boolean;
   /** M4-20: the finds — got or not, the reward claimed or waiting, hidden, how far a numeric one is. */
   finds(): Array<{ id: string; got: boolean; claimed: boolean; hidden: boolean; have: number; need: number }>;
   /** M4-20: takes the reward of a find (coins or crystals), once. */
@@ -678,6 +683,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     chat: number | null;
   }
   let active: ActiveEvent | null = null;
+  let twinsDone = false;
   let sessionSec = 0;
   let eventIn = rng.range(content.events.firstAfterSec.min, content.events.firstAfterSec.max);
   let nextCoinId = 1;
@@ -689,16 +695,19 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
 
   function possible(e: EventData): boolean {
     if (e.weight <= 0 || sessionSec < e.fromMin * 60) return false;
-    if (e.kind === 'golden' || e.kind === 'sneeze') return onSale().length > 0;
+    // M4-21: an event about a species comes only while one is on the shelf (the kettle whistles, the lampbug glows, the cat walks).
+    if ('needs' in e && !onSale().some((cr) => cr.species === e.needs)) return false;
+    if (e.kind === 'golden' || e.kind === 'sneeze' || e.kind === 'inspector' || e.kind === 'photo') return onSale().length > 0;
     return true;
   }
+  /** M4-21: the events that may come now (the unit test of the weights and the species). */
+  const possibleEvents = (): string[] => content.events.events.filter(possible).map((e) => e.id);
+  /** M4-21: the event of the moment, when it is of this kind. */
+  const activeOf = <K extends EventKind>(kind: K): Extract<EventData, { kind: K }> | null => (active?.data.kind === kind ? (active.data as Extract<EventData, { kind: K }>) : null);
 
-  function startEvent(): void {
-    const pool = content.events.events.filter(possible);
-    const total = pool.reduce((sum, e) => sum + e.weight, 0);
-    if (!pool.length || total <= 0) return;
-    let pick = rng.next() * total;
-    const data = pool.find((e) => (pick -= e.weight) < 0) ?? pool[pool.length - 1]!;
+  function startEvent(from = content.events.events): void {
+    const data = pickWeighted(from.filter(possible), rng.next());
+    if (!data) return;
     const ev: ActiveEvent = { data, left: data.durationSec, coins: [], uid: null, egg: null, chat: null };
     if (data.kind === 'golden') {
       const uid = dearest();
@@ -713,6 +722,12 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const n = randInt(data.coins);
       for (let i = 0; i < n; i++) ev.coins.push({ id: nextCoinId++, x: rng.next(), y: rng.next(), value: Math.max(randInt(data.coinValue), Math.round(avgSale * data.saleShare)) });
     } else if (data.kind === 'doorEgg') ev.egg = giftEgg();
+    else if (data.kind === 'kettle') {
+      // The kettle whistles: every neighbour on the shelf gets a few bites (feeding as if tapped).
+      const kettle = onSale().find((cr) => cr.species === data.needs);
+      ev.uid = kettle?.uid ?? null;
+      for (const cr of onSale()) if (cr !== kettle) feed(cr, data.fedTaps, 'helper');
+    } else if (data.kind === 'blink' || data.kind === 'catWalk') ev.uid = onSale().find((cr) => cr.species === data.needs)?.uid ?? null;
     active = ev;
     s().flags[`seen_event_${data.kind}`] = true;
     emit({ type: 'eventStarted', id: data.id, kind: data.kind, uid: ev.uid ?? undefined });
@@ -1003,7 +1018,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const base = c ? side.range(c.offer.min, c.offer.max) : 1;
     const roll = (base * side.range(ch.offer.min, ch.offer.max)) / characterMean;
     // Until the first deal the offer covers the next egg (first minute: sale → «buy a new egg»).
-    const share = (st.stats.deals === 0 ? Math.max(roll, content.ftue.firstOfferShare) : roll) * (cr.askShare ?? 1);
+    // M4-21: a school excursion — small offers, but many and nobody leaves.
+    const tour = activeOf('excursion');
+    const share = (st.stats.deals === 0 ? Math.max(roll, content.ftue.firstOfferShare) : tour ? tour.offerShare : roll) * (cr.askShare ?? 1);
     let offer = golden
       ? coins(appraisal(cr) * golden)
       : spec
@@ -1071,7 +1088,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   }
   /** Seconds until a buyer writes: the price zone of the slider (M3-06), the sign upgrade makes it sooner; the very first one comes at once. */
   const writeIn = (cr: Creature): number =>
-    s().stats.deals === 0 && !s().chats.length ? content.ftue.firstCustomerSec : replyDelay(cr.askShare ?? 1, side.next(), content.market) * Math.max(0.1, 1 + effectSum('spawnRate'));
+    s().stats.deals === 0 && !s().chats.length
+      ? content.ftue.firstCustomerSec
+      : replyDelay(cr.askShare ?? 1, side.next(), content.market) * Math.max(0.1, 1 + effectSum('spawnRate')) * (activeOf('excursion')?.writeMult ?? 1);
   function runChats(dt: number): void {
     const st = s();
     for (const c of st.chats) {
@@ -1209,6 +1228,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     st.stats.hatched += 1;
     const uid = `c${st.stats.hatched.toString(36)}${rng.int(1296).toString(36)}`;
     st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: egg.valueMult ?? 1 });
+    // M4-21: twins — the egg of the event gives two of a kind (the second waits in the inventory).
+    if (activeOf('twins')) {
+      st.creatures.push({ uid: `${uid}t`, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: egg.valueMult ?? 1 });
+      twinsDone = true;
+    }
     // Tapped (UB-03): the player decides in the result (keep, sell now, to the shop). By itself (helpers, away) it goes on sale if there is room.
     Object.assign(inc, emptyIncubator());
     if (by === 'self') listIfRoom(uid);
@@ -1222,6 +1246,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     commit({ flush: true });
     emit({ type: 'hatched', incubator: index, uid, species: kind.id, rarity: kind.rarity, by, egg: egg.id });
     if (done) emit({ type: 'ftueDone' });
+    if (twinsDone) {
+      twinsDone = false;
+      emit({ type: 'twins', species: kind.id });
+      endEvent('done');
+    }
     emit({ type: 'change' });
   }
 
@@ -1749,8 +1778,32 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         emit({ type: 'merchantOpen' });
         return;
       }
-      if (ev.data.kind !== 'doorEgg' || !ev.egg) return;
       const st = s();
+      const pay = (coins: number, crystals = 0): void => {
+        const c = Math.max(0, Math.round(coins));
+        st.coins += c;
+        st.stats.coinsEarned += c;
+        st.crystals += crystals;
+        commit({ flush: true });
+        emit({ type: 'eventGift', coins: c, crystals });
+        endEvent('done');
+      };
+      const city = cityMult(st.prestige, content.upgrades.prestige.incomeBonusPerPrestige);
+      const data = ev.data;
+      // M4-21: the things to tap — the inspector's note, the photographer, the pie, the lampbug's glow, the cat on the sign.
+      if (data.kind === 'inspector') return pay(data.perCreature * onSale().length * city);
+      if (data.kind === 'photo') {
+        const uid = dearest();
+        const cr = uid ? st.creatures.find((x) => x.uid === uid) : undefined;
+        return pay(cr ? appraisal(cr) * data.share : 0);
+      }
+      if (data.kind === 'pie') return pay(randInt(data.coins) * city);
+      if (data.kind === 'blink') {
+        const bug = st.creatures.find((x) => x.uid === ev.uid);
+        return pay((bug?.level ?? 1) * data.coinsPerLevel * city);
+      }
+      if (data.kind === 'catWalk') return rng.next() < data.crystalChance ? pay(0, 1) : pay(randInt(data.coins) * city);
+      if (ev.data.kind !== 'doorEgg' || !ev.egg) return;
       const at = eggSpot();
       if (at >= 0) {
         placeEgg(at, ev.egg, false);
@@ -1842,6 +1895,13 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const best = goals.reduce<GoalView | null>((a, g) => (!a || share(g) > share(a) + 1e-9 ? g : a), null);
       const city = game.rebirthView();
       return best ?? { kind: 'rebirth', id: 'rebirth', have: city.have, need: city.need, unit: 'coins' };
+    },
+    eventsPossible: () => possibleEvents(),
+    startEventNow(id) {
+      if (active || !possibleEvents().includes(id)) return false;
+      const keep = content.events.events;
+      startEvent(keep.filter((e) => e.id === id));
+      return active !== null;
     },
     finds() {
       const st = s();

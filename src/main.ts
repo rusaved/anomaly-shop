@@ -625,6 +625,8 @@ async function boot(): Promise<void> {
     }
     else if (e.type === 'eventStarted') {
       recentEvents.push({ id: e.id, at: runtime.elapsed() });
+      // M4-21: the kettle whistles itself.
+      if (e.kind === 'kettle' && e.uid) shop.speak({ uid: e.uid }, i18n.t('event.kettleLine'));
       toasts.show(i18n.t(`event.${e.kind}`), 'rare', 2600);
       sfx.play('rare');
     }
@@ -642,8 +644,12 @@ async function boot(): Promise<void> {
       sfx.play('rare');
     }
     else if (e.type === 'eventGift') {
-      toasts.show(i18n.t('toast.gift', { n: e.coins }), 'good', 2200);
+      toasts.show(e.crystals ? i18n.t('toast.giftCrystal', { n: e.crystals }) : i18n.t('toast.gift', { n: e.coins }), 'good', 2200);
       sfx.play('coin');
+    }
+    else if (e.type === 'twins') {
+      toasts.show(i18n.t('toast.twins'), 'rare', 2600);
+      sfx.play('rare');
     }
     else if (e.type === 'districtOpened') {
       const d = customers.districts.find((x) => x.id === e.district);
@@ -762,6 +768,7 @@ async function boot(): Promise<void> {
         store.commit();
       },
       toast: (text) => toasts.show(text, 'info'),
+      event: (id) => play.startEventNow(id),
     });
   }
 

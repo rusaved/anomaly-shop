@@ -62,17 +62,15 @@ describe('M4-06 rebirth', () => {
     expect(st.upgrades).toEqual({});
     expect(st.creatures).toEqual([]);
     expect(st.incubators).toHaveLength(1);
-    expect(st.incubators[0]!.egg).toBe(content.ftue.starterEgg);
+    // M4-09: the gift egg of the new city is on the counter at once (else the starter egg).
+    expect(st.incubators[0]!.egg).toBe(p.giftEgg ?? content.ftue.starterEgg);
     expect(game.reputation().level).toBe(1);
     expect(st.crystals).toBe(7);
     expect(st.collection.kettle?.sold).toBe(4);
     expect(st.flags.open_market).toBe(true);
     expect(seen.some((e) => e.type === 'rebirth' && e.city === 2)).toBe(true);
-    // M4-09: a step forward — the gift egg waits in «my eggs», the event names it, the scene gets the new city.
-    if (p.giftEgg) {
-      expect(st.myEggs[p.giftEgg]).toBe(1);
-      expect(seen.some((e) => e.type === 'rebirth' && e.gift === p.giftEgg)).toBe(true);
-    }
+    // M4-09: a step forward — the event names the gift egg, the scene gets the new city.
+    if (p.giftEgg) expect(seen.some((e) => e.type === 'rebirth' && e.gift === p.giftEgg)).toBe(true);
     expect(game.view().city).toBe(2);
     // The next move counts from here; the city's own egg of the ladder top is open and new.
     expect(game.rebirthView()).toMatchObject({ city: 2, have: 0, need: rebirthNeed(1, p), ready: false });

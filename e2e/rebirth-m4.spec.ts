@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { collectErrors, open, seedSave, state } from './helpers.ts';
 
@@ -28,7 +29,8 @@ test('M4-06 rebirth: ready → the popup asks → a new city, the collection sta
   await expect(win).toBeHidden();
   const s = (await state(page)) as unknown as { city: number; coins: number; upgrades: Record<string, number> };
   expect(s.city).toBe(2);
-  expect(s.coins).toBe(50);
+  // The start of a new city is in the data (upgrades.json prestige.startCoins; M4-09: 500, a step forward).
+  expect(s.coins).toBe((JSON.parse(readFileSync('content/upgrades.json', 'utf8')) as { prestige: { startCoins: number } }).prestige.startCoins);
   expect(s.upgrades).toEqual({});
   await page.locator('[data-tab=inventory]').click();
   await page.locator('[data-sheet=inventory] [data-sub=collection]').click();

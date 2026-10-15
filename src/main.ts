@@ -792,7 +792,7 @@ async function boot(): Promise<void> {
     const toastNow = toasts.showing();
     const wanted = tabIntro ?? (hint && !(sceneHint && nav.active() !== 'eggs') ? hint : null);
     const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) ? null : wanted;
-    hints.update(shownHint);
+    hints.update(shownHint, Boolean(toastNow));
     sceneHintOn = Boolean(shownHint && (SCENE_TARGETS.has(shownHint.target.kind) || hints.outside()) && hints.text());
     shop.quiet(sceneHintOn || Boolean(toastNow));
     newsTicker.tick(runtime.pause.isPaused() ? 0 : ticker.deltaMS / 1000, controllable && Boolean(store.state.flags.ftue_done));

@@ -19,7 +19,8 @@ export interface HintDeps {
 
 export interface Hints {
   root: HTMLElement;
-  update(hint: FtueHint | null): void;
+  /** quiet: a toast is over the shop — a bubble that would stand outside a tab (over the shop) waits (one caption, M4-00). */
+  update(hint: FtueHint | null, quiet?: boolean): void;
   /** The text on screen now ('' when hidden): test API. */
   text(): string;
   /** M4-09: the bubble of a tab's target stands outside the tab, over the shop (the shop's own captions keep quiet). */
@@ -60,7 +61,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
     root,
     text: () => (root.hidden ? '' : label.textContent ?? ''),
     outside: () => outside && !root.hidden,
-    update(hint) {
+    update(hint, quiet = false) {
       if (!hint) {
         hide();
         return;
@@ -135,6 +136,10 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       // (a phone upright) or to its left (sideways, a PC): inside it covered the title, prices and subsections.
       const sheet = button?.closest<HTMLElement>('.sheet') ?? null;
       if (button && sheet) {
+        if (quiet) {
+          hide();
+          return;
+        }
         const s = sheet.getBoundingClientRect();
         const b = button.getBoundingClientRect();
         const side = s.left - base.left > 40;

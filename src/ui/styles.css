@@ -999,8 +999,12 @@
   position: sticky;
   top: 0;
   z-index: 2;
+  /* A full-width bar: the lines scrolling under it never peek out beside it. */
+  display: block;
+  width: 100%;
+  align-self: stretch;
+  text-align: left;
   background: var(--c-uiPanel);
-  border-radius: 12px;
 }
 /* A tap on the shop while another tab is open closes that tab (the home screen comes back). */
 .scene-catcher {
@@ -1663,6 +1667,10 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     overscroll-behavior: contain;
+    /* M4-09: the row fades out at the right edge — more answers wait there. */
+    -webkit-mask-image: linear-gradient(to right, #000 82%, transparent);
+    mask-image: linear-gradient(to right, #000 82%, transparent);
+    padding-right: 40px;
   }
   .chat-buttons .btn {
     flex: 0 0 auto;
@@ -2246,10 +2254,16 @@
   font-weight: 700;
   color: var(--c-uiGood);
 }
-/* M4-09: «Done» of the Gifts window stays in view while its list scrolls (a phone upright). */
+/* M4-09: the list of the Gifts window scrolls, «Done» stands under it and is always in view (a phone upright or sideways). */
+.card-gifts {
+  overflow: hidden;
+}
+.card-gifts > .gifts {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .card-gifts > [data-action='gifts-close'] {
-  position: sticky;
-  bottom: 0;
   flex: none;
-  box-shadow: 0 -10px 12px var(--c-uiPanel);
 }

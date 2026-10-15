@@ -2114,15 +2114,13 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       st.incubators = [emptyIncubator()];
       for (const k of Object.keys(st.flags)) if (k.startsWith('egg_new_')) delete st.flags[k];
       syncIncubators();
-      // The new city greets with an egg on the counter and its own new egg of the ladder top («New!»).
-      placeEgg(0, basicEgg, false);
+      // The new city greets with an egg on the counter (M4-09: its gift egg when there is one) and its own new egg of the ladder top («New!»).
+      const gift = content.upgrades.prestige.giftEgg && eggData(content.upgrades.prestige.giftEgg) ? content.upgrades.prestige.giftEgg : undefined;
+      placeEgg(0, gift ?? basicEgg, false);
       for (const e of eggs.eggs) if (e.unlock.type === 'city' && eggOpen(e)) st.flags[`egg_new_${e.id}`] = true;
-      // M4-09 (the game designer of M4): a move is a step forward — a gift egg waits in «my eggs», the start is in data.
-      const gift = content.upgrades.prestige.giftEgg;
-      if (gift && eggData(gift)) st.myEggs[gift] = (st.myEggs[gift] ?? 0) + 1;
       stockMarket();
       commit({ flush: true });
-      emit({ type: 'rebirth', city: st.prestige + 1, ...(gift && eggData(gift) ? { gift } : {}) });
+      emit({ type: 'rebirth', city: st.prestige + 1, ...(gift ? { gift } : {}) });
       emit({ type: 'change' });
       return true;
     },

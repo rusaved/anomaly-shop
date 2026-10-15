@@ -19,6 +19,7 @@ import { renderBuildLabel } from './ui/label.ts';
 import { createCoinFlight } from './ui/coin-flight.ts';
 import { createShopTab } from './ui/upgrades.ts';
 import { moodChip } from './ui/mood.ts';
+import { createRebirthWindow } from './ui/rebirth.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
 import { createNewsTicker } from './ui/news.ts';
@@ -380,6 +381,8 @@ async function boot(): Promise<void> {
   );
   (hud.side.querySelector('[data-action="gifts"]') as HTMLElement).addEventListener('click', () => giftsWindow.open());
   const workWindow = createWorkWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang });
+  // M4-06: the move to a new city — asked in a popup (the Next card when ready, the city line of the seller level panel).
+  const rebirthWindow = createRebirthWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang });
   // UB-08: the seller level in the top bar; a tap shows what the next levels open.
   const reputationChip = createReputation(hud.balance, uiRoot, play, {
     t: i18n.t,
@@ -393,6 +396,7 @@ async function boot(): Promise<void> {
         ...upgrades.shop.map((id) => upgrades.upgrades.find((u) => u.id === id)).filter((u) => u !== undefined).map((u) => ({ name: u.name[lang], unlock: u.unlock })),
       ];
     },
+    openCity: () => rebirthWindow.open(),
   });
   hud.side.insertAdjacentHTML(
     'beforeend',
@@ -447,13 +451,14 @@ async function boot(): Promise<void> {
         if (g.kind === 'egg') return eggs.eggs.find((e) => e.id === g.id)?.name[lang] ?? g.id;
         if (g.kind === 'district') return i18n.t('next.district', { name: customers.districts.find((d) => d.id === g.id)?.name[lang] ?? g.id });
         if (g.kind === 'level') return i18n.t('next.level', { n: g.id });
-        return i18n.t('next.rebirth');
+        return i18n.t(play.rebirthView().ready ? 'next.rebirthReady' : 'next.rebirth');
       },
     },
     () => {
       // UB-06: «Next» leads to the action — an egg goal opens its card, a seller level the sales (deals raise it), the rest the upgrades.
       const goal = play.nextGoal();
-      if (goal.kind === 'egg') {
+      if (goal.kind === 'rebirth') rebirthWindow.open();
+      else if (goal.kind === 'egg') {
         selectTab('eggs');
         eggsTab.show(goal.id);
       } else if (goal.kind === 'level' || goal.kind === 'district') selectTab('sales');
@@ -519,6 +524,7 @@ async function boot(): Promise<void> {
   const renderUi = (): void => {
     renderTabs();
     nextCard.render();
+    rebirthWindow.render();
     merchantWindow.render();
     reputationChip.render();
   };
@@ -564,6 +570,11 @@ async function boot(): Promise<void> {
       sfx.play('buy');
     }
     else if (e.type === 'firstCrystal') toasts.show(i18n.t('toast.crystal'), 'rare', 2800);
+    else if (e.type === 'rebirth') {
+      toasts.show(i18n.t('toast.rebirth', { n: e.city, x: new Intl.NumberFormat(i18n.lang(), { maximumFractionDigits: 2 }).format(play.rebirthView().mult) }), 'rare', 3200);
+      sfx.play('levelUp');
+      selectTab('eggs');
+    }
     else if (e.type === 'guestUnpaid') toasts.show(i18n.t('toast.guestUnpaid'), 'warn', 2600);
     else if (e.type === 'guestBought') {
       toasts.show(i18n.t('toast.guestBought', { name: decorData.items.find((x) => x.id === e.id)?.name[i18n.lang()] ?? e.id }), 'good', 2000);
@@ -706,6 +717,7 @@ async function boot(): Promise<void> {
         shelf: play.view().creatures.map((c) => c.uid),
         windows: [...uiRoot.querySelectorAll<HTMLElement>('.overlay:not([hidden]):not(.under)')].map((el) => el.dataset.overlay ?? ''),
         upgradeFx: shop.lastUpgradeText(),
+        city: play.rebirthView().city,
         captions: [...shop.captions(), ...(sceneHintOn ? [hints.text()] : []), ...(toasts.showing() ? [toasts.showing()] : [])],
         hatchTiming: hatchShow.timing(),
         newest: (() => {

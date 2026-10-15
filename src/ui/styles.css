@@ -2068,3 +2068,25 @@
 .mood-chip.mood-cold {
   border-color: var(--c-uiMuted);
 }
+
+/* M4-06: the move to a new city — a popup; the city line in the seller level panel. */
+.card-rebirth {
+  text-align: center;
+}
+.rebirth-mult {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--c-uiAccent);
+}
+.rebirth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rep-city {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

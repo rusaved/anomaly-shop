@@ -1768,6 +1768,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     },
     nextGoal() {
       const st = s();
+      // M4-06: a move that is ready is the goal of the moment.
+      const ready = game.rebirthView();
+      if (ready.ready) return { kind: 'rebirth', id: 'rebirth', have: ready.have, need: ready.need, unit: 'coins' };
       const goals: GoalView[] = [];
       for (const u of game.upgradeList()) {
         if (u.maxed || u.affordable) continue;

@@ -12,6 +12,8 @@ export interface ReputationLookups {
   data: ReputationData;
   /** Everything that opens by a level: its name and unlock (eggs of the ladder, shop positions, districts). */
   openers(): Array<{ name: string; unlock: UnlockData | undefined }>;
+  /** M4-06: opens the window of the move to a new city. */
+  openCity(): void;
 }
 
 export interface Reputation {
@@ -70,7 +72,8 @@ export function createReputation(hudBalance: HTMLElement, parent: HTMLElement, g
       if (chip.getAttribute('aria-label') !== label) chip.setAttribute('aria-label', label);
       if (number.textContent !== String(r.level)) number.textContent = String(r.level);
       if (!panel.isOpen()) return;
-      const next = `${look.lang()}:${r.level}:${Math.floor(r.xp)}`;
+      const city = game.rebirthView();
+      const next = `${look.lang()}:${r.level}:${Math.floor(r.xp)}:${city.city}:${city.ready}`;
       if (next === key) return;
       key = next;
       const fmt = new Intl.NumberFormat(look.lang());
@@ -86,10 +89,14 @@ export function createReputation(hudBalance: HTMLElement, parent: HTMLElement, g
         `<div class="rep-bar" aria-hidden="true"><i style="width:${Math.round(share * 100)}%"></i></div>` +
         `<p class="card-sub">${r.next === null ? look.t('rep.top') : look.t('rep.points', { n: fmt.format(Math.floor(r.xp)), m: fmt.format(r.next) })}</p>` +
         `<p class="card-sub">${look.t('rep.how')}</p>` +
+        // M4-06: the city of the shop and the way to the next one.
+        `<div class="rep-city"><span class="card-sub">${look.t('rebirth.city', { n: city.city, x: new Intl.NumberFormat(look.lang(), { maximumFractionDigits: 2 }).format(city.mult) })}</span>` +
+        `<button type="button" class="btn ${city.ready ? 'btn-primary' : 'btn-alt'}" data-action="rep-city">${look.t('rebirth.open')}</button></div>` +
         (rows.length ? `<h3 class="eggs-title">${look.t('rep.opens')}</h3><ul class="rep-list">${rows.join('')}</ul>` : '');
       (panel.card.querySelector('.rep-title') as HTMLElement).textContent = look.t('rep.title', { n: r.level });
       (panel.card.querySelector('.rep-name') as HTMLElement).textContent = titleOf(r.level);
       panel.card.querySelector('[data-action="rep-back"]')?.addEventListener('click', () => panel.hide());
+      panel.card.querySelector('[data-action="rep-city"]')?.addEventListener('click', () => look.openCity());
     },
     up(level) {
       chip.classList.remove('rep-up');

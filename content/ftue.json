@@ -7,5 +7,6 @@
   "secondRarity": "valuable",
   "firstCustomerSec": 12,
   "firstOfferShare": 0.85,
+  "shelfHintSec": 8,
   "maxHintWords": 6
 }

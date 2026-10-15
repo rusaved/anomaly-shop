@@ -301,14 +301,21 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     if (counterH > 0 && caption.height > counterH * 0.82) caption.scale.set((counterH * 0.82) / caption.height);
   };
 
+  // M4-09: the city the shop is in — every new city has its own walls and floor (style.json cities).
+  let city = 1;
+  const room = (): typeof c => {
+    const list = style.cities ?? [];
+    return city > 1 && list.length ? { ...c, ...list[(city - 2) % list.length] } : c;
+  };
   function drawBack(l: ShopLayout): void {
+    const k = room();
     back.clear();
-    back.rect(l.wall.x, l.wall.y, l.wall.w, l.wall.h).fill(c.wall);
-    back.rect(l.wall.x, l.wall.y, l.wall.w, Math.min(l.wall.h, l.unit * 0.9)).fill(c.wallShade);
-    back.rect(l.floor.x, l.floor.y, l.floor.w, l.floor.h).fill(c.floor);
-    back.rect(l.floor.x, l.floor.y, l.floor.w, l.outline).fill(c.floorLine);
+    back.rect(l.wall.x, l.wall.y, l.wall.w, l.wall.h).fill(k.wall);
+    back.rect(l.wall.x, l.wall.y, l.wall.w, Math.min(l.wall.h, l.unit * 0.9)).fill(k.wallShade);
+    back.rect(l.floor.x, l.floor.y, l.floor.w, l.floor.h).fill(k.floor);
+    back.rect(l.floor.x, l.floor.y, l.floor.w, l.outline).fill(k.floorLine);
     const stripe = l.unit * 1.2;
-    for (let x = l.floor.x + stripe; x < l.floor.x + l.floor.w; x += stripe) back.rect(x, l.floor.y + l.outline, l.outline / 2, l.floor.h).fill(c.floorLine);
+    for (let x = l.floor.x + stripe; x < l.floor.x + l.floor.w; x += stripe) back.rect(x, l.floor.y + l.outline, l.outline / 2, l.floor.h).fill(k.floorLine);
   }
 
   function drawFurniture(l: ShopLayout): void {
@@ -943,6 +950,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     },
     frame(dt, view) {
       time += dt;
+      if (view.city !== city) {
+        city = view.city;
+        if (current) {
+          drawBack(current);
+          decorKey = '';
+        }
+      }
       const sign = !captionsOn ? '' : view.incubators.some((i) => i.egg && (i.ready || i.waiting)) ? 'shop.tapHatch' : view.creatures.length ? 'shop.tapFeed' : view.incubators.some((i) => i.egg) ? 'shop.tapWarm' : '';
       if (sign !== captionKey) {
         captionKey = sign;
@@ -962,7 +976,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         decorKey = key;
         decorItems = view.decor;
         drawDecor(decorG, decorItems, current, c);
-        drawPointBack(pointBack, decorItems, current, c);
+        drawPointBack(pointBack, decorItems, current, room());
         buildThings(current, decorItems.sign ?? 0);
         bellBox.visible = Boolean(decorItems.bell);
         drawBell(bellG, current.decor.bell.r, c, current.outline);

@@ -198,6 +198,8 @@ export const UpgradesFile = v.object({
     thresholdGrowth: v.pipe(v.number(), v.minValue(1)),
     incomeBonusPerPrestige: v.pipe(v.number(), v.minValue(0)),
     startCoins: v.pipe(v.number(), v.minValue(0)),
+    /** M4-09: the new city greets with this egg in «my eggs» (it goes into the incubator once one is free). */
+    giftEgg: v.optional(Id),
   }),
   shop: v.pipe(v.array(Id), v.minLength(1)),
   upgrades: v.pipe(v.array(Upgrade), v.minLength(1)),
@@ -238,6 +240,8 @@ export const FtueFile = v.object({
   secondRarity: Rarity,
   firstCustomerSec: v.pipe(v.number(), v.minValue(0)),
   firstOfferShare: Share,
+  /** M4-09: after the first minute, an empty shelf with pets in the inventory brings back «List it» once the player is idle this long. */
+  shelfHintSec: v.pipe(v.number(), v.minValue(1)),
   maxHintWords: Count,
 });
 
@@ -265,6 +269,8 @@ export const StyleFile = v.object({
   colors: v.object(Object.fromEntries(STYLE_COLORS.map((k) => [k, Color])) as Record<(typeof STYLE_COLORS)[number], typeof Color>),
   scene: v.object({ outlineWidth: v.pipe(v.number(), v.minValue(0)), cornerRadius: v.pipe(v.number(), v.minValue(0)), floorShare: Share }),
   creatures: v.record(Id, CreatureLook),
+  /** M4-09: every new city has its own walls and floor (city 2, 3, … in turn; the first city keeps colors). */
+  cities: v.optional(v.array(v.object({ wall: Color, wallShade: Color, floor: Color, floorLine: Color }))),
   customers: v.record(Id, v.object({ body: Color, accent: Color })),
   eggs: v.record(Id, v.object({ shell: Color, spots: Color })),
   /** Rarity colors from grey to red (Q-022): a dash or a dot under a creature or an upgrade, never a fill or colored text. */

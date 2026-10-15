@@ -8,6 +8,8 @@ import { button, createOverlay, type Overlay } from './overlay.ts';
 export interface RebirthLookups {
   t(key: string, vars?: Record<string, string | number>): string;
   lang(): string;
+  /** M4-09: the gift egg's name. */
+  eggName(id: string): string;
 }
 
 export interface RebirthWindow {
@@ -22,7 +24,7 @@ export function createRebirthWindow(parent: HTMLElement, game: Game, look: Rebir
   overlay.card.classList.add('card-rebirth');
   overlay.card.innerHTML =
     '<h2 data-rebirth-title></h2><p class="rebirth-mult" data-rebirth-mult></p><div class="rep-bar" aria-hidden="true"><i data-rebirth-bar></i></div>' +
-    '<p class="card-sub" data-rebirth-have></p><p class="card-sub" data-rebirth-reset></p><p class="card-sub" data-rebirth-keep></p><div class="rebirth-buttons"></div>';
+    '<p class="card-sub" data-rebirth-have></p><p class="rebirth-gift" data-rebirth-gift></p><p class="card-sub" data-rebirth-reset></p><p class="card-sub" data-rebirth-keep></p><div class="rebirth-buttons"></div>';
   const move = button('rebirth-move', 'rebirth.move', 'btn-primary');
   const later = button('rebirth-later', 'rebirth.later');
   (overlay.card.querySelector('.rebirth-buttons') as HTMLElement).append(move, later);
@@ -46,6 +48,10 @@ export function createRebirthWindow(parent: HTMLElement, game: Game, look: Rebir
       q('[data-rebirth-mult]').textContent = look.t('rebirth.mult', { a: x.format(r.mult), b: x.format(r.nextMult) });
       q('[data-rebirth-bar]').style.width = `${Math.round(Math.min(1, r.have / Math.max(1, r.need)) * 100)}%`;
       q('[data-rebirth-have]').textContent = look.t('rebirth.have', { n: fmt.format(Math.floor(Math.min(r.have, r.need))), m: fmt.format(r.need) });
+      // M4-09: what the new city greets with comes first — a move is a step forward, not a loss.
+      q('[data-rebirth-gift]').textContent = r.giftEgg
+        ? look.t('rebirth.gift', { n: fmt.format(r.startCoins), egg: look.eggName(r.giftEgg) })
+        : look.t('rebirth.start', { n: fmt.format(r.startCoins) });
       q('[data-rebirth-reset]').textContent = look.t('rebirth.reset');
       q('[data-rebirth-keep]').textContent = look.t('rebirth.keep');
       move.setAttribute('aria-disabled', String(!r.ready));

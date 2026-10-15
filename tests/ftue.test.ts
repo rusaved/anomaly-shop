@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
-import { ftueHint, tabHint, type FtueStep } from '../src/sim/ftue.ts';
+import { ftueHint, shelfHint, tabHint, type FtueStep } from '../src/sim/ftue.ts';
 import { TABS } from '../src/ui/nav.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
@@ -93,5 +93,23 @@ describe('M1-09 first minute', () => {
     const game = createGame(createStore(save, () => 0), content, createRng(1));
     expect(ftueHint(game.state, game.view())).toBeNull();
     expect(game.state.incubators[0]!.egg).toBeNull();
+  });
+});
+
+describe('M4-09 empty shelf hint', () => {
+  it('after the first minute, an empty shelf with pets in the inventory brings «List it» back once the player is idle', () => {
+    const save = newSave(0);
+    save.flags.ftue_done = true;
+    save.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }];
+    save.showcase = [];
+    const game = createGame(createStore(save, () => 0), content, createRng(1));
+    game.unlist('a');
+    const view = game.view();
+    expect(view.creatures).toHaveLength(0);
+    expect(view.inventory).toHaveLength(1);
+    expect(shelfHint(game.state, view, 3, 8)).toBeNull();
+    expect(shelfHint(game.state, view, 9, 8)?.step).toBe('list');
+    game.list('a');
+    expect(shelfHint(game.state, game.view(), 9, 8)).toBeNull();
   });
 });

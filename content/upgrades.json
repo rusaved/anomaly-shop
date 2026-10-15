@@ -4,7 +4,7 @@
   "offlineMaxHours": 8,
   "offlineRate": 0.13,
   "away": {"autoSell": {"type": "autoSell", "priceShare": 0.9, "delaySec": 6, "offline": true}, "autoBuyEgg": {"type": "autoBuyEgg", "egg": "egg_basic", "everySec": 2, "offline": true}},
-  "prestige": {"thresholdCoinsEarned": 90000, "thresholdGrowth": 2.5, "incomeBonusPerPrestige": 0.25, "startCoins": 50},
+  "prestige": {"thresholdCoinsEarned": 90000, "thresholdGrowth": 2.5, "incomeBonusPerPrestige": 0.25, "startCoins": 500, "giftEgg": "egg_odd"},
   "shop": ["incubator", "incubator_speed", "showcase", "bowl", "bell", "sign", "mat", "tags", "cash", "radio", "board", "stool", "cuckoo", "helper_feed", "helper_sell", "helper_courier", "point_rent", "point_repair", "point_furnish", "point_clerk", "point_second", "point_passive"],
   "upgrades": [
     {"id": "incubator", "name": {"ru": "Инкубаторы", "en": "Incubators"}, "levels": 3, "price1": 50, "priceMax": 1500, "effect": {"type": "slots", "perLevel": 1}},

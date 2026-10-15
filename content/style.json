@@ -2,6 +2,12 @@
   "$schema": "style.schema.json",
   "note": "Стиль по Q-001, вариант A: плоский милый вектор с толстым контуром. Цвета сцены (PixiJS) и интерфейса (CSS-переменные --c-*). Размеры сцены в условных единицах, масштабируются раскладкой. creatures — облик каждого вида: форма из набора сцены (shape) и два цвета; новый вид = новая запись (форму можно переиспользовать с другими цветами). customers — облик типа покупателя: тело и шапка. eggs — скорлупа и пятна каждого яйца (нет записи — цвета egg/eggSpots). rarity — шесть цветов редкости от серого до красного (Q-022): чёрточка или точка под существом и улучшением, не заливка и не цвет текста; rarityCommon…rarityLegendary в colors — просто цвета сцены.",
   "art": "flat_outline",
+  "cities": [
+    {"wall": "#d4e9e6", "wallShade": "#b9d6d2", "floor": "#6f808c", "floorLine": "#56636d"},
+    {"wall": "#e9dcf2", "wallShade": "#d4c2e3", "floor": "#7a5a78", "floorLine": "#5f4560"},
+    {"wall": "#e2edcb", "wallShade": "#cbdcb1", "floor": "#6e7a4a", "floorLine": "#56603a"},
+    {"wall": "#f6d9cc", "wallShade": "#ebbfae", "floor": "#8a4f4a", "floorLine": "#6c3c38"}
+  ],
   "colors": {
     "sky": "#3a2d5c",
     "skyLow": "#6b4a8a",

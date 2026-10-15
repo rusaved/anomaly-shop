@@ -2240,6 +2240,12 @@
 .rep-head {
   padding-right: 48px;
 }
+/* M4-09: what the new city greets with — the good news of the move window. */
+.rebirth-gift {
+  margin: 0;
+  font-weight: 700;
+  color: var(--c-uiGood);
+}
 /* M4-09: «Done» of the Gifts window stays in view while its list scrolls (a phone upright). */
 .card-gifts > [data-action='gifts-close'] {
   position: sticky;

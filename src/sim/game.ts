@@ -100,10 +100,13 @@ export interface RebirthView {
   ready: boolean;
   mult: number;
   nextMult: number;
+  /** M4-09: what the new city greets with — coins to start and a gift egg ('' when none). */
+  startCoins: number;
+  giftEgg: string;
 }
 
 export type GameEvent =
-  | { type: 'rebirth'; city: number }
+  | { type: 'rebirth'; city: number; gift?: string }
   | { type: 'rowDone'; rarity: RarityName; crystals: number; bonus: number }
   | { type: 'guestUnpaid' }
   | { type: 'find'; id: string; coins: number; crystals: number }
@@ -217,6 +220,8 @@ export interface CustomerView {
 }
 
 export interface GameView {
+  /** M4-09: the city the shop is in (1 + moves): the scene draws its own walls and floor. */
+  city: number;
   incubators: IncubatorView[];
   queue: CustomerView[];
   /** The creatures on sale: the showcase of the shop = the slots of «My sales» (M3-07), in slot order. */
@@ -1781,6 +1786,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     },
     view() {
       return {
+        city: s().prestige + 1,
         incubators: s().incubators.map((inc) => {
           const care = careOf(inc);
           return {
@@ -2081,7 +2087,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const p = content.upgrades.prestige;
       const need = rebirthNeed(st.prestige, p);
       const have = Math.max(0, st.stats.coinsEarned - st.cityEarnedAt);
-      return { city: st.prestige + 1, have, need, ready: have >= need, mult: cityMult(st.prestige, p.incomeBonusPerPrestige), nextMult: cityMult(st.prestige + 1, p.incomeBonusPerPrestige) };
+      return { city: st.prestige + 1, have, need, ready: have >= need, mult: cityMult(st.prestige, p.incomeBonusPerPrestige), nextMult: cityMult(st.prestige + 1, p.incomeBonusPerPrestige), startCoins: p.startCoins, giftEgg: p.giftEgg && eggData(p.giftEgg) ? p.giftEgg : '' };
     },
     rebirth() {
       if (!game.rebirthView().ready) {
@@ -2111,9 +2117,12 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       // The new city greets with an egg on the counter and its own new egg of the ladder top («New!»).
       placeEgg(0, basicEgg, false);
       for (const e of eggs.eggs) if (e.unlock.type === 'city' && eggOpen(e)) st.flags[`egg_new_${e.id}`] = true;
+      // M4-09 (the game designer of M4): a move is a step forward — a gift egg waits in «my eggs», the start is in data.
+      const gift = content.upgrades.prestige.giftEgg;
+      if (gift && eggData(gift)) st.myEggs[gift] = (st.myEggs[gift] ?? 0) + 1;
       stockMarket();
       commit({ flush: true });
-      emit({ type: 'rebirth', city: st.prestige + 1 });
+      emit({ type: 'rebirth', city: st.prestige + 1, ...(gift && eggData(gift) ? { gift } : {}) });
       emit({ type: 'change' });
       return true;
     },

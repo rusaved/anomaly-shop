@@ -46,6 +46,16 @@ export function ftueHint(state: SaveData, view: GameView): FtueHint | null {
 }
 
 /**
+ * M4-09 (the playtester of M4): after the first minute, a shelf left empty with pets waiting in the inventory stalls the loop —
+ * once the player has been idle for a while, «List it» points at «My sales» again.
+ */
+export function shelfHint(state: SaveData, view: GameView, idleSec: number, afterSec: number): FtueHint | null {
+  if (!state.flags[FLAGS.done] || idleSec < afterSec) return null;
+  if (view.creatures.length > 0 || view.inventory.length === 0) return null;
+  return { step: 'list', target: LIST };
+}
+
+/**
  * UB-06: the first visit of a tab — one hint at its main thing, the tab title when the tab is empty.
  * «eggs» is the home screen: the first minute above is its hint.
  */

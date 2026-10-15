@@ -28,7 +28,7 @@ import { createMerchantWindow } from './ui/merchant.ts';
 import { createChatter } from './ui/chatter.ts';
 import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { ftueHint, tabHint, tabUnlocked } from './sim/ftue.ts';
+import { ftueHint, shelfHint, tabHint, tabUnlocked } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { createNav, TABS, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
@@ -391,7 +391,7 @@ async function boot(): Promise<void> {
   (hud.side.querySelector('[data-action="gifts"]') as HTMLElement).addEventListener('click', () => giftsWindow.open());
   const workWindow = createWorkWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang });
   // M4-06: the move to a new city — asked in a popup (the Next card when ready, the city line of the seller level panel).
-  const rebirthWindow = createRebirthWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang });
+  const rebirthWindow = createRebirthWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, eggName: (id) => eggs.eggs.find((g) => g.id === id)?.name[i18n.lang()] ?? id });
   // UB-08: the seller level in the top bar; a tap shows what the next levels open.
   const reputationChip = createReputation(hud.balance, uiRoot, play, {
     t: i18n.t,
@@ -591,7 +591,8 @@ async function boot(): Promise<void> {
     }
     else if (e.type === 'firstCrystal') toasts.show(i18n.t('toast.crystal'), 'rare', 2800);
     else if (e.type === 'rebirth') {
-      toasts.show(i18n.t('toast.rebirth', { n: e.city, x: new Intl.NumberFormat(i18n.lang(), { maximumFractionDigits: 2 }).format(play.rebirthView().mult) }), 'rare', 3200);
+      const x = new Intl.NumberFormat(i18n.lang(), { maximumFractionDigits: 2 }).format(play.rebirthView().mult);
+      toasts.show(e.gift ? i18n.t('toast.rebirthGift', { n: e.city, x, egg: eggs.eggs.find((g) => g.id === e.gift)?.name[i18n.lang()] ?? '' }) : i18n.t('toast.rebirth', { n: e.city, x }), 'rare', 3600);
       sfx.play('levelUp');
       selectTab('eggs');
     }
@@ -775,13 +776,16 @@ async function boot(): Promise<void> {
     });
   }
 
+  // M4-09: the time of the player's last touch (the empty-shelf hint waits for a pause).
+  let lastInputAt = performance.now();
+  window.addEventListener('pointerdown', () => (lastInputAt = performance.now()), { capture: true, passive: true });
   scene.app.ticker.add((ticker) => {
     runtime.frame(ticker.deltaMS / 1000);
     const view = play.view();
     shop.signGestures(Boolean(store.state.flags.ftue_done));
     shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, view);
     // UB-01, UB-02: a hint at the shop shows on the home screen only, and never over a window.
-    const hint = controllable ? ftueHint(store.state, view) : null;
+    const hint = controllable ? (ftueHint(store.state, view) ?? shelfHint(store.state, view, (performance.now() - lastInputAt) / 1000, ftue.shelfHintSec)) : null;
     const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';
     const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
     // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.

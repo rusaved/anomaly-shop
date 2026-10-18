@@ -129,4 +129,16 @@ describe('MU-12 the zone of the price slider decides', () => {
     expect(green).toBeGreaterThan(0.75);
     expect(red).toBeLessThan(0.5);
   });
+
+  it('«Максимум» is not a jackpot: at the top of the slider a buyer never pays more than the asking price (unless very generous)', () => {
+    let over = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const { game, seen } = setup(seed, content.market.slider.max);
+      until(game, seen, 120);
+      const chat = game.state.chats[0];
+      const ask = game.view().talking[0]?.ask ?? Infinity;
+      if (chat && chat.offer > ask * 1.05) over++;
+    }
+    expect(over / 40).toBeLessThan(0.1);
+  });
 });

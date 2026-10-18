@@ -1074,6 +1074,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const agree = content.market.slider.agree;
     if (!golden && !order && !tour && st.stats.deals > 0 && agree && side.next() < (agree[priceZone(cr.askShare ?? 1, content.market.slider)] ?? 0))
       offer = Math.max(offer, Math.max(1, coins(appraisal(cr) * (cr.askShare ?? 1))));
+    // MU-12 (the game design recheck): a price over the market never multiplies a generous offer — the buyer pays
+    // the asking price or what it would give at the market price, whichever is more («Максимум» is not a jackpot).
+    const ask = cr.askShare ?? 1;
+    if (!golden && !order && !tour && st.stats.deals > 0 && agree && ask > 1) offer = Math.min(offer, Math.max(coins(appraisal(cr) * ask), coins(offer / ask)));
     if (order && st.order) offer = Math.max(offer, st.order.reward);
     offer = Math.max(1, offer);
     const chat: Chat = {

@@ -302,7 +302,7 @@
   "market.below": "Ниже рынка",
   "market.market": "По рынку",
   "market.above": "Выше рынка",
-  "market.sold": "Продано",
+  "market.sold": "Куплено",
   "market.take": "Заберу сейчас за {n}",
   "market.seller": "Продаёт {who}",
   "seller.ask": "Отдам за {n}",

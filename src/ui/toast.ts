@@ -66,11 +66,14 @@ export function createToasts(parent: HTMLElement): Toasts {
     el.dataset.text = item.text;
     root.appendChild(el);
     current = el;
+    // MU-12: a tab screen under the top bar makes room for the toast (07 rule 17: under the bar, over nothing).
+    parent.style.setProperty('--toast-space', `${el.offsetHeight + 12}px`);
     window.setTimeout(() => {
       el.classList.add('out');
       window.setTimeout(() => {
         el.remove();
         current = null;
+        parent.style.setProperty('--toast-space', '0px');
         next();
       }, FADE_MS);
     }, Math.max(TOAST_MIN_MS, item.ms));

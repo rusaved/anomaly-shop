@@ -4,6 +4,7 @@
 
 import type { Game } from '../sim/game.ts';
 import { button, closeX, createOverlay } from './overlay.ts';
+import { iconize } from './kit.ts';
 
 export interface WorkLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -58,7 +59,7 @@ export function createWorkWindow(parent: HTMLElement, game: Game, look: WorkLook
       level.textContent = look.t('work.level', { n: v.level, pay: fmt.format(v.pay) });
       up.hidden = v.price === null;
       if (v.price !== null) {
-        up.textContent = look.t('work.upFor', { n: fmt.format(v.price) });
+        up.innerHTML = iconize(look.t('work.upFor', { n: `◉ ${fmt.format(v.price)}` }));
         up.setAttribute('aria-disabled', String(game.state.coins + 1e-9 < v.price));
       }
     },

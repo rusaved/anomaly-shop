@@ -2213,8 +2213,20 @@ button.mu-card {
   }
 }
 /* MU-12: a hint inside a tab screen keeps its own room at the top of the screen. */
-.sheet.hint-room {
-  padding-top: calc(8px + var(--hint-space, 0px));
+/* (specificity over .portrait/.landscape .sheet[data-kind='dock']) */
+#ui .sheet[data-kind='dock'] {
+  padding-top: calc(8px + var(--hint-space, 0px) + var(--toast-space, 0px));
+  transition: padding-top 0.15s ease-out;
+}
+#ui .overlay[data-kind='screen'] > .card {
+  padding-top: calc(var(--toast-space, 0px));
+  transition: padding-top 0.15s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  #ui .sheet[data-kind='dock'],
+  #ui .overlay[data-kind='screen'] > .card {
+    transition: none;
+  }
 }
 .hint.roomed {
   animation: none;
@@ -2251,9 +2263,6 @@ button.mu-card {
 .landscape .sheet .mu-pic-btn .mu-pic {
   width: 44px;
   height: 44px;
-}
-.landscape .home-next {
-  display: none;
 }
 .overlay .card .day-anomaly {
   display: grid;

@@ -853,6 +853,8 @@ async function boot(): Promise<void> {
     const view = play.view();
     shop.signGestures(Boolean(store.state.flags.ftue_done));
     shop.frame(runtime.pause.isPaused() ? 0 : (ticker.deltaMS / 1000) * runtime.timeScale, view);
+    // MU-12: the «+» places follow the scene's own layout (it relayouts on its frame when the shelf grows).
+    if (nav.active() === 'home') renderShelf();
     // UB-01, UB-02: a hint at the shop shows on the home screen only, and never over a window.
     const hint = controllable ? (ftueHint(store.state, view) ?? shelfHint(store.state, view, (performance.now() - lastInputAt) / 1000, ftue.shelfHintSec)) : null;
     const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';

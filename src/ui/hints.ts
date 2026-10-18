@@ -195,7 +195,18 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       const left = Math.max(8, Math.min(base.width - w - 8, x - w / 2));
       root.style.left = `${left}px`;
       root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, x - left))}px`);
-      root.style.top = above ? `${y - r - 12 - root.offsetHeight}px` : `${(button ? bottom : y + r) + 12}px`;
+      let top = above ? y - r - 12 - root.offsetHeight : (button ? bottom : y + r) + 12;
+      // MU-12 (the usability recheck): a bubble over a tab of the bar never lies on the scene buttons above it
+      // («Улучшения», «Подработка», the next goal) — it rises over them, the arrow still points down to the tab.
+      if (inBar)
+        for (let pass = 0; pass < 2; pass++)
+          for (const el of parent.querySelectorAll<HTMLElement>('.stage-actions .stage-btn, .home-next .next')) {
+            if (el.offsetParent === null) continue;
+            const e = el.getBoundingClientRect();
+            const t = top + base.top;
+            if (e.left - base.left < left + w && e.right - base.left > left && e.top < t + root.offsetHeight && e.bottom > t) top = Math.min(top, e.top - base.top - 8 - root.offsetHeight);
+          }
+      root.style.top = `${top}px`;
       ring.hidden = r === 0;
       if (r > 0) {
         ring.style.left = `${x - r}px`;

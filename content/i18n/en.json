@@ -302,7 +302,7 @@
   "market.below": "Below market",
   "market.market": "At market",
   "market.above": "Above market",
-  "market.sold": "Sold",
+  "market.sold": "Bought",
   "market.take": "Take it now for {n}",
   "market.seller": "Sold by {who}",
   "seller.ask": "Yours for {n}",

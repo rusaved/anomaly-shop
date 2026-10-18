@@ -4,7 +4,7 @@
 
 import type { RarityName } from '../content/schemas.ts';
 import type { Game } from '../sim/game.ts';
-import { COIN, esc, GEM, money, rarityBadge } from './kit.ts';
+import { COIN, esc, GEM, iconize, money, rarityBadge } from './kit.ts';
 import type { Sheet } from './sheet.ts';
 
 export interface InventoryLookups {
@@ -131,7 +131,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
         .map(
           (row) =>
             `<section class="col-row${row.done ? ' done' : ''}" data-row="${row.rarity}"><div class="mu-head"><h3>${esc(look.t(`collection.row.${row.rarity}`))}</h3><span>${row.have}/${row.all}</span></div>` +
-            `<p class="mu-meta col-bonus" data-row-bonus>${esc(row.done ? look.t('collection.rowDone', { p: pct(row.bonus) }) : look.t('collection.rowGoal', { p: pct(row.bonus), c: row.crystals }))}</p>` +
+            `<p class="mu-meta col-bonus" data-row-bonus>${iconize(row.done ? look.t('collection.rowDone', { p: pct(row.bonus) }) : look.t('collection.rowGoal', { p: pct(row.bonus), c: row.crystals }))}</p>` +
             `<div class="mu-grid">${row.species
               .map(
                 (x) =>

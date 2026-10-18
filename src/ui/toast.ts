@@ -2,6 +2,8 @@
 // Called by: src/main.ts (game events → text through t()), src/ui/* when an action is refused; hold() keeps the queue during «Lv N!» in the scene.
 // Keep: toasts never block taps (pointer-events: none); texts come translated from the caller; a text already shown or waiting is not repeated.
 
+import { iconize } from './kit.ts';
+
 export type ToastKind = 'info' | 'good' | 'rare' | 'warn';
 
 export interface Toasts {
@@ -59,7 +61,9 @@ export function createToasts(parent: HTMLElement): Toasts {
     const el = document.createElement('div');
     el.className = `toast toast-${item.kind}`;
     el.dataset.toast = item.kind;
-    el.textContent = item.text;
+    // MU-01: ◉ and ◆ in a text become the coin and the crystal pictures (07 «Знаки»).
+    el.innerHTML = iconize(item.text);
+    el.dataset.text = item.text;
     root.appendChild(el);
     current = el;
     window.setTimeout(() => {
@@ -75,13 +79,13 @@ export function createToasts(parent: HTMLElement): Toasts {
   return {
     root,
     show(text, kind = 'info', ms = 1600) {
-      enqueue(queue, { text, kind, ms }, current?.textContent ?? null);
+      enqueue(queue, { text, kind, ms }, current?.dataset.text ?? null);
       next();
     },
     hold(ms) {
       heldUntil = Math.max(heldUntil, Date.now() + ms);
     },
     waiting: () => queue.length + (current ? 1 : 0),
-    showing: () => (current && !current.classList.contains('out') ? (current.textContent ?? '') : ''),
+    showing: () => (current && !current.classList.contains('out') ? (current.dataset.text ?? '') : ''),
   };
 }

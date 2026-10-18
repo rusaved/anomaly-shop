@@ -2029,3 +2029,6 @@ button.mu-card {
 .landscape .overlay[data-overlay='settings'] > .card > [data-action='back'] {
   grid-row: 4;
 }
+.hud-btn[hidden] {
+  display: none;
+}

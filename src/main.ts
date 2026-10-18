@@ -428,6 +428,14 @@ async function boot(): Promise<void> {
     '<button type="button" class="hud-btn" data-action="leaders" data-i18n="leaders.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4"/><path d="M17 6h3a3 3 0 0 1-3 4"/><path d="M12 14v4M8 20h8"/></svg></button>',
   );
   (hud.side.querySelector('[data-action="leaders"]') as HTMLElement).addEventListener('click', () => leadersWindow.open());
+  // MU-02: «Сезон» is a mark of the top bar after the release (content/nav.json tabs.season; hidden until then).
+  hud.side.insertAdjacentHTML(
+    'beforeend',
+    '<button type="button" class="hud-btn" data-action="season" data-i18n="nav.season" data-i18n-attr="aria-label" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg></button>',
+  );
+  const seasonButton = hud.side.querySelector('[data-action="season"]') as HTMLElement;
+  seasonButton.hidden = navData.tabs.season.type === 'hidden';
+  seasonButton.addEventListener('click', () => toasts.show(i18n.t('season.later'), 'info', 2600));
   window.setInterval(() => leadersWindow.sync(), 120_000);
   /** Q-026 B: which tabs are open now; an opened one stays open (flag open_<id>), a fresh one pulses. */
   let tabsKnown = false;

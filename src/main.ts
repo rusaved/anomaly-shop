@@ -501,13 +501,18 @@ async function boot(): Promise<void> {
     if (tab === 'sales') salesTab.render();
     if (tab === 'shop') shopTab.render();
     nav.badge('chats', play.chats().filter((c) => c.unread).length);
-    // M4-20: a find with its reward waiting — a dot on the Inventory tab.
-    nav.badge('inventory', play.finds().some((f) => f.got && !f.claimed));
-    const upgradeReady = play.upgradeList().some((u) => u.affordable || u.fresh);
+    // MU-12 (s1-shop-scene, the game design recheck): one green dot on the bar — the main step only:
+    // a free or new egg, then a find with its reward waiting (M4-20), then an upgrade to buy.
+    // (Every list is read each time, as before: the order of these reads is part of the frame.)
+    const findWaits = play.finds().some((f) => f.got && !f.claimed);
+    const upgradeWaits = play.upgradeList().some((u) => u.affordable || u.fresh);
+    const eggReady = play.eggShop().eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open));
+    const findReady = !eggReady && findWaits;
+    const upgradeReady = !eggReady && !findReady && upgradeWaits;
+    nav.badge('eggs', eggReady);
+    nav.badge('inventory', findReady);
     nav.badge('shop', upgradeReady);
     (stageButton.querySelector('[data-upgrades-dot]') as HTMLElement).hidden = !upgradeReady;
-    const shopEggs = play.eggShop();
-    nav.badge('eggs', shopEggs.eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open)));
   }
   // MU-12 (the game design review, «Цели» 2): the nearest goal on «Лавка» — one dark card on the free floor
   // between the «Витрина» row and the scene buttons (Q-035 B); a tap leads to the action.

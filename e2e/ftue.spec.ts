@@ -34,6 +34,13 @@ test('M1-09 first minute: hints up to 6 words lead from the starter egg to a rar
   };
 
   await expect(page.locator('.hint [data-hint-text]')).toBeVisible();
+  // The closing toast starts with the second hatch and may end while the hatch window is closed: it is caught when it appears.
+  await page.evaluate(() => {
+    const w = window as unknown as { goodToast?: boolean };
+    new MutationObserver(() => {
+      if (document.querySelector('[data-toast=good]')) w.goodToast = true;
+    }).observe(document.body, { subtree: true, childList: true });
+  });
   const deadline = Date.now() + 150_000;
   while (Date.now() < deadline) {
     if (await closeHatch(page)) continue;
@@ -57,7 +64,7 @@ test('M1-09 first minute: hints up to 6 words lead from the starter egg to a rar
   for (const h of hints) expect(h.split(/\s+/).length, h).toBeLessThanOrEqual(6);
   expect(hints.length).toBeGreaterThanOrEqual(5);
   // The closing words of the first minute and the funnel events in order (docs/06, section 1).
-  await expect(page.locator('[data-toast=good]').first()).toBeVisible();
+  await page.waitForFunction(() => (window as unknown as { goodToast?: boolean }).goodToast === true, null, { timeout: 15_000 });
   const names = (await events(page)).map((e) => e.name);
   const order = ['first_tap', 'hatch_1', 'feed_1', 'sale_1', 'egg_buy_1'].map((n) => names.indexOf(n));
   expect(order.every((i) => i >= 0)).toBe(true);

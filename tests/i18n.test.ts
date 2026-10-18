@@ -57,3 +57,25 @@ describe('t()', () => {
     expect(bad).toEqual([]);
   });
 });
+
+/** docs/07 «Словарь» (MU, the round of fixes, item 7): one place — one name, in the player's texts and the upgrade names. */
+describe('the dictionary of 07', () => {
+  const ru = dictionaries.ru as Record<string, string>;
+  const upgrades = JSON.parse(readFileSync(join(root, 'content/upgrades.json'), 'utf8')) as { upgrades: Array<{ name: { ru: string } }> };
+  const texts = [...Object.values(ru), ...upgrades.upgrades.map((u) => u.name.ru)];
+
+  it('names the places the way 07 does', () => {
+    expect(ru['shop.section.point']).toBe('Пункт продаж');
+    expect(ru['shop.section.point.short']).toBe('Пункт');
+    expect(ru['rebirth.open']).toBe('Переезд');
+    expect(ru['next.rebirth']).toBe('Переезд');
+    expect(ru['gifts.reviewChest']).toBe('Сундук за отзыв');
+    expect(ru['sales.toChat']).toBe('В чат');
+  });
+
+  it('keeps the old names out of every text a player reads', () => {
+    for (const bad of ['Новый город', 'ПВЗ', 'В переписку', 'подпишись', 'за подписку'])
+      expect(texts.filter((t) => t.toLowerCase().includes(bad.toLowerCase())), bad).toEqual([]);
+    expect(ru['rate.text']).toContain('сундук за отзыв');
+  });
+});

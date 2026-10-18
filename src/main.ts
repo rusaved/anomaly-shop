@@ -397,6 +397,7 @@ async function boot(): Promise<void> {
     rewardText,
     rewardShort: (r) => (r.egg ? i18n.t(`egg.short.${r.egg}`) : `${r.crystals ? '◆' : '◉'} ${new Intl.NumberFormat(i18n.lang()).format(r.coins ?? r.crystals ?? 0)}`),
     eggPicture: (id) => portraits.egg(id),
+    thing: (name) => portraits.thing(name),
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
     portrait: (sp, r) => portraits.creature(sp, r),
     goalName: (id) => calendar.tasks.pool.find((g) => g.id === id)?.name[i18n.lang()] ?? id,

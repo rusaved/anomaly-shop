@@ -19,6 +19,8 @@ export interface GiftsLookups {
   /** A short label for a day cell: «◉ 50», «◆ 3» or the short egg name. */
   rewardShort(r: RewardData): string;
   eggPicture(id: string): string;
+  /** A thing drawn by the scene (the review chest). */
+  thing(name: string): string;
   /** M4-07: the anomaly of the day and the goals' names (calendar.json). */
   speciesName(id: string): string;
   portrait(species: string, rarity: RarityName): string;
@@ -57,8 +59,8 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
   };
   const openRate = (): void => {
     rate.card.innerHTML =
-      `<h2>${esc(look.t('rate.title'))}</h2><span class="mu-pic rate-pic"><img alt="" src="${look.eggPicture(look.gifts.review.reward.egg ?? 'egg_gold')}"></span>` +
-      `<p class="mu-meta rate-text">${esc(look.t('rate.text', { what: look.rewardText(look.gifts.review.reward) }))}</p>` +
+      `<h2>${esc(look.t('rate.title'))}</h2><span class="mu-pic rate-pic"><img alt="" src="${look.thing('chest')}"></span>` +
+      `<p class="mu-meta rate-text">${esc(look.t('rate.text'))}</p>` +
       `<button type="button" class="mu-btn main" data-action="rate-send">${esc(look.t('gifts.reviewBtnSend'))}</button>`;
     closeX(rate.card, '✕', () => rate.hide(), 'rate-close');
     rate.card.querySelector('[data-action="rate-send"]')?.addEventListener('click', sendReview);
@@ -108,7 +110,7 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
             '</div>',
         );
       cards.push(
-        `<div class="mu-card gift-card" data-gift="review"><span class="mu-pic"><img alt="" src="${look.eggPicture(look.gifts.review.reward.egg ?? 'egg_gold')}"></span><span class="mu-name">${esc(look.t('gifts.reviewChest'))}</span>` +
+        `<div class="mu-card gift-card" data-gift="review"><span class="mu-pic"><img alt="" src="${look.thing('chest')}"></span><span class="mu-name">${esc(look.t('gifts.reviewChest'))}</span>` +
           (v.reviewed ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('gifts.got'))}</button>` : `<button type="button" class="mu-btn" data-action="gift-review">${esc(look.t('gifts.reviewBtn'))}</button>`) +
           '</div>',
       );

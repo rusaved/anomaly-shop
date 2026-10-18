@@ -105,6 +105,22 @@ function locker(g: Graphics, R: number, c: Colors, outline: number): void {
     for (let col = 0; col < 2; col++) g.rect(-R * 0.52 + col * R * 0.54, -R * 0.72 + r * R * 0.38, R * 0.48, R * 0.32).fill(c.queueSpot).stroke({ width: outline * 0.5, color: c.outline });
 }
 
+/** The review chest of «Подарки» (07 «Словарь»: «Сундук за отзыв»): a wooden box, a round lid, gold bands and a lock. */
+function chest(g: Graphics, R: number, c: Colors, outline: number): void {
+  const stroke = { width: outline * 0.8, color: c.outline, join: 'round' as const };
+  g.roundRect(-R * 0.9, -R * 0.1, R * 1.8, R * 0.95, R * 0.12).fill(c.counter).stroke(stroke);
+  g.moveTo(-R * 0.9, -R * 0.1)
+    .lineTo(-R * 0.9, -R * 0.35)
+    .quadraticCurveTo(0, -R * 0.95, R * 0.9, -R * 0.35)
+    .lineTo(R * 0.9, -R * 0.1)
+    .closePath()
+    .fill(c.floorLine)
+    .stroke(stroke);
+  for (const x of [-R * 0.55, R * 0.42]) g.rect(x, -R * 0.62, R * 0.13, R * 1.45).fill(c.rarityLegendary).stroke({ width: outline * 0.5, color: c.outline });
+  g.roundRect(-R * 0.17, -R * 0.24, R * 0.34, R * 0.4, R * 0.06).fill(c.rarityLegendary).stroke(stroke);
+  g.rect(-R * 0.04, -R * 0.12, R * 0.08, R * 0.16).fill(c.outline);
+}
+
 /** The picture of a thing to buy at 0,0 inside radius R, with its shadow; thing — the upgrade's decor (content/upgrades.json) or its id. */
 export function drawUpgradeIcon(box: Container, thing: string, R: number, c: Colors, outline: number): void {
   const art = new Container();
@@ -122,6 +138,7 @@ function drawThing(box: Container, thing: string, R: number, c: Colors, outline:
   if (thing === 'incubator' || thing === 'incubator_speed') return incubator(box, R, c, outline, thing === 'incubator_speed');
   if (thing === 'showcase') return showcase(g, R, c, outline);
   if (thing === 'tags') return tags(g, R, c, outline);
+  if (thing === 'chest') return chest(g, R, c, outline);
   if (thing === 'point_repair') return repair(g, R, c, outline);
   if (thing === 'point_furnish') return shelves(g, R, c, outline);
   if (thing === 'point_passive') return locker(g, R, c, outline);

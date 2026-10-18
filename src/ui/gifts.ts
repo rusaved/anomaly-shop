@@ -1,11 +1,12 @@
-// What: the Gifts window (docs/01 §3 p. 15; M3-11): today's anomaly and goals (M4-07), an egg for following a community (VK, Telegram), the golden egg for a review, 7 days of gifts.
+// What: the «Подарки» screen (docs/01 §3 p. 15; MU-08 by s5-gifts): «Загляни в группу» and the review chest → 7 days → «Забрать подарок дня» → the anomaly of the day → the goals of the day.
 // Called by: src/main.ts (the Gifts button of the top bar); the community link opens in a new tab, the egg comes once the player is back.
-// Keep: the only rewards for leaving the game are these, once each; no community links in the youtube profile (links === null); no words «ad» or «referral».
+// Keep: the reward is for a visit to the group, never for «following» (07 «Словарь»); once each; no community in the youtube profile (links === null); one way back — ✕.
 
 import type { GiftsData, RarityName, RewardData } from '../content/schemas.ts';
 import type { Game } from '../sim/game.ts';
 import { openCommunity, type CommunityLinks, type Network } from './community.ts';
-import { button, createOverlay } from './overlay.ts';
+import { esc, iconize, ringPic } from './kit.ts';
+import { createOverlay } from './overlay.ts';
 
 export interface GiftsLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -15,7 +16,7 @@ export interface GiftsLookups {
   /** The player's local date, YYYY-MM-DD (platform time). */
   today(): string;
   rewardText(r: RewardData): string;
-  /** A short label for a day cell: a number or the short egg name. */
+  /** A short label for a day cell: «◉ 50», «◆ 3» or the short egg name. */
   rewardShort(r: RewardData): string;
   eggPicture(id: string): string;
   /** M4-07: the anomaly of the day and the goals' names (calendar.json). */
@@ -28,7 +29,7 @@ export interface GiftsLookups {
 export interface GiftsWindow {
   open(): void;
   render(): void;
-  /** Something to take: today's gift or a community not followed yet. */
+  /** Something to take: today's gift or a group not visited yet. */
   hasNew(): boolean;
 }
 
@@ -36,17 +37,13 @@ export interface GiftsWindow {
 const BACK_AFTER_MS = 1500;
 
 export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLookups): GiftsWindow {
-  const overlay = createOverlay(parent, 'gifts', () => overlay.hide());
+  // MU-08: a screen under the top bar with its own «Подарки ✕» row (s5-gifts), the tab bar stays.
+  const overlay = createOverlay(parent, 'gifts', () => overlay.hide(), { kind: 'screen' });
   overlay.card.classList.add('card-gifts');
-  const body = document.createElement('div');
-  body.className = 'gifts';
-  const close = button('gifts-close', 'gifts.close', 'btn-primary');
-  close.addEventListener('click', () => overlay.hide());
-  overlay.card.append(body, close);
   const pending = new Map<Network, number>();
   let reviewBusy = false;
 
-  // Back from the community page: the egg for following, once.
+  // Back from the community page: the egg for the visit, once.
   const back = (): void => {
     if (document.visibilityState !== 'visible') return;
     for (const [network, at] of pending) {
@@ -54,10 +51,11 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
       pending.delete(network);
       game.claimSubscribe(network);
     }
-    win.render();
+    if (overlay.isOpen()) win.render();
   };
   document.addEventListener('visibilitychange', back);
   window.addEventListener('focus', back);
+  const head = (key: string): string => `<div class="mu-head"><h3>${esc(look.t(key))}</h3><span></span></div>`;
 
   const win: GiftsWindow = {
     open() {
@@ -72,49 +70,67 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
     },
     render() {
       const v = game.giftsView(look.today());
-      const parts: string[] = [`<h2>${look.t('gifts.title')}</h2>`];
-      // M4-07: today — the anomaly of the day (an egg, once a day) and three goals; a new date brings new ones.
       const d = game.dayView(look.today());
-      if (d.species) {
-        parts.push(
-          `<h3 class="eggs-title">${look.t('day.title')}</h3><div class="gift-row day-anomaly"><img alt="" src="${look.portrait(d.species, d.rarity)}">` +
-            `<span><b>${look.speciesName(d.species)}</b><br><small>${look.t('day.anomaly', { n: d.mult, m: d.holdMin })}</small></span>` +
-            (d.eggTaken ? `<span class="chip-on">${look.t('gifts.got')}</span>` : `<button type="button" class="btn btn-small" data-action="day-egg">${look.t('day.take')}</button>`) +
+      const parts: string[] = [
+        `<div class="mu-back gifts-top"><h2>${esc(look.t('gifts.title'))}</h2><button type="button" class="mu-round" data-action="gifts-close" aria-label="${esc(look.t('sheet.close'))}">✕</button></div>`,
+      ];
+      // 1. A visit to the group and a review: two cards side by side.
+      const visit = look.links ? look.gifts.subscribe.find((s) => !v.subscribed[s.id]) : undefined;
+      const cards: string[] = [];
+      if (look.links)
+        cards.push(
+          `<div class="mu-card gift-card" data-gift="group"><span class="mu-pic"><img alt="" src="${look.eggPicture(look.gifts.subscribe[0]?.reward.egg ?? 'egg_warm')}"></span><span class="mu-name">${esc(look.t('gifts.follow'))}</span>` +
+            (visit
+              ? `<button type="button" class="mu-btn" data-action="gift-follow-${visit.id}">${esc(look.t('gifts.followBtn'))} · ${esc(look.t('gifts.egg'))}</button>`
+              : `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('gifts.got'))}</button>`) +
             '</div>',
         );
-      }
-      for (const g of d.goals)
-        parts.push(
-          `<div class="gift-row day-goal" data-goal="${g.id}"><span>${look.goalName(g.id)} · ${g.have}/${g.need}<br><small>${look.rewardText(g.reward)}</small></span>` +
-            (g.claimed ? `<span class="chip-on">${look.t('gifts.got')}</span>` : g.done ? `<button type="button" class="btn btn-small btn-primary" data-action="day-goal-${g.id}">${look.t('day.claim')}</button>` : '') +
-            '</div>',
-        );
-      // Seven days: the count only goes on; today's cell is the one to take.
-      parts.push(`<h3 class="eggs-title">${look.t('gifts.days')}</h3><div class="days">`);
-      look.gifts.daily.forEach((d, i) => {
-        const state = i < v.day || (i === v.day && !v.dailyReady) ? 'taken' : i === v.day ? 'today' : 'later';
-        const pic = d.reward.egg ? `<img alt="" src="${look.eggPicture(d.reward.egg)}">` : `<span class="${d.reward.crystals ? 'gem' : 'coin'}" aria-hidden="true"></span>`;
-        parts.push(`<div class="day day-${state}" data-day="${i + 1}"><small>${look.t('gifts.day', { n: d.day })}</small>${pic}<b>${look.rewardShort(d.reward)}</b></div>`);
-      });
-      parts.push('</div>');
-      parts.push(v.dailyReady ? `<button type="button" class="btn btn-primary" data-action="gift-daily">${look.t('gifts.take')}</button>` : `<p class="card-sub">${look.t('gifts.tomorrow')}</p>`);
-      if (look.links) {
-        parts.push(`<h3 class="eggs-title">${look.t('gifts.follow')}</h3>`);
-        for (const s of look.gifts.subscribe) {
-          const done = Boolean(v.subscribed[s.id]);
-          parts.push(
-            `<div class="gift-row"><span>${look.t(`community.${s.id}`)} · ${look.rewardText(s.reward)}</span>` +
-              (done ? `<span class="chip-on">${look.t('gifts.got')}</span>` : `<button type="button" class="btn btn-small" data-action="gift-follow-${s.id}">${look.t('gifts.followBtn')}</button>`) +
-              '</div>',
-          );
-        }
-      }
-      parts.push(
-        `<h3 class="eggs-title">${look.t('gifts.review')}</h3><div class="gift-row"><span>${look.rewardText(look.gifts.review.reward)}</span>` +
-          (v.reviewed ? `<span class="chip-on">${look.t('gifts.got')}</span>` : `<button type="button" class="btn btn-small" data-action="gift-review">${look.t('gifts.reviewBtn')}</button>`) +
+      cards.push(
+        `<div class="mu-card gift-card" data-gift="review"><span class="mu-pic"><img alt="" src="${look.eggPicture(look.gifts.review.reward.egg ?? 'egg_gold')}"></span><span class="mu-name">${esc(look.t('gifts.reviewChest'))}</span>` +
+          (v.reviewed ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('gifts.got'))}</button>` : `<button type="button" class="mu-btn" data-action="gift-review">${esc(look.t('gifts.reviewBtn'))}</button>`) +
           '</div>',
       );
-      body.innerHTML = parts.join('');
+      parts.push(`<div class="mu-grid gift-top">${cards.join('')}</div>`);
+      // 2. Seven days: 4 + 3 cells, the 7th on two; today filled.
+      parts.push(head('gifts.days'), '<div class="days">');
+      look.gifts.daily.forEach((g, i) => {
+        const state = i < v.day || (i === v.day && !v.dailyReady) ? 'taken' : i === v.day ? 'today' : 'later';
+        parts.push(`<div class="day day-${state}" data-day="${i + 1}"><b>${esc(look.t('gifts.day', { n: g.day }))}</b><span>${iconize(look.rewardShort(g.reward))}</span></div>`);
+      });
+      parts.push('</div>');
+      // 3. The green «take» of the day (no «Done» button: the ✕ closes).
+      parts.push(
+        v.dailyReady
+          ? `<button type="button" class="mu-btn good gift-take" data-action="gift-daily">${esc(look.t('gifts.take'))}</button>`
+          : `<p class="mu-meta gift-take gift-tomorrow">${esc(look.t('gifts.tomorrow'))}</p>`,
+      );
+      // 4. The anomaly of the day: its pet in the rarity frame, an egg once a day.
+      if (d.species)
+        parts.push(
+          head('day.title'),
+          `<div class="mu-card rar day-anomaly" data-rarity="${d.rarity}">${ringPic(look.portrait(d.species, d.rarity), d.rarity, 52)}<span class="day-text"><b class="mu-name">${esc(look.speciesName(d.species))}</b>` +
+            `<span class="mu-meta">${esc(look.t('day.short', { n: d.mult, m: d.holdMin }))}</span></span>` +
+            (d.eggTaken ? `<span class="mu-meta day-got">${esc(look.t('gifts.got'))}</span>` : `<button type="button" class="mu-btn" data-action="day-egg">${esc(look.t('day.take'))}</button>`) +
+            '</div>',
+        );
+      // 5. The goals of the day with their progress.
+      if (d.goals.length) {
+        parts.push(head('day.goals'));
+        for (const g of d.goals)
+          parts.push(
+            `<div class="mu-card day-goal" data-goal="${g.id}"><span class="day-text"><b class="mu-name">${esc(look.goalName(g.id))}</b><span class="goal-bar"><i style="width:${Math.round((Math.min(g.have, g.need) / Math.max(1, g.need)) * 100)}%"></i></span>` +
+              `<span class="mu-meta">${g.have}/${g.need} · ${esc(look.rewardText(g.reward))}</span></span>` +
+              (g.claimed
+                ? `<span class="mu-meta day-got">${esc(look.t('gifts.got'))}</span>`
+                : g.done
+                  ? `<button type="button" class="mu-btn good" data-action="day-goal-${g.id}">${esc(look.t('day.claim'))}</button>`
+                  : '') +
+              '</div>',
+          );
+      }
+      overlay.card.innerHTML = parts.join('');
+      const body = overlay.card;
+      body.querySelector('[data-action="gifts-close"]')?.addEventListener('click', () => overlay.hide());
       body.querySelector('[data-action="day-egg"]')?.addEventListener('click', () => {
         game.claimDayEgg(look.today());
         win.render();

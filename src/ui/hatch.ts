@@ -1,10 +1,11 @@
-// What: the hatch show as a case (docs/01 §3 p. 12; M3-05, UB-03): portraits run under a marker 4–5 s; «Hatched!» with the range, Take / Sell now / To the shop.
+// What: the hatch show as a case (docs/01 §3 p. 12; M3-05, UB-03; MU-09 by s6, r1, r2): portraits run under a marker 4–5 s; «Hatched!» — «На витрину», «На склад», «Продать сразу».
 // Called by: src/main.ts on a hatched event the player tapped (by: 'tap'); hatches by themselves (helpers, time away) skip the show.
 // Keep: the result is the game's roll (the uid from the event); the strip around it is decoration (Math.random is fine in ui); a tap skips to the end.
 
 import type { RarityName } from '../content/schemas.ts';
 import type { CreatureView, Game } from '../sim/game.ts';
 import { button, createOverlay } from './overlay.ts';
+import { COIN, esc, ringPic } from './kit.ts';
 
 export interface HatchLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -42,17 +43,19 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   overlay.card.innerHTML =
     '<h2 data-hatch-title></h2><div class="hatch-window" data-action="hatch-skip"><div class="hatch-strip" data-hatch-strip></div><i class="hatch-marker" aria-hidden="true"></i></div>' +
     '<p class="hatch-skip" data-hatch-skip data-i18n="hatch.skip"></p>' +
-    '<div class="hatch-result" data-hatch-result hidden><p class="hatch-big" data-hatch-big></p><img alt="" data-hatch-pic><h3 data-hatch-name></h3><p class="hatch-rarity"><i class="rarity-dot" data-hatch-dot></i><span data-hatch-rarity></span></p>' +
-    '<p class="hatch-range"><span data-i18n="hatch.range"></span> <b data-hatch-range></b></p><div class="hatch-buttons"></div></div>';
+    // MU-09 (s6-hatch-result, r1, r2): the pet, its rarity word over the name, the price range (and the chance from VIP up), three ways out.
+    '<div class="hatch-result" data-hatch-result hidden><span class="mu-pic hatch-pic"><img alt="" data-hatch-pic></span><span class="rar-word" data-hatch-rarity></span><h3 data-hatch-name></h3>' +
+    '<p class="hatch-range" data-hatch-range></p><div class="hatch-buttons"></div></div>';
   const q = <T extends HTMLElement>(sel: string): T => overlay.card.querySelector(sel) as T;
   const title = q('[data-hatch-title]');
   const strip = q('[data-hatch-strip]');
   const result = q('[data-hatch-result]');
   const skipHint = q('[data-hatch-skip]');
-  const keep = button('hatch-keep', 'hatch.keep');
-  const sell = button('hatch-sell', 'hatch.sell');
-  const toShop = button('hatch-shop', 'hatch.toShop', 'btn-primary');
-  q('.hatch-buttons').append(keep, sell, toShop);
+  const keep = button('hatch-keep', 'hatch.keep', 'mu-btn');
+  const sell = button('hatch-sell', 'hatch.sell', 'mu-btn quiet hatch-sell');
+  const toShop = button('hatch-shop', 'hatch.toShop', 'mu-btn main');
+  q('.hatch-buttons').append(toShop, keep, sell);
+  let egg = '';
   let uid = '';
   let raf = 0;
   let start = 0;
@@ -103,17 +106,22 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     const fmt = new Intl.NumberFormat(look.lang());
     q<HTMLImageElement>('[data-hatch-pic]').src = look.portrait(cr.species, cr.rarity);
     q('[data-hatch-name]').textContent = look.speciesName(cr.species);
-    q('[data-hatch-rarity]').textContent = `${look.t(`rarity.${cr.rarity}`)}${cr.mark ? ` · ${look.t(`mark.${cr.mark}`)}` : ''}`;
-    q('[data-hatch-dot]').style.background = look.rarityColor(cr.rarity);
-    // UB-10, M4-00: a valuable one and above is an event — a flash of its rarity color, a short pause, a big «Valuable!», then the creature pops.
+    const word = q('[data-hatch-rarity]');
+    word.dataset.rarity = cr.rarity;
+    word.textContent = `${look.t(`rarity.${cr.rarity}`)}${cr.mark ? ` · ${look.t(`mark.${cr.mark}`)}` : ''}`;
+    // MU-01: the card wears the frame of the rarity (premium glows, VIP shines, exclusive pulses); a valuable one and above also flashes.
     const rare = cr.rarity !== 'common' && cr.rarity !== 'good';
+    overlay.card.classList.add('rar');
+    overlay.card.dataset.rarity = cr.rarity;
     overlay.card.style.setProperty('--rc', look.rarityColor(cr.rarity));
     overlay.card.classList.toggle('hatch-rare', rare);
-    q('[data-hatch-big]').textContent = rare ? `${look.t(`rarity.${cr.rarity}`)}!` : '';
-    q('[data-hatch-range]').textContent = `${fmt.format(cr.low)} – ${fmt.format(cr.high)}`;
+    const chance = cr.rarity === 'vip' || cr.rarity === 'exclusive' ? look.odds(egg).find((o) => o.species === cr.species)?.chance ?? 0 : 0;
+    q('[data-hatch-range]').innerHTML =
+      `${esc(look.t('hatch.range'))} ${COIN}<b>${fmt.format(cr.low)}–${fmt.format(cr.high)}</b>` +
+      (chance > 0 ? ` · ${esc(look.t('hatch.chance', { n: fmt.format(Math.max(1, Math.round(100 / chance))) }))}` : '');
     // M4-07: the anomaly of the day settles in first — no «sell now».
     sell.hidden = cr.hold > 0;
-    sell.textContent = look.t('hatch.sellFor', { n: fmt.format(cr.low) });
+    sell.innerHTML = `${esc(look.t('hatch.sell'))} ${COIN}${fmt.format(cr.low)}`;
     sell.dataset.price = String(cr.low);
   }
   function skip(): void {
@@ -123,11 +131,13 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   return {
     play(e) {
       uid = e.uid;
+      egg = e.egg;
       done = false;
       result.hidden = true;
       skipHint.hidden = false;
       skipHint.textContent = look.t('hatch.skip');
-      overlay.card.classList.remove('shown', 'hatch-rare');
+      overlay.card.classList.remove('shown', 'hatch-rare', 'rar');
+      delete overlay.card.dataset.rarity;
       title.textContent = look.t('hatch.title');
       const odds = look.odds(e.egg);
       const total = odds.reduce((s, o) => s + o.chance, 0) || 1;
@@ -141,7 +151,7 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
           const it = i === TARGET ? { species: e.species, rarity: e.rarity } : roll();
           const el = document.createElement('span');
           el.className = 'hatch-item';
-          el.innerHTML = `<img alt="" src="${look.portrait(it.species, it.rarity)}"><i style="background:${look.rarityColor(it.rarity)}"></i>`;
+          el.innerHTML = ringPic(look.portrait(it.species, it.rarity), it.rarity, 64);
           return el;
         }),
       );

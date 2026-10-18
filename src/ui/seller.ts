@@ -1,9 +1,10 @@
-// What: a market lot with its seller chat (docs/01 §3 p. 14; M3-09, M3-10): «What about it?», «How are you?» + hobby discount, bargain slider, take it, bye.
+// What: a market lot with its seller chat (docs/01 §3 p. 14; M3-09, M3-10; MU-11 in the chat style of s2): «What about it?», «How are you?» + hobby discount, bargain slider, take it, bye.
 // Called by: src/ui/market.ts (openLot) through src/main.ts.
 // Keep: commands only through the game (buyLot, lotHobby, lotBargain); seller lines come from customers.json (character lines, hobbies) and i18n.
 
 import type { CharacterData, HobbyData, RarityName } from '../content/schemas.ts';
 import type { Game, LotView } from '../sim/game.ts';
+import { esc, iconize, money, rarityBadge } from './kit.ts';
 
 export interface SellerLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -30,12 +31,12 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
   const say = (ctx: keyof CharacterData['lines'], n?: number): string => {
     const pool = ch?.lines[ctx] ?? [];
     const line = pool[Math.floor(Math.random() * pool.length)]?.[look.lang()] ?? '';
-    return n === undefined ? line : line.replaceAll('{n}', new Intl.NumberFormat(look.lang()).format(n));
+    return n === undefined ? line : line.replaceAll('{n}', `◉ ${new Intl.NumberFormat(look.lang()).format(n)}`);
   };
   let asked = false;
   let bargaining = false;
   let done: 'bought' | 'left' | null = null;
-  lines.push({ me: false, text: say('greet') }, { me: false, text: look.t('seller.ask', { n: new Intl.NumberFormat(look.lang()).format(first.price) }) });
+  lines.push({ me: false, text: say('greet') }, { me: false, text: look.t('seller.ask', { n: `◉ ${new Intl.NumberFormat(look.lang()).format(first.price)}` }) });
 
   const lot = (): LotView | undefined => game.market().lots.find((l) => l.id === first.id);
   // M4-09: like a buyer's chat (UB-10), the seller's opens on its latest lines — above the answers, not under them.
@@ -43,34 +44,33 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
     drawPage();
     const scroller = body.closest<HTMLElement>('.sheet-detail') ?? body;
     scroller.scrollTop = scroller.scrollHeight;
+    const linesEl = body.querySelector<HTMLElement>('.chat-lines');
+    if (linesEl) linesEl.scrollTop = linesEl.scrollHeight;
   }
   function drawPage(): void {
     const l = lot() ?? first;
     const fmt = new Intl.NumberFormat(look.lang());
     const p = look.person(l.person);
     const who = `${p.name} · ${ch ? (p.f && ch.nameF ? ch.nameF : ch.name)[look.lang()] : ''}`;
+    // MU-11: the lot page like a chat (s2-chat-dialog): «‹ seller», the pet in its rarity, the lines, the answers at the bottom.
     body.innerHTML =
-      `<button type="button" class="eggs-back" data-action="lot-back">‹ ${look.t('eggs.back')}</button>` +
-      `<div class="chat-head"><b class="chat-who"></b></div>` +
-      `<div class="chat-item"><span class="card-pic"><img alt="" src="${look.portrait(l.species, l.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(l.rarity)}"></i></span>` +
-      `<span><b class="chat-item-name"></b> · ${look.t('card.level', { n: l.level })}<br><span class="card-sub">${look.t('price.marketIs', { n: fmt.format(l.value) })} · <span class="verdict v-${l.verdict}">${look.t(`market.${l.verdict}`)}</span> ${look.mood(l.species)}</span></span></div>` +
-      `<div class="chat-lines">${lines.map((x) => `<p class="bubble ${x.me ? 'me' : 'them'}"></p>`).join('')}</div><div class="chat-buttons"></div>`;
-    (body.querySelector('.chat-who') as HTMLElement).textContent = who;
-    (body.querySelector('.chat-item-name') as HTMLElement).textContent = look.speciesName(l.species);
-    body.querySelectorAll<HTMLElement>('.bubble').forEach((el, i) => (el.textContent = lines[i]?.text ?? ''));
+      `<div class="mu-back"><button type="button" class="mu-round" data-action="lot-back" aria-label="${esc(look.t('eggs.back'))}">‹</button><span class="chat-main"><b class="chat-who">${esc(who)}</b><span class="chat-last">${esc(look.t('market.seller', { who: p.name }))}</span></span></div>` +
+      `<div class="price-pet lot-pet"><span class="mu-pic"><img alt="" src="${look.portrait(l.species, l.rarity)}"></span><div class="price-pet-text"><b class="mu-name">${esc(look.speciesName(l.species))}</b>` +
+      `<span>${rarityBadge(l.rarity, look.t(`rarity.${l.rarity}`))}</span><span class="mu-meta">${esc(look.t('card.level', { n: l.level }))} · ${esc(look.t('price.marketWord'))} ${money(l.value, fmt)} · ${esc(look.t(`market.${l.verdict}`).toLowerCase())} ${look.mood(l.species)}</span></div></div>` +
+      `<div class="chat-lines">${lines.map((x) => `<p class="bubble ${x.me ? 'me' : 'them'}">${iconize(x.text)}</p>`).join('')}</div><div class="chat-buttons lot-buttons"></div>`;
     body.querySelector('[data-action="lot-back"]')?.addEventListener('click', back);
     const buttons = body.querySelector('.chat-buttons') as HTMLElement;
     const add = (action: string, label: string, cls: string, fn: () => void): void => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = `btn ${cls}`;
+      b.className = `mu-btn ${cls}`;
       b.dataset.action = action;
       b.textContent = label;
       b.addEventListener('click', fn);
       buttons.appendChild(b);
     };
     if (done) {
-      add('lot-back2', look.t('eggs.back'), 'btn-alt', back);
+      add('lot-back2', look.t('eggs.back'), '', back);
       return;
     }
     if (bargaining) {
@@ -86,9 +86,9 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
       };
       paint();
       range.addEventListener('input', paint);
-      add('lot-offer', look.t('seller.offer'), 'btn-primary', () => {
+      add('lot-offer', look.t('seller.offer'), 'main', () => {
         const want = Number(range.value);
-        lines.push({ me: true, text: look.t('seller.me.take', { n: fmt.format(want) }) });
+        lines.push({ me: true, text: look.t('seller.me.take', { n: `◉ ${fmt.format(want)}` }) });
         const r = game.lotBargain(l.id, want);
         bargaining = false;
         if (r === 'yes') {
@@ -100,37 +100,37 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
       });
       return;
     }
-    add('lot-buy', look.t('market.take', { n: fmt.format(l.price) }), 'btn-primary', () => {
+    add('lot-buy', look.t('market.take', { n: fmt.format(l.price) }), 'main', () => {
       if (game.buyLot(l.id)) {
         lines.push({ me: true, text: look.t('seller.me.now') }, { me: false, text: say('thanks') });
         done = 'bought';
       } else lines.push({ me: false, text: look.t('seller.coins') });
       draw();
     });
-    add('lot-item', look.t('seller.me.item'), 'btn-alt', () => {
+    add('lot-item', look.t('seller.me.item'), '', () => {
       lines.push({ me: true, text: look.t('seller.me.item') }, { me: false, text: look.t(`seller.item.${Math.floor(Math.random() * ITEM_LINES)}`) });
       draw();
     });
     if (!asked)
-      add('lot-how', look.t('seller.me.how'), 'btn-alt', () => {
+      add('lot-how', look.t('seller.me.how'), '', () => {
         asked = true;
         lines.push({ me: true, text: look.t('seller.me.how') }, { me: false, text: hobby?.line[look.lang()] ?? say('greet') });
         draw();
       });
     else if (!l.hobbyDone && hobby)
-      add('lot-hobby', look.t('seller.me.hobby', { hobby: hobby.name[look.lang()].toLowerCase() }), 'btn-alt', () => {
+      add('lot-hobby', look.t('seller.me.hobby', { hobby: hobby.name[look.lang()].toLowerCase() }), '', () => {
         lines.push({ me: true, text: look.t('seller.me.hobby', { hobby: hobby.name[look.lang()].toLowerCase() }) });
         const off = game.lotHobby(l.id);
         const now = lot()?.price ?? l.price;
-        lines.push({ me: false, text: off > 0 ? look.t('seller.discount', { n: fmt.format(now) }) : say('greet') });
+        lines.push({ me: false, text: off > 0 ? look.t('seller.discount', { n: `◉ ${fmt.format(now)}` }) : say('greet') });
         draw();
       });
     if (!l.bargained)
-      add('lot-bargain', look.t('seller.me.bargain'), 'btn-alt', () => {
+      add('lot-bargain', look.t('seller.me.bargain'), '', () => {
         bargaining = true;
         draw();
       });
-    add('lot-bye', look.t('seller.me.bye'), 'btn-alt', () => {
+    add('lot-bye', look.t('seller.me.bye'), '', () => {
       lines.push({ me: true, text: look.t('seller.me.bye') }, { me: false, text: say('bye') });
       done = 'left';
       draw();

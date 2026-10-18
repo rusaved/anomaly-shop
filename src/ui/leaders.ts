@@ -24,7 +24,7 @@ const TOP = 10;
 
 export function createLeadersWindow(parent: HTMLElement, leaders: Leaders, look: LeadersLookups): LeadersWindow {
   // UB-02: a top bar button opens a panel from the right; the shop stays in view.
-  const overlay = createOverlay(parent, 'leaders', () => overlay.hide(), { kind: 'panel' });
+  const overlay = createOverlay(parent, 'leaders', () => overlay.hide());
   overlay.card.classList.add('card-detail', 'card-leaders');
   overlay.card.innerHTML =
     // M4-00: one panel model — a panel of the top bar closes with ✕ (a tab or a tap on the shop close it too); «Back» lives only inside a tab.

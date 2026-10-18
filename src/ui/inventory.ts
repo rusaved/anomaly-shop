@@ -1,9 +1,10 @@
-// What: the Inventory tab (docs/01 §6; M3-03, M4-01): «Inventory» — the creatures the shop has, «Collection» — rows by rarity, statuses, row bonus.
-// Called by: src/main.ts (create once into its sheet; render on every commit while the sheet is open).
-// Keep: reads the game view and the save only; the rarity shows as a colored dash under the picture (M3-17 color discipline), text stays plain.
+// What: the «Склад» tab (docs/01 §6; MU-07 by s4-inventory, s4-finds, l3; MU-11 «Коллекция»): Питомцы · Коллекция · Находки, cards 2 in a row with their rarity.
+// Called by: src/main.ts (create once into its sheet; render on every commit while the sheet is open, each second for the hatching timers).
+// Keep: reads the game view and the save only; commands through the game or main.ts lookups; the rarity by the one component of kit.ts.
 
 import type { RarityName } from '../content/schemas.ts';
 import type { Game } from '../sim/game.ts';
+import { COIN, esc, GEM, money, rarityBadge } from './kit.ts';
 import type { Sheet } from './sheet.ts';
 
 export interface InventoryLookups {
@@ -12,10 +13,14 @@ export interface InventoryLookups {
   speciesName(id: string): string;
   portrait(species: string, rarity: RarityName): string;
   rarityColor(r: RarityName): string;
-  /** Taps a creature in the shop (selects it for the customer at the counter). */
+  /** An egg's picture and name (the hatching ones stand among the pets, s4-inventory). */
+  eggPicture(id: string): string;
+  /** Taps a creature in the shop (feeds it). */
   pick(uid: string): void;
-  /** UB-10: list a creature for sale — its price slider opens. */
+  /** MU-06: «На продажу» — the pet's «Цена» page. */
   list(uid: string): void;
+  /** «Открыть» on a hatching egg: the «Яйца» tab. */
+  openEggs(): void;
   /** M4-23: the market's mood chip for a species ('' when none). */
   mood(species: string): string;
   /** M4-20: a find's name, how to get it and its reward, in the player's language. */
@@ -26,139 +31,126 @@ export interface InventoryTab {
   render(): void;
 }
 
+type Mode = 'items' | 'collection' | 'finds';
+
 export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLookups): InventoryTab {
-  let mode: 'items' | 'collection' | 'finds' = 'items';
+  let mode: Mode = 'items';
   sheet.head.innerHTML =
-    '<div class="subtabs" role="tablist"><button type="button" class="subtab" data-sub="items" data-i18n="inventory.items"></button>' +
+    '<div class="mu-seg subtabs" role="tablist"><button type="button" class="subtab" data-sub="items" data-i18n="inventory.items"></button>' +
     '<button type="button" class="subtab" data-sub="collection" data-i18n="inventory.collection"></button>' +
     '<button type="button" class="subtab" data-sub="finds" data-i18n="inventory.finds"></button></div>';
   const list = document.createElement('div');
-  list.className = 'cards';
+  list.className = 'inventory';
   sheet.body.appendChild(list);
   sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) =>
     b.addEventListener('click', () => {
-      mode = b.dataset.sub === 'collection' ? 'collection' : b.dataset.sub === 'finds' ? 'finds' : 'items';
+      mode = (b.dataset.sub as Mode) ?? 'items';
       key = '';
       tab.render();
     }),
   );
   let key = '';
+
+  function renderItems(fmt: Intl.NumberFormat): void {
+    const view = game.view();
+    // MU-07: the storage first (a tap «На продажу» opens the price), then the shelf and the chats, then the eggs hatching.
+    const all = [...view.inventory.map((c) => ({ c, where: 'store' as const })), ...view.creatures.map((c) => ({ c, where: 'shelf' as const })), ...view.talking.map((c) => ({ c, where: 'chat' as const }))];
+    const hatching = view.incubators.map((inc, i) => ({ inc, i })).filter((x) => x.inc.egg && !x.inc.ready);
+    const next = `i:${look.lang()}:${all.map(({ c, where }) => `${c.uid}.${c.level}.${c.price}.${where}`).join(',')}:${hatching.map((x) => `${x.inc.egg}.${Math.round(x.inc.share * 100)}`).join(',')}:${JSON.stringify(game.mood())}`;
+    if (next === key) return;
+    key = next;
+    if (!all.length && !hatching.length) {
+      list.innerHTML = `<p class="empty" data-empty>${esc(look.t('inventory.empty'))}</p>`;
+      return;
+    }
+    const cards = all.map(({ c, where }) => {
+      const btn =
+        where === 'store'
+          ? `<button type="button" class="mu-btn" data-action="inv-list-${c.uid}">${esc(look.t('inventory.list'))}</button>`
+          : where === 'shelf'
+            ? `<button type="button" class="mu-btn" data-action="inv-off-${c.uid}">${esc(look.t('sales.off'))}</button>`
+            : `<span class="mu-meta inv-where">${esc(look.t('sales.talkingSub'))}</span>`;
+      return (
+        `<div class="mu-card rar tile" data-rarity="${c.rarity}" data-uid="${c.uid}" data-on="${where !== 'store'}"><button type="button" class="mu-pic-btn" data-action="inv-pic-${c.uid}"><span class="mu-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"></span></button>` +
+        `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span>${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}</span>` +
+        `<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}${c.mark ? ` · ${esc(look.t(`mark.${c.mark}`))}` : ''} · ${money(c.price, fmt)} ${look.mood(c.species)}</span>${btn}</div>`
+      );
+    });
+    for (const { inc, i } of hatching)
+      cards.push(
+        `<div class="mu-card mu-dim card-hatching" data-incubator="${i}"><span class="mu-pic"><img alt="" src="${look.eggPicture(inc.egg!)}"></span><span class="mu-name">${esc(look.t('inventory.hatching'))}</span>` +
+          `<span class="mu-meta">${Math.round(inc.share * 100)} %</span><button type="button" class="mu-btn" data-action="inv-eggs">${esc(look.t('eggs.open'))}</button></div>`,
+      );
+    list.innerHTML = `<div class="mu-grid">${cards.join('')}</div>`;
+    for (const { c, where } of all) {
+      list.querySelector(`[data-action="inv-list-${c.uid}"]`)?.addEventListener('click', () => look.list(c.uid));
+      list.querySelector(`[data-action="inv-off-${c.uid}"]`)?.addEventListener('click', () => game.unlist(c.uid));
+      list.querySelector(`[data-action="inv-pic-${c.uid}"]`)?.addEventListener('click', () => (where === 'store' ? look.list(c.uid) : look.pick(c.uid)));
+    }
+    list.querySelectorAll('[data-action="inv-eggs"]').forEach((b) => b.addEventListener('click', () => look.openEggs()));
+  }
+
+  function renderFinds(fmt: Intl.NumberFormat): void {
+    // M4-20, MU-07 (s4-finds): the finds — a got one with its reward waits in a green frame with a green «Забрать».
+    const finds = game.finds();
+    const next = `f:${look.lang()}:${finds.map((f) => `${f.got ? 1 : 0}${f.claimed ? 1 : 0}${Math.min(f.have, f.need)}`).join(',')}`;
+    if (next === key) return;
+    key = next;
+    const got = finds.filter((f) => f.got).length;
+    const sorted = [...finds].sort((a, b) => Number(b.got && !b.claimed) - Number(a.got && !a.claimed) || Number(b.got) - Number(a.got) || Number(a.hidden) - Number(b.hidden));
+    const cards = sorted.map((f) => {
+      const d = look.find(f.id);
+      const secret = f.hidden && !f.got;
+      const ready = f.got && !f.claimed;
+      const reward = money(d.crystals || d.coins, fmt, Boolean(d.crystals));
+      const icon = secret ? '<b class="find-icon">?</b>' : `<b class="find-icon">${d.crystals ? GEM : COIN}</b>`;
+      const meta = ready ? `${esc(look.t('finds.reward'))} ${reward}` : secret ? esc(look.t('finds.secret')) : `${esc(d.desc)}${f.need > 1 && !f.got ? ` · ${fmt.format(Math.min(f.have, f.need))}/${fmt.format(f.need)}` : ''}`;
+      const btn = ready
+        ? `<button type="button" class="mu-btn good" data-action="find-take-${f.id}">${esc(look.t('finds.take'))}</button>`
+        : f.claimed
+          ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('finds.got'))}</button>`
+          : `<button type="button" class="mu-btn off" aria-disabled="true">${secret ? '?' : reward}</button>`;
+      return `<div class="mu-card find${f.got ? ' got' : ''}${ready ? ' mu-ready' : ''}${secret ? ' secret' : ''}" data-find="${f.id}"><span class="mu-pic">${icon}</span><span class="mu-name find-name">${esc(secret ? '???' : d.name)}</span><span class="mu-meta">${meta}</span>${btn}</div>`;
+    });
+    list.innerHTML =
+      `<div class="mu-head"><h3>${esc(look.t('finds.head'))}</h3><span class="cards-sum" data-finds="${got}/${finds.length}">${esc(look.t('finds.count', { n: got, all: finds.length }))}</span></div>` +
+      `<div class="mu-grid finds">${cards.join('')}</div>`;
+    for (const f of finds) list.querySelector(`[data-action="find-take-${f.id}"]`)?.addEventListener('click', () => game.claimFind(f.id));
+  }
+
+  function renderCollection(): void {
+    // M4-01, MU-11: the collection by rarity — a row per rarity with «N/M» and its bonus, every species in its rarity frame.
+    const view = game.collection();
+    const next = `c:${look.lang()}:${view.rows.map((r) => `${r.done}.${r.species.map((x) => x.status[0]).join('')}`).join(',')}`;
+    if (next === key) return;
+    key = next;
+    const pct = (x: number): number => Math.round(x * 100);
+    list.innerHTML =
+      `<p class="mu-meta cards-sum" data-collected="${view.have}/${view.all}">${esc(look.t('inventory.found', { n: view.have, all: view.all }))}</p>` +
+      view.rows
+        .map(
+          (row) =>
+            `<section class="col-row${row.done ? ' done' : ''}" data-row="${row.rarity}"><div class="mu-head"><h3>${esc(look.t(`collection.row.${row.rarity}`))}</h3><span>${row.have}/${row.all}</span></div>` +
+            `<p class="mu-meta col-bonus" data-row-bonus>${esc(row.done ? look.t('collection.rowDone', { p: pct(row.bonus) }) : look.t('collection.rowGoal', { p: pct(row.bonus), c: row.crystals }))}</p>` +
+            `<div class="mu-grid">${row.species
+              .map(
+                (x) =>
+                  `<div class="mu-card rar card-col${x.status === 'none' ? ' unknown mu-dim' : ''}" data-rarity="${row.rarity}" data-species="${x.id}" data-status="${x.status}"><span class="mu-pic"><img alt="" src="${look.portrait(x.id, row.rarity)}"></span>` +
+                  `<span class="mu-name">${esc(x.status === 'none' ? '?' : look.speciesName(x.id))}</span><span>${rarityBadge(row.rarity, look.t(`rarity.${row.rarity}`))}</span><span class="mu-meta">${esc(look.t(`collection.status.${x.status}`))}</span></div>`,
+              )
+              .join('')}</div></section>`,
+        )
+        .join('');
+  }
+
   const tab: InventoryTab = {
     render() {
       sheet.setTitle(look.t('nav.inventory'));
       sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) => b.classList.toggle('active', b.dataset.sub === mode));
       const fmt = new Intl.NumberFormat(look.lang());
-      if (mode === 'items') {
-        const view = game.view();
-        // On sale counts the ones a buyer is writing about too (Q-025: off the shelf, still being sold).
-        const all = [...view.creatures.map((c) => ({ c, on: true })), ...view.talking.map((c) => ({ c, on: true })), ...view.inventory.map((c) => ({ c, on: false }))];
-        const next = `i:${look.lang()}:${all.map(({ c, on }) => `${c.uid}.${c.level}.${c.price}.${on}`).join(',')}:${JSON.stringify(game.mood())}`;
-        if (next === key) return;
-        key = next;
-        if (!all.length) {
-          list.innerHTML = `<p class="empty" data-empty>${look.t('inventory.empty')}</p>`;
-          return;
-        }
-        list.replaceChildren(
-          ...all.map(({ c, on }) => {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'tile';
-            b.dataset.uid = c.uid;
-            b.innerHTML =
-              `<span class="card-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(c.rarity)}"></i></span>` +
-              `<span class="card-name"></span><span class="card-sub"></span><span class="card-price"><span class="coin coin-sm" aria-hidden="true"></span><b></b></span>`;
-            (b.querySelector('.card-name') as HTMLElement).textContent = look.speciesName(c.species);
-            (b.querySelector('.card-sub') as HTMLElement).textContent = `${look.t(`rarity.${c.rarity}`)}${c.mark ? ` · ${look.t(`mark.${c.mark}`)}` : ''} · ${look.t('card.level', { n: c.level })}`;
-            (b.querySelector('.card-price b') as HTMLElement).textContent = fmt.format(c.price);
-            b.querySelector('.card-price')?.insertAdjacentHTML('afterend', look.mood(c.species));
-            const chip = document.createElement('span');
-            chip.className = on ? 'card-sub chip-on' : 'card-sub';
-            chip.dataset.action = on ? '' : `inv-list-${c.uid}`;
-            chip.textContent = look.t(on ? 'inventory.onSale' : 'inventory.list');
-            b.appendChild(chip);
-            b.dataset.on = String(on);
-            b.addEventListener('click', () => (on ? look.pick(c.uid) : look.list(c.uid)));
-            return b;
-          }),
-        );
-        return;
-      }
-      if (mode === 'finds') {
-        // M4-20: the finds — got ones with their name and reward, open ones with how to get them and how far, hidden ones as «???».
-        const finds = game.finds();
-        const next = `f:${look.lang()}:${finds.map((f) => `${f.got ? 1 : 0}${f.claimed ? 1 : 0}${Math.min(f.have, f.need)}`).join(',')}`;
-        if (next === key) return;
-        key = next;
-        const sum = document.createElement('p');
-        sum.className = 'cards-sum';
-        sum.dataset.finds = `${finds.filter((f) => f.got).length}/${finds.length}`;
-        sum.textContent = look.t('finds.sum', { n: finds.filter((f) => f.got).length, all: finds.length });
-        const tiles = [...finds].sort((a, b) => Number(b.got) - Number(a.got) || Number(a.hidden) - Number(b.hidden)).map((f) => {
-          const d = look.find(f.id);
-          const secret = f.hidden && !f.got;
-          const el = document.createElement('div');
-          el.className = `find${f.got ? ' got' : ''}${secret ? ' secret' : ''}`;
-          el.dataset.find = f.id;
-          const reward = d.crystals ? `◆ ${fmt.format(d.crystals)}` : `${fmt.format(d.coins)}`;
-          el.innerHTML = `<b class="find-name"></b><span class="card-sub find-desc"></span><span class="find-foot"><span class="card-sub find-progress"></span><span class="find-reward">${d.crystals ? '' : '<span class="coin coin-sm" aria-hidden="true"></span>'}${reward}</span></span>`;
-          (el.querySelector('.find-name') as HTMLElement).textContent = secret ? '???' : d.name;
-          (el.querySelector('.find-desc') as HTMLElement).textContent = secret ? look.t('finds.secret') : d.desc;
-          (el.querySelector('.find-progress') as HTMLElement).textContent = f.got ? (f.claimed ? look.t('finds.got') : '') : f.need > 1 && !secret ? `${fmt.format(Math.min(f.have, f.need))} / ${fmt.format(f.need)}` : '';
-          // Found, the reward waits: «Take» in place of the reward line.
-          if (f.got && !f.claimed) {
-            const take = document.createElement('button');
-            take.type = 'button';
-            take.className = 'btn btn-primary btn-small';
-            take.dataset.action = `find-take-${f.id}`;
-            take.innerHTML = `${look.t('finds.take')} ${d.crystals ? '' : '<span class="coin coin-sm" aria-hidden="true"></span>'}${reward}`;
-            take.addEventListener('click', () => game.claimFind(f.id));
-            el.querySelector('.find-reward')?.replaceWith(take);
-          }
-          return el;
-        });
-        const grid = document.createElement('div');
-        grid.className = 'finds';
-        grid.append(...tiles);
-        list.replaceChildren(sum, grid);
-        return;
-      }
-      // M4-01: the collection by rarity — «Collected N/M», a row per rarity with its bonus, every species with its status.
-      const view = game.collection();
-      const next = `c:${look.lang()}:${view.rows.map((r) => `${r.done}.${r.species.map((x) => x.status[0]).join('')}`).join(',')}`;
-      if (next === key) return;
-      key = next;
-      const pct = (x: number): number => Math.round(x * 100);
-      const sum = document.createElement('p');
-      sum.className = 'cards-sum';
-      sum.dataset.collected = `${view.have}/${view.all}`;
-      sum.textContent = look.t('inventory.found', { n: view.have, all: view.all });
-      const rows = view.rows.map((row) => {
-        const box = document.createElement('section');
-        box.className = `col-row${row.done ? ' done' : ''}`;
-        box.dataset.row = row.rarity;
-        box.innerHTML =
-          `<h3 class="eggs-title col-head"><i class="rarity-dot" style="background:${look.rarityColor(row.rarity)}"></i><span data-row-name></span><b>${row.have}/${row.all}</b></h3>` +
-          `<p class="card-sub col-bonus" data-row-bonus></p><div class="cards"></div>`;
-        (box.querySelector('[data-row-name]') as HTMLElement).textContent = look.t(`collection.row.${row.rarity}`);
-        (box.querySelector('[data-row-bonus]') as HTMLElement).textContent = row.done
-          ? look.t('collection.rowDone', { p: pct(row.bonus) })
-          : look.t('collection.rowGoal', { p: pct(row.bonus), c: row.crystals });
-        (box.querySelector('.cards') as HTMLElement).replaceChildren(
-          ...row.species.map((x) => {
-            const el = document.createElement('div');
-            el.className = `tile card-col${x.status === 'none' ? ' unknown' : ''}`;
-            el.dataset.species = x.id;
-            el.dataset.status = x.status;
-            el.innerHTML = `<span class="card-pic"><img alt="" src="${look.portrait(x.id, row.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(row.rarity)}"></i></span><span class="card-name"></span><span class="card-sub"></span>`;
-            (el.querySelector('.card-name') as HTMLElement).textContent = x.status === 'none' ? '?' : look.speciesName(x.id);
-            (el.querySelector('.card-sub') as HTMLElement).textContent = look.t(`collection.status.${x.status}`);
-            return el;
-          }),
-        );
-        return box;
-      });
-      list.replaceChildren(sum, ...rows);
+      if (mode === 'items') renderItems(fmt);
+      else if (mode === 'finds') renderFinds(fmt);
+      else renderCollection();
     },
   };
   return tab;

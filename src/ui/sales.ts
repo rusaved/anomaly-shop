@@ -1,9 +1,10 @@
-// What: the «My sales» tab (docs/01 §3 p. 13, §6; M3-06, M3-07): the sale slots (the shop showcase itself), the price slider, take off and list.
+// What: the «Продажи» tab (docs/01 §3 p. 13; MU-06 by s3-sales-slots, s3-price): the places of the shelf 2 in a row, the pick for a free place, the «Цена» page.
 // Called by: src/main.ts (create once into its sheet; render on every commit while the sheet is open).
-// Keep: one entity with the showcase on the scene (game.view().creatures on sale); commands only through the game (setAsk, unlist, list).
+// Keep: one entity with the shelf of the scene (game.view().creatures on sale); commands only through the game (list, setAsk, unlist); «Выставить на продажу» always over the tab bar.
 
 import type { RarityName } from '../content/schemas.ts';
 import type { CreatureView, Game } from '../sim/game.ts';
+import { esc, money, rarityBadge } from './kit.ts';
 import { createPriceSlider, type SliderData } from './price-slider.ts';
 import type { Sheet } from './sheet.ts';
 
@@ -15,6 +16,8 @@ export interface SalesLookups {
   rarityColor(r: RarityName): string;
   slider: SliderData;
   zoneColors: readonly string[];
+  /** The mean wait of a buyer at the market price, seconds. */
+  baseWaitSec: number;
   /** M4-23: the market's mood chip for a species ('' when none). */
   mood(species: string): string;
   /** Opens the chat about a creature a buyer is writing about (Q-025: it is off the shelf meanwhile). */
@@ -23,134 +26,136 @@ export interface SalesLookups {
 
 export interface SalesTab {
   render(): void;
+  /** A pet's «Цена» page, the pick of a free place (#pick) or the places (null). */
   show(uid: string | null): void;
 }
 
-/** The «pick a creature for a free slot» view. */
+/** The «pick a pet for a free place» page. */
 const PICK = '#pick';
 
 export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): SalesTab {
   const root = document.createElement('div');
   root.className = 'sales';
   sheet.body.appendChild(root);
-  // M4-00: a creature's card (the price slider) and the pick for a free place are inner pages of the tab — «Back» to the slots.
+  // The «Цена» page and the pick are inner pages of the tab: «‹» back to the places.
   const panel = sheet.detail('sale', () => tab.show(null));
   let open: string | null = null;
   let key = '';
   let panelKey = '';
+  /** The share chosen on the «Цена» page of a pet not on the shelf yet (it goes on with «Выставить на продажу»). */
+  let draft = 1;
+  let draftFor = '';
   let slider: ReturnType<typeof createPriceSlider> | null = null;
 
-  const slotCard = (c: CreatureView, fmt: Intl.NumberFormat): HTMLElement => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'tile card-sale';
-    b.dataset.uid = c.uid;
-    b.dataset.action = `sale-${c.uid}`;
-    b.innerHTML =
-      `<span class="card-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(c.rarity)}"></i></span>` +
-      `<span class="card-name"></span><span class="card-price"><span class="coin coin-sm" aria-hidden="true"></span><b>${fmt.format(c.ask)}</b></span>` +
-      `<span class="zone-dot" style="background:${look.zoneColors[c.zone] ?? ''}"></span>`;
-    (b.querySelector('.card-name') as HTMLElement).textContent = look.speciesName(c.species);
-    b.addEventListener('click', () => tab.show(c.uid));
-    return b;
-  };
+  const meta = (c: CreatureView, fmt: Intl.NumberFormat, price: number): string =>
+    `<span class="mu-meta mu-rar-line">${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}<span>·</span>${money(price, fmt)}</span>`;
+  const pic = (c: CreatureView): string => `<span class="mu-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"></span>`;
 
   function renderList(): void {
     const view = game.view();
     const fmt = new Intl.NumberFormat(look.lang());
-    const next = `l:${look.lang()}:${view.slots}:${view.creatures.map((c) => `${c.uid}.${c.ask}.${c.zone}`).join(',')}:${view.inventory.length}:${view.talking.map((c) => c.uid).join(',')}`;
+    const next = `l:${look.lang()}:${view.slots}:${view.creatures.map((c) => `${c.uid}.${c.ask}.${c.zone}`).join(',')}:${view.inventory.length}:${view.talking.map((c) => `${c.uid}.${c.ask}`).join(',')}`;
     if (next === key) return;
     key = next;
-    const cards: HTMLElement[] = view.creatures.map((c) => slotCard(c, fmt));
-    for (let i = view.creatures.length; i < view.slots; i++) {
-      const el = document.createElement('button');
-      el.type = 'button';
-      el.className = 'tile card-empty';
-      el.dataset.action = 'sale-add';
-      el.innerHTML = `<span class="card-pic"><span class="slot-plus" aria-hidden="true">+</span></span><span class="card-sub">${look.t(view.inventory.length ? 'sales.add' : 'sales.free')}</span>`;
-      el.addEventListener('click', () => tab.show(PICK));
-      cards.push(el);
+    const cards: string[] = [];
+    // MU-06 (s3-sales-slots): a free place first, then the pets on the shelf, then those a buyer writes about.
+    for (let i = view.creatures.length + view.talking.length; i < view.slots; i++)
+      cards.push(`<button type="button" class="mu-card card-empty" data-action="sale-add"><span class="sale-plus" aria-hidden="true">+</span><span class="mu-meta">${esc(look.t(view.inventory.length ? 'sales.add' : 'sales.free'))}</span></button>`);
+    for (const c of view.creatures)
+      cards.push(
+        `<div class="mu-card rar card-sale" data-rarity="${c.rarity}" data-uid="${c.uid}"><button type="button" class="mu-pic-btn" data-action="sale-${c.uid}">${pic(c)}</button>` +
+          `<span class="mu-name">${esc(look.speciesName(c.species))}</span>${meta(c, fmt, c.ask)}<span class="mu-meta">${esc(look.t('sales.onShelf'))}</span>` +
+          `<button type="button" class="mu-btn" data-action="sale-off-${c.uid}">${esc(look.t('sales.off'))}</button></div>`,
+      );
+    for (const c of view.talking)
+      cards.push(
+        `<div class="mu-card rar card-sale" data-rarity="${c.rarity}" data-uid="${c.uid}"><button type="button" class="mu-pic-btn" data-action="sale-chat-pic-${c.uid}">${pic(c)}</button>` +
+          `<span class="mu-name">${esc(look.speciesName(c.species))}</span>${meta(c, fmt, c.ask)}<span class="mu-meta">${esc(look.t('sales.talkingSub'))}</span>` +
+          `<button type="button" class="mu-btn main" data-action="sale-chat-${c.uid}">${esc(look.t('sales.toChat'))}</button></div>`,
+      );
+    root.innerHTML =
+      `<div class="mu-head"><h3>${esc(look.t('sales.title'))}</h3><span>${esc(look.t('sales.places', { n: view.creatures.length + view.talking.length, all: view.slots }))}</span></div>` +
+      `<div class="mu-grid">${cards.join('')}</div>`;
+    root.querySelector('[data-action="sale-add"]')?.addEventListener('click', () => tab.show(PICK));
+    for (const c of view.creatures) {
+      root.querySelector(`[data-action="sale-${c.uid}"]`)?.addEventListener('click', () => tab.show(c.uid));
+      root.querySelector(`[data-action="sale-off-${c.uid}"]`)?.addEventListener('click', () => game.unlist(c.uid));
     }
-    const sum = document.createElement('p');
-    sum.className = 'cards-sum';
-    sum.textContent = look.t('sales.slots', { n: view.creatures.length, all: view.slots });
-    const grid = document.createElement('div');
-    grid.className = 'cards';
-    grid.append(sum, ...cards);
-    root.replaceChildren(grid);
-    if (!view.talking.length) return;
-    // Q-025: a buyer is writing about these — they wait in «Chats», not on the shelf.
-    const talk = document.createElement('div');
-    talk.className = 'cards';
-    const head = document.createElement('p');
-    head.className = 'cards-sum';
-    head.textContent = look.t('sales.talking');
-    talk.appendChild(head);
     for (const c of view.talking) {
-      const card = slotCard(c, fmt).cloneNode(true) as HTMLElement;
-      card.dataset.action = `sale-chat-${c.uid}`;
-      (card.querySelector('.card-price') as HTMLElement).textContent = look.t('sales.talkingSub');
-      card.addEventListener('click', () => look.openChat(c.uid));
-      talk.appendChild(card);
+      root.querySelector(`[data-action="sale-chat-${c.uid}"]`)?.addEventListener('click', () => look.openChat(c.uid));
+      root.querySelector(`[data-action="sale-chat-pic-${c.uid}"]`)?.addEventListener('click', () => look.openChat(c.uid));
     }
-    root.appendChild(talk);
   }
 
-  /** The inventory to pick from for a free slot. */
+  const back = (title: string): string =>
+    `<div class="mu-back"><button type="button" class="mu-round" data-action="sale-back" aria-label="${esc(look.t('eggs.back'))}">‹</button><h2>${esc(title)}</h2></div>`;
+
+  /** The pets of the storage to pick from for a free place: a tap opens its «Цена» page. */
   function renderPick(): void {
     const view = game.view();
     const fmt = new Intl.NumberFormat(look.lang());
     const next = `p:${look.lang()}:${view.inventory.map((c) => c.uid).join(',')}:${view.creatures.length}`;
     if (next === panelKey) return;
     panelKey = next;
-    const root = panel.card;
-    root.innerHTML = `<button type="button" class="eggs-back" data-action="sale-back">‹ ${look.t('eggs.back')}</button><h3 class="eggs-title">${look.t('sales.pick')}</h3>`;
-    root.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => tab.show(null));
-    const grid = document.createElement('div');
-    grid.className = 'cards';
-    if (!view.inventory.length) grid.innerHTML = `<p class="empty">${look.t('sales.nothing')}</p>`;
-    for (const c of view.inventory) {
-      // A copy of the slot card without its «open» handler: a tap here lists the creature.
-      const fresh = slotCard(c, fmt).cloneNode(true) as HTMLElement;
-      fresh.dataset.action = `sale-list-${c.uid}`;
-      fresh.addEventListener('click', () => {
-        // UB-10: listed — its card with the price slider opens at once (one path: place → price → chats).
-        if (game.list(c.uid)) tab.show(c.uid);
-      });
-      grid.appendChild(fresh);
-    }
-    root.appendChild(grid);
+    panel.card.innerHTML =
+      back(look.t('sales.pick')) +
+      (view.inventory.length
+        ? `<div class="mu-grid">${view.inventory
+            .map(
+              (c) =>
+                `<button type="button" class="mu-card rar card-sale" data-rarity="${c.rarity}" data-action="sale-list-${c.uid}">${pic(c)}<span class="mu-name">${esc(look.speciesName(c.species))}</span>` +
+                `${meta(c, fmt, c.price)}<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}</span></button>`,
+            )
+            .join('')}</div>`
+        : `<p class="empty">${esc(look.t('sales.nothing'))}</p>`);
+    panel.card.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => tab.show(null));
+    for (const c of view.inventory) panel.card.querySelector(`[data-action="sale-list-${c.uid}"]`)?.addEventListener('click', () => tab.show(c.uid));
   }
 
+  /** MU-06 (s3-price): the pet, the big price with its zone chip, the slider of four zones, «Выставить на продажу» at the bottom. */
   function renderCard(uid: string): void {
-    const c = game.view().creatures.find((x) => x.uid === uid);
+    const view = game.view();
+    const onShelf = view.creatures.find((x) => x.uid === uid);
+    const c = onShelf ?? view.inventory.find((x) => x.uid === uid);
     if (!c) {
       tab.show(null);
       return;
     }
     const fmt = new Intl.NumberFormat(look.lang());
-    const next = `c:${uid}:${look.lang()}:${c.price}:${c.level}:${look.mood(c.species)}`;
+    if (!onShelf && draftFor !== uid) {
+      draftFor = uid;
+      draft = c.askShare;
+    }
+    const share = onShelf ? c.askShare : draft;
+    const next = `c:${uid}:${look.lang()}:${c.price}:${c.level}:${Boolean(onShelf)}:${look.mood(c.species)}`;
     if (next === panelKey) {
-      slider?.set(c.askShare, c.price);
+      slider?.set(share, c.price);
       return;
     }
     panelKey = next;
-    const root = panel.card;
-    root.innerHTML =
-      `<button type="button" class="eggs-back" data-action="sale-back">‹ ${look.t('eggs.back')}</button>` +
-      `<div class="egg-hero"><img alt="" src="${look.portrait(c.species, c.rarity)}"><div><h3 class="egg-name"></h3>` +
-      `<p class="card-sub"><i class="rarity-dot" style="background:${look.rarityColor(c.rarity)}"></i> ${look.t(`rarity.${c.rarity}`)}${c.mark ? ` · ${look.t(`mark.${c.mark}`)}` : ''} · ${look.t('card.level', { n: c.level })}</p>` +
-      `<p class="card-sub">${look.t('price.marketIs', { n: fmt.format(c.price) })} ${look.mood(c.species)}</p>${c.hold ? `<p class="card-sub">${look.t('day.hold', { n: c.hold })}</p>` : ''}</div></div>` +
+    panel.card.innerHTML =
+      back(look.t('price.title')) +
+      `<div class="price-pet"><span class="mu-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"></span><div class="price-pet-text"><b class="mu-name egg-name">${esc(look.speciesName(c.species))}</b>` +
+      `<span>${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}</span>` +
+      `<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))} · ${esc(look.t('price.marketWord'))} ${money(c.price, fmt)} ${look.mood(c.species)}</span>${c.hold ? `<span class="mu-meta">${esc(look.t('day.hold', { n: c.hold }))}</span>` : ''}</div></div>` +
       '<div data-slider></div>' +
-      `<div class="egg-buy"><button type="button" class="btn btn-alt" data-action="sale-off">${look.t('sales.off')}</button></div>`;
-    root.querySelector('[data-action="sale-off"]')?.addEventListener('click', () => {
-      game.unlist(uid);
-      tab.show(null);
+      `<div class="price-go"><button type="button" class="mu-btn main" data-action="${onShelf ? 'sale-save' : `sale-go-${uid}`}">${esc(look.t(onShelf ? 'sales.save' : 'sales.go'))}</button></div>`;
+    panel.card.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => tab.show(onShelf ? null : PICK));
+    slider = createPriceSlider(
+      panel.card.querySelector('[data-slider]') as HTMLElement,
+      look.slider,
+      { t: look.t, lang: look.lang, colors: look.zoneColors, baseWaitSec: look.baseWaitSec },
+      (s) => {
+        if (onShelf) game.setAsk(uid, s);
+        else draft = s;
+      },
+    );
+    slider.set(share, c.price);
+    panel.card.querySelector('[data-action="sale-save"]')?.addEventListener('click', () => tab.show(null));
+    panel.card.querySelector(`[data-action="sale-go-${uid}"]`)?.addEventListener('click', () => {
+      game.setAsk(uid, draft);
+      if (game.list(uid)) tab.show(null);
     });
-    (root.querySelector('.egg-name') as HTMLElement).textContent = look.speciesName(c.species);
-    root.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => tab.show(null));
-    slider = createPriceSlider(root.querySelector('[data-slider]') as HTMLElement, look.slider, { t: look.t, lang: look.lang, colors: look.zoneColors }, (share) => game.setAsk(uid, share));
-    slider.set(c.askShare, c.price);
   }
 
   const tab: SalesTab = {

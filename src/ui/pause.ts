@@ -3,7 +3,7 @@
 // Keep: opening and closing go through open()/close() only, so the pause reason is always released.
 
 import type { PauseManager } from '../core/pause.ts';
-import { button, createOverlay, type Overlay } from './overlay.ts';
+import { button, closeX, createOverlay, type Overlay } from './overlay.ts';
 import { renderCommunity, type CommunityLinks } from './community.ts';
 
 export interface PauseWindow {
@@ -41,6 +41,8 @@ export function createPauseWindow(parent: HTMLElement, pause: PauseManager, link
     },
   };
   resume.addEventListener('click', win.close);
+  // MU-09 (s6-pause): the ✕ resumes as well.
+  closeX(overlay.card, '✕', () => win.close(), 'pause-close');
   // Settings open over the pause (it stays open underneath, hidden, holding the game).
   settings.addEventListener('click', () => {
     overlay.root.classList.add('under');

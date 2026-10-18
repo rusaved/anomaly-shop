@@ -20,7 +20,7 @@ export interface MerchantWindow {
 }
 
 export function createMerchantWindow(parent: HTMLElement, game: Game, look: MerchantLookups): MerchantWindow {
-  const overlay = createOverlay(parent, 'merchant', () => win.close(), { kind: 'panel', dismiss: () => win.close() });
+  const overlay = createOverlay(parent, 'merchant', () => win.close(), { dismiss: () => win.close() });
   overlay.card.classList.add('card-shop');
   const title = document.createElement('h2');
   const list = document.createElement('div');

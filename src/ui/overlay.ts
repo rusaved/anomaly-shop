@@ -2,7 +2,8 @@
 // Called by: every window module (pause, settings, hatch, away, gifts, work, merchant, upgrades, egg / lot / sale cards); src/main.ts (dismissAll on a tab tap).
 // Keep: every window has a way back (docs/03 GD-05); a tap outside the card closes it; the tab bar stays above every window (styles.css z-index).
 
-export type OverlayKind = 'popup' | 'panel';
+/** popup — a 343 px card in the centre (07 rule 13); panel — from the right; screen — MU-08: a screen under the top bar (Подарки). */
+export type OverlayKind = 'popup' | 'panel' | 'screen';
 
 export interface Overlay {
   root: HTMLElement;
@@ -95,5 +96,18 @@ export function button(action: string, i18nKey: string, extraClass = ''): HTMLBu
   b.className = `btn ${extraClass}`.trim();
   b.dataset.action = action;
   b.dataset.i18n = i18nKey;
+  return b;
+}
+
+/** MU-09 (07 rule 13): the ✕ of a window that closes without a choice, in its top right corner. */
+export function closeX(card: HTMLElement, label: string, onClose: () => void, action = 'win-close'): HTMLButtonElement {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'win-x';
+  b.dataset.action = action;
+  b.setAttribute('aria-label', label);
+  b.textContent = '✕';
+  b.addEventListener('click', onClose);
+  card.prepend(b);
   return b;
 }

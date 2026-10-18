@@ -1,8 +1,9 @@
-// What: the price slider (docs/01 §3 p. 13; M3-06): six zones in the rarity colors from grey to red, «below / market / above» and the number.
-// Called by: src/ui/sales.ts (the card of a creature on sale).
-// Keep: a native range input (tap and drag work on phones and with a mouse); the zone and the speed hint come from rules.priceZone over market.json.
+// What: the price slider (docs/01 §3 p. 13; MU-06 by s3-price and docs/07 «Ползунок цены»): four colored zones «Быстро» → «Максимум», the big price and the zone chip with the wait.
+// Called by: src/ui/sales.ts (the «Цена» page of a pet).
+// Keep: a native range input over the track (tap and drag on phones and with a mouse); zones, colors and waits come from market.json and style.json, never from code.
 
 import { priceZone } from '../sim/rules.ts';
+import { COIN } from './kit.ts';
 
 export interface SliderData {
   min: number;
@@ -19,35 +20,40 @@ export interface PriceSlider {
 export interface SliderLookups {
   t(key: string, vars?: Record<string, string | number>): string;
   lang(): string;
-  /** Six zone colors, grey to red (style.json rarity). */
+  /** The zone colors, green to red (style.json priceZones), as many as slider.delay. */
   colors: readonly string[];
+  /** The mean wait of a buyer at the market price, seconds (market.json replySec). */
+  baseWaitSec: number;
 }
 
-/** Zones 0–1 below the market, 2–3 the market, 4–5 above it. */
-const ZONE_WORD = ['below', 'below', 'market', 'market', 'above', 'above'] as const;
-
 export function createPriceSlider(parent: HTMLElement, data: SliderData, look: SliderLookups, onChange: (share: number) => void): PriceSlider {
+  const n = data.delay.length;
   const root = document.createElement('div');
   root.className = 'price-slider';
-  const stops = look.colors.map((c, i) => `${c} ${((i * 100) / look.colors.length).toFixed(2)}% ${(((i + 1) * 100) / look.colors.length).toFixed(2)}%`).join(', ');
   root.innerHTML =
-    '<div class="price-now"><b data-price-coins></b><span data-price-zone></span></div>' +
-    `<input type="range" class="price-range" data-action="price-slider" min="${data.min}" max="${data.max}" step="0.01" style="background:linear-gradient(to right, ${stops})">` +
-    `<div class="price-scale"><span>${look.t('price.below')}</span><span>${look.t('price.market')}</span><span>${look.t('price.above')}</span></div>` +
-    '<p class="price-hint" data-price-hint></p>';
+    `<div class="price-now"><b class="price-big">${COIN}<span data-price-coins></span></b><span class="price-chip" data-price-zone></span></div>` +
+    `<div class="price-track">${look.colors.map((c, i) => `<i data-zone-bar="${i}" style="background:${c}"></i>`).join('')}` +
+    `<input type="range" class="price-range" data-action="price-slider" min="${data.min}" max="${data.max}" step="0.01" aria-label="${look.t('price.title')}"></div>` +
+    `<div class="price-scale">${Array.from({ length: n }, (_, i) => `<span data-zone-label="${i}">${look.t(`price.zone.${i}`)}</span>`).join('')}</div>` +
+    `<p class="price-hint" data-price-hint>${look.t('price.hint')}</p>`;
   parent.appendChild(root);
   const input = root.querySelector('input') as HTMLInputElement;
   const coinsEl = root.querySelector('[data-price-coins]') as HTMLElement;
   const zoneEl = root.querySelector('[data-price-zone]') as HTMLElement;
-  const hintEl = root.querySelector('[data-price-hint]') as HTMLElement;
   let base = 1;
+  const wait = (zone: number): string => {
+    const sec = look.baseWaitSec * (data.delay[zone] ?? 1);
+    return sec < 60 ? look.t('price.wait.sec', { n: Math.max(1, Math.round(sec)) }) : look.t('price.wait.min', { n: Math.max(1, Math.round(sec / 60)) });
+  };
   const paint = (share: number): void => {
     const zone = priceZone(share, data);
+    const color = look.colors[zone] ?? '';
     coinsEl.textContent = new Intl.NumberFormat(look.lang()).format(Math.max(1, Math.round(base * share)));
-    zoneEl.textContent = look.t(`price.${ZONE_WORD[zone] ?? 'market'}`);
-    zoneEl.style.borderColor = look.colors[zone] ?? '';
+    zoneEl.textContent = `${look.t(`price.zone.${zone}`)} · ${wait(zone)}`;
+    root.style.setProperty('--zc', color);
     root.dataset.zone = String(zone);
-    hintEl.textContent = look.t(`price.speed${zone < 2 ? 0 : zone < 4 ? 1 : 2}`);
+    root.querySelectorAll<HTMLElement>('[data-zone-bar]').forEach((el) => el.classList.toggle('on', el.dataset.zoneBar === String(zone)));
+    root.querySelectorAll<HTMLElement>('[data-zone-label]').forEach((el) => el.classList.toggle('on', el.dataset.zoneLabel === String(zone)));
   };
   input.addEventListener('input', () => {
     const share = Number(input.value);

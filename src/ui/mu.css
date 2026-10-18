@@ -308,7 +308,7 @@ button.mu-card {
   line-height: 1.2;
   text-align: center;
   cursor: pointer;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .mu-btn:active {
   transform: translateY(1px);
@@ -411,8 +411,7 @@ button.mu-card {
   pointer-events: auto;
 }
 /* Portrait «Лавка»: the bar lies over the room (s1-shop-scene). */
-.portrait #ui[data-screen='home'] .hud,
-.portrait[data-screen='home'] .hud {
+.portrait #ui[data-screen='home']:not(:has(.overlay[data-kind='screen']:not([hidden]))) .hud {
   background: transparent;
   pointer-events: none;
 }
@@ -831,4 +830,958 @@ button.mu-card {
   outline-offset: 3px;
   border-radius: var(--mu-r);
   animation: none;
+}
+
+/* ---- MU-05 «Чаты» (s2-chat-list, s2-chat-dialog, l2): rows of 60 px; a dialog with its answers over the tab bar ---- */
+.sheet.sheet-fixed > .sheet-body {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+.chats {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+.chat-list {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+.chat-dialog {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: none;
+  flex-direction: column;
+}
+.portrait .chats.has-open .chat-list {
+  display: none;
+}
+.chats.has-open .chat-dialog {
+  display: flex;
+}
+.landscape .chat-list {
+  flex: 0 0 35%;
+}
+.chat-row {
+  width: 100%;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding: 8px 10px 8px 10px;
+  border-radius: var(--mu-r);
+  background: var(--c-uiPanelAlt);
+  text-align: left;
+}
+.chat-row.closed {
+  opacity: 0.55;
+}
+.chat-row.active {
+  box-shadow: 0 0 0 2px var(--c-uiAccent);
+}
+.chat-avatar {
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--c-uiAccentText);
+}
+.chat-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.chat-who {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.chat-last {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--c-uiMuted);
+  overflow-wrap: anywhere;
+}
+.chat-row.unread .chat-last {
+  color: var(--c-uiText);
+}
+.chat-pet {
+  border-radius: 14px;
+}
+.chat-top {
+  margin-top: -8px;
+}
+.landscape .chat-top {
+  margin: 0 0 8px;
+  padding: 4px 0 8px;
+}
+.chat-ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 4px 12px 4px 6px;
+  border-radius: 14px;
+  background: var(--c-uiPanelAlt);
+  font-size: 14px;
+  font-weight: 600;
+}
+.chat-ask .rar-ring {
+  border-radius: 9px;
+}
+.chat-lines {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 12px;
+  overscroll-behavior: contain;
+}
+.bubble {
+  margin: 0;
+  max-width: 76%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+.bubble.them {
+  align-self: flex-start;
+  background: var(--c-uiPanelAlt);
+}
+.bubble.me {
+  align-self: flex-end;
+  background: var(--c-uiPanelHi);
+}
+.chat-buttons {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0 16px;
+  border-top: 1px solid var(--c-uiPanelAlt);
+}
+.chat-row2 {
+  display: flex;
+  gap: 10px;
+}
+.chat-row2 > .mu-btn {
+  flex: 1 1 0;
+}
+.landscape .chat-buttons {
+  flex-direction: row;
+  padding-bottom: 8px;
+}
+.landscape .chat-buttons > .mu-btn,
+.landscape .chat-row2 {
+  flex: 1 1 0;
+}
+.chat-end {
+  text-align: center;
+}
+
+/* ---- MU-06 «Продажи» (s3-sales-slots) and «Цена» (s3-price, 07 «Ползунок цены») ---- */
+.card-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border: 2px dashed var(--c-uiPanelHi);
+  background: transparent;
+  color: var(--c-uiMuted);
+}
+.sale-plus {
+  font-size: 44px;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--c-uiText);
+}
+.mu-rar-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+.price-pet {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0 12px;
+}
+.price-pet .mu-pic {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+}
+.price-pet .mu-pic img {
+  max-width: 48px;
+  max-height: 48px;
+}
+.price-pet-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+.price-pet-text .mu-name {
+  font-size: 20px;
+}
+.price-slider {
+  --zc: var(--c-uiText);
+  margin: 4px 0 0;
+}
+.price-now {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.price-big {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+}
+.price-big .mu-coin {
+  font-size: 32px;
+  background: var(--c-uiText);
+  box-shadow: inset 0 0 0 0.16em var(--c-uiBg), inset 0 0 0 0.3em var(--c-uiText);
+}
+.price-chip {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border: 2px solid var(--zc);
+  border-radius: 14px;
+  color: var(--zc);
+  font-size: 14px;
+  font-weight: 600;
+}
+.price-track {
+  position: relative;
+  display: flex;
+  gap: 0;
+  height: 44px;
+  align-items: center;
+}
+.price-track > i {
+  flex: 1 1 0;
+  height: 14px;
+  opacity: 0.35;
+}
+.price-track > i:first-of-type {
+  border-radius: 7px 0 0 7px;
+}
+.price-track > i:last-of-type {
+  border-radius: 0 7px 7px 0;
+}
+.price-track > i.on {
+  opacity: 1;
+}
+.price-range {
+  position: absolute;
+  inset: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  outline: none;
+  touch-action: pan-y;
+}
+.price-range::-webkit-slider-runnable-track {
+  height: 44px;
+  background: transparent;
+}
+.price-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  margin-top: 6px;
+  border-radius: 50%;
+  border: 4px solid var(--zc);
+  background: var(--c-eyeWhite);
+  box-shadow: none;
+  cursor: pointer;
+}
+.price-range::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 4px solid var(--zc);
+  background: var(--c-eyeWhite);
+  cursor: pointer;
+}
+.price-scale {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+.price-scale > span {
+  flex: 1 1 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-uiMuted);
+  overflow-wrap: break-word;
+}
+.price-scale > span.on {
+  color: var(--zc);
+  font-weight: 700;
+}
+.price-hint {
+  margin: 16px 0 0;
+  font-size: 14px;
+  text-align: center;
+  color: var(--c-uiMuted);
+}
+.price-go {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  padding: 16px 0 16px;
+  background: var(--c-uiBg);
+}
+.price-go .mu-btn {
+  width: 100%;
+}
+.sheet-detail {
+  padding-bottom: 0;
+}
+.detail-page {
+  min-height: 100%;
+}
+
+/* ---- MU-07 «Склад» (s4-inventory, s4-finds, l3) ---- */
+.sheet-head .mu-seg {
+  margin: 0;
+}
+.find-icon {
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--c-uiMuted);
+}
+.mu-card.mu-ready {
+  outline: 3px solid var(--c-uiGood);
+  outline-offset: 0;
+}
+.mu-card.secret {
+  opacity: 0.75;
+}
+.inv-where {
+  margin-top: auto;
+  min-height: var(--mu-btn);
+  display: grid;
+  place-items: center;
+}
+.col-row .mu-head {
+  margin-top: 20px;
+}
+.col-bonus {
+  margin: -4px 0 10px;
+}
+.col-row.done .mu-head h3 {
+  color: var(--c-uiGood);
+}
+/* l3: sideways the storage is rows in 2 columns: the picture, the name with its rarity line, the button in the row. */
+.landscape .sheet[data-sheet='inventory'] .mu-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.landscape .sheet[data-sheet='inventory'] .mu-card {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  grid-template-areas: 'pic name btn' 'pic badge btn' 'pic meta btn';
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 2px;
+  padding: 6px 10px;
+  text-align: left;
+}
+.landscape .sheet[data-sheet='inventory'] .mu-card .mu-pic,
+.landscape .sheet[data-sheet='inventory'] .mu-card .mu-pic-btn {
+  grid-area: pic;
+  width: 44px;
+  height: 44px;
+}
+.landscape .sheet[data-sheet='inventory'] .mu-pic img {
+  max-width: 36px;
+  max-height: 36px;
+}
+.landscape .sheet[data-sheet='inventory'] .mu-card .mu-name {
+  grid-area: name;
+}
+.landscape .sheet[data-sheet='inventory'] .mu-card > span:not(.mu-name):not(.mu-meta):not(.mu-pic) {
+  grid-area: badge;
+}
+.landscape .sheet[data-sheet='inventory'] .mu-card .mu-meta {
+  grid-area: meta;
+}
+.landscape .sheet[data-sheet='inventory'] .mu-card > .mu-btn,
+.landscape .sheet[data-sheet='inventory'] .mu-card > .inv-where {
+  grid-area: btn;
+  margin: 0;
+  min-width: 120px;
+}
+.landscape .sheet[data-sheet='inventory'] .sheet-head .mu-seg {
+  max-width: 420px;
+}
+.card-col.unknown .mu-pic img {
+  filter: brightness(0);
+  opacity: 0.25;
+}
+.mu-card.find.got:not(.mu-ready) {
+  opacity: 0.85;
+}
+
+/* ---- MU-09 windows of one style (07 rule 13; s6-hatch-result, s6-pause, r1, r2): the dim, a 343 px card in the centre ---- */
+.overlay,
+.overlay[data-kind='panel'] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--hud-height, 48px) + 8px) calc(16px + var(--safe-right)) calc(var(--nav-size, 56px) + 8px) calc(16px + var(--safe-left));
+  background: var(--c-uiOverlay);
+}
+.overlay[hidden],
+.overlay[data-kind='panel'][hidden] {
+  display: none;
+}
+.overlay > .card,
+.overlay[data-kind='panel'] > .card,
+.portrait .overlay[data-kind='panel'] > .card,
+.landscape .overlay[data-kind='panel'] > .card {
+  position: relative;
+  left: auto;
+  top: auto;
+  bottom: auto;
+  width: min(100%, var(--mu-win));
+  height: auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  gap: 12px;
+  padding: 22px 20px 20px;
+  border-radius: var(--mu-r-win);
+  border: 1px solid var(--c-uiPanelHi);
+  background: var(--c-uiPanel);
+  box-shadow: none;
+  animation: win-in 0.18s ease-out;
+}
+@keyframes win-in {
+  from {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+}
+.overlay > .card h2 {
+  margin: 0 40px 2px;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+}
+.overlay > .card .btn,
+.overlay > .card .mu-btn {
+  width: 100%;
+  min-height: var(--mu-btn);
+  border-radius: var(--mu-r);
+  box-shadow: none;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--c-uiPanelHi);
+  color: var(--c-uiText);
+}
+.overlay > .card .btn-primary,
+.overlay > .card .mu-btn.main {
+  min-height: var(--mu-btn-main);
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+}
+.overlay > .card .mu-btn.good {
+  background: var(--c-uiGood);
+  color: var(--c-uiAccentText);
+}
+.overlay > .card .mu-btn.quiet {
+  background: transparent;
+  color: var(--c-uiMuted);
+  font-weight: 600;
+}
+.win-x,
+.overlay .panel-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  border-radius: 50%;
+  background: var(--c-uiPanelHi) !important;
+  color: var(--c-uiText);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+.overlay .card-sub,
+.overlay .mu-meta {
+  font-size: 14px;
+  color: var(--c-uiMuted);
+}
+/* MU-08: a screen under the top bar (Подарки): no dim, the tab bar stays. */
+.overlay[data-kind='screen'] {
+  display: block;
+  padding: 0;
+  top: var(--hud-height, 48px);
+  bottom: var(--nav-size, 56px);
+  height: auto;
+  inset: var(--hud-height, 48px) 0 var(--nav-size, 56px) 0;
+  background: var(--c-uiBg);
+}
+.overlay[data-kind='screen'][hidden] {
+  display: none;
+}
+.overlay[data-kind='screen'] > .card {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  padding: 0 calc(var(--mu-pad) + var(--safe-right)) 24px calc(var(--mu-pad) + var(--safe-left));
+  border: 0;
+  border-radius: 0;
+  background: var(--c-uiBg);
+  gap: 0;
+  animation: none;
+  display: block;
+}
+.overlay[data-kind='screen'] .mu-back {
+  margin: 0 calc(-1 * var(--mu-pad)) 12px;
+}
+.overlay .gifts-top h2 {
+  margin: 0;
+  text-align: left;
+}
+.gift-top .mu-card {
+  gap: 8px;
+}
+.gift-top .mu-pic {
+  height: 60px;
+}
+.gift-top .mu-pic img {
+  max-height: 44px;
+}
+.days {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 64px;
+  padding: 8px 4px;
+  border-radius: var(--mu-r);
+  background: var(--c-uiPanelAlt);
+  text-align: center;
+  font-size: 13px;
+  color: var(--c-uiMuted);
+}
+.day b {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-uiText);
+}
+.day[data-day='7'] {
+  grid-column: span 2;
+}
+.day-taken {
+  opacity: 0.45;
+}
+.day-today {
+  background: var(--c-uiPanelHi);
+  color: var(--c-uiText);
+}
+.gift-take {
+  display: flex;
+  width: 100%;
+  margin: 12px 0 0;
+}
+.gift-tomorrow {
+  justify-content: center;
+  min-height: var(--mu-btn);
+  align-items: center;
+}
+.day-anomaly,
+.day-goal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  text-align: left;
+  margin-bottom: 10px;
+}
+.day-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.overlay .card .day-anomaly > .mu-btn,
+.overlay .card .day-goal > .mu-btn {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+}
+.day-got {
+  flex: 0 0 auto;
+  color: var(--c-uiGood) !important;
+  font-weight: 700;
+}
+.goal-bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--c-uiPanelHi);
+  overflow: hidden;
+}
+.goal-bar i {
+  display: block;
+  height: 100%;
+  background: var(--c-uiGood);
+}
+
+/* ---- MU-09 «Вылупился!» (s6-hatch-result, r1-hatch-exclusive, r2-hatch-common) ---- */
+.overlay > .card.card-hatch {
+  text-align: center;
+  gap: 0;
+  padding: 24px 24px 18px;
+}
+.overlay > .card.card-hatch.rar {
+  border-width: 2px;
+}
+.overlay > .card.card-hatch.rar[data-rarity='common'] {
+  border: 1px solid var(--c-rarityEdge);
+}
+.card-hatch h2 {
+  margin-bottom: 18px !important;
+}
+.hatch-window {
+  position: relative;
+  width: 100%;
+  height: 92px;
+  margin: 4px 0 8px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--c-uiPanelAlt);
+  cursor: pointer;
+}
+.hatch-strip {
+  position: absolute;
+  left: 0;
+  top: 14px;
+  display: flex;
+  will-change: transform;
+  pointer-events: none;
+}
+.hatch-item {
+  flex: 0 0 76px;
+  width: 76px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+}
+.hatch-marker {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--c-uiAccent);
+  pointer-events: none;
+}
+.hatch-skip {
+  margin: 0;
+  font-size: 13px;
+  color: var(--c-uiMuted);
+}
+.hatch-skip[hidden],
+.card-hatch.shown .hatch-window {
+  display: none;
+}
+.hatch-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hatch-result[hidden] {
+  display: none;
+}
+.hatch-pic {
+  width: 128px;
+  height: 104px;
+  margin-bottom: 18px;
+}
+.hatch-pic img {
+  max-width: 76px;
+  max-height: 76px;
+}
+.card-hatch .rar-word {
+  margin-bottom: 8px;
+}
+.hatch-result h3 {
+  margin: 0 0 10px;
+  font-size: 22px;
+  font-weight: 800;
+}
+.hatch-range {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: var(--c-uiMuted);
+}
+.hatch-range b {
+  margin-left: 4px;
+  color: var(--c-uiText);
+}
+.hatch-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.overlay .card .hatch-buttons .hatch-sell {
+  margin-top: 14px;
+  min-height: var(--mu-btn);
+  background: transparent;
+  color: var(--c-uiMuted);
+  font-weight: 600;
+}
+/* A valuable one and above: a flash of its color, then the pet pops (reduced motion: none). */
+.card.hatch-rare::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--rc);
+  pointer-events: none;
+  animation: hatch-flash 0.6s ease-out forwards;
+}
+.card.hatch-rare .hatch-pic img {
+  animation: hatch-pop 0.55s ease-out;
+}
+@keyframes hatch-flash {
+  0% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes hatch-pop {
+  0% {
+    transform: scale(0.5);
+  }
+  70% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card.hatch-rare::before,
+  .card.hatch-rare .hatch-pic img {
+    animation: none;
+    opacity: 0;
+  }
+  .card.hatch-rare .hatch-pic img {
+    opacity: 1;
+  }
+}
+@media (max-height: 520px) {
+  .overlay > .card.card-hatch {
+    padding: 12px 18px;
+  }
+  .card-hatch h2 {
+    margin-bottom: 6px !important;
+    font-size: 18px !important;
+  }
+  .hatch-pic {
+    width: 88px;
+    height: 56px;
+    margin-bottom: 6px;
+  }
+  .hatch-pic img {
+    max-height: 48px;
+  }
+  .hatch-result h3 {
+    margin-bottom: 4px;
+    font-size: 18px;
+  }
+  .hatch-range {
+    margin-bottom: 8px;
+  }
+  .hatch-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .hatch-buttons > .mu-btn {
+    flex: 1 1 40%;
+  }
+  .overlay .card .hatch-buttons .hatch-sell {
+    margin-top: 0;
+    flex-basis: 100%;
+  }
+}
+.overlay .card .day-anomaly > .mu-btn {
+  max-width: 128px;
+}
+/* A window in the frame of its rarity (07 «Редкость»): the window style keeps the rarity edge, glow and pulse. */
+.overlay > .card.rar[data-rarity='common'] {
+  border: 1px solid var(--c-rarityEdge);
+}
+.overlay > .card.rar[data-rarity='good'] {
+  border: 1.5px solid color-mix(in srgb, var(--r-good) 60%, transparent);
+}
+.overlay > .card.rar[data-rarity='valuable'] {
+  border: 1.5px solid color-mix(in srgb, var(--r-valuable) 60%, transparent);
+}
+.overlay > .card.rar[data-rarity='premium'] {
+  border: 2px solid var(--r-premium);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--r-premium) 20%, transparent);
+}
+.overlay > .card.rar[data-rarity='vip'] {
+  border: 2px solid var(--r-vip);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--r-vip) 30%, transparent);
+}
+.overlay > .card.rar[data-rarity='exclusive'] {
+  border: 2px solid var(--r-exclusive);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--r-exclusive) 50%, transparent);
+  animation: win-in 0.18s ease-out, rar-pulse 1.4s ease-in-out infinite;
+}
+.overlay > .card.rar .hatch-pic {
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--rc) 14%, transparent), transparent 70%), var(--c-uiPanelHi);
+}
+.overlay > .card.rar[data-rarity='common'] .hatch-pic,
+.overlay > .card.rar[data-rarity='good'] .hatch-pic,
+.overlay > .card.rar[data-rarity='valuable'] .hatch-pic {
+  background: var(--c-uiPanelHi);
+}
+@media (prefers-reduced-motion: reduce) {
+  .overlay > .card.rar[data-rarity='exclusive'] {
+    animation: none;
+  }
+}
+
+/* ---- MU-10 «Магазин» (s7-shop): cards 2 in a row, levels as dots, «не хватает N» as meta, a dark price button ---- */
+.mu-card.shop-item {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px;
+  border-radius: var(--mu-r);
+  background: var(--c-uiPanelAlt);
+}
+.mu-card.shop-item .mu-pic {
+  height: 60px;
+}
+.lvl-dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+.lvl-dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--c-uiAccent);
+}
+.lvl-dots i.on {
+  background: var(--c-uiAccent);
+}
+.guest-sets {
+  margin: 0 0 10px;
+}
+.guest-unpaid {
+  color: var(--c-uiText) !important;
+}
+.card-shop .mu-head:first-child {
+  margin-top: 4px;
+}
+
+/* ---- MU-10 «Рынок» (s8-market) and MU-11 the lot page with the seller chat ---- */
+.card-lot.sold {
+  opacity: 0.5;
+}
+.lot-pet {
+  margin: 4px 0 8px;
+}
+.sheet-detail .chat-lines {
+  overflow: visible;
+  min-height: 0;
+}
+.lot-buttons {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 0 16px;
+  background: var(--c-uiBg);
+}
+.lot-buttons > .main,
+.lot-buttons > .bargain,
+.lot-buttons > :only-child {
+  grid-column: 1 / -1;
+}
+.bargain {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bargain b {
+  min-width: 56px;
+  font-size: 18px;
+}
+.bargain .price-range {
+  position: relative;
+  flex: 1 1 auto;
+  background: var(--c-uiPanelHi) !important;
+  border-radius: 7px;
+  height: 14px;
 }

@@ -38,7 +38,7 @@ export function createReputation(hudBalance: HTMLElement, parent: HTMLElement, g
   hudBalance.prepend(chip);
   const number = chip.querySelector('[data-level]') as HTMLElement;
   // UB-02: a detail — a panel from the right.
-  const panel = createOverlay(parent, 'reputation', () => panel.hide(), { kind: 'panel' });
+  const panel = createOverlay(parent, 'reputation', () => panel.hide());
   panel.card.classList.add('card-detail', 'card-rep');
   chip.addEventListener('click', (e) => {
     // The chip sits in the balance group (which opens the shop): this tap is the reputation's own.

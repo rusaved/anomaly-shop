@@ -3,7 +3,7 @@
 // Keep: commands only through the game (workTap, workUp); numbers from content/work.json.
 
 import type { Game } from '../sim/game.ts';
-import { button, createOverlay } from './overlay.ts';
+import { button, closeX, createOverlay } from './overlay.ts';
 
 export interface WorkLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -20,21 +20,18 @@ const BOWL =
   '<path d="M10 30 Q60 100 110 30" fill="var(--c-rarityRare)" stroke="var(--c-outline)" stroke-width="5"/><circle cx="45" cy="26" r="6" fill="var(--c-uiAccent)"/><circle cx="62" cy="24" r="6" fill="var(--c-uiAccent)"/><circle cx="76" cy="27" r="5" fill="var(--c-uiAccent)"/></svg>';
 
 export function createWorkWindow(parent: HTMLElement, game: Game, look: WorkLookups): WorkWindow {
-  const overlay = createOverlay(parent, 'work', () => overlay.hide(), { kind: 'panel' });
+  const overlay = createOverlay(parent, 'work', () => overlay.hide());
   overlay.card.classList.add('card-work');
   overlay.card.innerHTML =
     '<h2 data-i18n="work.title"></h2><p class="card-sub" data-i18n="work.hint"></p>' +
     `<button type="button" class="work-bowl" data-action="work-tap">${BOWL}</button>` +
     '<p class="work-level" data-work-level></p>';
   const up = button('work-up', 'work.up', 'btn-primary');
-  const close = button('work-close', 'gifts.close', 'btn-alt');
-  const row = document.createElement('div');
-  row.className = 'egg-buy';
-  row.append(up, close);
-  overlay.card.appendChild(row);
+  overlay.card.appendChild(up);
+  // MU-09: the window closes with its ✕ (no «Done» button).
+  closeX(overlay.card, '✕', () => overlay.hide(), 'work-close');
   const bowl = overlay.card.querySelector('[data-action="work-tap"]') as HTMLElement;
   const level = overlay.card.querySelector('[data-work-level]') as HTMLElement;
-  close.addEventListener('click', () => overlay.hide());
   bowl.addEventListener('click', () => {
     const n = game.workTap();
     const f = document.createElement('span');

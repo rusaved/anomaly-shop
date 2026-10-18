@@ -242,7 +242,7 @@ async function boot(): Promise<void> {
     lang: i18n.lang,
     upgrade: (id) => upgrades.upgrades.find((u) => u.id === id),
     tierColors: Object.values(styleData.rarity),
-    sections: navData.shop.sections.filter((x) => x.enabled).map((x) => x.id),
+    sections: navData.shop.sections,
     guestName: (id) => decorData.items.find((x) => x.id === id)?.name[i18n.lang()] ?? id,
     themeName: (theme) => decorData.sets.find((x) => x.theme === theme)?.name[i18n.lang()] ?? theme,
     pointLevel: (() => {
@@ -258,14 +258,16 @@ async function boot(): Promise<void> {
     portrait: (id, r) => portraits.creature(id, r),
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     pick: (uid) => play.tapCreature(uid),
+    eggPicture: (id) => portraits.egg(id),
+    openEggs: () => selectTab('eggs'),
     mood: moodOf,
     find: (id) => {
       const f = achievements.items.find((x) => x.id === id);
       const lang = i18n.lang();
       return { name: f?.name[lang] ?? id, desc: f?.desc[lang] ?? '', coins: f?.reward.coins ?? 0, crystals: f?.reward.crystals ?? 0 };
     },
+    // MU-06: «На продажу» opens the pet's «Цена» page; «Выставить на продажу» there puts it on the shelf.
     list: (uid) => {
-      if (!play.list(uid)) return;
       selectTab('sales');
       salesTab.show(uid);
     },
@@ -309,6 +311,7 @@ async function boot(): Promise<void> {
   // Timers on the egg screen (free egg, hatching) tick each second while it is open.
   window.setInterval(() => {
     if (nav.active() === 'eggs') eggsTab.render();
+    if (nav.active() === 'inventory') inventoryTab.render();
     if (nav.active() === 'home') homeEggs.render();
   }, 1000);
   const salesTab = createSalesTab(sheets.get('sales')!, play, {
@@ -319,6 +322,7 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     slider: market.slider,
     zoneColors: styleData.priceZones,
+    baseWaitSec: (market.replySec.min + market.replySec.max) / 2,
     mood: moodOf,
     openChat: (uid) => {
       selectTab('chats');
@@ -339,6 +343,7 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     avatarColor: (i) => customers.people.outfits[i % customers.people.outfits.length] ?? styleData.colors.uiAccent,
     mood: moodOf,
+    wide: () => appRoot.classList.contains('landscape'),
   });
   const sellerLook = {
     t: i18n.t,
@@ -385,7 +390,7 @@ async function boot(): Promise<void> {
     links,
     today,
     rewardText,
-    rewardShort: (r) => (r.egg ? i18n.t(`egg.short.${r.egg}`) : new Intl.NumberFormat(i18n.lang()).format(r.coins ?? r.crystals ?? 0)),
+    rewardShort: (r) => (r.egg ? i18n.t(`egg.short.${r.egg}`) : `${r.crystals ? '◆' : '◉'} ${new Intl.NumberFormat(i18n.lang()).format(r.coins ?? r.crystals ?? 0)}`),
     eggPicture: (id) => portraits.egg(id),
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
     portrait: (sp, r) => portraits.creature(sp, r),

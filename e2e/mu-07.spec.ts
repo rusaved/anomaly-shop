@@ -74,8 +74,10 @@ function check(page: Page): Promise<Report> {
       return b;
     };
     const nav = document.getElementById('nav')!.getBoundingClientRect();
-    const win = document.querySelector('.overlay:not([hidden]):not(.under)');
-    r.windows = document.querySelectorAll('.overlay:not([hidden]):not(.under)').length;
+    // «Подарки» is a screen (MU-08); a window may stand over it.
+    const open = [...document.querySelectorAll('.overlay:not([hidden]):not(.under)')];
+    const win = open.at(-1) ?? null;
+    r.windows = open.filter((el) => (el as HTMLElement).dataset.kind !== 'screen').length;
     const taps: Array<{ el: Element; b: DOMRect }> = [];
     for (const el of document.querySelectorAll('#ui *')) {
       if (el.closest('.lil-gui, svg, [aria-hidden="true"], .hint, .toasts, .coin-flight')) continue;
@@ -183,6 +185,10 @@ async function walk(page: Page, fn: (where: string) => Promise<void>): Promise<v
   const row = page.locator('[data-sheet=chats] .chat-row:not(.closed)').first();
   if (await row.isVisible()) await row.click();
   await fn('chat');
+  await tab('home');
+  await page.locator('[data-action=gifts]').click();
+  await page.locator('[data-overlay=gifts] [data-action=gift-review]').click();
+  await fn('review window');
   for (const [opener, name] of [
     ['gifts', 'gifts'],
     ['pause', 'pause'],

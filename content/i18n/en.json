@@ -412,5 +412,8 @@
   "market.refresh": "refresh in {t}",
   "market.haggle": "Haggle",
   "market.buy": "Buy",
-  "inventory.count": "pets: {n}"
+  "inventory.count": "pets: {n}",
+  "rate.title": "Rate the game",
+  "rate.text": "Enjoying the shop? Leave a rating and {what} is yours",
+  "gifts.reviewBtnSend": "Rate"
 }

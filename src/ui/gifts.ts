@@ -6,7 +6,7 @@ import type { GiftsData, RarityName, RewardData } from '../content/schemas.ts';
 import type { Game } from '../sim/game.ts';
 import { openCommunity, type CommunityLinks, type Network } from './community.ts';
 import { esc, iconize, ringPic } from './kit.ts';
-import { createOverlay } from './overlay.ts';
+import { closeX, createOverlay } from './overlay.ts';
 
 export interface GiftsLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -42,6 +42,28 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
   overlay.card.classList.add('card-gifts');
   const pending = new Map<Network, number>();
   let reviewBusy = false;
+  // MU-09, MU-11: the review window — the window style of 07 over «Подарки»: the chest, one main «Оценить», ✕.
+  const rate = createOverlay(parent, 'rate', () => rate.hide(), { over: ['gifts'] });
+  rate.card.classList.add('card-rate');
+  const sendReview = (): void => {
+    if (reviewBusy) return;
+    reviewBusy = true;
+    void look.review().then((r) => {
+      reviewBusy = false;
+      if (r.sent) game.claimReview();
+      rate.hide();
+      win.render();
+    });
+  };
+  const openRate = (): void => {
+    rate.card.innerHTML =
+      `<h2>${esc(look.t('rate.title'))}</h2><span class="mu-pic rate-pic"><img alt="" src="${look.eggPicture(look.gifts.review.reward.egg ?? 'egg_gold')}"></span>` +
+      `<p class="mu-meta rate-text">${esc(look.t('rate.text', { what: look.rewardText(look.gifts.review.reward) }))}</p>` +
+      `<button type="button" class="mu-btn main" data-action="rate-send">${esc(look.t('gifts.reviewBtnSend'))}</button>`;
+    closeX(rate.card, '✕', () => rate.hide(), 'rate-close');
+    rate.card.querySelector('[data-action="rate-send"]')?.addEventListener('click', sendReview);
+    rate.show();
+  };
 
   // Back from the community page: the egg for the visit, once.
   const back = (): void => {
@@ -150,15 +172,7 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
           pending.set(s.id, Date.now());
           openCommunity(look.links, s.id);
         });
-      body.querySelector('[data-action="gift-review"]')?.addEventListener('click', () => {
-        if (reviewBusy) return;
-        reviewBusy = true;
-        void look.review().then((r) => {
-          reviewBusy = false;
-          if (r.sent) game.claimReview();
-          win.render();
-        });
-      });
+      body.querySelector('[data-action="gift-review"]')?.addEventListener('click', openRate);
     },
   };
   return win;

@@ -113,6 +113,8 @@ for (const [w, h, tag] of [[375, 650, 'p'], [812, 375, 'l']]) {
     await tab(page, 'home');
     await page.locator('[data-action=gifts]').click();
     await shot(page, `gifts.${tag}`);
+    await page.locator('[data-overlay=gifts] [data-action=gift-review]').click();
+    await shot(page, `rate.${tag}`);
     await tab(page, 'home');
     await page.locator('[data-action=pause]').click();
     await shot(page, `pause.${tag}`);

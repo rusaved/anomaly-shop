@@ -412,5 +412,8 @@
   "market.refresh": "обновится через {t}",
   "market.haggle": "Торг",
   "market.buy": "Купить",
-  "inventory.count": "питомцев: {n}"
+  "inventory.count": "питомцев: {n}",
+  "rate.title": "Оцени игру",
+  "rate.text": "Нравится лавка? Поставь оценку, и {what} твоё",
+  "gifts.reviewBtnSend": "Оценить"
 }

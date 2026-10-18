@@ -2300,3 +2300,15 @@ button.mu-card {
 .landscape .overlay[data-overlay='work'] > .card > :not(h2):not(.work-bowl):not(.win-x) {
   grid-column: 2;
 }
+/* MU-09: the review window. */
+.overlay > .card.card-rate {
+  text-align: center;
+  align-items: center;
+}
+.rate-pic {
+  width: 104px;
+  height: 88px;
+}
+.rate-text {
+  margin: 0;
+}

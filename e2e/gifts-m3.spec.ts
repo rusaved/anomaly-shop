@@ -14,7 +14,12 @@ test('M3-11 gifts: the daily gift and the review egg once, kept after a reload',
   await page.locator('[data-action=gift-daily]').click();
   await expect.poll(async () => ((await state(page)) as unknown as S).coins).toBeGreaterThan(0);
   await expect(page.locator('[data-action=gift-daily]')).toHaveCount(0);
+  // MU-09: «За отзыв» opens the review window of the 07 style; «Оценить» there asks the platform.
   await page.locator('[data-action=gift-review]').click();
+  await expect(page.locator('[data-overlay=rate]')).toBeVisible();
+  await expect(page.locator('[data-overlay=gifts]')).toBeVisible();
+  await page.locator('[data-overlay=rate] [data-action=rate-send]').click();
+  await expect(page.locator('[data-overlay=rate]')).toBeHidden();
   await expect(page.locator('[data-action=gift-review]')).toHaveCount(0);
   const coins = ((await state(page)) as unknown as S).coins;
   await page.waitForTimeout(400);

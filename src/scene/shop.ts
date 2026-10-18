@@ -444,9 +444,16 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   /** picked: the customer at the counter bids for this one — its pill takes the offer bubble's accent color. */
   function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout, picked: boolean, order: 'none' | 'wanted' | 'ready'): void {
     const size = Math.max(12, r * 0.42);
-    // MU-12 (the mockup check, s1 + s3): a place of the «Витрина» strip — the pet in its rarity ring (no dash), a dark price pill
-    // at the bottom of the place and the level badge, as the cards of «Продажи».
-    const strip = Boolean(l.strip);
+    // MU-03 (s1-shop-scene, «макет главнее кода»): a place of the «Витрина» strip shows the pet in its rarity ring, no tags —
+    // the price is on «Продажи» (s3). Q-037 B (a dark price pill on the place) is one line: drop this return.
+    if (l.strip) {
+      node.tag.clear();
+      node.bar.clear();
+      node.price.text = '';
+      node.level.text = '';
+      return;
+    }
+    const strip = false;
     node.price.text = fmt(cv.price);
     node.price.style.fontSize = size;
     const coinR = size * 0.42;

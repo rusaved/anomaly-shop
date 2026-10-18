@@ -1,0 +1,18 @@
+2026-10-18 20:51 UTC
+Running 12 tests using 2 workers
+
+  ✓   2 [desktop] › e2e/mu-07.spec.ts:275:5 › MU-12 docs/07 at 375×650 › every screen keeps the rules of 07 and shows the rarity of every pet (25.5s)
+  ✓   1 [desktop] › e2e/mu-07.spec.ts:283:5 › MU-12 docs/07 at 375×650 › a system font at 130 %: nothing runs out of the screen or under the tab bar (26.1s)
+  ✓   4 [desktop] › e2e/mu-07.spec.ts:283:5 › MU-12 docs/07 at 812×330 › a system font at 130 %: nothing runs out of the screen or under the tab bar (23.2s)
+  ✓   3 [desktop] › e2e/mu-07.spec.ts:275:5 › MU-12 docs/07 at 812×330 › every screen keeps the rules of 07 and shows the rarity of every pet (25.2s)
+  ✓   5 [desktop] › e2e/mu-07.spec.ts:331:3 › the round of fixes, item 1: lists by the mockups at 375×650 › finds 172, the two gift cards 122, the sales places 200; the first line 8–14 px under the top bar (16.9s)
+  ✓   6 [desktop] › e2e/mu-07.spec.ts:374:3 › the round of fixes, item 2: sideways 812×330 is «list + detail» › rows 44–52 px; the lot, the egg card, the collection, the gifts and «Вылупился!» whole (15.7s)
+  ✓   8 [desktop] › e2e/mu-07.spec.ts:461:5 › the round of fixes, item 3: the font scale of 07 at 812×330 › titles 18 on one line, pet names 18, the big price 32, section labels 12.5 (9.8s)
+  ✓   7 [desktop] › e2e/mu-07.spec.ts:461:5 › the round of fixes, item 3: the font scale of 07 at 375×650 › titles 18 on one line, pet names 18, the big price 32, section labels 12.5 (12.3s)
+  ✓   9 [desktop] › e2e/mu-07.spec.ts:491:3 › the round of fixes, item 6: the small things › tab names and 12 px labels, the top bar 44 px, one green fill among the finds, «Скидка? Возьму за…» on one line (9.9s)
+  ✓  10 [desktop] › e2e/mu-07.spec.ts:523:3 › the round of fixes, item 8: a toast moves nothing, a hint lies on no card › a toast over «Рынок» leaves every card where the finger aims (8.3s)
+  ✓  12 [desktop] › e2e/mu-07.spec.ts:563:3 › the round of fixes, item 8 (the recheck): the first hint of a tab moves nothing when it goes › «Рынок» on its first visit: the hint stands in a band at the bottom, the lots stay put after the first tap (9.5s)
+  ✓  11 [desktop] › e2e/mu-07.spec.ts:538:3 › the round of fixes, item 8: a toast moves nothing, a hint lies on no card › the hint over a tab of the bar takes its own band: no card of the open screen under it (12.3s)
+
+  12 passed (1.7m)
+EXIT=0

@@ -425,6 +425,66 @@ test.describe('the round of fixes, item 2: sideways 812×330 is «list + detail�
   });
 });
 
+/** The size of the first shown element of each selector and how many lines its text takes. */
+async function type(page: Page, sels: string[]): Promise<Record<string, string>> {
+  return page.evaluate((list) => {
+    const out: Record<string, string> = {};
+    for (const sel of list) {
+      const el = [...document.querySelectorAll<HTMLElement>(sel)].find((e) => e.offsetParent && e.getBoundingClientRect().height > 0);
+      if (!el) {
+        out[sel] = 'none';
+        continue;
+      }
+      // Lines of the text alone: a coin badge inside sits on its own box.
+      const bottoms = new Set<number>();
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (!n.textContent?.trim()) continue;
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        for (const r of range.getClientRects()) if (r.width > 1) bottoms.add(Math.round(r.bottom));
+      }
+      const lines = bottoms.size;
+      out[sel] = `${getComputedStyle(el).fontSize} ${lines}`;
+    }
+    return out;
+  }, sels);
+}
+
+for (const [w, h] of [
+  [375, 650],
+  [812, 330],
+] as const) {
+  test.describe(`the round of fixes, item 3: the font scale of 07 at ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+
+    test('titles 18 on one line, pet names 18, the big price 32, section labels 12.5', async ({ page }) => {
+      const errors = collectErrors(page);
+      await seedSave(page, SEED);
+      await open(page);
+      const tab = (id: string) => page.locator(`[data-tab=${id}]`).click();
+      await tab('eggs');
+      expect(await type(page, ['[data-sheet=eggs] .mu-head h3'])).toEqual({ '[data-sheet=eggs] .mu-head h3': '12.5px 1' });
+      await tab('sales');
+      await page.locator('[data-sheet=sales] [data-action="sale-add"]').first().click();
+      await page.locator('[data-detail=sale] [data-action^="sale-list-"]').first().click();
+      expect(await type(page, ['[data-detail=sale] .mu-back h2', '.price-pet-text .mu-name', '.price-big'])).toEqual({
+        '[data-detail=sale] .mu-back h2': '18px 1',
+        '.price-pet-text .mu-name': '18px 1',
+        '.price-big': '32px 1',
+      });
+      await tab('home');
+      await page.locator('[data-action=reputation]').click();
+      expect(await type(page, ['[data-overlay] .card > h2'])).toEqual({ '[data-overlay] .card > h2': '18px 1' });
+      await page.keyboard.press('Escape');
+      await tab('home');
+      await page.locator('[data-action=gifts]').click();
+      expect(await type(page, ['.gifts-top h2'])).toEqual({ '.gifts-top h2': '18px 1' });
+      expect(errors).toEqual([]);
+    });
+  });
+}
+
 test.describe('the round of fixes, item 6: the small things', () => {
   test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
 

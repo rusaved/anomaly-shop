@@ -65,13 +65,13 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     for (const c of view.creatures)
       cards.push(
         `<div class="mu-card rar card-sale" data-rarity="${c.rarity}" data-uid="${c.uid}"><button type="button" class="mu-pic-btn" data-action="sale-${c.uid}">${pic(c)}</button>` +
-          `<span class="mu-name">${esc(look.speciesName(c.species))}</span>${meta(c, fmt, c.ask)}<span class="mu-meta">${esc(look.t('sales.onShelf'))}</span>` +
+          `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span class="mu-line">${meta(c, fmt, c.ask)}<span class="mu-meta">${esc(look.t('sales.onShelf'))}</span></span>` +
           `<button type="button" class="mu-btn" data-action="sale-off-${c.uid}">${esc(look.t('sales.off'))}</button></div>`,
       );
     for (const c of view.talking)
       cards.push(
         `<div class="mu-card rar card-sale" data-rarity="${c.rarity}" data-uid="${c.uid}"><button type="button" class="mu-pic-btn" data-action="sale-chat-pic-${c.uid}">${pic(c)}</button>` +
-          `<span class="mu-name">${esc(look.speciesName(c.species))}</span>${meta(c, fmt, c.ask)}<span class="mu-meta">${esc(look.t('sales.talkingSub'))}</span>` +
+          `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span class="mu-line">${meta(c, fmt, c.ask)}<span class="mu-meta">${esc(look.t('sales.talkingSub'))}</span></span>` +
           `<button type="button" class="mu-btn main" data-action="sale-chat-${c.uid}">${esc(look.t('sales.toChat'))}</button></div>`,
       );
     root.innerHTML =
@@ -105,7 +105,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
             .map(
               (c) =>
                 `<button type="button" class="mu-card rar card-sale" data-rarity="${c.rarity}" data-action="sale-list-${c.uid}">${pic(c)}<span class="mu-name">${esc(look.speciesName(c.species))}</span>` +
-                `${meta(c, fmt, c.price)}<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}</span></button>`,
+                `<span class="mu-line">${meta(c, fmt, c.price)}<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}</span></span></button>`,
             )
             .join('')}</div>`
         : `<p class="empty">${esc(look.t('sales.nothing'))}</p>`);

@@ -777,38 +777,6 @@ button.mu-card {
   grid-template-columns: 1fr;
   gap: 8px;
 }
-.landscape .sheet[data-sheet='home'] .mu-card {
-  display: grid;
-  grid-template-columns: 44px 1fr auto;
-  grid-template-areas: 'pic name btn' 'pic meta btn';
-  align-items: center;
-  column-gap: 12px;
-  row-gap: 0;
-  padding: 6px 10px;
-  text-align: left;
-}
-.landscape .sheet[data-sheet='home'] .mu-card .mu-pic,
-.landscape .sheet[data-sheet='home'] .mu-card .mu-pic-btn {
-  grid-area: pic;
-  height: 44px;
-  width: 44px;
-}
-.landscape .sheet[data-sheet='home'] .mu-pic img {
-  max-width: 36px;
-  max-height: 36px;
-}
-.landscape .sheet[data-sheet='home'] .mu-card .mu-name {
-  grid-area: name;
-}
-.landscape .sheet[data-sheet='home'] .mu-card .mu-meta {
-  grid-area: meta;
-}
-.landscape .sheet[data-sheet='home'] .mu-card > .mu-btn {
-  grid-area: btn;
-  margin: 0;
-  min-width: 110px;
-}
-
 /* ---- MU-03 (s1-shop-scene, 07 rule 16): the hint — a light bubble next to the target, the target in a green frame ---- */
 .hint {
   max-width: min(280px, calc(100% - 32px));
@@ -1209,49 +1177,6 @@ button.mu-card {
 }
 .col-row.done .mu-head h3 {
   color: var(--c-uiGood);
-}
-/* l3: sideways the storage is rows in 2 columns: the picture, the name with its rarity line, the button in the row. */
-.landscape .sheet[data-sheet='inventory'] .mu-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
-}
-.landscape .sheet[data-sheet='inventory'] .mu-card {
-  display: grid;
-  grid-template-columns: 44px 1fr auto;
-  grid-template-areas: 'pic name btn' 'pic badge btn' 'pic meta btn';
-  align-items: center;
-  column-gap: 12px;
-  row-gap: 2px;
-  padding: 6px 10px;
-  text-align: left;
-}
-.landscape .sheet[data-sheet='inventory'] .mu-card .mu-pic,
-.landscape .sheet[data-sheet='inventory'] .mu-card .mu-pic-btn {
-  grid-area: pic;
-  width: 44px;
-  height: 44px;
-}
-.landscape .sheet[data-sheet='inventory'] .mu-pic img {
-  max-width: 36px;
-  max-height: 36px;
-}
-.landscape .sheet[data-sheet='inventory'] .mu-card .mu-name {
-  grid-area: name;
-}
-.landscape .sheet[data-sheet='inventory'] .mu-card > span:not(.mu-name):not(.mu-meta):not(.mu-pic) {
-  grid-area: badge;
-}
-.landscape .sheet[data-sheet='inventory'] .mu-card .mu-meta {
-  grid-area: meta;
-}
-.landscape .sheet[data-sheet='inventory'] .mu-card > .mu-btn,
-.landscape .sheet[data-sheet='inventory'] .mu-card > .inv-where {
-  grid-area: btn;
-  margin: 0;
-  min-width: 120px;
-}
-.landscape .sheet[data-sheet='inventory'] .sheet-head .mu-seg {
-  max-width: 420px;
 }
 .card-col.unknown .mu-pic img {
   filter: brightness(0);
@@ -2196,14 +2121,16 @@ button.mu-card {
 .landscape .sheet-head:has(.seg-count) {
   justify-content: space-between;
 }
-.inv-line {
+/* A card's second line (the badge, the price, the level): in a portrait card its pieces stand one under another, sideways one line. */
+.mu-line {
   display: contents;
 }
-.landscape .inv-line {
+.landscape .mu-line {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px 6px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 /* Sideways windows that are tall scroll inside (the side job bowl smaller). */
 @media (max-height: 520px) {
@@ -2328,4 +2255,158 @@ button.mu-card {
 }
 .landscape #ui:has(> .toasts > .toast) > .home-ui .home-next {
   visibility: hidden;
+}
+
+/* ---- MU, круг правок (18.10): the lists under the tab bar by the mockups ---- */
+/* The 16 px screen field lives inside the scrolling list: a rarity frame, a ready find's frame, the open chat's frame and a glow are never cut by its edge. */
+#ui .sheet[data-kind='dock'] {
+  padding-left: 0;
+  padding-right: 0;
+}
+#ui .sheet[data-kind='dock']:not([data-sheet='home']) {
+  padding-top: calc(var(--hint-space, 0px) + var(--toast-space, 0px));
+}
+/* s4, s7: the segments 10 px under the top bar; s1-eggs, s2, s3, s8: the first section head 10 px under it (07: 8–14). */
+#ui .sheet[data-kind='dock'] > .sheet-head {
+  margin-top: 10px;
+  padding: 0 calc(var(--mu-pad) + var(--safe-right)) 0 calc(var(--mu-pad) + var(--safe-left));
+}
+#ui .sheet[data-kind='dock'] > .sheet-body,
+#ui .sheet[data-kind='dock'] > .sheet-detail {
+  margin-top: 0;
+  padding: 10px calc(var(--mu-pad) + var(--safe-right)) 16px calc(var(--mu-pad) + var(--safe-left));
+}
+#ui .sheet[data-kind='dock'] > .sheet-head:not(:empty) + .sheet-body {
+  padding-top: 12px;
+}
+#ui .sheet[data-kind='dock'] > .sheet-detail,
+#ui .sheet.sheet-fixed > .sheet-body {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.landscape #ui .sheet[data-sheet='home'] > .sheet-body {
+  padding-left: 12px;
+}
+.mu-head:first-child {
+  margin-top: 0;
+}
+/* s3-price, s2-chat-dialog: the back row right under the top bar, 52 px. */
+.mu-back {
+  min-height: 52px;
+  margin: 0 calc(-1 * var(--mu-pad)) 8px;
+  padding: 4px var(--mu-pad);
+}
+.chat-top {
+  margin-top: 0;
+}
+#ui .chats:not(.has-open) .chat-list {
+  padding-top: 10px;
+}
+/* The chat list scrolls inside the screen field too (the open chat's frame). */
+#ui .chat-list {
+  margin: 0 calc(-1 * var(--mu-pad));
+  padding: 10px var(--mu-pad) 16px;
+}
+.landscape #ui .chat-list {
+  margin-right: -8px;
+  padding-right: 8px;
+}
+/* s4-finds: a find 172 px — the picture 44, the name, its line, the button. */
+.mu-grid.finds .mu-card {
+  gap: 4px;
+  min-height: 172px;
+}
+.mu-grid.finds .mu-pic {
+  height: 44px;
+}
+.find-icon {
+  font-size: 28px;
+}
+/* s3-sales-slots: a place 200 px. */
+.portrait #ui [data-sheet='sales'] > .sheet-body .mu-card {
+  min-height: 200px;
+}
+.card-sale .mu-pic {
+  height: 58px;
+}
+.card-sale .mu-pic img {
+  max-width: 50px;
+  max-height: 50px;
+}
+.mu-card.rar {
+  gap: 5px;
+}
+/* s5-gifts: the two top cards 122 px. */
+.gift-top .mu-card {
+  gap: 5px;
+}
+.gift-top .mu-pic {
+  height: 34px;
+}
+.gift-top .mu-pic img {
+  max-height: 30px;
+}
+/* s7-shop: a store card about 180 px — the picture 48. */
+.mu-card.shop-item {
+  gap: 5px;
+}
+.mu-card.shop-item .mu-pic {
+  height: 48px;
+}
+/* l1, l3 (812×330): sideways a list row is 44–50 px — the picture, the name over its one line, the button in the row. */
+.landscape #ui .sheet .mu-card,
+.landscape #ui .overlay[data-kind='screen'] .gift-top .mu-card {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-content: center;
+  column-gap: 10px;
+  row-gap: 0;
+  min-height: 50px;
+  padding: 2px 8px 2px 6px;
+}
+.landscape #ui .sheet .mu-card > .mu-pic,
+.landscape #ui .sheet .mu-card > .mu-pic-btn,
+.landscape #ui .overlay[data-kind='screen'] .gift-top .mu-card > .mu-pic {
+  grid-row: 1 / span 2;
+}
+.landscape #ui .sheet .mu-card > .mu-btn,
+.landscape #ui .sheet .mu-card > .inv-where,
+.landscape #ui .overlay[data-kind='screen'] .gift-top .mu-card > .mu-btn {
+  grid-row: 1 / span 2;
+  min-width: 88px;
+  padding: 0 14px;
+}
+.landscape #ui .mu-grid.finds .mu-card {
+  min-height: 50px;
+}
+/* Sideways the button says it: «Снять с витрины» needs no «на витрине», a dimmed price no «не хватает». */
+.landscape .card-sale .mu-line > .mu-meta:not(.mu-rar-line),
+.landscape .mu-short {
+  display: none;
+}
+.landscape .shop-item .lvl-dots i {
+  width: 8px;
+  height: 8px;
+}
+.landscape .shop-item .lvl-dots {
+  gap: 3px;
+}
+.landscape #ui .sheet .mu-grid,
+.landscape #ui .overlay[data-kind='screen'] .mu-grid {
+  gap: 8px 12px;
+}
+/* 07 rule 15: a list fades out 28 px over the tab bar, so a row going under it is never cut through a name or a price;
+   its end has the same room, so the last row scrolls up whole. */
+#ui .sheet[data-kind='dock']:not(.sheet-fixed) > .sheet-body,
+#ui .chat-list,
+#ui .overlay[data-kind='screen'] > .card {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+#ui .sheet[data-kind='dock']:not(.sheet-fixed) > .sheet-body,
+#ui .chat-list {
+  padding-bottom: 32px;
+}
+#ui .overlay[data-kind='screen'] > .card {
+  padding-bottom: 32px;
 }

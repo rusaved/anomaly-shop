@@ -1,4 +1,4 @@
-// MU-12: screenshots of every screen of docs/07 next to its mockup (docs/mockups) — portrait 375×650 (the zone of a phone) and landscape 812×375.
+// MU-12: screenshots of every screen of docs/07 next to its mockup (docs/mockups) — portrait 375×650 (the zone of a phone) and landscape 812×330.
 // Run after `npm run build:e2e`: node scripts/mu-shots.mjs [outDir=docs/evidence/MU/screens] [--only=name,name]
 // The save is seeded past the first minute with one pet of every rarity; console errors are printed and fail the run.
 import { chromium } from '@playwright/test';
@@ -51,6 +51,8 @@ async function session(w, h, tag) {
 }
 const shot = async (page, name) => {
   if (only.length && !only.includes(name.split('.')[0])) return;
+  // After the animation: a toast moves the screen down while it shows.
+  await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(350);
   await page.screenshot({ path: `${out}/${name}.png` });
 };
@@ -63,7 +65,7 @@ const tryStep = async (name, fn) => {
   }
 };
 
-for (const [w, h, tag] of [[375, 650, 'p'], [812, 375, 'l']]) {
+for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']]) {
   const { page, ctx } = await session(w, h, tag);
   await tryStep(`${tag} home`, async () => shot(page, `home.${tag}`));
   await tryStep(`${tag} eggs`, async () => {

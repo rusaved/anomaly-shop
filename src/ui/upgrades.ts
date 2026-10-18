@@ -84,13 +84,13 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
         : item.levels <= DOTS
           ? `<span class="lvl-dots" aria-label="${esc(look.t('upgrades.level', { n: item.level, max: item.levels }))}">${Array.from({ length: item.levels }, (_, i) => `<i${i < item.level ? ' class="on"' : ''}></i>`).join('')}</span>`
           : `<span class="mu-meta">${esc(look.t('upgrades.level', { n: item.level, max: item.levels }))}</span>`;
-    const short = !item.maxed && !item.affordable ? `<span class="mu-meta">${esc(look.t('upgrades.short'))} ${money(Math.max(1, Math.ceil(item.price - have)), fmt, gem)}</span>` : '';
+    const short = !item.maxed && !item.affordable ? `<span class="mu-meta mu-short">${esc(look.t('upgrades.short'))} ${money(Math.max(1, Math.ceil(item.price - have)), fmt, gem)}</span>` : '';
     const btn = item.maxed
       ? `<button type="button" class="mu-btn off is-max" data-action="buy-upgrade" data-id="${id}" aria-disabled="true">${esc(look.t('upgrades.max'))}</button>`
       : `<button type="button" class="mu-btn${item.affordable ? '' : ' off'}" data-action="buy-upgrade" data-id="${id}" aria-disabled="${!item.affordable}">${money(item.price, fmt, gem)}</button>`;
     return (
       `<div class="mu-card shop-item" data-upgrade="${id}"><span class="mu-pic"><span class="shop-icon shop-icon-${u.effect.type}" aria-hidden="true"></span>${item.fresh ? '<i class="mu-new" data-new></i>' : ''}</span>` +
-      `<span class="mu-name">${esc(u.name[look.lang() === 'en' ? 'en' : 'ru'])}</span><span class="mu-meta">${esc(effectText(u, look))}</span>${lvl}${short}${btn}</div>`
+      `<span class="mu-name">${esc(u.name[look.lang() === 'en' ? 'en' : 'ru'])}</span><span class="mu-line"><span class="mu-meta">${esc(effectText(u, look))}</span>${lvl}${short}</span>${btn}</div>`
     );
   }
 

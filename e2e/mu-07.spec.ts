@@ -30,11 +30,13 @@ interface Report {
   underBar: string[];
   outside: string[];
   noRarity: string[];
+  clipped: string[];
+  cutByBar: string[];
 }
 
 function check(page: Page): Promise<Report> {
   return page.evaluate((holders) => {
-    const r: Report = { tiny: [], small: [], cut: [], covered: [], overlap: [], windows: 0, underBar: [], outside: [], noRarity: [] };
+    const r: Report = { tiny: [], small: [], cut: [], covered: [], overlap: [], windows: 0, underBar: [], outside: [], noRarity: [], clipped: [], cutByBar: [] };
     const name = (el: Element): string => {
       const h = el as HTMLElement;
       const hook = h.dataset.action ?? h.dataset.tab ?? h.className.toString().split(' ')[0] ?? el.tagName;
@@ -134,7 +136,45 @@ function check(page: Page): Promise<Report> {
       const has = (el.matches('.rar[data-rarity], .rar-ring[data-rarity]') || [...el.querySelectorAll('.rar-badge[data-rarity], .rar-ring[data-rarity], .rar-word[data-rarity]')].some((x) => shown(x))) as boolean;
       if (!has) r.noRarity.push(name(el));
     }
-    for (const k of ['tiny', 'small', 'cut', 'covered', 'overlap', 'underBar', 'outside', 'noRarity'] as const) r[k] = [...new Set(r[k])];
+    /** The nearest box around el that clips it (a scrolling list, a window). */
+    const clipBox = (el: Element): HTMLElement | null => {
+      for (let e = el.parentElement; e; e = e.parentElement) {
+        const cs = getComputedStyle(e);
+        if (cs.overflowY !== 'visible' || cs.overflowX !== 'visible') return e;
+      }
+      return null;
+    };
+    // The round of fixes, item 1: the 16 px field is inside the scrolling list — a rarity frame, a ready find's frame,
+    // the open chat's frame and a glow keep 6 px of room from the list's edge.
+    for (const el of document.querySelectorAll('#ui .rar, #ui .mu-ready, #ui .chat-row.active, #ui .rar-ring')) {
+      if (!shown(el) || !visible(el)) continue;
+      if (win && !win.contains(el)) continue;
+      const box = clipBox(el);
+      if (!box) continue;
+      const b = el.getBoundingClientRect();
+      const p = box.getBoundingClientRect();
+      const left = b.left - (p.left + box.clientLeft);
+      const right = p.left + box.clientLeft + box.clientWidth - b.right;
+      if (Math.min(left, right) < 6) r.clipped.push(`${name(el)} ${Math.round(left)}/${Math.round(right)}`);
+    }
+    // No name or price is cut through by the bottom of its list (the tab bar): a list fades out over its last 28 px.
+    for (const el of document.querySelectorAll('#ui .mu-name, #ui .mu-meta, #ui .mu-money, #ui .chat-who, #ui .chat-last, #ui .rar-badge, #ui .day b')) {
+      if (!shown(el)) continue;
+      if (win && !win.contains(el)) continue;
+      const box = clipBox(el);
+      if (!box) continue;
+      const cs = getComputedStyle(box);
+      const fade = (cs.maskImage || cs.webkitMaskImage || 'none') !== 'none' ? 28 : 0;
+      const edge = Math.min(box.getBoundingClientRect().bottom, nav.top);
+      for (const n of el.childNodes) {
+        if (n.nodeType !== Node.TEXT_NODE || !(n.textContent ?? '').trim()) continue;
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        const t = range.getBoundingClientRect();
+        if (t.top < edge - fade - 1 && t.bottom > edge + 1) r.cutByBar.push(name(el));
+      }
+    }
+    for (const k of ['tiny', 'small', 'cut', 'covered', 'overlap', 'underBar', 'outside', 'noRarity', 'clipped', 'cutByBar'] as const) r[k] = [...new Set(r[k])];
     return r;
   }, PET_HOLDERS);
 }
@@ -151,6 +191,8 @@ async function expectClean(page: Page, where: string): Promise<void> {
   expect.soft(r.underBar, `${where}: under the tab bar`).toEqual([]);
   expect.soft(r.outside, `${where}: out of the screen`).toEqual([]);
   expect.soft(r.noRarity, `${where}: a pet without its rarity`).toEqual([]);
+  expect.soft(r.clipped, `${where}: a frame cut by its list`).toEqual([]);
+  expect.soft(r.cutByBar, `${where}: a name or a price cut by the tab bar`).toEqual([]);
 }
 
 /** Every screen of 07 in turn; fn checks each one. */
@@ -243,3 +285,54 @@ for (const [w, h] of [
     });
   });
 }
+
+/** The heights of the list cards on the first screen (CSS px) next to the mockups, ±3 px; the first line of a list 8–14 px under the top bar. */
+async function heights(page: Page, sel: string): Promise<number[]> {
+  return page.locator(sel).evaluateAll((els) => {
+    const bar = document.getElementById('nav')!.getBoundingClientRect().top;
+    return els.filter((e) => (e as HTMLElement).offsetParent && e.getBoundingClientRect().bottom <= bar).map((e) => Math.round(e.getBoundingClientRect().height));
+  });
+}
+async function firstLine(page: Page, sheet: string): Promise<number> {
+  // A toast moves the screen down while it shows (MU-12): measure after it.
+  await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 });
+  await page.waitForTimeout(200);
+  return page.evaluate((id) => {
+    const hud = document.querySelector('.hud')!.getBoundingClientRect().bottom;
+    const root = document.querySelector(`[data-sheet=${id}]`)!;
+    const first = root.querySelector('.sheet-head:not(:empty) .mu-seg, .sheet-body .mu-head, .sheet-body .mu-card')!;
+    return Math.round(first.getBoundingClientRect().top - hud);
+  }, sheet);
+}
+
+test.describe('the round of fixes, item 1: lists by the mockups at 375×650', () => {
+  test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
+
+  test('finds 172, the two gift cards 122, the sales places 200; the first line 8–14 px under the top bar', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, SEED);
+    await open(page);
+    const near = (list: number[], h: number) => list.every((x) => Math.abs(x - h) <= 3);
+    const tab = (id: string) => page.locator(`[data-tab=${id}]`).click();
+    await tab('inventory');
+    await page.locator('[data-sheet=inventory] [data-sub=finds]').click();
+    const finds = await heights(page, '[data-sheet=inventory] .mu-grid.finds .mu-card');
+    expect(near(finds, 172), `finds ${finds}`).toBe(true);
+    expect(await firstLine(page, 'inventory')).toBeGreaterThanOrEqual(8);
+    expect(await firstLine(page, 'inventory')).toBeLessThanOrEqual(14);
+    await tab('sales');
+    const sales = await heights(page, '[data-sheet=sales] .sheet-body .mu-card');
+    expect(near(sales, 200), `sales ${sales}`).toBe(true);
+    expect(await firstLine(page, 'sales')).toBeLessThanOrEqual(14);
+    for (const id of ['eggs', 'market', 'shop']) {
+      await tab(id);
+      const top = await firstLine(page, id);
+      expect(top >= 8 && top <= 14, `${id}: ${top}`).toBe(true);
+    }
+    await tab('home');
+    await page.locator('[data-action=gifts]').click();
+    const gifts = await heights(page, '[data-overlay=gifts] .gift-top .mu-card');
+    expect(near(gifts, 122), `gifts ${gifts}`).toBe(true);
+    expect(errors).toEqual([]);
+  });
+});

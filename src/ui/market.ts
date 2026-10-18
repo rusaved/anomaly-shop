@@ -61,8 +61,8 @@ export function createMarketTab(sheet: Sheet, game: Game, look: MarketLookups): 
             : `<button type="button" class="mu-btn" data-action="${haggle ? 'lot-haggle' : 'lot-quick'}-${l.id}" aria-disabled="${!haggle && coins + 1e-9 < l.price}">${esc(look.t(haggle ? 'market.haggle' : 'market.buy'))}</button>`;
           return (
             `<div class="mu-card rar card-lot${l.sold ? ' sold mu-dim' : ''}" data-rarity="${l.rarity}" data-lot="${l.id}" data-verdict="${l.verdict}"><button type="button" class="mu-pic-btn" data-action="lot-open-${l.id}"><span class="mu-pic"><img alt="" src="${look.portrait(l.species, l.rarity)}"></span></button>` +
-            `<span class="mu-name">${esc(look.speciesName(l.species))}</span><span>${rarityBadge(l.rarity, look.t(`rarity.${l.rarity}`))}</span>` +
-            `<span class="mu-meta">${money(l.price, fmt)} · ${esc(look.t(`market.${l.verdict}`).toLowerCase())}</span>${btn}</div>`
+            `<span class="mu-name">${esc(look.speciesName(l.species))}</span><span class="mu-line"><span>${rarityBadge(l.rarity, look.t(`rarity.${l.rarity}`))}</span>` +
+            `<span class="mu-meta">${money(l.price, fmt)} · ${esc(look.t(`market.${l.verdict}`).toLowerCase())}</span></span>${btn}</div>`
           );
         })
         .join('')}</div>`;

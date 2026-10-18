@@ -75,7 +75,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
             : `<span class="mu-meta inv-where">${esc(look.t('sales.talkingSub'))}</span>`;
       return (
         `<div class="mu-card rar tile" data-rarity="${c.rarity}" data-uid="${c.uid}" data-on="${where !== 'store'}"><button type="button" class="mu-pic-btn" data-action="inv-pic-${c.uid}"><span class="mu-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"></span></button>` +
-        `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span class="inv-line"><span>${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}</span>` +
+        `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span class="mu-line inv-line"><span>${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}</span>` +
         `<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}${c.mark ? ` · ${esc(look.t(`mark.${c.mark}`))}` : ''} · ${money(c.price, fmt)} ${look.mood(c.species)}</span></span>${btn}</div>`
       );
     });
@@ -141,7 +141,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
               .map(
                 (x) =>
                   `<div class="mu-card rar card-col${x.status === 'none' ? ' unknown mu-dim' : ''}" data-rarity="${row.rarity}" data-species="${x.id}" data-status="${x.status}"><span class="mu-pic"><img alt="" src="${look.portrait(x.id, row.rarity)}"></span>` +
-                  `<span class="mu-name">${esc(x.status === 'none' ? '?' : look.speciesName(x.id))}</span><span>${rarityBadge(row.rarity, look.t(`rarity.${row.rarity}`))}</span><span class="mu-meta">${esc(look.t(`collection.status.${x.status}`))}</span></div>`,
+                  `<span class="mu-name">${esc(x.status === 'none' ? '?' : look.speciesName(x.id))}</span><span class="mu-line"><span>${rarityBadge(row.rarity, look.t(`rarity.${row.rarity}`))}</span><span class="mu-meta">${esc(look.t(`collection.status.${x.status}`))}</span></span></div>`,
               )
               .join('')}</div></section>`,
         )

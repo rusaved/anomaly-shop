@@ -47,8 +47,8 @@ describe('M3-08 chats', () => {
     for (const seed of [1, 2, 3, 4, 5]) {
       const { game, seen } = setup(seed);
       const t = until(game, seen, 40)!;
-      expect(t).toBeGreaterThanOrEqual(content.market.replySec.min * Math.min(...content.market.slider.delay.slice(2, 4)) - 0.1);
-      expect(t).toBeLessThanOrEqual(content.market.replySec.max * Math.max(...content.market.slider.delay.slice(2, 4)) + 0.1);
+      expect(t).toBeGreaterThanOrEqual(content.market.replySec.min * content.market.slider.delay[1]! - 0.1);
+      expect(t).toBeLessThanOrEqual(content.market.replySec.max * content.market.slider.delay[1]! + 0.1);
       const chat = game.chats()[0]!;
       expect(chat.lines.map((l) => l.ctx)).toEqual(['greet', 'offer']);
       expect(chat.unread).toBe(true);

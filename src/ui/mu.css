@@ -1,0 +1,834 @@
+/* MU «Мобильный интерфейс» (docs/07-mobile-ui.md, docs/mockups/): tokens, the card kit and the rarity component.
+   Loaded after styles.css: what is here wins. Colors come from content/style.json (--c-*, rarity --r-*), never literals. */
+
+:root {
+  /* 07 «Токены»: sizes */
+  --mu-hud: 48px;
+  --mu-hud-el: 40px;
+  --mu-nav: 56px;
+  --mu-pad: 16px;
+  --mu-gap: 12px;
+  --mu-r: 14px;
+  --mu-r-win: 22px;
+  --mu-btn: 44px;
+  --mu-btn-main: 46px;
+  --mu-win: 343px;
+}
+
+/* ---- Rarity (07 «Редкость»): one component — frame, badge, ring, word. ---- */
+.rar {
+  --rc: var(--r-common);
+  position: relative;
+  border: 1px solid var(--c-rarityEdge);
+}
+.rar[data-rarity='common'] {
+  --rc: var(--r-common);
+}
+.rar[data-rarity='good'] {
+  --rc: var(--r-good);
+  border: 1.5px solid color-mix(in srgb, var(--r-good) 60%, transparent);
+}
+.rar[data-rarity='valuable'] {
+  --rc: var(--r-valuable);
+  border: 1.5px solid color-mix(in srgb, var(--r-valuable) 60%, transparent);
+}
+.rar[data-rarity='premium'] {
+  --rc: var(--r-premium);
+  border: 2px solid var(--r-premium);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--r-premium) 20%, transparent);
+}
+.rar[data-rarity='vip'] {
+  --rc: var(--r-vip);
+  border: 2px solid var(--r-vip);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--r-vip) 30%, transparent);
+  overflow: hidden;
+}
+.rar[data-rarity='exclusive'] {
+  --rc: var(--r-exclusive);
+  border: 2px solid var(--r-exclusive);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--r-exclusive) 50%, transparent);
+  animation: rar-pulse 1.4s ease-in-out infinite;
+}
+/* The tone of the picture box: premium 10 %, VIP 12 %, exclusive 16 %. */
+.rar[data-rarity='premium'] .mu-pic {
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--r-premium) 10%, transparent), transparent 70%), var(--c-uiPanelHi);
+}
+.rar[data-rarity='vip'] .mu-pic {
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--r-vip) 12%, transparent), transparent 70%), var(--c-uiPanelHi);
+}
+.rar[data-rarity='exclusive'] .mu-pic {
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--r-exclusive) 16%, transparent), transparent 70%), var(--c-uiPanelHi);
+}
+/* VIP: one white streak runs across every 2.4 s, no repeat (07: no jump on the second pass). */
+.rar[data-rarity='vip']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: linear-gradient(135deg, transparent 40%, color-mix(in srgb, var(--c-eyeWhite) 12%, transparent) 50%, transparent 60%);
+  background-repeat: no-repeat;
+  background-size: 250% 250%;
+  background-position: 120% 120%;
+  animation: rar-shine 2.4s linear infinite;
+}
+@keyframes rar-shine {
+  from {
+    background-position: 120% 120%;
+  }
+  to {
+    background-position: -20% -20%;
+  }
+}
+@keyframes rar-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--r-exclusive) 50%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 26px color-mix(in srgb, var(--r-exclusive) 50%, transparent);
+  }
+}
+/* The badge: a 1.5 px outline, a dot, the word 11 px 700, 22 px high. */
+.rar-badge {
+  --rc: var(--r-common);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 22px;
+  padding: 1px 9px;
+  border: 1.5px solid var(--rc);
+  border-radius: 11px;
+  color: var(--rc);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.rar-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentcolor;
+  flex: 0 0 auto;
+}
+.rar-badge[data-rarity='good'] {
+  --rc: var(--r-good);
+}
+.rar-badge[data-rarity='valuable'] {
+  --rc: var(--r-valuable);
+}
+.rar-badge[data-rarity='premium'] {
+  --rc: var(--r-premium);
+}
+.rar-badge[data-rarity='vip'] {
+  --rc: var(--r-vip);
+}
+.rar-badge[data-rarity='exclusive'] {
+  --rc: var(--r-exclusive);
+}
+/* The ring around a pet in chats, rows and the showcase: 2.5 px, the lower steps at 70 %. */
+.rar-ring {
+  --rc: var(--r-common);
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  background: var(--c-uiPanelHi);
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--rc) 70%, transparent);
+  overflow: hidden;
+}
+.rar-ring img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.rar-ring[data-rarity='common'] {
+  box-shadow: 0 0 0 1px var(--c-rarityEdge);
+}
+.rar-ring[data-rarity='good'] {
+  --rc: var(--r-good);
+}
+.rar-ring[data-rarity='valuable'] {
+  --rc: var(--r-valuable);
+}
+.rar-ring[data-rarity='premium'] {
+  --rc: var(--r-premium);
+  box-shadow: 0 0 0 2.5px var(--rc), 0 0 6px color-mix(in srgb, var(--rc) 20%, transparent);
+}
+.rar-ring[data-rarity='vip'] {
+  --rc: var(--r-vip);
+  box-shadow: 0 0 0 2.5px var(--rc), 0 0 10px color-mix(in srgb, var(--rc) 30%, transparent);
+}
+.rar-ring[data-rarity='exclusive'] {
+  --rc: var(--r-exclusive);
+  box-shadow: 0 0 0 2.5px var(--rc), 0 0 12px color-mix(in srgb, var(--rc) 50%, transparent);
+}
+/* The word in «Hatched!»: 15 px 700 capitals in the rarity color, over the name. */
+.rar-word {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--r-common);
+}
+.rar-word[data-rarity='good'] {
+  color: var(--r-good);
+}
+.rar-word[data-rarity='valuable'] {
+  color: var(--r-valuable);
+}
+.rar-word[data-rarity='premium'] {
+  color: var(--r-premium);
+}
+.rar-word[data-rarity='vip'] {
+  color: var(--r-vip);
+}
+.rar-word[data-rarity='exclusive'] {
+  color: var(--r-exclusive);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rar,
+  .rar::after {
+    animation: none !important;
+  }
+}
+
+/* ---- Icons: one coin and one crystal picture (not a font glyph) ---- */
+.coin.coin-sm,
+.mu-coin {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  min-width: 12px;
+  min-height: 12px;
+  border-radius: 50%;
+  background: var(--c-uiAccent);
+  box-shadow: inset 0 0 0 0.16em var(--c-counterTop), inset 0 0 0 0.24em var(--c-uiAccentText);
+  vertical-align: -0.14em;
+  flex: 0 0 auto;
+}
+.mu-gem {
+  display: inline-block;
+  width: 0.9em;
+  height: 1em;
+  background: var(--c-rarityRare);
+  clip-path: polygon(50% 0, 100% 35%, 50% 100%, 0 35%);
+  vertical-align: -0.12em;
+  flex: 0 0 auto;
+}
+.mu-money {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  white-space: nowrap;
+}
+
+/* ---- Card kit (s1-eggs-list, s3, s4, s7, s8): 2 in a row, picture, name, meta, one button ---- */
+.mu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mu-gap) 12px;
+}
+.mu-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px;
+  border-radius: var(--mu-r);
+  background: var(--c-uiPanelAlt);
+  color: var(--c-uiText);
+  text-align: center;
+  font: inherit;
+}
+button.mu-card {
+  cursor: pointer;
+}
+.mu-card.mu-dim {
+  opacity: 0.6;
+}
+.mu-card.mu-target {
+  outline: 3px solid var(--c-uiGood);
+  outline-offset: 2px;
+}
+.mu-pic {
+  display: grid;
+  place-items: center;
+  height: 76px;
+  border-radius: 12px;
+  background: var(--c-uiPanelHi);
+  overflow: hidden;
+}
+.mu-pic img {
+  max-width: 64px;
+  max-height: 64px;
+  object-fit: contain;
+}
+.mu-name {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.mu-meta {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--c-uiMuted);
+  overflow-wrap: anywhere;
+}
+.mu-meta b {
+  color: var(--c-uiText);
+  font-weight: 600;
+}
+.mu-card > .mu-btn {
+  margin-top: auto;
+}
+
+/* ---- Buttons (07: dark by default, the main one by color, never by size) ---- */
+.mu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--mu-btn);
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--mu-r);
+  background: var(--c-uiPanelHi);
+  color: var(--c-uiText);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.mu-btn:active {
+  transform: translateY(1px);
+}
+.mu-btn.main {
+  min-height: var(--mu-btn-main);
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+  font-size: 15px;
+  font-weight: 700;
+}
+.mu-btn.good {
+  background: var(--c-uiGood);
+  color: var(--c-uiAccentText);
+}
+.mu-btn.good-text {
+  color: var(--c-uiGood);
+}
+.mu-btn.quiet {
+  background: transparent;
+  color: var(--c-uiMuted);
+  font-weight: 500;
+}
+.mu-btn[aria-disabled='true'],
+.mu-btn.off {
+  color: var(--c-uiMuted);
+}
+.mu-btn.main[aria-disabled='true'] {
+  background: var(--c-uiPanelHi);
+}
+.mu-btn .mu-coin,
+.mu-btn .coin-sm {
+  font-size: 1em;
+}
+
+/* ---- Section heads (МОИ ЯЙЦА · 1 из 2) and segments (Питомцы · Коллекция · Находки) ---- */
+.mu-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 16px 0 10px;
+}
+.mu-head:first-child {
+  margin-top: 4px;
+}
+.mu-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-uiMuted);
+}
+.mu-head span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-uiMuted);
+}
+.mu-seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 18px;
+  background: var(--c-uiPanelAlt);
+}
+.mu-seg > button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--mu-btn);
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--mu-r);
+  background: transparent;
+  color: var(--c-uiMuted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.mu-seg > button.active {
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+}
+.mu-seg > button[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---- MU-02 frame (07 rules 8, 11, 12; s1–s8): one top bar, one tab bar, a tab is a screen ---- */
+#ui {
+  font-weight: 400;
+}
+.hud {
+  height: var(--hud-height, 48px);
+  padding: calc(4px + var(--safe-top)) calc(var(--mu-pad) - 8px + var(--safe-right)) 4px calc(var(--mu-pad) - 8px + var(--safe-left));
+  gap: 8px;
+  background: var(--c-uiBg);
+  pointer-events: auto;
+}
+/* Portrait «Лавка»: the bar lies over the room (s1-shop-scene). */
+.portrait #ui[data-screen='home'] .hud,
+.portrait[data-screen='home'] .hud {
+  background: transparent;
+  pointer-events: none;
+}
+.hud-side,
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  pointer-events: auto;
+}
+.hud-btn,
+.hud-level,
+.hud-wallet {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--mu-hud-el);
+  min-width: var(--mu-hud-el);
+  border-radius: 20px;
+  background: var(--c-uiPanelAlt);
+  color: var(--c-uiText);
+  box-shadow: none;
+  pointer-events: auto;
+}
+.hud-btn svg {
+  width: 22px;
+  height: 22px;
+}
+.hud-btn .nav-badge.nav-dot {
+  top: 3px;
+  right: 3px;
+  width: 9px;
+  min-width: 9px;
+  height: 9px;
+}
+.hud-level {
+  padding: 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-uiMuted);
+}
+.hud-level b {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.hud-wallet {
+  gap: 8px;
+  padding: 0 4px 0 8px;
+}
+.hud-wallet .hud-coins {
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  gap: 6px;
+  background: none;
+  box-shadow: none;
+  font-size: 18px;
+  font-weight: 700;
+}
+.hud-wallet .hud-coin {
+  width: 22px;
+  height: 22px;
+}
+.hud-plus {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+/* The tab bar: 56 px (landscape 48), the icon 24, the label 11 px under every tab; «Лавка» in the center is a raised circle. */
+.nav {
+  height: var(--nav-size, 56px);
+  padding: 0 calc(2px + var(--safe-right)) var(--safe-bottom) calc(2px + var(--safe-left));
+  background: var(--c-uiPanel);
+  box-shadow: 0 -1px 0 var(--c-uiPanelHi);
+}
+.landscape .nav {
+  padding-left: calc(8px + var(--safe-left));
+  padding-right: calc(8px + var(--safe-right));
+}
+.nav-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  gap: 3px;
+}
+.nav-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.nav-tab.active .nav-label {
+  font-weight: 700;
+}
+.nav-tab[data-tab='home'] .nav-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-top: -16px;
+  border-radius: 50%;
+  background: var(--c-uiPanelHi);
+  color: var(--c-uiText);
+  box-shadow: 0 0 0 4px var(--c-uiPanel);
+}
+.nav-tab[data-tab='home'].active .nav-icon {
+  background: var(--c-uiAccent);
+  color: var(--c-uiAccentText);
+}
+.landscape .nav-tab {
+  flex-direction: row;
+  gap: 8px;
+}
+.landscape .nav-label {
+  font-size: 12px;
+}
+.landscape .nav-tab[data-tab='home'] .nav-icon {
+  width: 36px;
+  height: 36px;
+  margin-top: 0;
+  box-shadow: none;
+}
+.nav-badge {
+  top: 2px;
+  right: calc(50% - 22px);
+  font-size: 11px;
+}
+/* A tab is a screen under the top bar (07 rule 11); its inner pages take its place. */
+.sheet[data-kind='dock'],
+.portrait .sheet[data-kind='dock'],
+.landscape .sheet[data-kind='dock'] {
+  left: 0;
+  top: var(--hud-height, 48px);
+  width: 100%;
+  height: calc(100% - var(--hud-height, 48px) - var(--nav-size, 56px));
+  padding: 8px calc(var(--mu-pad) + var(--safe-right)) 0 calc(var(--mu-pad) + var(--safe-left));
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--c-uiBg);
+}
+.sheet > .sheet-top {
+  display: none;
+}
+.sheet-body,
+.sheet-detail {
+  margin-top: 8px;
+  padding-bottom: 16px;
+}
+.sheet-head:not(:empty) + .sheet-body {
+  margin-top: 8px;
+}
+/* «Лавка»: portrait — no panel (the scene, the shelf row and its buttons); landscape — the eggs in rows right of the room (l1). */
+.portrait .sheet[data-sheet='home'] {
+  display: none;
+}
+.landscape .sheet[data-sheet='home'] {
+  left: var(--panel-x, 45%);
+  width: var(--panel-w, 55%);
+  padding-left: 12px;
+}
+.scene-catcher {
+  display: none;
+}
+.home-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.home-ui[hidden] {
+  display: none;
+}
+.shelf-head {
+  position: absolute;
+  left: calc(var(--mu-pad) + var(--safe-left));
+  right: calc(var(--mu-pad) + var(--safe-right));
+  top: calc(var(--panel-y, 50%) + 22px);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.shelf-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-showcaseSlot);
+}
+.shelf-head span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-showcaseSlot);
+}
+.landscape .shelf-head {
+  display: none;
+}
+.shelf-free {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 2px dashed color-mix(in srgb, var(--c-showcaseSlot) 45%, transparent) !important;
+  border-radius: 14px;
+  color: var(--c-showcaseSlot) !important;
+  font-size: 30px !important;
+  font-weight: 400;
+  pointer-events: auto;
+}
+.stage-actions {
+  position: absolute;
+  right: calc(var(--mu-pad) + var(--safe-right));
+  bottom: calc(var(--nav-size, 56px) + 16px);
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+.landscape .stage-actions {
+  right: auto;
+  left: calc(var(--mu-pad) + var(--safe-left));
+  bottom: calc(var(--nav-size, 48px) + 12px);
+}
+.stage-actions .stage-btn {
+  position: relative;
+  left: auto;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  min-height: var(--mu-btn);
+  padding: 8px 16px;
+  border-radius: 16px;
+  background: var(--c-uiPanel);
+  color: var(--c-uiText);
+  box-shadow: none;
+  font-size: 15px;
+  font-weight: 700;
+}
+.stage-actions .stage-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.stage-actions .stage-btn[hidden] {
+  display: none;
+}
+.stage-actions .nav-badge.nav-dot {
+  top: 4px;
+  right: 4px;
+}
+/* 07 rule 17: one toast at a time, at the top center under the bar. */
+.toasts,
+.landscape .toasts {
+  top: calc(var(--hud-height, 48px) + 8px);
+  width: 100%;
+}
+.toast {
+  max-width: calc(100% - 32px);
+  padding: 10px 18px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: none;
+  text-align: center;
+}
+
+/* ---- Kit: picture buttons, marks, the back row of inner pages (07 rule 12), the hero of a detail ---- */
+.mu-pic-btn {
+  display: block;
+  width: 100%;
+  border-radius: 12px;
+}
+.mu-pic {
+  position: relative;
+}
+.mu-new {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c-uiGood);
+}
+.mu-count {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-uiText);
+}
+.mu-back {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  margin: -8px calc(-1 * var(--mu-pad)) 8px;
+  padding: 6px var(--mu-pad);
+  background: var(--c-uiBg);
+  border-bottom: 1px solid var(--c-uiPanelAlt);
+}
+.mu-back h2 {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.mu-round {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--c-uiPanelAlt) !important;
+  color: var(--c-uiText);
+  font-size: 26px !important;
+  font-weight: 500;
+  line-height: 1;
+}
+.mu-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.mu-hero .mu-pic {
+  width: 84px;
+  height: 84px;
+  flex: 0 0 auto;
+}
+.mu-buy {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0 4px;
+}
+.mu-buy > :first-child {
+  grid-column: 1 / -1;
+}
+.detail-page {
+  gap: 0;
+}
+/* MU-04 landscape: the «Яйца» tab 4 in a row; sideways «Лавка» — the eggs in rows with the button in the row (l1). */
+.landscape .sheet .mu-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.landscape .sheet[data-sheet='home'] .mu-head {
+  display: none;
+}
+.landscape .sheet[data-sheet='home'] .mu-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.landscape .sheet[data-sheet='home'] .mu-card {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  grid-template-areas: 'pic name btn' 'pic meta btn';
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 0;
+  padding: 6px 10px;
+  text-align: left;
+}
+.landscape .sheet[data-sheet='home'] .mu-card .mu-pic,
+.landscape .sheet[data-sheet='home'] .mu-card .mu-pic-btn {
+  grid-area: pic;
+  height: 44px;
+  width: 44px;
+}
+.landscape .sheet[data-sheet='home'] .mu-pic img {
+  max-width: 36px;
+  max-height: 36px;
+}
+.landscape .sheet[data-sheet='home'] .mu-card .mu-name {
+  grid-area: name;
+}
+.landscape .sheet[data-sheet='home'] .mu-card .mu-meta {
+  grid-area: meta;
+}
+.landscape .sheet[data-sheet='home'] .mu-card > .mu-btn {
+  grid-area: btn;
+  margin: 0;
+  min-width: 110px;
+}
+
+/* ---- MU-03 (s1-shop-scene, 07 rule 16): the hint — a light bubble next to the target, the target in a green frame ---- */
+.hint {
+  max-width: min(280px, calc(100% - 32px));
+  padding: 10px 18px;
+  border-radius: 16px;
+  background: var(--c-uiText);
+  color: var(--c-uiAccentText);
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: none;
+}
+.hint-ring {
+  border: 3px solid var(--c-uiGood);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c-uiGood) 40%, transparent);
+  animation: none;
+}
+.is-hinted {
+  outline: 3px solid var(--c-uiGood);
+  outline-offset: 3px;
+  border-radius: var(--mu-r);
+  animation: none;
+}

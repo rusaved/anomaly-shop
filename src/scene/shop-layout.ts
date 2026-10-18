@@ -26,6 +26,11 @@ export interface ShopLayout {
   incubators: Spot[];
   showcase: Rect;
   slots: Rect[];
+  /** MU-03: a portrait phone shows the showcase as the «Витрина» strip on the floor under the room; the wall keeps a picture frame here. */
+  strip: boolean;
+  frame: Rect;
+  /** The bottom of the room (the strip floor starts here); the stage bottom without a strip. */
+  roomBottom: number;
   /** Space between two showcase places; the tap zone of a place takes half of it on each side. */
   slotGap: number;
   door: Rect;
@@ -80,7 +85,12 @@ export function computeShopLayout(
   incubatorCount = 1,
   slotCount = SHOP.showcaseSlots,
   queueCount = SHOP.queueSpots,
+  shelf: Rect | null = null,
+  roomH = 0,
 ): ShopLayout {
+  // MU-03: with a shelf strip the room is the top roomH of the stage (the floor runs on under the strip).
+  const full = stage;
+  if (shelf) stage = { x: stage.x, y: stage.y, w: stage.w, h: Math.max(1, roomH || shelf.y - stage.y) };
   const u = Math.max(SHOP.minUnit, Math.min(stage.w, stage.h) / 10);
   const outline = Math.max(2, Math.min(outlineWidth, u * 0.2));
   const radius = Math.min(cornerRadius, u * 0.6);
@@ -125,7 +135,8 @@ export function computeShopLayout(
   }
 
   // Counter on the floor, centred; incubator stands on its left end.
-  const counterW = Math.min(stage.w * 0.58, u * 6, door.x - spotR * 2.6 - u * 0.6 - stage.x);
+  // MU-02: u * 6.4 — four incubators keep their 44 px tap zones in the 45 % room of a landscape phone (l1).
+  const counterW = Math.min(stage.w * 0.58, u * 6.4, door.x - spotR * 2.6 - u * 0.6 - stage.x);
   const counterH = Math.min(u * 1.1, floor.h * 0.45);
   const counter: Rect = { x: stage.x + Math.min(stage.w * 0.42 - counterW / 2, door.x - spotR * 2.6 - counterW - stage.x), y: floorY + floor.h * 0.3, w: counterW, h: counterH };
   const counterTop: Rect = { x: counter.x - u * 0.15, y: counter.y - u * 0.25, w: counterW + u * 0.3, h: u * 0.35 };
@@ -187,5 +198,14 @@ export function computeShopLayout(
   const k = decor.clock;
   if (k.x + k.r * 1.1 > decor.radio.x && k.x - k.r * 1.1 < decor.radio.x + decor.radio.w && k.y + k.r * 1.7 > decor.radio.y - decor.radio.h) k.x = decor.radio.x - k.r * 1.6;
 
-  return { stage, unit: u, wall, floor, counter, counterTop, incubator, incubators, showcase, slots, slotGap: gap, door, queue, decor, outline, radius };
+  if (!shelf) return { stage, unit: u, wall, floor, counter, counterTop, incubator, incubators, showcase, slots, slotGap: gap, door, queue, decor, outline, radius, strip: false, frame: showcase, roomBottom: stage.y + stage.h };
+  // MU-03 (s1-shop-scene): the places of the «Витрина» strip — 4 in a row (5 from 9 places), the size of a card picture.
+  const sCols = n <= 8 ? 4 : 5;
+  const sGap = 10;
+  const sSize = Math.min(78, (shelf.w - (sCols - 1) * sGap) / sCols);
+  const strip: Rect[] = [];
+  for (let i = 0; i < n; i++) strip.push({ x: shelf.x + (i % sCols) * (sSize + sGap), y: shelf.y + Math.floor(i / sCols) * (sSize + sGap), w: sSize, h: sSize });
+  const rowsN = Math.ceil(n / sCols);
+  const stripBox: Rect = { x: shelf.x, y: shelf.y, w: shelf.w, h: rowsN * sSize + (rowsN - 1) * sGap };
+  return { stage: full, unit: u, wall, floor: { ...floor, h: full.y + full.h - floorY }, counter, counterTop, incubator, incubators, showcase: stripBox, slots: strip, slotGap: sGap, door, queue, decor, outline, radius, strip: true, frame: { ...showcase, w: Math.min(showcase.w, slot + gap * 2), h: showcase.h }, roomBottom: stage.y + stage.h };
 }

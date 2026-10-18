@@ -1,25 +1,23 @@
-// What: the bottom tab bar of the genre standard (docs/01 §1а, §6; UB-01): Market · Inventory · My sales · Eggs (center, home) · Chats · Shop · Season.
-// Called by: src/main.ts (create once; badges and open tabs on every commit); a tap selects its tab, a tap on the active one says so (M4-00: it closes home).
-// Keep: tab ids are stable data-tab hooks for e2e; labels are nav.<id> keys in i18n; icons are inline SVG (no files, no links); a closed tab (Q-026 B) has no button.
+// What: the bottom tab bar (docs/07 «Словарь», rules 8–12; MU-02): Market · Storage · Sales · Shop (center, the scene) · Eggs · Chats · Store.
+// Called by: src/main.ts (create once; badges and open tabs on every commit); a tap selects its tab, a tap on the active one goes to its main screen.
+// Keep: tab ids are stable data-tab hooks for e2e; labels are nav.<id> keys in i18n (11 px under every icon); icons are inline SVG; a closed tab (Q-026 B) has no button.
 
-export const TABS = ['market', 'inventory', 'sales', 'eggs', 'chats', 'shop', 'season'] as const;
+export const TABS = ['market', 'inventory', 'sales', 'home', 'eggs', 'chats', 'shop'] as const;
 export type TabId = (typeof TABS)[number];
-/** Tabs whose label has a short form on narrow phones (nav.short.<id>). */
-const SHORT = new Set<TabId>(['inventory', 'chats']);
 
 const ICONS: Record<TabId, string> = {
-  market: '<path d="M4 10h16v10H4z"/><path d="M3 10l2-6h14l2 6"/><path d="M9 20v-5h6v5"/>',
-  inventory: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  market: '<path d="M3 4h2l2.2 11h10.6L20 7H6.2"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',
+  inventory: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
   sales: '<path d="M3 12l9-9h8v8l-9 9z"/><circle cx="16" cy="8" r="1.6"/>',
+  home: '<path d="M4 10l1.5-5h13L20 10"/><path d="M5 10v10h14V10"/><path d="M4 10h16"/><path d="M10 20v-5h4v5"/>',
   eggs: '<path d="M12 3c4 0 7 6 7 11a7 7 0 0 1-14 0c0-5 3-11 7-11z"/><path d="M8.5 13l2 1.6 2-2.2 2.5 1.8"/>',
-  chats: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8"/>',
-  shop: '<path d="M4 4h2l2 11h10l2-8H7"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',
-  season: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4"/><path d="M17 6h3a3 3 0 0 1-3 4"/><path d="M12 14v4M8 20h8"/>',
+  chats: '<path d="M4 5h16v11H9l-5 4z"/>',
+  shop: '<path d="M6 8h12l-1 12H7z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
 };
 
 export interface Nav {
   root: HTMLElement;
-  /** The active tab (UB-01: always one, «Eggs» is home). */
+  /** The active tab (always one; «Лавка» is home). */
   active(): TabId;
   /** Marks a tab active without calling back. */
   mark(tab: TabId): void;
@@ -37,13 +35,11 @@ export function createNav(parent: HTMLElement, onSelect: (tab: TabId, again: boo
     (id) =>
       `<button type="button" class="nav-tab" data-tab="${id}" data-action="${id === 'shop' ? 'upgrades' : `tab-${id}`}">` +
       `<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[id]}</svg></span>` +
-      // UB-07: labels at 12 px; the two long ones have a short form for narrow phones (CSS picks it).
-      `<span class="nav-label${SHORT.has(id) ? ' nav-label-full' : ''}" data-i18n="nav.${id}"></span>` +
-      (SHORT.has(id) ? `<span class="nav-label nav-label-short" data-i18n="nav.short.${id}"></span>` : '') +
+      `<span class="nav-label" data-i18n="nav.${id}"></span>` +
       '<span class="nav-badge" data-badge hidden></span></button>',
   ).join('');
   parent.appendChild(root);
-  let current: TabId = 'eggs';
+  let current: TabId = 'home';
   const button = (id: TabId): HTMLElement => root.querySelector(`[data-tab="${id}"]`) as HTMLElement;
   const nav: Nav = {
     root,

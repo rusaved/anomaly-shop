@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeLayout, PANEL } from '../src/ui/layout.ts';
 
-/** SCR-01, UB-01: the three reference sizes (docs/05, section 3) and odd proportions all give a stage, a home panel, a tab screen and a tab bar that fit. */
+/** SCR-01, UB-01, MU-02: the reference sizes (docs/05, section 3) and odd proportions all give a stage, a home panel, a tab screen and a tab bar that fit. */
 const fits = (w: number, h: number) => {
   const l = computeLayout(w, h);
   for (const r of [l.stage, l.panel, l.nav, l.screen]) {
@@ -20,33 +20,36 @@ const fits = (w: number, h: number) => {
 };
 
 describe('computeLayout', () => {
-  it('375×812 portrait: shop above, home panel below, the tab bar under both', () => {
-    const l = fits(375, 812);
+  it('375×650 portrait (the zone of 07): the shop above the tab bar, the top bar 48 over it, the tab bar 56', () => {
+    const l = fits(375, 650);
     expect(l.orientation).toBe('portrait');
-    expect(l.stage.w).toBe(375);
-    expect(l.panel.y).toBe(l.stage.h);
-    expect(l.panel.h).toBeGreaterThanOrEqual(PANEL.portraitMin);
-    expect(l.panel.h).toBeLessThanOrEqual(PANEL.portraitMax);
-    expect(l.stage.h - l.hudHeight).toBeGreaterThan(240);
+    expect(l.hudHeight).toBe(PANEL.hudHeight);
+    expect(l.nav.h).toBe(PANEL.navHeight);
+    expect(l.stage).toMatchObject({ x: 0, y: 0, w: 375, h: 650 - PANEL.navHeight });
+    // MU-03 (s1-shop-scene): the room takes ~43 %, the «Витрина» strip lies under it with 16 px margins.
+    expect(l.panel.y).toBeGreaterThanOrEqual(PANEL.roomMin);
     expect(l.panel.y + l.panel.h).toBe(l.nav.y);
+    expect(l.shelf).not.toBeNull();
+    expect(l.shelf!.x).toBe(PANEL.pad);
+    expect(l.shelf!.w).toBe(375 - PANEL.pad * 2);
+    expect(l.shelf!.y).toBeGreaterThan(l.panel.y);
   });
 
-  it('812×375 landscape phone: shop left, home panel right under the top bar, the tab bar under both', () => {
+  it('812×375 landscape phone (l1): the room left 45 %, the eggs right, both under the top bar; the tab bar 48', () => {
     const l = fits(812, 375);
     expect(l.orientation).toBe('landscape');
-    expect(l.stage.h).toBe(375 - l.nav.h);
+    expect(l.nav.h).toBe(PANEL.navHeightShort);
+    expect(l.stage.y).toBe(l.hudHeight);
+    expect(l.stage.w).toBe(Math.round(812 * PANEL.landscapeShare));
     expect(l.panel.x).toBe(l.stage.w);
-    expect(l.panel.y).toBe(l.hudHeight);
     expect(l.panel.y + l.panel.h).toBe(l.nav.y);
-    expect(l.panel.w).toBeGreaterThanOrEqual(PANEL.landscapeMin);
-    expect(l.stage.w).toBeGreaterThan(400);
+    expect(l.shelf).toBeNull();
   });
 
-  it('1280×720 desktop: panel capped at its maximum, stage gets the rest, the tab bar is not a side column', () => {
+  it('1280×720 desktop: the same landscape model, the tab bar is not a side column', () => {
     const l = fits(1280, 720);
     expect(l.orientation).toBe('landscape');
-    expect(l.panel.w).toBe(PANEL.landscapeMax);
-    expect(l.stage.w).toBe(1280 - PANEL.landscapeMax);
+    expect(l.panel.w).toBe(1280 - l.stage.w);
     expect(l.nav.w).toBe(1280);
   });
 
@@ -55,12 +58,12 @@ describe('computeLayout', () => {
     expect(computeLayout(600, 600).orientation).toBe('portrait');
   });
 
-  it('safe insets grow the tab bar, the top bar and the panel on the covered edge', () => {
+  it('safe insets grow the tab bar, the top bar and keep the shelf off the covered edge', () => {
     const plain = computeLayout(375, 812);
     const notch = computeLayout(375, 812, { top: 47, right: 0, bottom: 34, left: 0 });
     expect(notch.nav.h).toBe(plain.nav.h + 34);
     expect(notch.hudHeight).toBe(plain.hudHeight + 47);
-    const side = computeLayout(812, 375, { top: 0, right: 44, bottom: 21, left: 44 });
-    expect(side.panel.w).toBe(computeLayout(812, 375).panel.w + 44);
+    const side = computeLayout(375, 650, { top: 0, right: 20, bottom: 0, left: 20 });
+    expect(side.shelf!.x).toBe(PANEL.pad + 20);
   });
 });

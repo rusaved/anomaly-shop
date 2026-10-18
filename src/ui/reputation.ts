@@ -33,7 +33,8 @@ export function createReputation(hudBalance: HTMLElement, parent: HTMLElement, g
   chip.className = 'hud-level';
   chip.dataset.hud = 'level';
   chip.dataset.action = 'reputation';
-  chip.innerHTML = '<span class="hud-level-ring" aria-hidden="true"></span><span class="hud-level-star" aria-hidden="true">★</span><b data-level></b>';
+  // MU-02 (07 «Знаки»): «ур. N» as text, not a badge, so it never reads as a currency.
+  chip.innerHTML = '<b data-level></b>';
   hudBalance.prepend(chip);
   const number = chip.querySelector('[data-level]') as HTMLElement;
   // UB-02: a detail — a panel from the right.
@@ -70,7 +71,8 @@ export function createReputation(hudBalance: HTMLElement, parent: HTMLElement, g
       chip.style.setProperty('--p', `${Math.round(Math.min(1, Math.max(0, share)) * 360)}deg`);
       const label = look.t('rep.chip', { n: r.level });
       if (chip.getAttribute('aria-label') !== label) chip.setAttribute('aria-label', label);
-      if (number.textContent !== String(r.level)) number.textContent = String(r.level);
+      const short = look.t('rep.short', { n: r.level });
+      if (number.textContent !== short) number.textContent = short;
       if (!panel.isOpen()) return;
       const city = game.rebirthView();
       const next = `${look.lang()}:${r.level}:${Math.floor(r.xp)}:${city.city}:${city.ready}`;

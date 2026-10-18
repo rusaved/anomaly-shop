@@ -878,21 +878,6 @@
     display: block;
   }
 }
-.nav-tab[data-tab='eggs'] .nav-icon {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  margin-top: -18px;
-  border-radius: 50%;
-  background: var(--c-uiAccent);
-  color: var(--c-uiAccentText);
-  box-shadow: 0 3px 0 var(--c-outline);
-}
-.nav-tab[data-tab='eggs'] .nav-icon svg {
-  width: 28px;
-  height: 28px;
-}
 .nav-badge {
   position: absolute;
   top: 4px;
@@ -1965,73 +1950,7 @@
 }
 
 /* UB-04: «Upgrades» on the shop itself — bottom right of the scene; the tab screens and windows cover it. */
-.stage-btn {
-  position: absolute;
-  z-index: 4;
-  left: calc(var(--stage-w, 100%) - 10px);
-  top: calc(var(--stage-h, 50%) - 10px);
-  transform: translate(-100%, -100%);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 0 14px 0 10px;
-  border-radius: 22px;
-  background: var(--c-uiPanel);
-  color: var(--c-uiText);
-  font-weight: 700;
-  font-size: 14px;
-  box-shadow: 0 2px 0 var(--c-outline);
-  pointer-events: auto;
-}
-.stage-btn[hidden] {
-  display: none;
-}
-.portrait .stage-btn {
-  /* Above the home panel's rounded top. */
-  top: calc(var(--stage-h, 50%) - 16px);
-}
-.stage-btn svg {
-  width: 22px;
-  height: 22px;
-}
-.stage-btn .nav-badge {
-  top: -2px;
-  right: -2px;
-}
-
 /* UB-08: the seller level in the top bar — a star, the number, a ring of the way to the next level; a flash on a level up. */
-.hud-level {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  border-radius: 50%;
-  background: var(--c-uiPanel);
-  color: var(--c-uiText);
-  box-shadow: 0 2px 0 var(--c-outline);
-  pointer-events: auto;
-}
-.hud-level-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(var(--c-uiGood) var(--p, 0deg), var(--c-uiPanelAlt) 0);
-  -webkit-mask: radial-gradient(circle, transparent 17px, var(--c-outline) 18px);
-  mask: radial-gradient(circle, transparent 17px, var(--c-outline) 18px);
-}
-.hud-level-star {
-  position: absolute;
-  top: -6px;
-  font-size: var(--fs-m);
-  color: var(--c-uiAccent);
-}
-.hud-level b {
-  font-size: 17px;
-  font-variant-numeric: tabular-nums;
-}
 .hud-level.rep-up {
   animation: rep-up 0.9s ease-out;
 }

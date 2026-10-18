@@ -1,6 +1,6 @@
 {
   "$schema": "style.schema.json",
-  "note": "Стиль по Q-001, вариант A: плоский милый вектор с толстым контуром. Цвета сцены (PixiJS) и интерфейса (CSS-переменные --c-*). Размеры сцены в условных единицах, масштабируются раскладкой. creatures — облик каждого вида: форма из набора сцены (shape) и два цвета; новый вид = новая запись (форму можно переиспользовать с другими цветами). customers — облик типа покупателя: тело и шапка. eggs — скорлупа и пятна каждого яйца (нет записи — цвета egg/eggSpots). rarity — шесть цветов редкости от серого до красного (Q-022): чёрточка или точка под существом и улучшением, не заливка и не цвет текста; rarityCommon…rarityLegendary в colors — просто цвета сцены.",
+  "note": "Стиль по Q-001, вариант A: плоский милый вектор с толстым контуром. Цвета сцены (PixiJS) и интерфейса (CSS-переменные --c-*). Размеры сцены в условных единицах, масштабируются раскладкой. creatures — облик каждого вида: форма из набора сцены (shape) и два цвета; новый вид = новая запись (форму можно переиспользовать с другими цветами). customers — облик типа покупателя: тело и шапка. eggs — скорлупа и пятна каждого яйца (нет записи — цвета egg/eggSpots). rarity — шесть цветов редкости от серого до красного (Q-022, docs/07 «Редкость»): рамка карточки, бейдж, кольцо у питомца, слово редкости в окне «Вылупился!»; rarityEdge — ободок обычного; priceZones — четыре зоны ползунка цены (docs/07 «Ползунок цены»); ui* — токены интерфейса docs/07; rarityCommon…rarityLegendary в colors — просто цвета сцены.",
   "art": "flat_outline",
   "cities": [
     {"wall": "#d4e9e6", "wallShade": "#b9d6d2", "floor": "#6f808c", "floorLine": "#56636d"},
@@ -30,11 +30,15 @@
     "uiPanel": "#241c3a",
     "uiPanelAlt": "#332a52",
     "uiText": "#fff7ea",
-    "uiMuted": "#b9afd1",
+    "uiMuted": "#b9b0d6",
     "uiAccent": "#ffb347",
     "uiAccentText": "#2b1b3d",
-    "uiGood": "#7ddc8a",
+    "uiGood": "#5ad38a",
     "uiOverlay": "rgba(20, 14, 36, 0.82)",
+    "uiBg": "#2a2140",
+    "uiPanelHi": "#3d3366",
+    "uiBad": "#ff6b6b",
+    "rarityEdge": "#3d3365",
     "rarityCommon": "#9fd8a0",
     "rarityRare": "#5fb4ff",
     "rarityEpic": "#c58cff",
@@ -42,7 +46,7 @@
     "blush": "#ff9eb5",
     "eyeWhite": "#ffffff"
   },
-  "scene": {"outlineWidth": 4, "cornerRadius": 18, "floorShare": 0.34},
+  "scene": {"outlineWidth": 4, "cornerRadius": 18, "floorShare": 0.34, "stripFloorShare": 0.24},
   "creatures": {
     "kettle": {"shape": "kettle", "body": "#7fc8f8", "accent": "#e8f6ff"},
     "sockfish": {"shape": "sock", "body": "#8fa3c8", "accent": "#ff7a7a"},
@@ -77,11 +81,12 @@
     "egg_gold": {"shell": "#ffe066", "spots": "#e0a100"}
   },
   "rarity": {
-    "common": "#a9abb8",
-    "good": "#6fd27a",
-    "valuable": "#4ea8ff",
-    "premium": "#b77cff",
-    "vip": "#ff9a3c",
-    "exclusive": "#ff4f5e"
-  }
+    "common": "#8d8aa3",
+    "good": "#5ad38a",
+    "valuable": "#5aa9ff",
+    "premium": "#b07cff",
+    "vip": "#ffd84d",
+    "exclusive": "#ff5a5a"
+  },
+  "priceZones": ["#5ad38a", "#5aa9ff", "#ffb347", "#ff6b6b"]
 }

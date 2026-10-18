@@ -24,6 +24,8 @@ export interface Sheet {
   detail(name: string, onLeave: () => void): Detail;
   /** The ✕ in the title row (none on the home tab). */
   onClose(cb: () => void): void;
+  /** MU-02 (07 rule 12): a second tap on the active tab — its inner page closes, the tab's main screen comes back; false when none was open. */
+  back(): boolean;
 }
 
 export function createSheet(parent: HTMLElement, id: string, home = false): Sheet {
@@ -100,6 +102,11 @@ export function createSheet(parent: HTMLElement, id: string, home = false): Shee
     },
     onClose(cb) {
       close = cb;
+    },
+    back() {
+      const openNow = details.filter((x) => x.d.isOpen());
+      for (const x of openNow) x.onLeave();
+      return openNow.length > 0;
     },
   };
 }

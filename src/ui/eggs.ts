@@ -1,10 +1,11 @@
-// What: the Eggs tab, the home panel (docs/01 §3 p. 12, §6; M3-04, UB-01): incubating eggs, my eggs, free, seasonal, the ×10 ladder; an inner page shows the odds, buys ×1/×3/×5.
-// Called by: src/main.ts (create once into its sheet; render on every commit while the sheet is open, and each second for timers).
-// Keep: commands only through the game (buyEggs, claimFree, feedEgg); odds come from rules.eggOdds over eggs.json, so the card matches the data.
+// What: the Eggs tab (docs/01 §3 p. 12; MU-04 by s1-eggs-list): «Мои яйца» (incubators, free, waiting) and the egg sections, 2 in a row; the egg card «что внутри» (MU-11).
+// Called by: src/main.ts (two instances: the «Яйца» tab and sideways «Лавка» rows, l1; render on every commit and each second for timers).
+// Keep: commands only through the game (buyEggs, claimFree, feedEgg, tapIncubator); odds come from rules.eggOdds over eggs.json; the action is orange, a price button dark.
 
 import type { EggData, RarityName, SpeciesData, UnlockData } from '../content/schemas.ts';
 import type { EggCardView, Game } from '../sim/game.ts';
 import { eggOdds } from '../sim/rules.ts';
+import { esc, money, rarityBadge } from './kit.ts';
 import type { Sheet } from './sheet.ts';
 
 export interface EggsLookups {
@@ -23,18 +24,18 @@ export interface EggsLookups {
 
 export interface EggsTab {
   render(): void;
-  /** Opens the card of one egg (the «Next» goal, a hint). */
+  /** Opens the card of one egg (a hint, a goal), or the list with null. */
   show(eggId: string | null): void;
 }
 
 const MULTI = [1, 3, 5] as const;
-const SECTIONS = ['free', 'seasonal', 'ladder'] as const;
+const SECTIONS = ['seasonal', 'ladder'] as const;
 
 export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): EggsTab {
   const root = document.createElement('div');
   root.className = 'eggs';
   sheet.body.appendChild(root);
-  // M4-00: the egg card is an inner page of the tab — «Back» to the eggs, the ✕ home.
+  // The egg card is an inner page of the tab: «←» back to the eggs (07 rule 12).
   const panel = sheet.detail('egg-card', () => tab.show(null));
   let card: string | null = null;
   let key = '';
@@ -55,33 +56,21 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
     if (u.type === 'city') return look.t('eggs.lock.city', { n: u.n });
     return look.t('eggs.lock.later');
   };
-  const coinsHtml = (n: number, fmt: Intl.NumberFormat): string => `<span class="coin coin-sm" aria-hidden="true"></span><b>${fmt.format(n)}</b>`;
+  const head = (title: string, meta: string): string => `<div class="mu-head"><h3>${esc(title)}</h3><span>${esc(meta)}</span></div>`;
+  const pic = (src: string, extra = ''): string => `<span class="mu-pic"><img alt="" src="${src}">${extra}</span>`;
 
-  function eggCard(v: EggCardView, fmt: Intl.NumberFormat): HTMLElement {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = `tile card-egg${v.open ? '' : ' locked'}`;
-    b.dataset.egg = v.id;
-    b.dataset.action = `egg-card-${v.id}`;
+  /** A card of the egg shop: picture (opens «что внутри»), name, a dark price button that buys one. */
+  function shopCard(v: EggCardView, fmt: Intl.NumberFormat): string {
     const egg = look.egg(v.id);
-    let foot: string;
-    if (v.freeIn !== null) foot = v.freeIn > 0 ? `<span class="card-sub">${look.t('eggs.in', { t: fmtTime(v.freeIn) })}</span>` : `<span class="card-price chip-good">${look.t('eggs.take')}</span>`;
-    else if (!v.open && egg) foot = `<span class="card-sub">${lockText(egg.unlock)}</span>`;
-    else foot = `<span class="card-price${v.affordable ? '' : ' dim'}">${coinsHtml(v.price, fmt)}</span>`;
-    b.innerHTML = `<span class="card-pic"><img alt="" src="${look.eggPicture(v.id)}"></span><span class="card-name"></span>${foot}${v.fresh ? '<span class="dot"></span>' : ''}`;
-    (b.querySelector('.card-name') as HTMLElement).textContent = look.eggName(v.id);
-    b.addEventListener('click', () => tab.show(v.id));
-    return b;
-  }
-
-  function section(title: string, items: HTMLElement[], id: string): HTMLElement {
-    const box = document.createElement('section');
-    box.className = 'eggs-section';
-    box.dataset.section = id;
-    box.innerHTML = `<h3 class="eggs-title"></h3><div class="cards"></div>`;
-    (box.querySelector('.eggs-title') as HTMLElement).textContent = title;
-    (box.querySelector('.cards') as HTMLElement).replaceChildren(...items);
-    return box;
+    const name = esc(look.eggName(v.id));
+    if (!v.open && egg)
+      return `<div class="mu-card mu-dim card-egg locked" data-egg="${v.id}"><button type="button" class="mu-pic-btn" data-action="egg-card-${v.id}">${pic(look.eggPicture(v.id))}</button><span class="mu-name">${name}</span><span class="mu-meta">${esc(lockText(egg.unlock))}</span></div>`;
+    const short = game.state.coins + 1e-9 < v.price;
+    return (
+      `<div class="mu-card card-egg" data-egg="${v.id}"><button type="button" class="mu-pic-btn" data-action="egg-card-${v.id}">${pic(look.eggPicture(v.id), v.fresh ? '<i class="mu-new"></i>' : '')}</button>` +
+      `<span class="mu-name">${name}</span>` +
+      `<button type="button" class="mu-btn${short ? ' off' : ''}" data-action="egg-buy-${v.id}" aria-disabled="${short}">${money(v.price, fmt)}</button></div>`
+    );
   }
 
   function renderList(): void {
@@ -89,57 +78,57 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
     const view = game.view();
     const fmt = new Intl.NumberFormat(look.lang());
     const coins = game.state.coins;
-    const next = `l:${look.lang()}:${JSON.stringify(shop, (k, x: unknown) => (k === 'freeIn' && typeof x === 'number' ? Math.ceil(x) : x))}:${view.incubators.map((i) => `${i.egg}.${i.ready}.${i.careLevel}.${i.feedPrice}.${Math.round(i.share * 20)}`).join(',')}:${Math.floor(coins)}`;
+    const next = `l:${look.lang()}:${JSON.stringify(shop, (k, x: unknown) => (k === 'freeIn' && typeof x === 'number' ? Math.ceil(x) : x))}:${view.incubators.map((i) => `${i.egg}.${i.ready}.${i.careLevel}.${i.feedPrice}.${Math.round(i.share * 100)}`).join(',')}:${Math.floor(coins)}`;
     if (next === key) return;
     key = next;
-    const parts: HTMLElement[] = [];
-    // Eggs in the incubators: hatching progress, care and a portion of food (M3-02).
-    const busy = view.incubators.map((inc, i) => ({ inc, i })).filter((x) => x.inc.egg);
-    if (busy.length) {
-      parts.push(
-        section(
-          look.t('eggs.incubating'),
-          busy.map(({ inc, i }) => {
-            const el = document.createElement('div');
-            el.className = 'tile card-egg card-inc';
-            el.dataset.incubator = String(i);
-            const tint = inc.careLevel > 0 ? look.careShell[inc.careLevel] : undefined;
-            el.innerHTML =
-              `<span class="card-pic"><img alt="" src="${look.eggPicture(inc.egg!, tint)}"></span><span class="card-name"></span>` +
-              `<span class="card-sub">${inc.ready ? look.t('eggs.ready') : `${Math.round(inc.share * 100)}%`}</span>` +
-              (inc.feedPrice !== null
-                ? `<button type="button" class="btn btn-small${coins + 1e-9 < inc.feedPrice ? ' dim' : ''}" data-action="egg-feed-${i}">${look.t('eggs.feed')} ${coinsHtml(inc.feedPrice, fmt)}</button>`
-                : `<span class="card-sub">${look.t('eggs.fed')}</span>`);
-            (el.querySelector('.card-name') as HTMLElement).textContent = look.eggName(inc.egg!);
-            el.querySelector('[data-action^="egg-feed"]')?.addEventListener('click', () => game.feedEgg(i));
-            return el;
-          }),
-          'incubating',
-        ),
+    const mine: string[] = [];
+    // MU-04: «Мои яйца» — the eggs in the incubators (progress, a portion of food, «Покормить» in orange), then the free one.
+    view.incubators.forEach((inc, i) => {
+      if (!inc.egg) return;
+      const tint = inc.careLevel > 0 ? look.careShell[inc.careLevel] : undefined;
+      const name = esc(look.eggName(inc.egg));
+      let meta: string;
+      let btn: string;
+      if (inc.ready) {
+        meta = esc(look.t('eggs.ready'));
+        btn = `<button type="button" class="mu-btn main" data-action="egg-open-${i}">${esc(look.t('eggs.open'))}</button>`;
+      } else if (inc.feedPrice !== null) {
+        meta = `${Math.round(inc.share * 100)} % · ${esc(look.t('eggs.food'))} ${money(inc.feedPrice, fmt)}`;
+        btn = `<button type="button" class="mu-btn main" data-action="egg-feed-${i}" aria-disabled="${coins + 1e-9 < inc.feedPrice}">${esc(look.t('eggs.feed'))}</button>`;
+      } else {
+        meta = `${Math.round(inc.share * 100)} % · ${esc(look.t('eggs.fed'))}`;
+        btn = `<button type="button" class="mu-btn off" data-action="egg-wait-${i}" aria-disabled="true">${esc(look.t('eggs.warming'))}</button>`;
+      }
+      mine.push(`<div class="mu-card card-egg card-inc" data-incubator="${i}">${pic(look.eggPicture(inc.egg, tint))}<span class="mu-name">${name}</span><span class="mu-meta">${meta}</span>${btn}</div>`);
+    });
+    for (const m of shop.my)
+      mine.push(
+        `<div class="mu-card card-egg" data-my="${m.id}">${pic(look.eggPicture(m.id), `<i class="mu-count">×${m.count}</i>`)}<span class="mu-name">${esc(look.eggName(m.id))}</span><span class="mu-meta">${esc(look.t('eggs.waiting'))}</span></div>`,
+      );
+    for (const v of shop.eggs.filter((e) => e.section === 'free')) {
+      const ready = v.freeIn === 0;
+      mine.push(
+        `<div class="mu-card card-egg" data-egg="${v.id}"><button type="button" class="mu-pic-btn" data-action="egg-card-${v.id}">${pic(look.eggPicture(v.id), v.fresh ? '<i class="mu-new"></i>' : '')}</button>` +
+          `<span class="mu-name">${esc(look.t(`egg.short.${v.id}`))}</span><span class="mu-meta">${esc(ready ? look.t('eggs.free1') : look.t('eggs.in', { t: fmtTime(v.freeIn ?? 0) }))}</span>` +
+          `<button type="button" class="mu-btn${ready ? ' good-text' : ' off'}" data-action="egg-free-${v.id}" aria-disabled="${!ready}">${esc(look.t('eggs.take'))}</button></div>`,
       );
     }
-    if (shop.my.length)
-      parts.push(
-        section(
-          look.t('eggs.my'),
-          shop.my.map((m) => {
-            const el = document.createElement('div');
-            el.className = 'tile card-egg';
-            el.dataset.my = m.id;
-            el.innerHTML = `<span class="card-pic"><img alt="" src="${look.eggPicture(m.id)}"><i class="count">×${m.count}</i></span><span class="card-name"></span><span class="card-sub">${look.t('eggs.waiting')}</span>`;
-            (el.querySelector('.card-name') as HTMLElement).textContent = look.eggName(m.id);
-            return el;
-          }),
-          'my',
-        ),
-      );
+    const busy = view.incubators.filter((i) => i.egg).length;
+    let html = '';
+    if (mine.length) html += head(look.t('eggs.my'), look.t('eggs.slots', { n: busy, all: view.incubators.length })) + `<div class="mu-grid" data-section="my">${mine.join('')}</div>`;
     for (const s of SECTIONS) {
       const list = shop.eggs.filter((e) => e.section === s && (s !== 'seasonal' || e.open));
-      if (list.length) parts.push(section(look.t(`eggs.${s}`), list.map((e) => eggCard(e, fmt)), s));
+      if (list.length) html += head(look.t(`eggs.${s}`), look.t('eggs.perEgg')) + `<div class="mu-grid" data-section="${s}">${list.map((e) => shopCard(e, fmt)).join('')}</div>`;
     }
-    root.replaceChildren(...parts);
+    root.innerHTML = html;
+    root.querySelectorAll<HTMLElement>('[data-action^="egg-card-"]').forEach((b) => b.addEventListener('click', () => tab.show(b.dataset.action!.slice('egg-card-'.length))));
+    root.querySelectorAll<HTMLElement>('[data-action^="egg-buy-"]').forEach((b) => b.addEventListener('click', () => game.buyEggs(b.dataset.action!.slice('egg-buy-'.length), 1)));
+    root.querySelectorAll<HTMLElement>('[data-action^="egg-free-"]').forEach((b) => b.addEventListener('click', () => game.claimFree(b.dataset.action!.slice('egg-free-'.length))));
+    root.querySelectorAll<HTMLElement>('[data-action^="egg-feed-"]').forEach((b) => b.addEventListener('click', () => game.feedEgg(Number(b.dataset.action!.slice('egg-feed-'.length)))));
+    root.querySelectorAll<HTMLElement>('[data-action^="egg-open-"]').forEach((b) => b.addEventListener('click', () => game.tapIncubator(Number(b.dataset.action!.slice('egg-open-'.length)))));
   }
 
+  /** MU-11: the egg card — «←» and its name, the buy buttons, «Что внутри» with the rarity of every pet and its chance. */
   function renderCard(id: string): void {
     const egg = look.egg(id);
     const v = game.eggShop().eggs.find((e) => e.id === id);
@@ -153,37 +142,31 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
     const next = `c:${id}:${look.lang()}:${v.open}:${v.freeIn === null ? '' : Math.ceil(v.freeIn)}:${MULTI.map((n) => coins + 1e-9 >= v.price * n).join('')}`;
     if (next === cardKey) return;
     cardKey = next;
-    const root = panel.card;
     const odds = eggOdds(egg.chances, look.species);
     let buttons: string;
     if (v.freeIn !== null)
-      buttons = v.freeIn > 0 ? `<p class="card-sub">${look.t('eggs.in', { t: fmtTime(v.freeIn) })}</p>` : `<button type="button" class="btn btn-primary" data-action="egg-take">${look.t('eggs.take')}</button>`;
-    else if (!v.open) buttons = `<p class="card-sub">${lockText(egg.unlock)}</p>`;
+      buttons = v.freeIn > 0 ? `<p class="mu-meta">${esc(look.t('eggs.in', { t: fmtTime(v.freeIn) }))}</p>` : `<button type="button" class="mu-btn main" data-action="egg-take">${esc(look.t('eggs.take'))}</button>`;
+    else if (!v.open) buttons = `<p class="mu-meta">${esc(lockText(egg.unlock))}</p>`;
     else
-      buttons = MULTI.map(
-        (n) =>
-          `<button type="button" class="btn ${n === 1 ? 'btn-primary' : 'btn-alt'}${coins + 1e-9 < v.price * n ? ' dim' : ''}" data-action="egg-buy-${n}" aria-disabled="${coins + 1e-9 < v.price * n}">` +
-          `${n === 1 ? look.t('eggs.buy') : `×${n}`} ${coinsHtml(v.price * n, fmt)}</button>`,
-      ).join('');
-    root.innerHTML =
-      `<button type="button" class="eggs-back" data-action="egg-back">‹ ${look.t('eggs.back')}</button>` +
-      `<div class="egg-hero"><img alt="" src="${look.eggPicture(id)}"><div><h3 class="egg-name"></h3><p class="card-sub">${look.t('eggs.hatchIn', { t: fmtTime(egg.hatchSec) })}</p></div></div>` +
-      `<div class="egg-buy">${buttons}</div>` +
-      `<h3 class="eggs-title">${look.t('eggs.inside')}</h3>` +
-      `<div class="cards cards-odds">${odds
+      buttons = MULTI.map((n) => {
+        const short = coins + 1e-9 < v.price * n;
+        return `<button type="button" class="mu-btn${n === 1 ? ' main' : ''}${short ? ' off' : ''}" data-action="egg-buy-${n}" aria-disabled="${short}">${n === 1 ? esc(look.t('eggs.buy')) : `×${n}`} · ${money(v.price * n, fmt)}</button>`;
+      }).join('');
+    panel.card.innerHTML =
+      `<div class="mu-back"><button type="button" class="mu-round" data-action="egg-back" aria-label="${esc(look.t('eggs.back'))}">‹</button><h2 class="egg-name">${esc(look.eggName(id))}</h2></div>` +
+      `<div class="mu-hero"><span class="mu-pic"><img alt="" src="${look.eggPicture(id)}"></span><div><p class="mu-meta">${esc(look.t('eggs.hatchIn', { t: fmtTime(egg.hatchSec) }))}</p></div></div>` +
+      `<div class="mu-buy">${buttons}</div>` +
+      `<div class="mu-head"><h3>${esc(look.t('eggs.inside'))}</h3><span></span></div>` +
+      `<div class="mu-grid cards-odds">${odds
         .map(
           (o) =>
-            `<div class="tile card-odds" data-species="${o.species}" data-chance="${o.chance}"><span class="card-pic"><img alt="" src="${look.portrait(o.species, o.rarity)}"><i class="rarity-dash" style="background:${look.rarityColor(o.rarity)}"></i></span>` +
-            `<span class="card-name"></span><span class="card-sub">${pct(o.chance)}</span></div>`,
+            `<div class="mu-card rar card-odds" data-rarity="${o.rarity}" data-species="${o.species}" data-chance="${o.chance}"><span class="mu-pic"><img alt="" src="${look.portrait(o.species, o.rarity)}"></span>` +
+            `<span class="mu-name">${esc(look.speciesName(o.species))}</span><span>${rarityBadge(o.rarity, look.t(`rarity.${o.rarity}`))}</span><span class="mu-meta">${pct(o.chance)}</span></div>`,
         )
         .join('')}</div>`;
-    (root.querySelector('.egg-name') as HTMLElement).textContent = look.eggName(id);
-    root.querySelectorAll<HTMLElement>('.card-odds').forEach((el) => {
-      (el.querySelector('.card-name') as HTMLElement).textContent = look.speciesName(el.dataset.species ?? '');
-    });
-    root.querySelector('[data-action="egg-back"]')?.addEventListener('click', () => tab.show(null));
-    root.querySelector('[data-action="egg-take"]')?.addEventListener('click', () => game.claimFree(id));
-    for (const n of MULTI) root.querySelector(`[data-action="egg-buy-${n}"]`)?.addEventListener('click', () => game.buyEggs(id, n));
+    panel.card.querySelector('[data-action="egg-back"]')?.addEventListener('click', () => tab.show(null));
+    panel.card.querySelector('[data-action="egg-take"]')?.addEventListener('click', () => game.claimFree(id));
+    for (const n of MULTI) panel.card.querySelector(`[data-action="egg-buy-${n}"]`)?.addEventListener('click', () => game.buyEggs(id, n));
   }
 
   const tab: EggsTab = {

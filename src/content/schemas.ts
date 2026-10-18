@@ -258,7 +258,7 @@ export const CalendarFile = v.object({
 export const STYLE_COLORS = [
   'sky', 'skyLow', 'wall', 'wallShade', 'floor', 'floorLine', 'counter', 'counterTop', 'incubator', 'incubatorGlass', 'egg', 'eggSpots',
   'showcase', 'showcaseSlot', 'queueSpot', 'door', 'doorFrame', 'outline',
-  'uiPanel', 'uiPanelAlt', 'uiText', 'uiMuted', 'uiAccent', 'uiAccentText', 'uiGood', 'uiOverlay',
+  'uiPanel', 'uiPanelAlt', 'uiText', 'uiMuted', 'uiAccent', 'uiAccentText', 'uiGood', 'uiOverlay', 'uiBg', 'uiPanelHi', 'uiBad', 'rarityEdge',
   'rarityCommon', 'rarityRare', 'rarityEpic', 'rarityLegendary', 'blush', 'eyeWhite',
 ] as const;
 /** Creature shapes the scene can draw (src/scene/art.ts); species pick one with two colors in style.json. */
@@ -267,7 +267,7 @@ export const CreatureLook = v.object({ shape: v.picklist(CREATURE_SHAPES), body:
 export const StyleFile = v.object({
   art: Id,
   colors: v.object(Object.fromEntries(STYLE_COLORS.map((k) => [k, Color])) as Record<(typeof STYLE_COLORS)[number], typeof Color>),
-  scene: v.object({ outlineWidth: v.pipe(v.number(), v.minValue(0)), cornerRadius: v.pipe(v.number(), v.minValue(0)), floorShare: Share }),
+  scene: v.object({ outlineWidth: v.pipe(v.number(), v.minValue(0)), cornerRadius: v.pipe(v.number(), v.minValue(0)), floorShare: Share, stripFloorShare: v.optional(Share) }),
   creatures: v.record(Id, CreatureLook),
   /** M4-09: every new city has its own walls and floor (city 2, 3, … in turn; the first city keeps colors). */
   cities: v.optional(v.array(v.object({ wall: Color, wallShade: Color, floor: Color, floorLine: Color }))),
@@ -275,6 +275,8 @@ export const StyleFile = v.object({
   eggs: v.record(Id, v.object({ shell: Color, spots: Color })),
   /** Rarity colors from grey to red (Q-022): a dash or a dot under a creature or an upgrade, never a fill or colored text. */
   rarity: v.object(Object.fromEntries(RARITIES.map((r) => [r, Color])) as Record<(typeof RARITIES)[number], typeof Color>),
+  /** MU-06: the price slider zones from «Fast» (green) to «Max» (red), as many as market.json slider.delay. */
+  priceZones: v.pipe(v.array(Color), v.minLength(2)),
 });
 
 /** The market (docs/01 §3 p. 14): lots from sellers, refreshed by a timer; price — a share of the market value. */
@@ -294,8 +296,8 @@ export const MarketFile = v.object({
   bargainFloor: Share,
   /** A creature's price range as shares of its appraisal: low — «sell now», high — «above the market». */
   range: v.object({ low: Share, high: v.pipe(v.number(), v.minValue(1)) }),
-  /** The price slider (M3-06): from min to max of the appraisal in six equal zones; delay — how much slower a buyer writes in each zone. */
-  slider: v.object({ min: Share, max: v.pipe(v.number(), v.minValue(1)), delay: v.pipe(v.array(v.pipe(v.number(), v.minValue(0.1))), v.length(6)) }),
+  /** The price slider (M3-06, MU-06): from min to max of the appraisal in equal zones (four by docs/07); delay — how much slower a buyer writes in each zone. */
+  slider: v.object({ min: Share, max: v.pipe(v.number(), v.minValue(1)), delay: v.pipe(v.array(v.pipe(v.number(), v.minValue(0.1))), v.minLength(2)) }),
   /** Seconds before a buyer writes about a creature at the market price (docs/01 §3 p. 13: 8–15 s). */
   replySec: v.object({ min: Money, max: Money }),
 });
@@ -357,7 +359,7 @@ const TabUnlock = v.variant('type', [
   v.object({ type: v.literal('hidden') }),
 ]);
 export const NavFile = v.object({
-  tabs: v.object({ market: TabUnlock, inventory: TabUnlock, sales: TabUnlock, eggs: TabUnlock, chats: TabUnlock, shop: TabUnlock, season: TabUnlock }),
+  tabs: v.object({ market: TabUnlock, inventory: TabUnlock, sales: TabUnlock, home: TabUnlock, eggs: TabUnlock, chats: TabUnlock, shop: TabUnlock, season: TabUnlock }),
   shop: v.object({ sections: v.pipe(v.array(v.object({ id: Id, enabled: v.boolean() })), v.minLength(1)) }),
 });
 /** Side job (docs/01 §3 p. 15): tapping the bowl feeds the neighbours' pets for coins; the job levels up on a ×growth ladder. */

@@ -39,8 +39,8 @@ export function ftueHint(state: SaveData, view: GameView): FtueHint | null {
     if (view.creatures.length > 0) return { step: 'waitCustomer', target: { kind: 'queue' } };
     return view.inventory.length > 0 ? { step: 'list', target: LIST } : null;
   }
-  // UB-01: the egg shop is the home screen — the basic egg's tile, then «Buy» in its card.
-  if (!state.flags[FLAGS.bought]) return { step: 'buyEgg', target: { kind: 'button', action: 'egg-buy-1|egg-card-egg_basic|tab-eggs' } };
+  // MU-04: the price button of the basic egg on «Яйца» (the tab first when another screen is open).
+  if (!state.flags[FLAGS.bought]) return { step: 'buyEgg', target: { kind: 'button', action: 'egg-buy-egg_basic|tab-eggs' } };
   if (state.stats.hatched < 2 && eggAt >= 0) return { step: 'hatchRare', target: { kind: 'incubator', index: eggAt } };
   return null;
 }
@@ -57,9 +57,10 @@ export function shelfHint(state: SaveData, view: GameView, idleSec: number, afte
 
 /**
  * UB-06: the first visit of a tab — one hint at its main thing, the tab title when the tab is empty.
- * «eggs» is the home screen: the first minute above is its hint.
+ * «home» (MU-02: «Лавка») is the home screen: the first minute above is its hint.
  */
 export const TAB_HINTS: Record<string, string[]> = {
+  eggs: ['[data-sheet="eggs"] [data-action^="egg-buy-"]'],
   market: ['[data-sheet="market"] .card-lot:not(.sold)'],
   inventory: ['[data-sheet="inventory"] [data-action^="inv-list-"]', '[data-sheet="inventory"] .tile'],
   sales: ['[data-sheet="sales"] [data-action="sale-add"]', '[data-sheet="sales"] [data-action^="sale-"]'],

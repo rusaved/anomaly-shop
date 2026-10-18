@@ -7,7 +7,7 @@ import { upgradePrice } from '../src/sim/rules.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { computeShopLayout } from '../src/scene/shop-layout.ts';
-import { computeLayout } from '../src/ui/layout.ts';
+import { computeLayout, sceneTop } from '../src/ui/layout.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
 
 /** M2-01: incubators up to 4 and hatch speed up to 5 levels, all from upgrades.json. */
@@ -63,7 +63,7 @@ describe('M2-01 incubators and hatch speed', () => {
   it('four incubators fit the counter on phones in both orientations, each with a 44 px tap zone', () => {
     for (const [w, h] of [[375, 812], [812, 375], [320, 568], [1280, 720]] as const) {
       const page = computeLayout(w, h);
-      const l = computeShopLayout(page.stage, page.hudHeight, 0.34, 4, 18, 4);
+      const l = computeShopLayout(page.stage, sceneTop(page), 0.34, 4, 18, 4);
       expect(l.incubators).toHaveLength(4);
       for (const s of l.incubators) {
         expect(s.r * 1.25 * 2).toBeGreaterThanOrEqual(44);

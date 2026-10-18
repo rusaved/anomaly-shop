@@ -1,42 +1,44 @@
-// What: the HUD strip over the scene (the top bar of docs/01 §6): pause and settings on the left, the balance on the right (coins roll, M1-07; a tap opens the shop).
+// What: the top bar (docs/07 rule 8, «Токены»; MU-02): settings · gifts (a dot) · leaders on the left; «ур. N» · the balance with «+» on the right.
 // Called by: src/main.ts (create once, update on every store commit, delayed while sale coins fly in).
-// Keep: numbers through Intl.NumberFormat of the current language; the HUD only reads state; tabular digits, no layout jumps.
+// Keep: one top bar on every screen, 48 px, elements 40 px; numbers through Intl.NumberFormat; the only accent is the «+» (it opens the Store).
 
 import { createCounter } from './counter.ts';
 
 export interface Hud {
   root: HTMLElement;
+  /** The gear: the pause window with Settings (s6-pause). */
   pauseButton: HTMLButtonElement;
-  /** The left group next to pause: Gifts and Side job buttons (M3-11, M3-12). */
+  /** The left group after the gear: Gifts and Leaders (main.ts adds them). */
   side: HTMLElement;
-  /** The balance chips: a tap opens the shop. */
+  /** The right group: the seller level chip goes first, then the balance pill. */
   balance: HTMLElement;
+  /** The balance pill with its «+» (a tap opens the Store). */
+  wallet: HTMLElement;
   /** The coin icon the sale coins fly into. */
   coinIcon: HTMLElement;
   /** Rolls to coins; delaySec waits for flying coins (and restarts a roll that began this frame). */
   update(coins: number, opts?: { delaySec?: number; snap?: boolean }): void;
   /** A short pulse of the coin chip (a coin landed). */
   pulse(): void;
-  /** The crystal chip (M2-08): shown once the player has seen a crystal. */
-  crystals(n: number, shown: boolean): void;
   setLanguage(lang: string): void;
 }
+
+const GEAR =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>';
 
 export function createHud(parent: HTMLElement, lang: string, rollSec: () => number): Hud {
   const root = document.createElement('div');
   root.className = 'hud';
   root.innerHTML =
-    '<div class="hud-side" data-hud="side"><button type="button" class="hud-pause" data-action="pause" data-i18n="hud.pause" data-i18n-attr="aria-label"><span class="hud-pause-icon" aria-hidden="true"></span></button></div>' +
-    '<div class="hud-left hud-balance" data-action="balance"><div class="hud-coins" data-hud="coins" role="status" data-i18n="hud.coins" data-i18n-attr="aria-label"><span class="coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></div>' +
-    '<div class="hud-crystals" data-hud="crystals" role="status" data-i18n="hud.crystals" data-i18n-attr="aria-label" hidden><span class="gem" aria-hidden="true"></span><span class="hud-crystals-value">0</span></div></div>';
+    `<div class="hud-side" data-hud="side"><button type="button" class="hud-btn" data-action="pause" data-i18n="hud.settings" data-i18n-attr="aria-label">${GEAR}</button></div>` +
+    '<div class="hud-right" data-hud="right"><button type="button" class="hud-wallet" data-action="balance" data-i18n="hud.balance" data-i18n-attr="aria-label">' +
+    '<span class="hud-coins" data-hud="coins" role="status"><span class="coin hud-coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></span>' +
+    '<span class="hud-plus" aria-hidden="true">+</span></button></div>';
   parent.appendChild(root);
   const chip = root.querySelector('.hud-coins') as HTMLElement;
   const value = root.querySelector('.hud-coins-value') as HTMLElement;
-  const coinIcon = root.querySelector('.coin') as HTMLElement;
+  const coinIcon = root.querySelector('.hud-coin') as HTMLElement;
   const pauseButton = root.querySelector('[data-action="pause"]') as HTMLButtonElement;
-  const gemChip = root.querySelector('.hud-crystals') as HTMLElement;
-  const gemValue = root.querySelector('.hud-crystals-value') as HTMLElement;
-  let gemText = '';
   let format = new Intl.NumberFormat(lang);
   const counter = createCounter(0);
   let written = '';
@@ -68,7 +70,8 @@ export function createHud(parent: HTMLElement, lang: string, rollSec: () => numb
     root,
     pauseButton,
     side: root.querySelector('[data-hud="side"]') as HTMLElement,
-    balance: root.querySelector('[data-action="balance"]') as HTMLElement,
+    balance: root.querySelector('[data-hud="right"]') as HTMLElement,
+    wallet: root.querySelector('[data-action="balance"]') as HTMLElement,
     coinIcon,
     update(coins, opts) {
       if (opts?.snap || reduced) {
@@ -86,22 +89,9 @@ export function createHud(parent: HTMLElement, lang: string, rollSec: () => numb
       void chip.offsetWidth;
       chip.classList.add('pulse');
     },
-    crystals(n, shown) {
-      gemChip.hidden = !shown;
-      const text = format.format(Math.floor(n));
-      if (text === gemText) return;
-      if (gemText) {
-        gemChip.classList.remove('pulse');
-        void gemChip.offsetWidth;
-        gemChip.classList.add('pulse');
-      }
-      gemText = text;
-      gemValue.textContent = text;
-    },
     setLanguage(next) {
       format = new Intl.NumberFormat(next);
       written = '';
-      gemText = '';
       paint();
     },
   };

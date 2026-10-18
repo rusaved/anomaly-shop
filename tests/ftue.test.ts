@@ -74,12 +74,12 @@ describe('M1-09 first minute', () => {
   });
 
   it('UB-06 every tab but the home one has its one hint (6 words at most), shown on the very first visit only', () => {
-    for (const tab of TABS.filter((x) => x !== 'eggs')) {
+    for (const tab of TABS.filter((x) => x !== 'home')) {
       const hint = tabHint(tab)!;
       expect(hint.target.kind).toBe('el');
       for (const lang of ['ru', 'en']) expect(dict(lang)[hint.key!]!.trim().split(/\s+/).length, `${lang} ${hint.key}`).toBeLessThanOrEqual(content.ftue.maxHintWords);
     }
-    expect(tabHint('eggs')).toBeNull();
+    expect(tabHint('home')).toBeNull();
     const game = createGame(createStore(newSave(0), () => 0), content, createRng(1));
     expect(game.seenTab('market')).toBe(true);
     expect(game.seenTab('market')).toBe(false);

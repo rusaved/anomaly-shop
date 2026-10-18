@@ -40,7 +40,8 @@ export interface ShopAnchors {
 
 export interface ShopView {
   root: Container;
-  layout(stage: Rect, hudHeight: number): void;
+  /** shelf — MU-03: a portrait phone shows the showcase as the «Витрина» strip there (canvas coordinates). */
+  layout(stage: Rect, hudHeight: number, shelf?: Rect | null, roomH?: number): void;
   /** One ticker tick: animations, then a render request only when something moved. */
   frame(dt: number, view: GameView): void;
   onEvent(e: GameEvent): void;
@@ -256,6 +257,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
+  let shelfRect: Rect | null = null;
+  let roomHeight = 0;
   let upgradeText = '';
   let hud = 0;
   let current: ShopLayout | null = null;
@@ -315,7 +318,14 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     back.rect(l.floor.x, l.floor.y, l.floor.w, l.floor.h).fill(k.floor);
     back.rect(l.floor.x, l.floor.y, l.floor.w, l.outline).fill(k.floorLine);
     const stripe = l.unit * 1.2;
-    for (let x = l.floor.x + stripe; x < l.floor.x + l.floor.w; x += stripe) back.rect(x, l.floor.y + l.outline, l.outline / 2, l.floor.h).fill(k.floorLine);
+    // MU-03: the boards run only in the room; the «Витрина» floor under it is plain and a shade darker (s1-shop-scene).
+    const boardsH = l.strip ? l.roomBottom - l.floor.y : l.floor.h;
+    for (let x = l.floor.x + stripe; x < l.floor.x + l.floor.w; x += stripe) back.rect(x, l.floor.y + l.outline, l.outline / 2, boardsH).fill(k.floorLine);
+    if (l.strip) {
+      back.rect(l.floor.x, l.roomBottom, l.floor.w, l.floor.y + l.floor.h - l.roomBottom).fill(k.floor);
+      back.rect(l.floor.x, l.roomBottom, l.floor.w, l.floor.y + l.floor.h - l.roomBottom).fill({ color: k.outline, alpha: 0.14 });
+      back.rect(l.floor.x, l.roomBottom, l.floor.w, l.outline).fill(k.floorLine);
+    }
   }
 
   function drawFurniture(l: ShopLayout): void {
@@ -327,9 +337,17 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     g.roundRect(l.door.x + l.door.w * 0.18, l.door.y + l.door.h * 0.12, l.door.w * 0.64, l.door.h * 0.3, l.radius * 0.5).fill(c.doorFrame);
     g.circle(l.door.x + l.door.w * 0.78, l.door.y + l.door.h * 0.55, l.outline * 1.1).fill(c.counterTop);
     for (const s of l.queue) g.ellipse(s.x, s.y, s.r, s.r * 0.55).fill({ color: c.queueSpot, alpha: 0.55 }).stroke({ width: l.outline * 0.6, color: c.outline, alpha: 0.5 });
-    // Showcase shelf with slots.
-    g.roundRect(l.showcase.x, l.showcase.y, l.showcase.w, l.showcase.h, l.radius).fill(c.showcase).stroke(stroke);
-    for (const s of l.slots) g.roundRect(s.x, s.y, s.w, s.h, l.radius * 0.7).fill(c.showcaseSlot).stroke({ width: l.outline * 0.7, color: c.outline, alpha: 0.6 });
+    if (l.strip) {
+      // MU-03 (s1-shop-scene): a picture frame on the wall; the places are dark cards of the «Витрина» strip on the floor.
+      const f = l.frame;
+      g.roundRect(f.x, f.y, f.w, f.h, l.radius).fill(c.showcase).stroke(stroke);
+      g.roundRect(f.x + l.outline * 2.2, f.y + l.outline * 2.2, f.w - l.outline * 4.4, f.h - l.outline * 4.4, l.radius * 0.6).fill(c.showcaseSlot).stroke({ width: l.outline * 0.7, color: c.outline, alpha: 0.6 });
+      for (const s of l.slots) g.roundRect(s.x, s.y, s.w, s.h, 14).fill({ color: c.outline, alpha: 0.32 });
+    } else {
+      // Showcase shelf with slots.
+      g.roundRect(l.showcase.x, l.showcase.y, l.showcase.w, l.showcase.h, l.radius).fill(c.showcase).stroke(stroke);
+      for (const s of l.slots) g.roundRect(s.x, s.y, s.w, s.h, l.radius * 0.7).fill(c.showcaseSlot).stroke({ width: l.outline * 0.7, color: c.outline, alpha: 0.6 });
+    }
     // Counter with a lighter top board.
     g.roundRect(l.counter.x, l.counter.y, l.counter.w, l.counter.h, l.radius * 0.6).fill(c.counter).stroke(stroke);
     g.roundRect(l.counterTop.x, l.counterTop.y, l.counterTop.w, l.counterTop.h, l.radius * 0.5).fill(c.counterTop).stroke(stroke);
@@ -380,12 +398,19 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
 
   function drawSelection(view: GameView, l: ShopLayout): void {
     const index = view.creatures.slice(0, l.slots.length).findIndex((x) => x.uid === view.selected);
-    const key = `${index}:${view.creatures.length}`;
+    const key = `${index}:${view.creatures.map((x) => x.rarity).join(',')}`;
     if (key === selectedKey) return;
     selectedKey = key;
     selection.clear();
+    // MU-01: on the «Витрина» strip every pet wears the ring of its rarity (07 «Редкость»: 2.5 px, the lower steps at 70 %).
+    if (l.strip)
+      view.creatures.slice(0, l.slots.length).forEach((cv, i) => {
+        const s = l.slots[i]!;
+        const low = cv.rarity === 'common' || cv.rarity === 'good' || cv.rarity === 'valuable';
+        selection.roundRect(s.x, s.y, s.w, s.h, 14).stroke({ width: cv.rarity === 'common' ? 1 : 2.5, color: cv.rarity === 'common' ? c.rarityEdge : rarityColor(style.rarity, cv.rarity), alpha: low ? 0.7 : 1 });
+      });
     const slot = l.slots[index];
-    if (!slot) return;
+    if (!slot || l.strip) return;
     const pad = l.outline * 1.2;
     selection.roundRect(slot.x - pad, slot.y - pad, slot.w + pad * 2, slot.h + pad * 2, l.radius * 0.9).stroke({ width: l.outline * 1.2, color: c.uiAccent });
   }
@@ -401,7 +426,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     texts.showcase.position.set(l.showcase.x + l.showcase.w / 2, l.showcase.y + l.showcase.h + l.outline);
     // The label gives way to the incubators when the wall is short (landscape phones).
     const domeTop = Math.min(...l.incubators.map((i) => i.y - i.r - l.outline));
-    showcaseFits = texts.showcase.y + size * 1.2 < domeTop;
+    showcaseFits = !l.strip && texts.showcase.y + size * 1.2 < domeTop;
     // The one-caption choice is made again after a relayout (it would keep a stale «shown»).
     captionsKey = '';
     oneCaption();
@@ -419,6 +444,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   /** picked: the customer at the counter bids for this one — its pill takes the offer bubble's accent color. */
   function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout, picked: boolean, order: 'none' | 'wanted' | 'ready'): void {
     const size = Math.max(12, r * 0.42);
+    // MU-03 (s1-shop-scene): a place of the «Витрина» strip shows the pet in its rarity ring, no tags (the price is on «Продажи»).
+    if (l.strip) {
+      node.tag.clear();
+      node.price.text = '';
+      node.level.text = '';
+      return;
+    }
     node.price.text = fmt(cv.price);
     node.price.style.fontSize = size;
     const coinR = size * 0.42;
@@ -747,7 +779,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
 
   function relayout(): void {
     if (!stageRect) return;
-    current = computeShopLayout(stageRect, hud, style.scene.floorShare, style.scene.outlineWidth, style.scene.cornerRadius, incubatorCount, slotCount, queueCount);
+    current = computeShopLayout(stageRect, hud, shelfRect ? (style.scene.stripFloorShare ?? style.scene.floorShare) : style.scene.floorShare, style.scene.outlineWidth, style.scene.cornerRadius, incubatorCount, slotCount, queueCount, shelfRect, roomHeight);
     drawBack(current);
     drawFurniture(current);
     buildIncubators(current);
@@ -943,8 +975,10 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
 
   return {
     root,
-    layout(stage, hudHeight) {
+    layout(stage, hudHeight, shelf = null, roomH = 0) {
       stageRect = stage;
+      shelfRect = shelf;
+      roomHeight = roomH;
       hud = hudHeight;
       relayout();
     },

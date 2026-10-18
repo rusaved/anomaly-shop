@@ -1,4 +1,4 @@
-// What: screen layout (docs/02, 4.4; docs/01 §6; UB-01): top bar, a full-width tab bar at the bottom; between them home «Eggs» (shop + panel) or a tab screen.
+// What: screen layout (docs/02, 4.4; docs/07; MU-02): the top bar, a full-width tab bar at the bottom; between them «Лавка» (the shop room + the shelf or eggs) or a tab screen.
 // Called by: src/main.ts (watchLayout once), src/scene (stage rect), tests/layout.test.ts (computeLayout is pure).
 // Keep: computeLayout has no DOM; every size and ratio sits in PANEL; both orientations work at any proportion, never locked.
 
@@ -19,38 +19,38 @@ export interface Layout {
   orientation: Orientation;
   width: number;
   height: number;
-  /** Where the PixiJS shop is drawn: above the home panel in portrait, left of it in landscape (the top bar lies over it). */
+  /** Where the PixiJS shop is drawn: portrait — everything above the tab bar (the top bar lies over it); landscape — left of the side panel. */
   stage: Rect;
-  /** The home panel (the eggs of the «Eggs» screen) and the side panel over it (UB-04: upgrades, details — the shop stays in view). */
+  /** MU-03: the «Витрина» strip of a portrait phone (its places, under the room); null in landscape (the shelf stays on the wall). */
+  shelf: Rect | null;
+  /** The part of «Лавка» next to the room: portrait — the floor under the room (shelf strip, buttons); landscape — the eggs list (l1). */
   panel: Rect;
   /** The tab bar: the whole width at the bottom in every orientation (UB-01). */
   nav: Rect;
-  /** The screen of a tab other than «Eggs»: everything between the top bar and the tab bar. */
+  /** MU-02: a tab is a screen — everything between the top bar and the tab bar. */
   screen: Rect;
   hudHeight: number;
   safe: Insets;
 }
 
+/** MU-02, MU-03 (docs/07 «Токены», s1-shop-scene, l1-home-landscape): the bars and the share of the shop room. */
 export const PANEL = {
-  /** Portrait: the home panel takes this share of the height above the tab bar, within min and max. */
-  portraitShare: 0.46,
-  portraitMin: 200,
-  portraitMax: 440,
-  /** Portrait: the shop keeps at least this much (the top bar included): 44 px tap zones on a 320×568 phone. */
-  portraitStageMin: 290,
-  landscapeShare: 0.42,
-  landscapeMin: 300,
-  landscapeMax: 460,
-  /** Landscape: the shop keeps at least this width. */
+  /** Portrait: the room (wall and counter) takes this share of the height above the tab bar (s1: 256 of 595). */
+  roomShare: 0.43,
+  roomMin: 200,
+  roomMax: 340,
+  /** Portrait: the «Витрина» label row under the room, then the places (s1: 27 + 40 px). */
+  shelfTop: 66,
+  /** Landscape: the shop room takes this share of the width (l1: 45 %), the eggs list the rest. */
+  landscapeShare: 0.45,
   landscapeStageMin: 260,
-  /** The top bar height (plus the top safe inset); lower on a landscape phone. */
-  hudHeight: 56,
-  hudHeightShort: 50,
-  /** The tab bar height (plus the bottom safe inset): a 24 px icon and a 12 px label; lower on a landscape phone. */
-  navHeight: 62,
-  navHeightShort: 56,
-  /** Screens lower than this use the short bars. */
-  shortHeight: 480,
+  landscapePanelMin: 300,
+  /** 07: the top bar 48 px, the tab bar 56 px (landscape 48). */
+  hudHeight: 48,
+  navHeight: 56,
+  navHeightShort: 48,
+  /** The shelf strip keeps the screen margins (07 rule 1: 16 px). */
+  pad: 16,
 };
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -59,39 +59,47 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
 export function computeLayout(width: number, height: number, safe: Insets = NO_INSETS): Layout {
   const w = Math.max(1, Math.floor(width));
   const h = Math.max(1, Math.floor(height));
-  const short = h < PANEL.shortHeight;
-  const hudHeight = Math.min((short ? PANEL.hudHeightShort : PANEL.hudHeight) + safe.top, Math.max(1, Math.floor(h / 3)));
-  const navH = Math.min((short ? PANEL.navHeightShort : PANEL.navHeight) + safe.bottom, Math.max(1, Math.floor(h / 3)));
+  const portrait = h >= w;
+  const hudHeight = Math.min(PANEL.hudHeight + safe.top, Math.max(1, Math.floor(h / 3)));
+  const navH = Math.min((portrait ? PANEL.navHeight : PANEL.navHeightShort) + safe.bottom, Math.max(1, Math.floor(h / 3)));
   const nav = { x: 0, y: h - navH, w, h: navH };
   const screen = { x: 0, y: hudHeight, w, h: Math.max(1, h - navH - hudHeight) };
-  const above = h - navH;
-  if (h >= w) {
-    const panelH = Math.max(1, Math.min(above - PANEL.portraitStageMin, clamp(Math.round(above * PANEL.portraitShare), PANEL.portraitMin, PANEL.portraitMax)));
-    const stageH = Math.max(1, above - panelH);
+  const above = Math.max(1, h - navH);
+  if (portrait) {
+    const roomH = Math.max(1, Math.min(above - 1, clamp(Math.round(above * PANEL.roomShare), PANEL.roomMin, PANEL.roomMax)));
+    const shelfY = roomH + PANEL.shelfTop;
     return {
       orientation: 'portrait',
       width: w,
       height: h,
-      stage: { x: 0, y: 0, w, h: stageH },
-      panel: { x: 0, y: stageH, w, h: panelH },
+      stage: { x: 0, y: 0, w, h: above },
+      shelf: { x: PANEL.pad + safe.left, y: Math.min(shelfY, above - 1), w: Math.max(1, w - PANEL.pad * 2 - safe.left - safe.right), h: Math.max(1, above - shelfY) },
+      panel: { x: 0, y: roomH, w, h: Math.max(1, above - roomH) },
       nav,
       screen,
       hudHeight,
       safe,
     };
   }
-  const panelW = Math.max(1, Math.min(w - PANEL.landscapeStageMin, clamp(Math.round(w * PANEL.landscapeShare), PANEL.landscapeMin, PANEL.landscapeMax) + safe.right));
+  const stageW = Math.max(1, Math.min(w - PANEL.landscapePanelMin, Math.max(PANEL.landscapeStageMin, Math.round(w * PANEL.landscapeShare))));
+  const bodyH = Math.max(1, above - hudHeight);
   return {
     orientation: 'landscape',
     width: w,
     height: h,
-    stage: { x: 0, y: 0, w: Math.max(1, w - panelW), h: Math.max(1, above) },
-    panel: { x: w - panelW, y: hudHeight, w: panelW, h: Math.max(1, above - hudHeight) },
+    stage: { x: 0, y: hudHeight, w: stageW, h: bodyH },
+    shelf: null,
+    panel: { x: stageW, y: hudHeight, w: Math.max(1, w - stageW), h: bodyH },
     nav,
     screen,
     hudHeight,
     safe,
   };
+}
+
+/** The top inset the shop room keeps for the top bar: portrait — the bar lies over the room; landscape — the room is under the bar already. */
+export function sceneTop(layout: Layout): number {
+  return layout.shelf ? layout.hudHeight : 8;
 }
 
 /** env(safe-area-inset-*) through a probe element (iPhone notch and home bar). */

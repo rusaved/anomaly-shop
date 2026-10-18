@@ -6,7 +6,7 @@ import { coins, creatureValue } from '../src/sim/rules.ts';
 import { newSave, type Creature } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { computeShopLayout } from '../src/scene/shop-layout.ts';
-import { computeLayout } from '../src/ui/layout.ts';
+import { computeLayout, sceneTop } from '../src/ui/layout.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
 
 /** M2-02: the showcase 3 → 8 places, prices grow on the shelf, the showcase draws its customers and they pick by type. */
@@ -100,7 +100,7 @@ describe('M2-02 showcase', () => {
     for (const [w, h] of [[375, 812], [812, 375], [320, 568], [1280, 720]] as const) {
       const page = computeLayout(w, h);
       for (const n of [1, 3, 5, 6, 7]) {
-        const l = computeShopLayout(page.stage, page.hudHeight, 0.34, 4, 18, 4, n);
+        const l = computeShopLayout(page.stage, sceneTop(page), 0.34, 4, 18, 4, n);
         expect(l.slots).toHaveLength(n);
         for (const s of l.slots) {
           expect(Math.min(s.w + l.slotGap, s.h * 1.2)).toBeGreaterThanOrEqual(w <= 320 ? 40 : 44);

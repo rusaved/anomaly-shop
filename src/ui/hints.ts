@@ -1,4 +1,4 @@
-// What: first-minute hints (docs/01, section 4): a bubble of up to 6 words with an arrow at the target, a pulsing ring or a glowing button.
+// What: first-minute hints (docs/01, section 4; 07 rule 16): a bubble of up to 6 words next to the target, the target in a green ring or frame.
 // Called by: src/main.ts every frame with ftueHint(state, view); the shop anchors give scene targets, panel buttons are found by data-action.
 // Keep: hints never block taps (pointer-events: none); DOM is touched only when the hint or its spot changes.
 
@@ -61,7 +61,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
     root,
     text: () => (root.hidden ? '' : label.textContent ?? ''),
     outside: () => outside && !root.hidden,
-    update(hint, quiet = false) {
+    update(hint, _quiet = false) {
       if (!hint) {
         hide();
         return;
@@ -132,45 +132,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         setGlow(button);
         return;
       }
-      // M4-09: a target inside an open tab glows, and its bubble stands outside the tab — over the shop above the tab
-      // (a phone upright) or to its left (sideways, a PC): inside it covered the title, prices and subsections.
-      const sheet = button?.closest<HTMLElement>('.sheet') ?? null;
-      if (button && sheet) {
-        if (quiet) {
-          hide();
-          return;
-        }
-        const s = sheet.getBoundingClientRect();
-        const b = button.getBoundingClientRect();
-        const side = s.left - base.left > 40;
-        const key = `tab:${hint.key ?? hint.step}:${Math.round(s.left)}:${Math.round(s.top)}:${Math.round(b.top)}:${Math.round(b.left)}:${text}`;
-        setGlow(button);
-        if (key === lastKey) return;
-        lastKey = key;
-        outside = true;
-        label.textContent = text;
-        root.hidden = false;
-        ring.hidden = true;
-        root.dataset.hint = hint.step;
-        root.classList.remove('below');
-        root.classList.toggle('side', side);
-        const w = root.offsetWidth;
-        const hh = root.offsetHeight;
-        if (side) {
-          const cy = b.top + b.height / 2 - base.top;
-          const top = Math.max(deps.topInset() + 8, Math.min(base.height - hh - 8, cy - hh / 2));
-          root.style.left = `${Math.max(8, s.left - base.left - w - 14)}px`;
-          root.style.top = `${top}px`;
-          root.style.setProperty('--arrow-y', `${Math.max(14, Math.min(hh - 14, cy - top))}px`);
-        } else {
-          const tx = Math.max(s.left + 20, Math.min(s.right - 20, b.left + b.width / 2)) - base.left;
-          const left = Math.max(8, Math.min(base.width - w - 8, tx - w / 2));
-          root.style.left = `${left}px`;
-          root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, tx - left))}px`);
-          root.style.top = `${Math.max(deps.topInset() + 4, s.top - base.top - 12 - hh)}px`;
-        }
-        return;
-      }
+      // MU-03 (07 rule 16): a tab is a screen now — the bubble stands in its own layer next to the target (above or below), the target in a green frame.
       outside = false;
       root.classList.remove('side');
       // Above the target; below it when the HUD is in the way. A button in the upper half of a screen (the first card under

@@ -321,7 +321,7 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
     });
   }
   const nav = parseFile('nav.json', NavFile, data(files['nav.json']), errors);
-  if (nav && nav.tabs.eggs.type !== 'always') errors.push('nav.json: tabs.eggs — the home tab is always open');
+  if (nav && nav.tabs.home.type !== 'always') errors.push('nav.json: tabs.home — the shop scene is home, always open');
   const codes = parseFile('codes.json', CodesFile, data(files['codes.json']), errors);
   if (codes) {
     duplicates('codes.json', 'codes', codes.codes.map((c) => c.code), errors);

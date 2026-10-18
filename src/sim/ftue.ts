@@ -72,8 +72,9 @@ export const TAB_HINTS: Record<string, string[]> = {
 export function tabHint(tab: string): FtueHint | null {
   const selectors = TAB_HINTS[tab];
   if (!selectors) return null;
-  const title = `[data-sheet="${tab}"] .sheet-title`;
-  return { step: 'tab', key: `ftue.tab.${tab}`, target: { kind: 'el', selectors: [...selectors, title] } };
+  // MU-02: a tab has no title row — an empty tab's hint stands at its section head or its segments.
+  const head = [`[data-sheet="${tab}"] .mu-seg`, `[data-sheet="${tab}"] .mu-head`];
+  return { step: 'tab', key: `ftue.tab.${tab}`, target: { kind: 'el', selectors: [...selectors, ...head] } };
 }
 
 /** What a tab's unlock (Q-026 B, content/nav.json) looks at. */

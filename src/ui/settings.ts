@@ -5,7 +5,7 @@
 import type { GameStore } from '../sim/store.ts';
 import type { I18n } from './i18n.ts';
 import type { LangName } from '../content/schemas.ts';
-import { button, createOverlay, type Overlay } from './overlay.ts';
+import { button, closeX, createOverlay, type Overlay } from './overlay.ts';
 import { renderCommunity, type CommunityLinks } from './community.ts';
 
 export interface SettingsWindow {
@@ -67,7 +67,7 @@ export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n
   codeInput.spellcheck = false;
   codeInput.dataset.i18n = 'code.placeholder';
   codeInput.dataset.i18nAttr = 'placeholder';
-  const codeApply = button('code-apply', 'code.apply', 'btn-primary');
+  const codeApply = button('code-apply', 'code.apply');
   const codeAnswer = document.createElement('p');
   codeAnswer.className = 'code-answer';
   codeAnswer.dataset.codeAnswer = '';
@@ -80,7 +80,8 @@ export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n
   });
   codeRow.append(codeInput, codeApply);
 
-  const back = button('back', 'settings.back', 'btn-primary');
+  // MU-09: no second main button — «Назад» is dark, the ✕ does the same.
+  const back = button('back', 'settings.back');
   overlay.card.append(title, soundRow, langRow);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
@@ -97,5 +98,6 @@ export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n
     },
   };
   back.addEventListener('click', win.close);
+  closeX(overlay.card, '✕', () => win.close(), 'settings-close');
   return win;
 }

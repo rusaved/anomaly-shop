@@ -15,7 +15,7 @@ test('M3-10 bought below the market → on sale → sold dearer', async ({ page 
   });
   await open(page);
   await page.locator('[data-tab=market]').click();
-  await page.locator('[data-sheet=market] [data-lot="1"]').click();
+  await page.locator('[data-sheet=market] [data-action=lot-open-1]').click();
   await expect(page.locator('[data-detail=lot] [data-action=lot-item]')).toBeVisible();
   await page.locator('[data-action=lot-how]').click();
   await expect(page.locator('[data-action=lot-hobby]')).toBeVisible();

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { collectErrors, open, seedSave, state } from './helpers.ts';
 
-/** M4-06: the move to a new city — the «Next» card says it is ready, a popup asks, «Move» starts the shop over in city 2; the collection stays. */
+/** M4-06: the move to a new city — the seller level window says it is ready, a popup asks, «Move» starts the shop over in city 2; the collection stays. */
 test('M4-06 rebirth: ready → the popup asks → a new city, the collection stays', async ({ page }) => {
   const errors = collectErrors(page);
   await seedSave(page, {
@@ -11,9 +11,10 @@ test('M4-06 rebirth: ready → the popup asks → a new city, the collection sta
     collection: { kettle: { seen: 3, hatched: 3, sold: 3 } },
   });
   await open(page);
-  const next = page.locator('[data-action=next]');
-  await expect(next).toHaveAttribute('data-kind', 'rebirth');
-  await next.click();
+  // MU-03: no «Next» card on «Лавка» (Q-035): the way to a new city is in the window of the seller level («ур. N»).
+  await page.locator('[data-action=reputation]').click();
+  await expect(page.locator('[data-action=rep-city]')).toHaveClass(/main/);
+  await page.locator('[data-action=rep-city]').click();
   const win = page.locator('[data-overlay=rebirth]');
   await expect(win).toBeVisible();
   await expect(win.locator('[data-rebirth-mult]')).toContainText('1,25');

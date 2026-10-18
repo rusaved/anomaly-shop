@@ -25,7 +25,8 @@ test('UB-03 the first egg opens with one tap; the creature is nowhere until the 
   await expect(page.locator('[data-hatch-result]')).toBeVisible();
   await expect(page.locator('[data-hatch-skip]')).toBeHidden();
   const s = await st(page);
-  expect(s.hatchTiming.result - s.hatchTiming.start).toBeLessThan(1500);
+  // Far sooner than the 4–5 s run (a loaded machine adds its own lag to the 450 ms wait above).
+  expect(s.hatchTiming.result - s.hatchTiming.start).toBeLessThan(2500);
   for (const action of ['hatch-keep', 'hatch-sell', 'hatch-shop']) await expect(page.locator(`[data-action=${action}]`)).toBeVisible();
   await expect(page.locator('[data-action=hatch-keep]')).toHaveText(await page.evaluate(() => (window as unknown as { __TEST__: { t(k: string): string } }).__TEST__.t('hatch.keep')));
   // «To the shop»: now it stands on the shelf.

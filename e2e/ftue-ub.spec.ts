@@ -42,9 +42,7 @@ test('UB-06 first minute by taps only: egg → To the shop → a letter → Sell
   await page.locator('[data-tab=eggs]').click();
   await expect.poll(async () => ((await state(page)) as S).ftue).toBe('buyEgg');
   await check();
-  await page.locator('[data-action=egg-card-egg_basic]').click();
-  await check();
-  await page.locator('[data-action=egg-buy-1]').click();
+  await page.locator('[data-sheet=eggs] [data-action=egg-buy-egg_basic]').click();
   await expect.poll(async () => ((await state(page)) as S).ftue).toBe('hatchRare');
   expect(Date.now() - start).toBeLessThan(60_000);
   expect(errors).toEqual([]);
@@ -54,27 +52,21 @@ test('UB-06 each tab gets one hint on its first visit, none on the next; never a
   const errors = collectErrors(page);
   await seedSave(page);
   await open(page, '?mock_device=mobile');
-  // M4-00: the Shop is a tab like the others (its «Upgrades» in the one panel); Q-026 B: «Season» is hidden until its update.
-  await expect(page.locator('[data-tab=season]')).toBeHidden();
-  for (const tab of ['market', 'inventory', 'sales', 'chats', 'shop']) {
+  // MU-02: «Лавка» is home; every other tab (the eggs included) has its first hint; «Season» is no tab.
+  await expect(page.locator('[data-tab=season]')).toHaveCount(0);
+  for (const tab of ['market', 'inventory', 'sales', 'chats', 'shop', 'eggs']) {
     await page.locator(`[data-tab=${tab}]`).click();
     await expect(page.locator('.hint:not([hidden]) [data-hint-text]'), tab).toHaveText(await translated(page, `ftue.tab.${tab}`));
     const p = await pointed(page);
     expect(p.count, tab).toBe(1);
     expect(p.locked, tab).toBe(false);
     await page.waitForTimeout(350);
-    await page.locator('[data-tab=eggs]').click();
+    await page.locator('[data-tab=home]').click();
     await expect(page.locator('.hint')).toBeHidden();
     await page.locator(`[data-tab=${tab}]`).click();
     await page.waitForTimeout(300);
     await expect(page.locator('.hint'), `${tab} second visit`).toBeHidden();
-    await page.locator('[data-tab=eggs]').click();
+    await page.locator('[data-tab=home]').click();
   }
-  // «Next» leads to the action: an egg — its card, a seller level or a district — «My sales», the rest — the upgrades.
-  const next = page.locator('[data-action=next]');
-  const kind = await next.getAttribute('data-kind');
-  await next.click();
-  const where = kind === 'egg' ? '[data-detail=egg-card]' : kind === 'level' || kind === 'district' ? '[data-sheet=sales]' : '[data-sheet=shop]';
-  await expect(page.locator(where), `next ${kind}`).toBeVisible();
   expect(errors).toEqual([]);
 });

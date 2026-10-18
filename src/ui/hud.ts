@@ -32,8 +32,8 @@ export function createHud(parent: HTMLElement, lang: string, rollSec: () => numb
   root.innerHTML =
     `<div class="hud-side" data-hud="side"><button type="button" class="hud-btn" data-action="pause" data-i18n="hud.settings" data-i18n-attr="aria-label">${GEAR}</button></div>` +
     '<div class="hud-right" data-hud="right"><button type="button" class="hud-wallet" data-action="balance" data-i18n="hud.balance" data-i18n-attr="aria-label">' +
-    '<span class="hud-coins" data-hud="coins" role="status"><span class="coin hud-coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></span>' +
-    '<span class="hud-plus" aria-hidden="true">+</span></button></div>';
+    '<span class="hud-pill"><span class="hud-coins" data-hud="coins" role="status"><span class="coin hud-coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></span>' +
+    '<span class="hud-plus" aria-hidden="true">+</span></span></button></div>';
   parent.appendChild(root);
   const chip = root.querySelector('.hud-coins') as HTMLElement;
   const value = root.querySelector('.hud-coins-value') as HTMLElement;

@@ -25,11 +25,12 @@ export async function everyScreenReadable(page: Page): Promise<void> {
     await look(`tab ${id}`);
   };
   await look('home');
-  await page.locator('[data-action=egg-card-egg_basic]').click();
+  await tab('eggs');
+  await page.locator('[data-sheet=eggs] [data-action=egg-card-egg_basic]').click();
   await look('egg card');
   // A new egg in the incubator: taps until it opens, the hatch window.
   await page.locator('[data-action=egg-buy-1]').click();
-  await page.locator('[data-tab=eggs]').click();
+  await page.locator('[data-tab=home]').click();
   const egg = (await targets(page)).incubators[0]!;
   for (let i = 0; i < 30 && !(await page.locator('[data-overlay=hatch]').isVisible()); i++) {
     if (page.viewportSize()!.width < 900) await page.touchscreen.tap(egg.x, egg.y);
@@ -44,34 +45,38 @@ export async function everyScreenReadable(page: Page): Promise<void> {
   await look('hatch result');
   await closeHatch(page);
   await tab('market');
-  const lot = page.locator('[data-sheet=market] .card-lot:not(.sold)').first();
+  const lot = page.locator('[data-sheet=market] .card-lot:not(.sold) [data-action^=lot-open-]').first();
   if (await lot.isVisible()) {
     await lot.click();
     await look('lot card');
   }
   await tab('inventory');
   await tab('sales');
+  // The hatched one went on the only place: take it off to have a free one.
+  if (!(await page.locator('[data-sheet=sales] [data-action=sale-add]').count())) await page.locator('[data-sheet=sales] [data-action^=sale-off-]').first().click();
   await page.locator('[data-sheet=sales] [data-action=sale-add]').first().click();
   await look('sale pick');
-  // UB-10: listed — the price slider opens at once.
+  // MU-06: the pet's «Цена» page opens.
   await page.locator('[data-detail=sale] [data-action^=sale-list-]').first().click();
   await expect(page.locator('[data-detail=sale] .price-range')).toBeVisible();
   await look('sale card');
+  // MU-06: «Выставить на продажу» puts it on the shelf; a buyer writes.
+  await page.locator('[data-detail=sale] [data-action^=sale-go-]').click();
   await runSim(page, 25);
   await tab('chats');
   await page.locator('[data-sheet=chats] .chat-row').first().click();
   await look('chat');
   await tab('shop');
-  await page.locator('[data-tab=eggs]').click();
+  await page.locator('[data-tab=home]').click();
   await page.locator('[data-action=reputation]').click();
   await look('reputation');
   // A window closes by a tab tap (UB-02); the top bar buttons open the next one.
   for (const [action, where] of [['gifts', 'gifts'], ['work', 'work']] as const) {
-    await page.locator('[data-tab=eggs]').click();
+    await page.locator('[data-tab=home]').click();
     await page.locator(`[data-action=${action}]`).click();
     await look(where);
   }
-  await page.locator('[data-tab=eggs]').click();
+  await page.locator('[data-tab=home]').click();
   await page.locator('[data-action=pause]').click();
   await look('pause');
   await page.locator('[data-overlay=pause] [data-action=settings]').click();

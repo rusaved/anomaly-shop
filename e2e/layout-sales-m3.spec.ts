@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { collectErrors, open, seedSave, state } from './helpers.ts';
 
-/** M3-06 on the phone projects: the price slider in «My sales» moves by a tap on the track and by dragging the thumb. */
+/** M3-06, MU-06 on the phone projects: the price slider of four zones moves by a tap on the track and by dragging the thumb. */
 type C = { uid: string; askShare?: number };
 
 test('M3-06 phone: the price slider works by tap and by drag', async ({ page }) => {
   const errors = collectErrors(page);
-  await seedSave(page);
+  await seedSave(page, { showcase: ['e2e1'] });
   await open(page, '?mock_device=mobile');
   await page.locator('[data-tab=sales]').tap();
-  await page.locator('[data-sheet=sales] .card-sale').first().tap();
+  await page.locator('[data-sheet=sales] [data-action=sale-e2e1]').tap();
   const range = page.locator('[data-action=price-slider]');
   await expect(range).toBeVisible();
   // M4-00: the card is an inner page of the tab's panel — on a low landscape phone it scrolls to the slider.
@@ -20,7 +20,7 @@ test('M3-06 phone: the price slider works by tap and by drag', async ({ page }) 
   await page.touchscreen.tap(box.x + 6, box.y + box.height / 2);
   await expect.poll(share).toBeLessThan(0.75);
   await expect(page.locator('.price-slider')).toHaveAttribute('data-zone', '0');
-  // A drag of the thumb to the right end: far above the market (zone 5).
+  // A drag of the thumb to the right end: the red «Максимум» (zone 3).
   const cdp = await page.context().newCDPSession(page);
   const y = box.y + box.height / 2;
   const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
@@ -29,6 +29,6 @@ test('M3-06 phone: the price slider works by tap and by drag', async ({ page }) 
   await touch('touchMove', box.x + box.width - 2);
   await touch('touchEnd', 0);
   await expect.poll(share).toBeGreaterThan(1.35);
-  await expect(page.locator('.price-slider')).toHaveAttribute('data-zone', '5');
+  await expect(page.locator('.price-slider')).toHaveAttribute('data-zone', '3');
   expect(errors).toEqual([]);
 });

@@ -27,7 +27,7 @@ export async function windowClosesByTab(page: Page): Promise<void> {
   await seeded(page);
   await open(page);
   for (const [i, [opener, name]] of OPENERS.entries()) {
-    await page.locator('[data-tab=eggs]').click();
+    await page.locator('[data-tab=home]').click();
     await page.locator(opener).click();
     await expect(page.locator(`[data-overlay=${name}]`), name).toBeVisible();
     // Any tab closes it: alternately the home tab and another screen.
@@ -45,7 +45,7 @@ export async function oneWindowAtATime(page: Page): Promise<void> {
   await seeded(page);
   await open(page);
   // Real taps one after another on whatever opens a window: never two open at once (settings over pause aside).
-  const spots = ['[data-action=egg-card-egg_basic]', '[data-tab=shop]', '[data-action=reputation]', '[data-action=gifts]', '[data-tab=eggs]', '[data-action=work]', '[data-action=open-upgrades]', '[data-action=pause]', '[data-tab=sales]'];
+  const spots = ['[data-tab=eggs]', '[data-action=egg-card-egg_basic]', '[data-tab=shop]', '[data-action=reputation]', '[data-action=gifts]', '[data-tab=home]', '[data-action=work]', '[data-action=open-upgrades]', '[data-action=pause]', '[data-tab=sales]'];
   for (const sel of [...spots, ...spots.reverse()]) {
     const el = page.locator(sel).first();
     if (!(await el.isVisible())) continue;
@@ -63,7 +63,7 @@ export async function hintsNeverOverWindows(page: Page): Promise<void> {
   // The first minute's «Tap the egg» is on: every window hides it, the home screen brings it back.
   await expect(page.locator('.hint [data-hint-text]')).toBeVisible();
   for (const [opener, name] of OPENERS) {
-    await page.locator('[data-tab=eggs]').click();
+    await page.locator('[data-tab=home]').click();
     await expect(page.locator('.hint [data-hint-text]')).toBeVisible();
     await page.locator(opener).click();
     await expect(page.locator(`[data-overlay=${name}]`)).toBeVisible();
@@ -105,9 +105,9 @@ export async function gesturesSigned(page: Page): Promise<void> {
   await seedSave(page, { coins: 500, showcase: [], flags: { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true, showcase_m3: true } });
   await open(page);
   expect((await targets(page)).caption).toBe('');
-  await page.locator('[data-action=egg-card-egg_basic]').click();
-  await page.locator('[data-action=egg-buy-1]').click();
   await page.locator('[data-tab=eggs]').click();
+  await page.locator('[data-sheet=eggs] [data-action=egg-buy-egg_basic]').click();
+  await page.locator('[data-tab=home]').click();
   // An egg on the counter: a caption says what a tap does.
   await expect.poll(async () => (await targets(page)).caption).toMatch(new RegExp(`^(${await translated(page, 'shop.tapWarm')}|${await translated(page, 'shop.tapHatch')})$`));
   const egg = (await targets(page)).incubators[0]!;
@@ -122,7 +122,7 @@ export async function gesturesSigned(page: Page): Promise<void> {
   await expect(page.locator('[data-detail=sale] .price-scale')).toBeVisible();
   expect((await page.locator('[data-detail=sale] .price-scale').innerText()).trim().length).toBeGreaterThan(0);
   // A pet on the shelf: a tap feeds it, the counter says so.
-  await page.locator('[data-tab=eggs]').click();
+  await page.locator('[data-tab=home]').click();
   await expect.poll(async () => (await targets(page)).caption).toBe(await translated(page, 'shop.tapFeed'));
   expect(errors).toEqual([]);
 }
@@ -131,8 +131,8 @@ export async function tabLabels(page: Page): Promise<void> {
   const errors = collectErrors(page);
   await seeded(page);
   await open(page);
-  // Q-026 B: «Season» stays hidden until its update; the six open tabs are all signed.
-  await expect(page.locator('[data-tab=season]')).toBeHidden();
+  // Q-026 B, MU-02: «Season» is no tab; the seven tabs are all signed, 11 px (07 «Токены»), the label inside its tab.
+  await expect(page.locator('[data-tab=season]')).toHaveCount(0);
   const tabs = await page.locator('#nav [data-tab]:not([hidden])').evaluateAll((els) =>
     els.map((el) => {
       const label = [...el.querySelectorAll<HTMLElement>('.nav-label')].find((l) => getComputedStyle(l).display !== 'none');
@@ -140,10 +140,10 @@ export async function tabLabels(page: Page): Promise<void> {
       return { tab: (el as HTMLElement).dataset.tab, text: label?.innerText.trim() ?? '', size: label ? parseFloat(getComputedStyle(label).fontSize) : 0, fits: Boolean(label && label.scrollWidth <= label.clientWidth + 1 && r && r.width > 0) };
     }),
   );
-  expect(tabs).toHaveLength(6);
+  expect(tabs).toHaveLength(7);
   for (const t of tabs) {
     expect(t.text, t.tab).not.toBe('');
-    expect(t.size, t.tab).toBeGreaterThanOrEqual(12);
+    expect(t.size, t.tab).toBeGreaterThanOrEqual(11);
     expect(t.fits, `${t.tab} label fits`).toBe(true);
   }
   expect(errors).toEqual([]);
@@ -156,8 +156,8 @@ export async function noServiceMarks(page: Page): Promise<void> {
   // No build label, no raw i18n keys, no {placeholders}, no NaN / undefined, no dev words — on every screen.
   const bad = /\b[a-z]+\.[a-z][a-zA-Z]+(\.[a-zA-Z]+)?\b|\{[a-z]+\}|\bNaN\b|\bundefined\b|\bnull\b|\bdebug\b|\bTODO\b|\bM\d+ ·/;
   await expect(page.locator('[data-build-label]')).toHaveCount(0);
-  for (const tab of ['eggs', 'market', 'inventory', 'sales', 'chats', 'shop']) {
-    if (tab !== 'eggs') await page.locator('[data-tab=eggs]').click();
+  for (const tab of ['home', 'eggs', 'market', 'inventory', 'sales', 'chats', 'shop']) {
+    if (tab !== 'home') await page.locator('[data-tab=home]').click();
     await page.locator(`[data-tab=${tab}]`).click();
     await page.waitForTimeout(200);
     const text = await page.locator('#ui').innerText();
@@ -167,35 +167,33 @@ export async function noServiceMarks(page: Page): Promise<void> {
 }
 
 /**
- * M4-00: one panel model for every tab — the same panel as the home «Eggs» (right of the shop on a PC and sideways, above the tab bar
- * on a phone); ✕, the active tab or a tap on the shop close it to «Eggs»; «Back» only inside; each tab keeps its scroll.
+ * MU-02 (docs/07 rules 11, 12): a tab is a screen under the top bar, the same box for every tab; the active tab again brings back
+ * its main screen; «Лавка» is home; each tab keeps its scroll.
  */
 export async function onePanelModel(page: Page): Promise<void> {
   const errors = collectErrors(page);
   await seeded(page);
   await open(page);
-  const home = (await page.locator('[data-sheet=eggs]').boundingBox())!;
-  await expect(page.locator('[data-sheet=eggs] [data-action=sheet-close]')).toHaveCount(0);
+  await page.locator('[data-tab=eggs]').click();
+  const first = (await page.locator('[data-sheet=eggs]').boundingBox())!;
   const tabs = ['market', 'inventory', 'sales', 'chats', 'shop'];
-  for (const [i, tab] of tabs.entries()) {
+  for (const tab of tabs) {
     await page.locator(`[data-tab=${tab}]`).click();
     const sheet = page.locator(`[data-sheet=${tab}]`);
     await expect(sheet).toBeVisible();
     const box = (await sheet.boundingBox())!;
-    for (const k of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(box[k] - home[k]), `${tab} ${k}`).toBeLessThanOrEqual(1);
-    // No window opens for a tab: tabs are panels, windows are for the top bar and what matters (UB-02).
+    for (const k of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(box[k] - first[k]), `${tab} ${k}`).toBeLessThanOrEqual(1);
+    // No window opens for a tab: tabs are screens, windows are for the top bar and what matters (UB-02).
     await expect(openWindows(page)).toHaveCount(0);
-    // Close it — ✕, the tab again, the shop — always home «Eggs».
-    if (i % 3 === 0) await sheet.locator('[data-action=sheet-close]').click();
-    else if (i % 3 === 1) await page.locator(`[data-tab=${tab}]`).click();
-    else {
-      const stage = (await page.locator('[data-action=scene-close]').boundingBox())!;
-      await tap(page, { x: stage.x + 12, y: stage.y + stage.height * 0.6 });
-    }
-    await expect(page.locator('[data-sheet=eggs]'), tab).toBeVisible();
-    await expect(page.locator('[data-tab=eggs]')).toHaveAttribute('aria-pressed', 'true');
+    // The tab again keeps its screen (its main one).
+    await page.locator(`[data-tab=${tab}]`).click();
+    await expect(sheet).toBeVisible();
   }
+  await page.locator('[data-tab=home]').click();
+  await expect(page.locator('.home-ui')).toBeVisible();
+  await expect(page.locator('[data-tab=home]')).toHaveAttribute('aria-pressed', 'true');
   // The scroll of a tab stays: the eggs list scrolled down, another tab, back — the same place.
+  await page.locator('[data-tab=eggs]').click();
   const body = page.locator('[data-sheet=eggs] .sheet-body');
   await body.evaluate((el) => (el.scrollTop = 120));
   const before = await body.evaluate((el) => el.scrollTop);

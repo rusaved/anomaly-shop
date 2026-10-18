@@ -18,7 +18,7 @@ test('M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold', 
   await expect(page.locator('[data-sheet=inventory] [data-row]')).toHaveCount(6);
   await expect(page.locator('[data-species=kettle]')).toHaveAttribute('data-status', 'shop');
   await expect(page.locator('[data-species=cloudcat]')).toHaveAttribute('data-status', 'sold');
-  await expect(page.locator('[data-species=kettle] .card-sub')).toHaveText(await translated(page, 'collection.status.shop'));
+  await expect(page.locator('[data-species=kettle] .mu-meta')).toHaveText(await translated(page, 'collection.status.shop'));
   await expect(page.locator('[data-row=exclusive] [data-status=none]')).toHaveCount(2);
   expect(await page.locator('[data-row=common] [data-row-bonus]').innerText()).toMatch(/\d/);
   // The section stays when the tab is left and opened again (M4-00).
@@ -37,7 +37,7 @@ test('M4-23 market mood: the chip in the sale card of the species in fashion', a
   await seedSave(page, { createdAt: 0, showcase: ['hot1'], creatures: [{ uid: 'hot1', species: mood.hot, level: 1, fed: 0, hatchedAt: 0, age: 0 }] });
   await open(page, '?mock_device=mobile');
   await page.locator('[data-tab=sales]').tap();
-  await page.locator('[data-sheet=sales] [data-uid=hot1]').tap();
+  await page.locator('[data-sheet=sales] [data-action=sale-hot1]').tap();
   await expect(page.locator('[data-detail=sale] [data-mood=hot]')).toBeVisible();
   expect(errors).toEqual([]);
 });

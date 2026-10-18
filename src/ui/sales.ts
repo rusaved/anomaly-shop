@@ -59,7 +59,8 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     key = next;
     const cards: string[] = [];
     // MU-06 (s3-sales-slots): a free place first, then the pets on the shelf, then those a buyer writes about.
-    for (let i = view.creatures.length + view.talking.length; i < view.slots; i++)
+    // Q-025: a pet a buyer writes about is off the shelf — its place is free for another one.
+    for (let i = view.creatures.length; i < view.slots; i++)
       cards.push(`<button type="button" class="mu-card card-empty" data-action="sale-add"><span class="sale-plus" aria-hidden="true">+</span><span class="mu-meta">${esc(look.t(view.inventory.length ? 'sales.add' : 'sales.free'))}</span></button>`);
     for (const c of view.creatures)
       cards.push(
@@ -74,7 +75,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
           `<button type="button" class="mu-btn main" data-action="sale-chat-${c.uid}">${esc(look.t('sales.toChat'))}</button></div>`,
       );
     root.innerHTML =
-      `<div class="mu-head"><h3>${esc(look.t('sales.title'))}</h3><span>${esc(look.t('sales.places', { n: view.creatures.length + view.talking.length, all: view.slots }))}</span></div>` +
+      `<div class="mu-head"><h3>${esc(look.t('sales.title'))}</h3><span>${esc(look.t('sales.places', { n: view.creatures.length, all: view.slots }))}</span></div>` +
       `<div class="mu-grid">${cards.join('')}</div>`;
     root.querySelector('[data-action="sale-add"]')?.addEventListener('click', () => tab.show(PICK));
     for (const c of view.creatures) {

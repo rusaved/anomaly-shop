@@ -46,7 +46,7 @@ test('M1-09 first minute: hints up to 6 words lead from the starter egg to a rar
     else if (s.ftue === 'sell') await sellInChat(page);
     else if (s.ftue === 'buyEgg') await buyEggAtHome(page);
     // The scene is on the home screen: back to it after a tab.
-    if (s.ftue === 'sell' || s.ftue === 'list') await page.locator('[data-tab=eggs]').click();
+    if (s.ftue === 'sell' || s.ftue === 'list' || s.ftue === 'buyEgg') await page.locator('[data-tab=home]').click();
     await page.waitForTimeout(220);
   }
   const end = await st(page);

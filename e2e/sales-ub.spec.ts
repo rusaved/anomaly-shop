@@ -22,6 +22,9 @@ test('UB-05 one path: listed with the slider, a buyer writes, the creature is of
   await page.mouse.click(box.x + 4, box.y + box.height / 2);
   await expect(page.locator('[data-detail=sale] [data-price-zone]')).not.toHaveText('');
   expect(Number(await page.locator('[data-detail=sale] [data-zone]').first().getAttribute('data-zone'))).toBeLessThan(2);
+  // MU-06: «Выставить на продажу» puts it on the shelf with this price.
+  await page.locator('[data-detail=sale] [data-action=sale-go-e2e1]').click();
+  await expect(page.locator('[data-detail=sale]')).toBeHidden();
   // Game time runs: a buyer writes (the tab badge counts it); the creature leaves the shelf (Q-025).
   await runSim(page, 20);
   await expect(page.locator('[data-tab=chats] [data-badge]')).toBeVisible();

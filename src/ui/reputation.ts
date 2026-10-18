@@ -84,17 +84,16 @@ export function createReputation(hudBalance: HTMLElement, parent: HTMLElement, g
         const what = opensAt(l);
         rows.push(`<li class="rep-row" data-rep-level="${l}"><b>${look.t('rep.level', { n: l })}</b><span>${what.length ? what.map((w) => w.replace(/</g, '')).join(' · ') : look.t('rep.nothing')}</span></li>`);
       }
+      // MU-11: the window style of 07 — the title with ✕, the bar, the city line, what the next levels open.
       panel.card.innerHTML =
-        `<button type="button" class="sheet-close panel-close" data-action="rep-back" aria-label="✕">✕</button>` +
-        `<div class="rep-head"><span class="hud-level rep-big" style="--p:${chip.style.getPropertyValue('--p')}"><span class="hud-level-ring" aria-hidden="true"></span><span class="hud-level-star" aria-hidden="true">★</span><b>${r.level}</b></span>` +
-        `<div><h2 class="rep-title"></h2><p class="card-sub rep-name"></p></div></div>` +
+        `<button type="button" class="win-x" data-action="rep-back" aria-label="✕">✕</button>` +
+        `<h2 class="rep-title"></h2><p class="card-sub rep-name"></p>` +
         `<div class="rep-bar" aria-hidden="true"><i style="width:${Math.round(share * 100)}%"></i></div>` +
-        `<p class="card-sub">${r.next === null ? look.t('rep.top') : look.t('rep.points', { n: fmt.format(Math.floor(r.xp)), m: fmt.format(r.next) })}</p>` +
-        `<p class="card-sub">${look.t('rep.how')}</p>` +
+        `<p class="card-sub">${r.next === null ? look.t('rep.top') : look.t('rep.points', { n: fmt.format(Math.floor(r.xp)), m: fmt.format(r.next) })} · ${look.t('rep.how')}</p>` +
         // M4-06: the city of the shop and the way to the next one.
         `<div class="rep-city"><span class="card-sub">${look.t('rebirth.city', { n: city.city, x: new Intl.NumberFormat(look.lang(), { maximumFractionDigits: 2 }).format(city.mult) })}</span>` +
-        `<button type="button" class="btn ${city.ready ? 'btn-primary' : 'btn-alt'}" data-action="rep-city">${look.t('rebirth.open')}</button></div>` +
-        (rows.length ? `<h3 class="eggs-title">${look.t('rep.opens')}</h3><ul class="rep-list">${rows.join('')}</ul>` : '');
+        `<button type="button" class="mu-btn${city.ready ? ' main' : ''}" data-action="rep-city">${look.t('rebirth.open')}</button></div>` +
+        (rows.length ? `<div class="mu-head"><h3>${look.t('rep.opens')}</h3><span></span></div><ul class="rep-list">${rows.join('')}</ul>` : '');
       (panel.card.querySelector('.rep-title') as HTMLElement).textContent = look.t('rep.title', { n: r.level });
       (panel.card.querySelector('.rep-name') as HTMLElement).textContent = titleOf(r.level);
       panel.card.querySelector('[data-action="rep-back"]')?.addEventListener('click', () => panel.hide());

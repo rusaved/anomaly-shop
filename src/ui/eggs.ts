@@ -26,17 +26,19 @@ export interface EggsTab {
   render(): void;
   /** Opens the card of one egg (a hint, a goal), or the list with null. */
   show(eggId: string | null): void;
+  /** Drops the cards (the instance out of sight). */
+  clear(): void;
 }
 
 const MULTI = [1, 3, 5] as const;
 const SECTIONS = ['seasonal', 'ladder'] as const;
 
-export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): EggsTab {
+export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detailName = 'egg-card'): EggsTab {
   const root = document.createElement('div');
   root.className = 'eggs';
   sheet.body.appendChild(root);
   // The egg card is an inner page of the tab: «←» back to the eggs (07 rule 12).
-  const panel = sheet.detail('egg-card', () => tab.show(null));
+  const panel = sheet.detail(detailName, () => tab.show(null));
   let card: string | null = null;
   let key = '';
   let cardKey = '';
@@ -174,6 +176,10 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups): Eggs
       sheet.setTitle(look.t('eggs.title'));
       renderList();
       if (card && panel.isOpen()) renderCard(card);
+    },
+    clear() {
+      if (root.firstChild) root.replaceChildren();
+      key = '';
     },
     show(eggId) {
       card = eggId;

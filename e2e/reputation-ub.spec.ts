@@ -11,14 +11,15 @@ test('UB-08 a deal brings the seller level up: the chip flashes, a toast, the pa
   await open(page);
   const chip = page.locator('[data-hud=level]');
   await expect(chip).toBeVisible();
-  await expect(chip.locator('[data-level]')).toHaveText('1');
+  await expect(chip.locator('[data-level]')).toHaveText(/\b1$/);
   // List a creature, a buyer writes, sell from the chat.
   await page.locator('[data-tab=sales]').click();
   await page.locator('[data-sheet=sales] [data-action=sale-add]').click();
   await page.locator('[data-detail=sale] [data-action=sale-list-e2e1]').click();
+  await page.locator('[data-detail=sale] [data-action=sale-go-e2e1]').click();
   await runSim(page, 25);
   await sellInChat(page);
-  await expect(chip.locator('[data-level]')).toHaveText('2');
+  await expect(chip.locator('[data-level]')).toHaveText(/\b2$/);
   await expect(chip).toHaveClass(/rep-up/);
   await expect(page.locator('[data-toast]').filter({ hasText: (await translated(page, 'rep.up')).replace('{n}!', '') }).first()).toBeVisible();
   // The panel: the level, its points, the next levels and what they open.

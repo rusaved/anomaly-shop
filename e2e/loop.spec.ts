@@ -17,7 +17,7 @@ async function playToFirstDeal(page: Page): Promise<void> {
     else if (s.ftue === 'feed') await page.mouse.click(t.slots[0]!.x, t.slots[0]!.y);
     else if (s.ftue === 'list') await listFromInventory(page);
     else if (s.ftue === 'sell') await sellInChat(page);
-    if (s.ftue === 'list' || s.ftue === 'sell') await page.locator('[data-tab=eggs]').click();
+    if (s.ftue === 'list' || s.ftue === 'sell') await page.locator('[data-tab=home]').click();
     await page.waitForTimeout(200);
   }
   throw new Error('no deal within the time');
@@ -48,9 +48,9 @@ test('M1-08 the upgrade shop: buying the second incubator changes the shop and s
   await open(page);
   await page.evaluate(() => (window as unknown as { __TEST__: { grant(n: number): void } }).__TEST__.grant(60));
   await page.locator('[data-tab=shop]').click();
-  await expect(page.locator('[data-sheet=shop] .shop-item')).toHaveCount(2);
+  await expect(page.locator('[data-sheet=shop] [data-section=upgrades] .shop-item')).toHaveCount(2);
   await page.locator('[data-upgrade=incubator] [data-action=buy-upgrade]').click();
-  await page.locator('[data-sheet=shop] [data-action=sheet-close]').click();
+  await page.locator('[data-tab=home]').click();
   const s = await st(page);
   expect(s.incubators).toHaveLength(2);
   expect(s.coins).toBe(10);
@@ -66,8 +66,9 @@ test('M1-08 the upgrade shop: buying the second incubator changes the shop and s
 test('LOC-03 English: the home screen, the chats, the tab bar and the upgrade shop have no Russian text', async ({ page }) => {
   await open(page, '?mock_lang=en');
   await playToFirstDeal(page);
-  const home = await page.locator('[data-sheet=eggs]').innerText();
-  expect(home.replace(/ВКонтакте/g, '')).not.toMatch(/[Ѐ-ӿ]/);
+  expect(await page.locator('.home-ui').innerText()).not.toMatch(/[Ѐ-ӿ]/);
+  await page.locator('[data-tab=eggs]').click();
+  expect(await page.locator('[data-sheet=eggs]').innerText()).not.toMatch(/[Ѐ-ӿ]/);
   expect(await page.locator('#nav').innerText()).not.toMatch(/[Ѐ-ӿ]/);
   await page.locator('[data-tab=chats]').click();
   expect(await page.locator('[data-sheet=chats]').innerText()).not.toMatch(/[Ѐ-ӿ]/);

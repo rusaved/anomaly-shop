@@ -110,7 +110,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
         : f.claimed
           ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('finds.got'))}</button>`
           : `<button type="button" class="mu-btn off" aria-disabled="true">${secret ? '?' : reward}</button>`;
-      return `<div class="mu-card find${f.got ? ' got' : ''}${ready ? ' mu-ready' : ''}${secret ? ' secret' : ''}" data-find="${f.id}"><span class="mu-pic">${icon}</span><span class="mu-name find-name">${esc(secret ? '???' : d.name)}</span><span class="mu-meta">${meta}</span>${btn}</div>`;
+      return `<div class="mu-card find${f.got ? ' got' : ''}${ready ? ' mu-ready' : ''}${secret ? ' secret' : ''}" data-find="${f.id}"><span class="mu-pic">${icon}</span><span class="mu-name find-name">${esc(secret ? '???' : d.name)}</span><span class="mu-meta find-progress">${meta}</span>${btn}</div>`;
     });
     list.innerHTML =
       `<div class="mu-head"><h3>${esc(look.t('finds.head'))}</h3><span class="cards-sum" data-finds="${got}/${finds.length}">${esc(look.t('finds.count', { n: got, all: finds.length }))}</span></div>` +

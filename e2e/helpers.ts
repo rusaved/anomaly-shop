@@ -129,19 +129,18 @@ export async function sellInChat(page: Page): Promise<void> {
   await sell.click();
 }
 
-/** UB-01: eggs are bought on the home screen — the egg's tile, then «Buy» in its card. */
+/** MU-04: an egg is bought on «Яйца» by its dark price button (s1-eggs-list). */
 export async function buyEggAtHome(page: Page, egg = 'egg_basic'): Promise<void> {
   await page.locator('[data-tab=eggs]').click();
-  const buy = page.locator('[data-action=egg-buy-1]');
-  if (!(await buy.isVisible())) await page.locator(`[data-action=egg-card-${egg}]`).click();
-  await buy.click();
+  await page.locator(`[data-sheet=eggs] [data-action=egg-buy-${egg}]`).click();
 }
 
-/** UB-03: a creature waiting in the inventory goes on the shelf through «My sales». */
+/** UB-03, MU-06: a pet waiting in the storage goes on the shelf through «Продажи»: a free place → the pet → «Выставить на продажу». */
 export async function listFromInventory(page: Page): Promise<void> {
   await page.locator('[data-tab=sales]').click();
   await page.locator('[data-sheet=sales] [data-action=sale-add]').first().click();
   await page.locator('[data-detail=sale] [data-action^=sale-list-]').first().click();
+  await page.locator('[data-detail=sale] [data-action^=sale-go-]').click();
 }
 
 
@@ -188,7 +187,9 @@ export function readability(page: Page): Promise<{ small: string[]; tiny: string
       const tap = el.matches('button, [role="button"], input[type="range"], select');
       if (!text && !tap) continue;
       if (!shown(el)) continue;
-      if (text && parseFloat(getComputedStyle(el).fontSize) < minFont) small.push(`${name(el)} ${getComputedStyle(el).fontSize}`);
+      // MU-01 (07 «Токены»): the tab labels and the rarity badges are 11 px on a phone by the producer's tokens.
+      const floor = !pc && el.closest('.nav-label, .rar-badge, .nav-badge') ? 10.5 : minFont;
+      if (text && parseFloat(getComputedStyle(el).fontSize) < floor) small.push(`${name(el)} ${getComputedStyle(el).fontSize}`);
       if (pc && text) {
         const cs = getComputedStyle(el);
         const h = el as HTMLElement;

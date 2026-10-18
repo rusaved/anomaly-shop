@@ -287,7 +287,7 @@ async function boot(): Promise<void> {
   };
   const eggsTab = createEggsTab(sheets.get('eggs')!, play, eggsLook);
   // MU-02 (l1-home-landscape): sideways «Лавка» keeps the eggs in rows right of the room.
-  const homeEggs = createEggsTab(sheets.get('home')!, play, eggsLook);
+  const homeEggs = createEggsTab(sheets.get('home')!, play, eggsLook, 'egg-card-home');
   const hatchShow = createHatchShow(uiRoot, play, {
     t: i18n.t,
     lang: i18n.lang,
@@ -312,7 +312,7 @@ async function boot(): Promise<void> {
   window.setInterval(() => {
     if (nav.active() === 'eggs') eggsTab.render();
     if (nav.active() === 'inventory') inventoryTab.render();
-    if (nav.active() === 'home') homeEggs.render();
+    if (nav.active() === 'home' && appRoot.classList.contains('landscape')) homeEggs.render();
   }, 1000);
   const salesTab = createSalesTab(sheets.get('sales')!, play, {
     t: i18n.t,
@@ -478,10 +478,10 @@ async function boot(): Promise<void> {
     (hud.side.querySelector('[data-gifts-dot]') as HTMLElement).hidden = !giftsWindow.hasNew();
     workWindow.render();
     const tab = nav.active();
-    if (tab === 'home') {
-      renderShelf();
-      homeEggs.render();
-    }
+    if (tab === 'home') renderShelf();
+    // MU-02: the eggs of sideways «Лавка» (l1) exist only there; the «Яйца» tab drops its cards when out of sight.
+    if (tab === 'home' && appRoot.classList.contains('landscape')) homeEggs.render();
+    else homeEggs.clear();
     if (tab === 'market') marketTab.render();
     if (tab === 'chats') chatsTab.render();
     if (tab === 'inventory') inventoryTab.render();
@@ -740,6 +740,7 @@ async function boot(): Promise<void> {
     else shop.layout(layout.stage, sceneTop(layout));
     shelfKey = '';
     renderShelf();
+    renderTabs();
   });
 
   if (__DEBUG_TOOLS__ && new URLSearchParams(location.search).has('debug')) {

@@ -12,7 +12,7 @@ test('M3-04 egg card: odds match eggs.json, buy one and ×3', async ({ page }) =
   await seedSave(page, { coins: 1000, stats: { deals: 8, coinsEarned: 300, hatched: 10, taps: 100, levelUps: 3, haggles: 1 } });
   await open(page);
   await page.locator('[data-tab=eggs]').click();
-  await page.locator('[data-sheet=eggs] [data-egg=egg_warm]').click();
+  await page.locator('[data-sheet=eggs] [data-action=egg-card-egg_warm]').click();
   const warm = eggsJson.eggs.find((e) => e.id === 'egg_warm')!;
   await expect(page.locator('[data-detail=egg-card]')).toBeVisible();
   const cards = page.locator('[data-detail=egg-card] .card-odds');

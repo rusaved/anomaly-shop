@@ -2,29 +2,19 @@ import { expect, test } from '@playwright/test';
 import { collectErrors, expectInsideViewport, expectNoPageScroll, open, state } from './helpers.ts';
 
 /** SCR-01 on the phone projects (375×812 portrait and 812×375 landscape, touch): nothing clipped, nothing scrolls. */
-test('SCR-01 phone: HUD, home panel, tab bar and community buttons inside the viewport, no scroll', async ({ page }) => {
+test('SCR-01 phone: the top bar, «Лавка» with its shelf row, the tab bar inside the viewport, no scroll', async ({ page }) => {
   const errors = collectErrors(page);
   await open(page, '?mock_device=mobile');
   expect((await state(page)).device).toBe('mobile');
   await expectNoPageScroll(page);
-  await expectInsideViewport(page, [
-    '[data-hud=coins]',
-    '[data-action=pause]',
-    '[data-sheet=eggs]',
-    '[data-sheet=eggs] .sheet-title',
-    '[data-tab=eggs]',
-  ]);
-  // Q-026 B: a fresh game shows the home tab only; the rest open step by step, «Season» after its update.
-  for (const tab of ['market', 'inventory', 'sales', 'chats', 'shop', 'season']) await expect(page.locator(`[data-tab=${tab}]`)).toBeHidden();
+  await expectInsideViewport(page, ['[data-hud=coins]', '[data-action=pause]', '[data-action=gifts]', '[data-action=leaders]', '[data-tab=home]', '[data-tab=eggs]', '.home-ui [data-action=work]']);
+  // Q-026 B, Q-034 A: a fresh game shows «Лавка» and «Яйца»; the rest open step by step; «Season» is no tab.
+  for (const tab of ['market', 'inventory', 'sales', 'chats', 'shop']) await expect(page.locator(`[data-tab=${tab}]`)).toBeHidden();
+  await expect(page.locator('[data-tab=season]')).toHaveCount(0);
   const vp = page.viewportSize()!;
-  // UB-01: the community buttons (Q-007) at the end of the home panel: scrolled to, they fit.
-  const tg = page.locator('[data-community=side] [data-action=community-telegram]');
-  await tg.scrollIntoViewIfNeeded();
-  await expectInsideViewport(page, ['[data-community=side] [data-action=community-telegram]', '[data-community=side] [data-action=community-vk]']);
-  const home = (await page.locator('[data-sheet=eggs]').boundingBox())!;
-  const bar = (await page.locator('#nav').boundingBox())!;
-  if (vp.height >= vp.width) expect(home.width).toBeCloseTo(vp.width, 0);
-  expect(home.y + home.height).toBeCloseTo(bar.y, 0);
+  // MU-03: portrait — the «Витрина» row under the room with a «+» on the free place; sideways — the eggs right of the room (l1).
+  if (vp.height >= vp.width) await expectInsideViewport(page, ['[data-shelf-head]', '[data-action=shelf-add]']);
+  else await expectInsideViewport(page, ['[data-sheet=home] [data-action=egg-buy-egg_basic]']);
   expect(errors).toEqual([]);
 });
 
@@ -52,7 +42,7 @@ test('SAV-03 rotation keeps the state and the layout follows', async ({ page }) 
   expect(s.coins).toBe(100);
   expect(s.controllable).toBe(true);
   await expectNoPageScroll(page);
-  await expectInsideViewport(page, ['[data-hud=coins]', '[data-action=pause]', '[data-sheet=eggs]', '#nav']);
+  await expectInsideViewport(page, ['[data-hud=coins]', '[data-action=pause]', '[data-tab=home]', '#nav']);
   const cls = await page.locator('#app').getAttribute('class');
   expect(cls).toContain(vp.height >= vp.width ? 'landscape' : 'portrait');
 });

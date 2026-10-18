@@ -4,7 +4,7 @@
 
 import type { RarityName } from '../content/schemas.ts';
 import type { CreatureView, Game } from '../sim/game.ts';
-import { esc, money, rarityBadge } from './kit.ts';
+import { esc, money, rarityBadge, ringPic } from './kit.ts';
 import { createPriceSlider, type SliderData } from './price-slider.ts';
 import type { Sheet } from './sheet.ts';
 
@@ -136,7 +136,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     panelKey = next;
     panel.card.innerHTML =
       back(look.t('price.title')) +
-      `<div class="price-pet"><span class="mu-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"></span><div class="price-pet-text"><b class="mu-name egg-name">${esc(look.speciesName(c.species))}</b>` +
+      `<div class="price-pet">${ringPic(look.portrait(c.species, c.rarity), c.rarity, 64)}<div class="price-pet-text"><b class="mu-name egg-name">${esc(look.speciesName(c.species))}</b>` +
       `<span>${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}</span>` +
       `<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))} · ${esc(look.t('price.marketWord'))} ${money(c.price, fmt)} ${look.mood(c.species)}</span>${c.hold ? `<span class="mu-meta">${esc(look.t('day.hold', { n: c.hold }))}</span>` : ''}</div></div>` +
       '<div data-slider></div>' +

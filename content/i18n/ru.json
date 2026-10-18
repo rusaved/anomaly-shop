@@ -322,7 +322,7 @@
   "mark.shiny": "Блестящий",
   "mark.sleepy": "Сонный",
   "mark.singing": "Поющий",
-  "day.title": "Аномалий дня",
+  "day.title": "Аномалия дня",
   "day.anomaly": "Аномалий дня: цена ×{n}, первые {m} мин привыкает к лавке",
   "day.take": "Забрать яйцо",
   "day.claim": "Забрать",
@@ -339,7 +339,7 @@
   "gifts.review": "Оцени игру",
   "gifts.reviewBtn": "За отзыв",
   "gifts.coins": "{n} монет",
-  "gifts.crystals": "{n} кристалла",
+  "gifts.crystals": "◆ {n}",
   "gifts.toast": "Подарок: {what}",
   "work.title": "Подработка",
   "work.hint": "Тапай миску: соседские питомцы сыты, тебе монеты",
@@ -411,5 +411,6 @@
   "upgrades.short": "не хватает",
   "market.refresh": "обновится через {t}",
   "market.haggle": "Торг",
-  "market.buy": "Купить"
+  "market.buy": "Купить",
+  "inventory.count": "питомцев: {n}"
 }

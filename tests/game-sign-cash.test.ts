@@ -9,7 +9,9 @@ import { loadGameContent } from '../scripts/load-game-content.ts';
 import { waitChat } from './chat-helper.ts';
 
 /** M2-07: the sign brings buyers sooner (UB-05: they write), the register adds to every deal; both open by deals and show in the shop scene. */
-const content = loadGameContent();
+// The register's math alone: no zone agreement (MU-12 slider.agree) rolling the offer up to the tag.
+const loaded = loadGameContent();
+const content = { ...loaded, market: { ...loaded.market, slider: { ...loaded.market.slider, agree: undefined } } };
 const up = (id: string) => content.upgrades.upgrades.find((u) => u.id === id)!;
 const cr = (uid: string): Creature => ({ uid, species: 'cloudcat', level: 2, fed: 0, hatchedAt: 0, age: 0 });
 

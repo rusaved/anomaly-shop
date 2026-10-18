@@ -39,6 +39,9 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
     '<div class="mu-seg subtabs" role="tablist"><button type="button" class="subtab" data-sub="items" data-i18n="inventory.items"></button>' +
     '<button type="button" class="subtab" data-sub="collection" data-i18n="inventory.collection"></button>' +
     '<button type="button" class="subtab" data-sub="finds" data-i18n="inventory.finds"></button></div>';
+  const count = document.createElement('span');
+  count.className = 'seg-count';
+  sheet.head.appendChild(count);
   const list = document.createElement('div');
   list.className = 'inventory';
   sheet.body.appendChild(list);
@@ -72,8 +75,8 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
             : `<span class="mu-meta inv-where">${esc(look.t('sales.talkingSub'))}</span>`;
       return (
         `<div class="mu-card rar tile" data-rarity="${c.rarity}" data-uid="${c.uid}" data-on="${where !== 'store'}"><button type="button" class="mu-pic-btn" data-action="inv-pic-${c.uid}"><span class="mu-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"></span></button>` +
-        `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span>${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}</span>` +
-        `<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}${c.mark ? ` · ${esc(look.t(`mark.${c.mark}`))}` : ''} · ${money(c.price, fmt)} ${look.mood(c.species)}</span>${btn}</div>`
+        `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span class="inv-line"><span>${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}</span>` +
+        `<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}${c.mark ? ` · ${esc(look.t(`mark.${c.mark}`))}` : ''} · ${money(c.price, fmt)} ${look.mood(c.species)}</span></span>${btn}</div>`
       );
     });
     for (const { inc, i } of hatching)
@@ -82,6 +85,8 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
           `<span class="mu-meta">${Math.round(inc.share * 100)} %</span><button type="button" class="mu-btn" data-action="inv-eggs">${esc(look.t('eggs.open'))}</button></div>`,
       );
     list.innerHTML = `<div class="mu-grid">${cards.join('')}</div>`;
+    // l3: sideways the count of pets stands right of the segments.
+    count.textContent = look.t('inventory.count', { n: all.length });
     for (const { c, where } of all) {
       list.querySelector(`[data-action="inv-list-${c.uid}"]`)?.addEventListener('click', () => look.list(c.uid));
       list.querySelector(`[data-action="inv-off-${c.uid}"]`)?.addEventListener('click', () => game.unlist(c.uid));
@@ -148,6 +153,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
       sheet.setTitle(look.t('nav.inventory'));
       sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) => b.classList.toggle('active', b.dataset.sub === mode));
       const fmt = new Intl.NumberFormat(look.lang());
+      count.hidden = mode !== 'items';
       if (mode === 'items') renderItems(fmt);
       else if (mode === 'finds') renderFinds(fmt);
       else renderCollection();

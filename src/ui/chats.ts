@@ -82,7 +82,7 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
           const r = look.rarity(c.species);
           return (
             `<button type="button" class="chat-row${c.unread ? ' unread' : ''}${c.state === 'open' ? '' : ' closed'}${c.id === open ? ' active' : ''}" data-chat="${c.id}">` +
-            `${avatar(c, 44)}<span class="chat-main"><b class="chat-who">${esc(who(c))}</b><span class="chat-last">${line}</span></span>${ringPic(look.portrait(c.species, r), r, 52, 'chat-pet')}</button>`
+            `${avatar(c, 44)}<span class="chat-main"><b class="chat-who">${esc(who(c))}</b><span class="chat-last">${line}</span></span>${ringPic(look.portrait(c.species, r), r, 46, 'chat-pet')}</button>`
           );
         })
         .join('');
@@ -112,15 +112,13 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     dialogKey = next;
     const f = fmt();
     const rarity = look.rarity(c.species);
-    const canCounter = c.state === 'open' && game.canCounter(c.id) && cr !== undefined && cr.ask > c.offer;
     let buttons: string;
     if (c.state !== 'open') buttons = `<p class="mu-meta chat-end">${esc(look.t(c.state === 'sold' ? 'chats.sold' : 'chats.gone'))}</p>`;
     else
       buttons =
         `<button type="button" class="mu-btn main" data-action="chat-sell">${iconize(look.t('chats.sell', { n: `◉ ${f.format(c.offer)}` }))}</button>` +
-        // UB-06: no counter price in the first deal (customers.json chat.firstCounter) nor with the golden buyer.
-        `<div class="chat-row2">${canCounter ? `<button type="button" class="mu-btn" data-action="chat-counter">${iconize(look.t('chats.counter', { n: `◉ ${f.format(cr.ask)}` }))}</button>` : ''}` +
-        `<button type="button" class="mu-btn" data-action="chat-decline">${esc(look.t('chats.decline'))}</button></div>`;
+        // MU-05 (s2-chat-dialog): two answers only — «Продать за N» and a dark «Отказаться» (the counter price waits, Q-036).
+        `<button type="button" class="mu-btn" data-action="chat-decline">${esc(look.t('chats.decline'))}</button>`;
     dialogEl.innerHTML =
       `<div class="mu-back chat-top">${look.wide() ? '' : `<button type="button" class="mu-round" data-action="chat-back" aria-label="${esc(look.t('eggs.back'))}">‹</button>`}` +
       `${avatar(c, 44)}<span class="chat-main"><b class="chat-who">${esc(who(c))}</b><span class="chat-last">${esc(look.t('chats.wants', { name: look.speciesName(c.species) }))}</span></span>` +
@@ -129,7 +127,6 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
       `<div class="chat-buttons" data-hint-glow>${buttons}</div>`;
     dialogEl.querySelector('[data-action="chat-back"]')?.addEventListener('click', () => tab.show(null));
     dialogEl.querySelector('[data-action="chat-sell"]')?.addEventListener('click', () => game.chatSell(c.id));
-    dialogEl.querySelector('[data-action="chat-counter"]')?.addEventListener('click', () => game.chatCounter(c.id));
     dialogEl.querySelector('[data-action="chat-decline"]')?.addEventListener('click', () => game.chatDecline(c.id));
     // UB-10: a chat opens on its latest lines.
     const lines = dialogEl.querySelector('.chat-lines') as HTMLElement;

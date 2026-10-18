@@ -110,3 +110,23 @@ describe('M3-08 chats', () => {
       for (const pool of Object.values(ch.lines)) for (const l of pool) for (const lang of ['ru', 'en'] as const) expect(l[lang].split(/\s+/).length, l[lang]).toBeLessThanOrEqual(8);
   });
 });
+
+describe('MU-12 the zone of the price slider decides', () => {
+  it('green — buyers mostly pay the asking price; red — mostly they bargain below it (market.json slider.agree)', () => {
+    const paid = (share: number): number => {
+      let n = 0;
+      for (let seed = 1; seed <= 40; seed++) {
+        const { game, seen } = setup(seed, share);
+        until(game, seen, 120);
+        const chat = game.state.chats[0];
+        const ask = game.view().talking[0]?.ask ?? Infinity;
+        if (chat && chat.offer >= ask) n++;
+      }
+      return n / 40;
+    };
+    const green = paid(content.market.slider.min);
+    const red = paid(content.market.slider.max);
+    expect(green).toBeGreaterThan(0.75);
+    expect(red).toBeLessThan(0.5);
+  });
+});

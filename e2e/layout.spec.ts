@@ -23,10 +23,10 @@ test('SCR-01 phone: pause and settings windows fit, every button is tappable', a
   await page.locator('[data-action=pause]').tap();
   await expectInsideViewport(page, ['[data-overlay=pause] .card', '[data-overlay=pause] [data-action=resume]', '[data-overlay=pause] [data-action=settings]', '[data-overlay=pause] [data-action=community-telegram]', '[data-overlay=pause] [data-action=community-vk]']);
   await page.locator('[data-overlay=pause] [data-action=settings]').tap();
-  await expectInsideViewport(page, ['[data-overlay=settings] .card', '[data-overlay=settings] [data-action=sound]', '[data-overlay=settings] [data-action=lang-ru]', '[data-overlay=settings] [data-action=lang-en]', '[data-overlay=settings] [data-action=back]']);
+  await expectInsideViewport(page, ['[data-overlay=settings] .card', '[data-overlay=settings] [data-action=sound]', '[data-overlay=settings] [data-action=lang-ru]', '[data-overlay=settings] [data-action=lang-en]', '[data-overlay=settings] [data-action=settings-close]']);
   await page.locator('[data-overlay=settings] [data-action=lang-en]').tap();
-  await expectInsideViewport(page, ['[data-overlay=settings] [data-action=back]', '[data-overlay=settings] [data-action=community-vk]']);
-  await page.locator('[data-overlay=settings] [data-action=back]').tap();
+  await expectInsideViewport(page, ['[data-overlay=settings] [data-action=settings-close]', '[data-overlay=settings] [data-action=community-vk]']);
+  await page.locator('[data-overlay=settings] [data-action=settings-close]').tap();
   await page.locator('[data-overlay=pause] [data-action=resume]').tap();
   expect((await state(page)).pause).toEqual([]);
 });

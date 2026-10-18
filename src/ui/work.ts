@@ -27,6 +27,8 @@ export function createWorkWindow(parent: HTMLElement, game: Game, look: WorkLook
     `<button type="button" class="work-bowl" data-action="work-tap">${BOWL}</button>` +
     '<p class="work-level" data-work-level></p>';
   const up = button('work-up', 'work.up', 'btn-primary');
+  // The label carries the price («Прокачать за N»), set on render.
+  delete up.dataset.i18n;
   overlay.card.appendChild(up);
   // MU-09: the window closes with its ✕ (no «Done» button).
   closeX(overlay.card, '✕', () => overlay.hide(), 'work-close');

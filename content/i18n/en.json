@@ -339,7 +339,7 @@
   "gifts.review": "Rate the game",
   "gifts.reviewBtn": "Review",
   "gifts.coins": "{n} coins",
-  "gifts.crystals": "{n} crystals",
+  "gifts.crystals": "◆ {n}",
   "gifts.toast": "Gift: {what}",
   "work.title": "Side job",
   "work.hint": "Tap the bowl: the neighbours' pets are fed, you get coins",
@@ -411,5 +411,6 @@
   "upgrades.short": "short of",
   "market.refresh": "refresh in {t}",
   "market.haggle": "Haggle",
-  "market.buy": "Buy"
+  "market.buy": "Buy",
+  "inventory.count": "pets: {n}"
 }

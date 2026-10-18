@@ -22,7 +22,13 @@ export async function upgradesPanel(page: Page, shots?: string): Promise<void> {
   if (shots) await page.screenshot({ path: `${shots}-before.png` });
   const first = panel.locator('[data-action=buy-upgrade][aria-disabled=false]').first();
   const id = await first.getAttribute('data-id');
+  const order = () => panel.locator('[data-section=upgrades] [data-upgrade]').evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.upgrade));
+  const before = await order();
   await first.click();
+  // MU-12 (the usability review): a purchase never moves the cards — the next tap lands where the finger expects; a tap at once after it is ignored.
+  await first.click();
+  expect(await order()).toEqual(before);
+  expect(((await state(page)) as unknown as { upgrades: Record<string, number> }).upgrades[id ?? ''] ?? 0).toBe(1);
   await expect.poll(async () => ((await state(page)) as unknown as { upgradeFx: string }).upgradeFx).toMatch(/\d/);
   // MU-10: the bought level shows on its card (dots or «куплено»), the price button stays dark.
   await expect.poll(async () => ((await state(page)) as unknown as { upgrades: Record<string, number> }).upgrades[id ?? ''] ?? 0).toBeGreaterThan(0);

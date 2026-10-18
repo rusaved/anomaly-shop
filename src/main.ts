@@ -30,6 +30,7 @@ import { moodChip } from './ui/mood.ts';
 import { createRebirthWindow } from './ui/rebirth.ts';
 import { createLeadersWindow } from './ui/leaders.ts';
 import { createHints } from './ui/hints.ts';
+import { createNextCard } from './ui/next.ts';
 import { createNewsTicker } from './ui/news.ts';
 import { createMerchantWindow } from './ui/merchant.ts';
 import { createChatter } from './ui/chatter.ts';
@@ -193,7 +194,10 @@ async function boot(): Promise<void> {
       if (id === tab) sh.show();
       else sh.hide();
     }
-    if (shown === 'shop' && tab !== 'shop') play.seenShop();
+    if (shown === 'shop' && tab !== 'shop') {
+      play.seenShop();
+      shopTab.leave();
+    }
     shown = tab;
     // MU-02 (07 rule 11): a tab is a screen; the scene shows on «Лавка» only.
     uiRoot.dataset.screen = tab;
@@ -505,6 +509,41 @@ async function boot(): Promise<void> {
     const shopEggs = play.eggShop();
     nav.badge('eggs', shopEggs.eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open)));
   }
+  // MU-12 (the game design review, «Цели» 2): the nearest goal on «Лавка» — one dark card on the free floor
+  // between the «Витрина» row and the scene buttons (Q-035 B); a tap leads to the action.
+  const nextBox = document.createElement('div');
+  nextBox.className = 'home-next';
+  homeUi.insertBefore(nextBox, homeUi.querySelector('.stage-actions'));
+  const nextCard = createNextCard(
+    nextBox,
+    play,
+    {
+      t: i18n.t,
+      lang: i18n.lang,
+      name: (g) => {
+        const lang = i18n.lang();
+        if (g.kind === 'upgrade') return upgrades.upgrades.find((u) => u.id === g.id)?.name[lang] ?? g.id;
+        if (g.kind === 'egg') return eggs.eggs.find((e) => e.id === g.id)?.name[lang] ?? g.id;
+        if (g.kind === 'district') return i18n.t('next.district', { name: customers.districts.find((d) => d.id === g.id)?.name[lang] ?? g.id });
+        if (g.kind === 'level') return i18n.t('next.level', { n: g.id });
+        return i18n.t(play.rebirthView().ready ? 'next.rebirthReady' : 'next.rebirth');
+      },
+    },
+    () => {
+      // UB-06: «Next» leads to the action — an egg goal opens its card, a seller level the sales (deals raise it), the rest the upgrades.
+      const goal = play.nextGoal();
+      if (goal.kind === 'rebirth') rebirthWindow.open();
+      else if (goal.kind === 'egg') {
+        selectTab('eggs');
+        eggsTab.show(goal.id);
+      } else if (goal.kind === 'level' || goal.kind === 'district') selectTab('sales');
+      else {
+        openUpgrades();
+        // M4-05: a step of the pickup point opens its section.
+        if (upgrades.upgrades.find((u) => u.id === goal.id)?.group === 'point') shopTab.section('point');
+      }
+    },
+  );
   /** Game second of the player's last touch (idle news) and the events of the last minute (event news). */
   let lastTouch = 0;
   const recentEvents: Array<{ id: string; at: number }> = [];
@@ -556,6 +595,7 @@ async function boot(): Promise<void> {
   });
   const renderUi = (): void => {
     renderTabs();
+    nextCard.render();
     rebirthWindow.render();
     merchantWindow.render();
     reputationChip.render();

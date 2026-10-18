@@ -85,7 +85,6 @@ export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n
   overlay.card.append(title, soundRow, langRow);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
-  overlay.card.appendChild(back);
 
   const win: SettingsWindow = {
     overlay,

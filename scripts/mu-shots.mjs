@@ -12,7 +12,7 @@ const only = (args.find((a) => a.startsWith('--only='))?.slice(7) ?? '').split('
 const scale = Number(args.find((a) => a.startsWith('--font='))?.slice(7) ?? 0);
 mkdirSync(out, { recursive: true });
 const port = 4198;
-const srv = spawn('npx', ['vite', 'preview', '--outDir', 'dist-e2e', '--port', String(port), '--strictPort', '--host', '127.0.0.1'], { stdio: 'ignore' });
+const srv = spawn('npx', ['vite', 'preview', '--outDir', process.env.MU_DIST || 'dist-e2e', '--port', String(port), '--strictPort', '--host', '127.0.0.1'], { stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 2500));
 const marker = resolve('.cache/chromium-path');
 const executablePath = process.env.CHROMIUM_EXECUTABLE || (existsSync(marker) ? readFileSync(marker, 'utf8').trim() : undefined);

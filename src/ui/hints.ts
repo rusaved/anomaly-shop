@@ -40,6 +40,18 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
   let lastKey = '';
   let glow: HTMLElement | null = null;
   let outside = false;
+  /** MU-12: the screen whose top keeps room for the hint (its content moves down, nothing lies under the bubble). */
+  let roomy: HTMLElement | null = null;
+  const room = (sheet: HTMLElement | null, h = 0): void => {
+    if (roomy && roomy !== sheet) {
+      roomy.classList.remove('hint-room');
+      roomy.style.removeProperty('--hint-space');
+    }
+    roomy = sheet;
+    if (!sheet) return;
+    sheet.classList.add('hint-room');
+    sheet.style.setProperty('--hint-space', `${Math.ceil(h)}px`);
+  };
 
   const setGlow = (el: HTMLElement | null): void => {
     if (glow === el) return;
@@ -49,6 +61,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
   };
 
   const hide = (): void => {
+    room(null);
     if (lastKey === '') return;
     lastKey = '';
     outside = false;
@@ -132,7 +145,39 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         setGlow(button);
         return;
       }
-      // MU-03 (07 rule 16): a tab is a screen now — the bubble stands in its own layer next to the target (above or below), the target in a green frame.
+      // MU-12 (07 rule 16, the usability review): inside a tab screen the bubble takes its own room at the top of the screen —
+      // the content moves down under it, so it covers no text; the target wears the green frame.
+      const sheet = button?.closest<HTMLElement>('.sheet') ?? null;
+      if (button && sheet && !button.closest('#nav')) {
+        if (_quiet) {
+          root.hidden = true;
+          lastKey = '';
+          setGlow(button);
+          return;
+        }
+        const key = `room:${hint.key ?? hint.step}:${text}:${sheet.dataset.sheet}`;
+        setGlow(button);
+        if (key === lastKey && roomy === sheet) return;
+        lastKey = key;
+        outside = false;
+        label.textContent = text;
+        root.hidden = false;
+        root.dataset.hint = hint.step;
+        root.classList.remove('side', 'below');
+        root.classList.add('roomed');
+        const s = sheet.getBoundingClientRect();
+        const w = root.offsetWidth;
+        const hh = root.offsetHeight;
+        room(sheet, hh + 12);
+        const b = button.getBoundingClientRect();
+        const left = Math.max(16, Math.min(base.width - w - 16, b.left + b.width / 2 - base.left - w / 2));
+        root.style.left = `${left}px`;
+        root.style.top = `${s.top - base.top + 8}px`;
+        root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, b.left + b.width / 2 - base.left - left))}px`);
+        return;
+      }
+      room(null);
+      root.classList.remove('roomed');
       outside = false;
       root.classList.remove('side');
       // Above the target; below it when the HUD is in the way. A button in the upper half of a screen (the first card under

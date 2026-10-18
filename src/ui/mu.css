@@ -2032,3 +2032,271 @@ button.mu-card {
 .hud-btn[hidden] {
   display: none;
 }
+
+/* MU-02 (07 rule 11, l3): sideways every list is rows in 2 columns — the picture left, the texts, the button in the row. */
+.landscape .sheet .mu-grid,
+.landscape .overlay[data-kind='screen'] .mu-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.landscape .sheet .mu-card,
+.landscape .overlay[data-kind='screen'] .gift-top .mu-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-auto-flow: row;
+  align-items: center;
+  align-content: center;
+  column-gap: 12px;
+  row-gap: 2px;
+  padding: 6px 10px;
+  text-align: left;
+}
+.landscape .sheet .mu-card > .mu-pic,
+.landscape .sheet .mu-card > .mu-pic-btn,
+.landscape .overlay[data-kind='screen'] .gift-top .mu-card > .mu-pic {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  width: 44px;
+  height: 44px;
+}
+.landscape .sheet .mu-card .mu-pic img,
+.landscape .overlay[data-kind='screen'] .gift-top .mu-pic img {
+  max-width: 36px;
+  max-height: 36px;
+}
+.landscape .sheet .mu-card > :not(.mu-pic):not(.mu-pic-btn):not(.mu-btn):not(.inv-where) {
+  grid-column: 2;
+  justify-self: start;
+}
+.landscape .overlay[data-kind='screen'] .gift-top .mu-card > .mu-name {
+  grid-column: 2;
+}
+.landscape .sheet .mu-card > .mu-btn,
+.landscape .sheet .mu-card > .inv-where,
+.landscape .overlay[data-kind='screen'] .gift-top .mu-card > .mu-btn {
+  grid-column: 3;
+  grid-row: 1 / span 4;
+  margin: 0;
+  min-width: 112px;
+}
+.landscape .sheet .card-empty {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+}
+.landscape .sheet .card-empty .sale-plus {
+  font-size: 28px;
+}
+.landscape .sheet .mu-card .mu-rar-line {
+  justify-content: flex-start;
+}
+.landscape .sheet .lvl-dots {
+  justify-content: flex-start;
+}
+
+/* ---- MU-12 fixes by the mockup check (docs/evidence/MU/mockup-check.md) ---- */
+/* Names wrap between words, never inside one. */
+.mu-name,
+.chat-who,
+.chat-last {
+  overflow-wrap: break-word;
+}
+/* 07 rule 13: the dim of a window lies over the tab bar too; the bar still takes taps (UB-02). */
+#ui:has(> .overlay:not([data-kind='screen']):not([hidden])) .nav::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--c-uiOverlay);
+  pointer-events: none;
+}
+/* s2: rows of 60 px, the pet in its 2.5 px ring. */
+.chat-row {
+  min-height: 60px;
+  padding: 7px 10px;
+}
+.chat-pet {
+  border-radius: 12px;
+}
+/* s2, s3: the answers stand over the tab bar with the room of the mockups under them (~ 74 % of the zone). */
+.portrait .chat-buttons {
+  padding-bottom: 60px;
+}
+.portrait .price-go {
+  padding-bottom: 60px;
+}
+.landscape .chat-buttons > .mu-btn {
+  flex: 1 1 0;
+}
+.price-hint {
+  font-size: 13px;
+}
+.price-big .mu-coin {
+  font-size: 34px;
+  background: var(--c-uiAccent);
+  box-shadow: inset 0 0 0 0.16em var(--c-counterTop), inset 0 0 0 0.24em var(--c-uiAccentText);
+}
+.price-pet .rar-ring {
+  border-radius: 16px;
+}
+.price-pet .rar-ring img {
+  max-width: 48px;
+  max-height: 48px;
+}
+/* s7: the picture box of a store card 56 px. */
+.mu-card.shop-item .mu-pic,
+.find .mu-pic {
+  height: 56px;
+}
+/* s5: the two top cards as low as the mockup. */
+.gift-top .mu-pic {
+  height: 52px;
+}
+.gift-top .mu-pic img {
+  max-height: 40px;
+}
+/* s1: the scene buttons as in the mockup — 14 px, room above the tab bar. */
+.stage-actions {
+  bottom: calc(var(--nav-size, 56px) + 40px);
+}
+.stage-actions .stage-btn {
+  padding: 8px 14px;
+  font-size: 14px;
+}
+.stage-actions .stage-btn svg {
+  width: 18px;
+  height: 18px;
+}
+/* The seller level title on one line or two whole words. */
+.overlay .rep-title {
+  font-size: 20px;
+}
+/* l3: the count of pets right of the segments; the badge and «ур. · цена» one line. */
+.sheet-head:has(.seg-count) {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.sheet-head .mu-seg {
+  flex: 1 1 auto;
+}
+.seg-count {
+  display: none;
+  font-size: 13px;
+  color: var(--c-uiMuted);
+  white-space: nowrap;
+}
+.landscape .seg-count:not([hidden]) {
+  display: inline-block;
+}
+.landscape .sheet-head .mu-seg {
+  flex: 0 1 420px;
+}
+.landscape .sheet-head:has(.seg-count) {
+  justify-content: space-between;
+}
+.inv-line {
+  display: contents;
+}
+.landscape .inv-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+/* Sideways windows that are tall scroll inside (the side job bowl smaller). */
+@media (max-height: 520px) {
+  .work-bowl {
+    width: 140px;
+    height: 96px;
+  }
+}
+/* MU-12: a hint inside a tab screen keeps its own room at the top of the screen. */
+.sheet.hint-room {
+  padding-top: calc(8px + var(--hint-space, 0px));
+}
+.hint.roomed {
+  animation: none;
+}
+/* MU-12: «Дальше» — the nearest goal on the free floor of «Лавка», above the scene buttons (Q-035 B). */
+.home-next {
+  position: absolute;
+  left: calc(var(--mu-pad) + var(--safe-left));
+  right: calc(var(--mu-pad) + var(--safe-right));
+  bottom: calc(var(--nav-size, 56px) + 40px + 44px + 14px);
+  pointer-events: auto;
+}
+.landscape .home-next {
+  right: auto;
+  width: calc(var(--stage-w, 45%) - 2 * var(--mu-pad));
+  top: calc(var(--hud-height, 48px) + 8px);
+  bottom: auto;
+}
+.home-next .next {
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 14px 12px;
+  border-radius: var(--mu-r);
+  background: var(--c-uiPanel);
+  box-shadow: none;
+}
+.home-next .next-text small {
+  font-size: 12px;
+  color: var(--c-uiMuted);
+}
+.home-next .next-text b {
+  font-size: 15px;
+}
+.landscape .sheet .mu-pic-btn .mu-pic {
+  width: 44px;
+  height: 44px;
+}
+.landscape .home-next {
+  display: none;
+}
+.overlay .card .day-anomaly {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+}
+.overlay .card .day-anomaly .day-text .mu-name {
+  font-size: 15px;
+}
+/* 07 rule 6: the goal wraps, never «…». */
+.home-next .next-text b,
+.home-next .next-text small {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+}
+@media (min-width: 1000px) and (min-height: 560px) {
+  .price-hint,
+  .seg-count,
+  .home-next .next-text small {
+    font-size: 14px;
+  }
+}
+/* «Подработка» sideways: the bowl left, the line, the level and «Прокачать за N» right — all above the tab bar. */
+.landscape .overlay[data-overlay='work'] > .card {
+  width: min(100%, 620px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 20px;
+  row-gap: 8px;
+  align-items: center;
+  padding: 14px 20px;
+}
+.landscape .overlay[data-overlay='work'] > .card > h2 {
+  grid-column: 1 / -1;
+}
+.landscape .overlay[data-overlay='work'] > .card > .work-bowl {
+  grid-column: 1;
+  grid-row: 2 / span 3;
+  margin: 0 auto;
+}
+.landscape .overlay[data-overlay='work'] > .card > :not(h2):not(.work-bowl):not(.win-x) {
+  grid-column: 2;
+}

@@ -33,7 +33,7 @@ test('SCR-09 zero console errors, page errors and dialogs through pause, setting
   await open(page);
   await page.locator('[data-action=pause]').click();
   await page.locator('[data-overlay=pause] [data-action=settings]').click();
-  await page.locator('[data-overlay=settings] [data-action=back]').click();
+  await page.locator('[data-overlay=settings] [data-action=settings-close]').click();
   await page.locator('[data-overlay=pause] [data-action=resume]').click();
   await page.reload();
   await open(page);
@@ -145,5 +145,5 @@ test('SCR-01 1280×720: the top bar, «Лавка», the tab bar, pause and sett
   await page.locator('[data-action=pause]').click();
   await expectInsideViewport(page, ['[data-overlay=pause] .card', '[data-overlay=pause] [data-action=resume]', '[data-overlay=pause] [data-action=community-vk]']);
   await page.locator('[data-overlay=pause] [data-action=settings]').click();
-  await expectInsideViewport(page, ['[data-overlay=settings] .card', '[data-overlay=settings] [data-action=back]', '[data-overlay=settings] [data-action=lang-en]']);
+  await expectInsideViewport(page, ['[data-overlay=settings] .card', '[data-overlay=settings] [data-action=settings-close]', '[data-overlay=settings] [data-action=lang-en]']);
 });

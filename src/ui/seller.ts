@@ -65,7 +65,7 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
       b.type = 'button';
       b.className = `mu-btn ${cls}`;
       b.dataset.action = action;
-      b.textContent = label;
+      b.innerHTML = iconize(label);
       b.addEventListener('click', fn);
       buttons.appendChild(b);
     };
@@ -100,7 +100,7 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
       });
       return;
     }
-    add('lot-buy', look.t('market.take', { n: fmt.format(l.price) }), 'main', () => {
+    add('lot-buy', look.t('market.take', { n: `◉ ${fmt.format(l.price)}` }), 'main', () => {
       if (game.buyLot(l.id)) {
         lines.push({ me: true, text: look.t('seller.me.now') }, { me: false, text: say('thanks') });
         done = 'bought';

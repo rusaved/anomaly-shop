@@ -1069,6 +1069,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     // M4-25: collectors love a singing one.
     if (!golden) offer = coins(offer * (markOf(cr)?.offerMult ?? 1));
     const order = !golden && orderFits(cr);
+    // MU-12 (the game design review): the slider decides — a buyer agrees to the asking price with the chance of its zone
+    // (market.json slider.agree): green — almost always, red — seldom; otherwise the character bargains as it likes.
+    const agree = content.market.slider.agree;
+    if (!golden && !order && !tour && st.stats.deals > 0 && agree && side.next() < (agree[priceZone(cr.askShare ?? 1, content.market.slider)] ?? 0))
+      offer = Math.max(offer, Math.max(1, coins(appraisal(cr) * (cr.askShare ?? 1))));
     if (order && st.order) offer = Math.max(offer, st.order.reward);
     offer = Math.max(1, offer);
     const chat: Chat = {

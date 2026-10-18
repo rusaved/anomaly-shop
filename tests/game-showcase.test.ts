@@ -53,7 +53,7 @@ describe('M2-02 showcase', () => {
     // Nobody writes for a while: the creature stays on the shelf and its tag grows; one character, one type, fixed shares.
     const quiet: GameContent = {
       ...base,
-      market: { ...base.market, replySec: { min: 1e6, max: 1e6 } },
+      market: { ...base.market, replySec: { min: 1e6, max: 1e6 }, slider: { ...base.market.slider, agree: undefined } },
       customers: {
         ...base.customers,
         characters: base.customers.characters.slice(0, 1).map((c) => ({ ...c, offer: { min: 1, max: 1 } })),

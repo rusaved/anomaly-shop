@@ -26,6 +26,8 @@ export interface ShopTab {
   /** Opens a section (the scene button opens «upgrades»). */
   section(id: string): void;
   render(): void;
+  /** The Store left the screen: the next visit sorts the cards afresh. */
+  leave(): void;
 }
 
 /** Effect line of an upgrade from its data (the numbers are never typed into texts). */
@@ -64,6 +66,9 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
   pointBox.hidden = true;
   sheet.body.appendChild(pointBox);
   let built = '';
+  /** MU-12 (the usability review): the order of the cards stays while the Store is on screen — a purchase never moves the next card under the finger. */
+  let order: string[] = [];
+  let boughtAt = 0;
 
   function upgradeCard(id: string, fmt: Intl.NumberFormat, coins: number, crystals: number): string {
     const u = look.upgrade(id);
@@ -112,6 +117,9 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
   }
 
   const tab: ShopTab = {
+    leave() {
+      order = [];
+    },
     section(id) {
       if (on.includes(id)) current = id;
       sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) => b.classList.toggle('active', b.dataset.sub === current));
@@ -130,16 +138,23 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
       const fmt = new Intl.NumberFormat(look.lang());
       // Affordable first, then the rest by price, maxed at the bottom (the nearest goals are what the player looks for).
       const rank = (u: { maxed: boolean; affordable: boolean }): number => (u.maxed ? 2 : u.affordable ? 0 : 1);
-      const sorted = [...list].sort((a, b) => rank(a) - rank(b) || a.price - b.price);
+      if (!order.length) order = [...list].sort((a, b) => rank(a) - rank(b) || a.price - b.price).map((u) => u.id);
+      for (const u of list) if (!order.includes(u.id)) order.push(u.id);
+      const sorted = order.map((id) => list.find((u) => u.id === id)).filter((u) => u !== undefined);
       const shop = sorted.filter((x) => look.upgrade(x.id)?.group !== 'point');
       const point = sorted.filter((x) => look.upgrade(x.id)?.group === 'point');
-      const wallet = crystals > 0 ? `<div class="mu-head"><h3>${esc(look.t('shop.section.upgrades'))}</h3><span>${money(crystals, fmt, true)}</span></div>` : '';
-      box.innerHTML = `${wallet}<div class="mu-grid">${shop.map((x) => upgradeCard(x.id, fmt, coins, crystals)).join('')}</div>`;
+      box.innerHTML = `<div class="mu-grid">${shop.map((x) => upgradeCard(x.id, fmt, coins, crystals)).join('')}</div>`;
       pointBox.innerHTML =
         `<div class="mu-head"><h3>${esc(look.t('shop.section.point'))}</h3><span></span></div>` +
         (point.length ? `<div class="mu-grid" data-point-list>${point.map((x) => upgradeCard(x.id, fmt, coins, crystals)).join('')}</div>` : `<p class="mu-meta" data-point-locked>${esc(look.t('point.locked', { n: look.pointLevel }))}</p>`) +
         `<div class="guest" data-guest>${renderGuest(fmt)}</div>`;
-      sheet.body.querySelectorAll<HTMLElement>('[data-action="buy-upgrade"]').forEach((b) => b.addEventListener('click', () => game.buyUpgrade(b.dataset.id ?? '')));
+      // A second tap right after a purchase is the same finger again, not a new choice.
+      sheet.body.querySelectorAll<HTMLElement>('[data-action="buy-upgrade"]').forEach((b) =>
+        b.addEventListener('click', () => {
+          if (performance.now() - boughtAt < 450) return;
+          if (game.buyUpgrade(b.dataset.id ?? '')) boughtAt = performance.now();
+        }),
+      );
       sheet.body.querySelectorAll<HTMLElement>('[data-action="guest-buy"]').forEach((b) => b.addEventListener('click', () => game.buyGuest(b.dataset.id ?? '')));
       sheet.body.querySelectorAll<HTMLElement>('[data-action="guest-remove"]').forEach((b) => b.addEventListener('click', () => game.removeGuest(b.dataset.id ?? '')));
     },

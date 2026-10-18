@@ -53,6 +53,14 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
     sheet.style.setProperty('--hint-space', `${Math.ceil(h)}px`);
   };
 
+  /** The usability review (the round of fixes): a bubble over a tab of the bar takes a band at the bottom of the open screen — its list ends above. */
+  let lowered: HTMLElement | null = null;
+  const lower = (sheet: HTMLElement | null, h = 0): void => {
+    if (lowered && lowered !== sheet) lowered.style.removeProperty('--hint-bottom');
+    lowered = sheet;
+    sheet?.style.setProperty('--hint-bottom', `${Math.ceil(h)}px`);
+  };
+
   const setGlow = (el: HTMLElement | null): void => {
     if (glow === el) return;
     glow?.classList.remove('is-hinted');
@@ -62,6 +70,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
 
   const hide = (): void => {
     room(null);
+    lower(null);
     if (lastKey === '') return;
     lastKey = '';
     outside = false;
@@ -149,6 +158,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       // the content moves down under it, so it covers no text; the target wears the green frame.
       const sheet = button?.closest<HTMLElement>('.sheet') ?? null;
       if (button && sheet && !button.closest('#nav')) {
+        lower(null);
         if (_quiet) {
           root.hidden = true;
           lastKey = '';
@@ -183,8 +193,10 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       // Above the target; below it when the HUD is in the way. A button in the upper half of a screen (the first card under
       // a tab title, UB-06) gets its bubble below, so the title stays readable; a tab of the bar — above.
       const inBar = button !== null && button.closest('#nav') !== null;
-      const above = inBar || (y - r - 56 > deps.topInset() && (button === null || y > base.height * 0.45));
-      const key = `${hint.key ?? hint.step}:${Math.round(x)}:${Math.round(y)}:${Math.round(r)}:${above}:${text}`;
+      // A place of the «Витрина» strip (portrait): the bubble under it, on the free floor — the «ВИТРИНА» head stays readable.
+      const above = inBar || (y - r - 56 > deps.topInset() && (button === null || y > base.height * 0.45) && !(target.kind === 'slot' && base.height > base.width));
+      const openSheet = inBar ? deps.panel.querySelector<HTMLElement>('.sheet[data-kind="dock"]:not([hidden]):not([data-sheet="home"])') : null;
+      const key = `${hint.key ?? hint.step}:${Math.round(x)}:${Math.round(y)}:${Math.round(r)}:${above}:${text}:${openSheet?.dataset.sheet ?? ''}`;
       if (key === lastKey) return;
       lastKey = key;
       label.textContent = text;
@@ -192,7 +204,10 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       root.dataset.hint = hint.step;
       root.classList.toggle('below', !above);
       const w = root.offsetWidth;
-      const left = Math.max(8, Math.min(base.width - w - 8, x - w / 2));
+      lower(openSheet, root.offsetHeight + 24);
+      // Sideways a bubble of the scene stays over the scene — never on the list right of it.
+      const stageW = !button && base.width > base.height ? parseFloat(getComputedStyle(parent).getPropertyValue('--stage-w')) || base.width : base.width;
+      const left = Math.max(8, Math.min(stageW - w - 8, x - w / 2));
       root.style.left = `${left}px`;
       root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, x - left))}px`);
       let top = above ? y - r - 12 - root.offsetHeight : (button ? bottom : y + r) + 12;

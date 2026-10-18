@@ -4,7 +4,7 @@
 
 import type { RarityName } from '../content/schemas.ts';
 import type { Game } from '../sim/game.ts';
-import { COIN, esc, GEM, iconize, money, rarityBadge } from './kit.ts';
+import { esc, iconize, money, rarityBadge } from './kit.ts';
 import type { Sheet } from './sheet.ts';
 
 export interface InventoryLookups {
@@ -24,7 +24,7 @@ export interface InventoryLookups {
   /** M4-23: the market's mood chip for a species ('' when none). */
   mood(species: string): string;
   /** M4-20: a find's name, how to get it and its reward, in the player's language. */
-  find(id: string): { name: string; desc: string; coins: number; crystals: number };
+  find(id: string): { name: string; desc: string; coins: number; crystals: number; picture: string };
 }
 
 export interface InventoryTab {
@@ -110,7 +110,8 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
       const secret = f.hidden && !f.got;
       const ready = f.got && !f.claimed;
       const reward = money(d.crystals || d.coins, fmt, Boolean(d.crystals));
-      const icon = secret ? '<b class="find-icon">?</b>' : `<b class="find-icon">${d.crystals ? GEM : COIN}</b>`;
+      // The round of fixes (the art review): every find has its own sign, never the coin of its reward.
+      const icon = secret ? '<b class="find-icon">?</b>' : `<img alt="" src="${d.picture}">`;
       const meta = ready ? `${esc(look.t('finds.reward'))} ${reward}` : secret ? esc(look.t('finds.secret')) : `${esc(d.desc)}${f.need > 1 && !f.got ? ` · ${fmt.format(Math.min(f.have, f.need))}/${fmt.format(f.need)}` : ''}`;
       const btn = ready
         ? `<button type="button" class="mu-btn ${green ? 'good' : 'good-text'}" data-action="find-take-${f.id}">${esc(look.t('finds.take'))}</button>`

@@ -68,12 +68,14 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
           `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span class="mu-line">${meta(c, fmt, c.ask)}<span class="mu-meta">${esc(look.t('sales.onShelf'))}</span></span>` +
           `<button type="button" class="mu-btn" data-action="sale-off-${c.uid}">${esc(look.t('sales.off'))}</button></div>`,
       );
-    for (const c of view.talking)
+    // 07 rule 7: one main button on the screen — the first pet in a chat; the others say «В чат» on a dark button.
+    view.talking.forEach((c, i) =>
       cards.push(
         `<div class="mu-card rar card-sale" data-rarity="${c.rarity}" data-uid="${c.uid}"><button type="button" class="mu-pic-btn" data-action="sale-chat-pic-${c.uid}">${pic(c)}</button>` +
           `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span class="mu-line">${meta(c, fmt, c.ask)}<span class="mu-meta">${esc(look.t('sales.talkingSub'))}</span></span>` +
-          `<button type="button" class="mu-btn main" data-action="sale-chat-${c.uid}">${esc(look.t('sales.toChat'))}</button></div>`,
-      );
+          `<button type="button" class="mu-btn${i === 0 ? ' main' : ''}" data-action="sale-chat-${c.uid}">${esc(look.t('sales.toChat'))}</button></div>`,
+      ),
+    );
     root.innerHTML =
       `<div class="mu-head"><h3>${esc(look.t('sales.title'))}</h3><span>${esc(look.t('sales.places', { n: view.creatures.length, all: view.slots }))}</span></div>` +
       `<div class="mu-grid">${cards.join('')}</div>`;

@@ -80,9 +80,11 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
           const last = c.lines[c.lines.length - 1];
           const line = c.state === 'sold' ? `${esc(look.t('chats.sold'))}${last?.n !== undefined ? ` · ${money(last.n, fmt())}` : ''}` : last ? text(c, last) : '';
           const r = look.rarity(c.species);
+          // l2 (the round of fixes): sideways a row is the name and the offer — the whole line is in the dialog next to it.
+          const short = c.state === 'open' ? money(c.offer, fmt()) : c.state === 'sold' ? line : esc(look.t('chats.gone'));
           return (
             `<button type="button" class="chat-row${c.unread ? ' unread' : ''}${c.state === 'open' ? '' : ' closed'}${c.id === open ? ' active' : ''}" data-chat="${c.id}">` +
-            `${avatar(c, 44)}<span class="chat-main"><b class="chat-who">${esc(who(c))}</b><span class="chat-last">${line}</span></span>${ringPic(look.portrait(c.species, r), r, 46, 'chat-pet')}</button>`
+            `${avatar(c, 44)}<span class="chat-main"><b class="chat-who">${esc(who(c))}</b><span class="chat-last">${line}</span><span class="chat-last chat-short">${short}</span></span>${ringPic(look.portrait(c.species, r), r, 46, 'chat-pet')}</button>`
           );
         })
         .join('');

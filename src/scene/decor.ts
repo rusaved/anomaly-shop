@@ -148,7 +148,9 @@ export function drawDecor(g: Graphics, items: Record<string, number>, l: ShopLay
   if (items.bowl) {
     const b = d.bowl;
     g.ellipse(b.x, b.y - b.r * 0.15, b.r * 0.85, b.r * 0.3).fill(c.eggSpots).stroke({ width: w * 0.7, color: c.outline });
-    for (const dx of [-0.35, 0, 0.35]) g.circle(b.x + b.r * dx, b.y - b.r * 0.32, b.r * 0.16).fill(c.counterTop).stroke({ width: w * 0.5, color: c.outline });
+    // A mound of food (the round of fixes: never three golden discs — they read as coins).
+    g.ellipse(b.x, b.y - b.r * 0.22, b.r * 0.62, b.r * 0.3).fill(c.blush).stroke({ width: w * 0.5, color: c.outline });
+    for (const [dx, dy] of [[-0.3, -0.26], [0.05, -0.38], [0.32, -0.24], [-0.05, -0.18]] as const) g.circle(b.x + b.r * dx, b.y + b.r * dy, b.r * 0.06).fill(c.counter);
     g.moveTo(b.x - b.r, b.y - b.r * 0.15).quadraticCurveTo(b.x, b.y + b.r * 1.05, b.x + b.r, b.y - b.r * 0.15).closePath().fill(c.rarityRare).stroke(stroke);
   }
   if (items.stool) {

@@ -203,14 +203,14 @@
 }
 
 /* ---- Icons: one coin and one crystal picture (not a font glyph) ---- */
-/* One coin everywhere (07 «Знаки»; the round of fixes, item 4): an orange disc with a ring and a light face inside and a dark contour
-   around it — on an orange button too it reads as a coin, never as the letter «O». */
+/* One coin everywhere (07 «Знаки»; the round of fixes, items 4 and 8): a light gold face with a shine, a rim darker than the main button
+   and a dark contour — on an orange button too it reads as a coin, never as the letter «O». */
 .coin,
 .coin.coin-sm,
 .mu-coin {
   display: inline-block;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 42%, var(--c-counterTop) 0 44%, color-mix(in srgb, var(--c-uiAccent) 78%, var(--c-outline)) 46% 54%, var(--c-uiAccent) 56%);
+  background: radial-gradient(circle at 42% 38%, color-mix(in srgb, var(--c-counterTop) 70%, var(--c-eyeWhite)) 0 14%, var(--c-counterTop) 16% 56%, color-mix(in srgb, var(--c-uiAccent) 72%, var(--c-outline)) 60%);
   box-shadow: 0 0 0 max(1.5px, 0.09em) var(--c-outline);
   flex: 0 0 auto;
 }
@@ -2151,11 +2151,7 @@ button.mu-card {
 /* MU-12: a hint inside a tab screen keeps its own room at the top of the screen. */
 /* (specificity over .portrait/.landscape .sheet[data-kind='dock']) */
 #ui .sheet[data-kind='dock']:not([data-sheet='home']) {
-  padding-top: calc(8px + var(--hint-space, 0px) + var(--toast-space, 0px));
-  transition: padding-top 0.15s ease-out;
-}
-#ui .overlay[data-kind='screen'] > .card {
-  padding-top: calc(var(--toast-space, 0px));
+  padding-top: calc(8px + var(--hint-space, 0px));
   transition: padding-top 0.15s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2270,7 +2266,9 @@ button.mu-card {
   padding-right: 0;
 }
 #ui .sheet[data-kind='dock']:not([data-sheet='home']) {
-  padding-top: calc(var(--hint-space, 0px) + var(--toast-space, 0px));
+  padding-top: var(--hint-space, 0px);
+  /* The usability review: a hint over a tab of the bar takes a band at the bottom of the screen; the list ends above it, nothing moves. */
+  padding-bottom: var(--hint-bottom, 0px);
 }
 /* s4, s7: the segments 10 px under the top bar; s1-eggs, s2, s3, s8: the first section head 10 px under it (07: 8–14). */
 #ui .sheet[data-kind='dock'] > .sheet-head {
@@ -2567,6 +2565,28 @@ button.mu-card {
   .landscape .chat-row .chat-last {
     font-size: 12px;
   }
+  /* l2: a row is 44–50 px — the name and the offer, the avatar and the pet 32 px. */
+  .landscape .chat-row {
+    min-height: 48px;
+    padding: 4px 8px;
+    gap: 6px;
+  }
+  .landscape .chat-row .chat-avatar,
+  .landscape .chat-row .chat-pet {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .landscape .chat-row .chat-last:not(.chat-short) {
+    display: none;
+  }
+}
+.chat-short {
+  display: none;
+}
+@media (max-height: 520px) {
+  .landscape .chat-row .chat-short {
+    display: block;
+  }
 }
 /* A phone sideways (a short screen): the windows that do not fit 343 px in height lie in two columns; a PC keeps the 343 px card (07 rule 13). */
 @media (max-height: 520px) {
@@ -2827,4 +2847,72 @@ button.mu-card {
     align-self: start;
     padding: 4px 0 8px;
   }
+}
+
+/* ---- MU, круг правок п. 8: by the mockup check and the art review ---- */
+/* s1: the scene buttons as narrow as the mockup (116 and 128 px). */
+.stage-actions .stage-btn {
+  gap: 6px;
+  padding: 8px 12px;
+}
+/* s3-price: the price, the slider and the hint as high as the mockup. */
+.price-pet {
+  margin: 4px 0 8px;
+}
+.price-now {
+  margin-bottom: 6px;
+}
+.price-hint {
+  margin-top: 10px;
+}
+/* s5-gifts: the days and the heads tighter — «Аномалия дня» whole above the tab bar. */
+.overlay[data-overlay='gifts'] .day {
+  min-height: 56px;
+  padding: 6px 4px;
+}
+.overlay[data-overlay='gifts'] .mu-head {
+  margin: 12px 0 8px;
+}
+.overlay[data-overlay='gifts'] .gift-take {
+  margin-top: 10px;
+}
+/* s6, r1, r2: «Вылупился!» buttons 307 px wide (18 px fields). */
+.overlay > .card.card-hatch {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+/* 07 rule 13: under a window the raised «Лавка» is dimmed too, and a window never runs under it (portrait). */
+.nav-tab[data-tab='home'] .nav-icon {
+  position: relative;
+}
+#ui:has(> .overlay:not([data-kind='screen']):not([hidden])) .nav-tab[data-tab='home'] .nav-icon::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: var(--c-uiOverlay);
+  pointer-events: none;
+}
+.portrait .overlay:not([data-kind='screen']) {
+  padding-bottom: calc(var(--nav-size, 56px) + 24px);
+}
+/* 07 «Приёмка»: the «‹ / ✕» row 8 px under the top bar, like every first line. */
+#ui .sheet-detail > .detail-page > .mu-back:first-child,
+#ui .chat-top {
+  margin-top: 8px;
+}
+/* The language segment of «Настройки» wraps at a large system font instead of running out of the card (the art review). */
+[data-overlay='settings'] .group {
+  flex-wrap: wrap;
+}
+[data-overlay='settings'] .group > .btn {
+  flex: 1 1 auto;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+/* The egg card is a list too (no buttons stuck to its bottom): it fades out over the tab bar like the lists. */
+#ui .sheet[data-kind='dock'] > .sheet-detail:has(.cards-odds) {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  padding-bottom: 32px;
 }

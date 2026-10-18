@@ -50,10 +50,10 @@ async function session(w, h, tag, fresh = false) {
   await page.waitForTimeout(600);
   return { page, ctx };
 }
-const shot = async (page, name) => {
+const shot = async (page, name, keepToast = false) => {
   if (only.length && !only.includes(name.split('.')[0])) return;
-  // After the animation: a toast moves the screen down while it shows.
-  await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 }).catch(() => {});
+  // After the animation: a toast moves the screen down while it shows (the toast shot keeps it).
+  if (!keepToast) await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 }).catch(() => {});
   // A window still opening is half transparent: the finite animations end first.
   await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {})))).catch(() => {});
   if (font130)
@@ -114,6 +114,10 @@ for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']]) {
   await tryStep(`${tag} shop`, async () => {
     await tab(page, 'shop');
     await shot(page, `shop.${tag}`);
+    // The section «Пункт продаж» (07 «Словарь»: «Пункт» in the segment).
+    await page.locator('[data-sheet=shop] [data-sub=point]').click();
+    await shot(page, `point.${tag}`);
+    await page.locator('[data-sheet=shop] [data-sub=upgrades]').click();
   });
   await tryStep(`${tag} chats`, async () => {
     // A buyer writes about a pet on the shelf: the game runs on a minute.
@@ -125,6 +129,14 @@ for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']]) {
     const row = tag === 'l' && (await rows.count()) > 1 ? rows.nth(1) : rows.first();
     if (await row.isVisible()) await row.click();
     await shot(page, `chat.${tag}`);
+    // A pet a buyer writes about: its place in «Продажи» with the main «В чат» (s3).
+    await tab(page, 'sales');
+    await shot(page, `sales-chat.${tag}`);
+    // One toast at the top under the bar (07 rule 17).
+    await tab(page, 'home');
+    await page.evaluate(() => window.__TEST__.toast('Новые находки: 2!'));
+    await page.waitForTimeout(400);
+    await shot(page, `toast.${tag}`, true);
   });
   await tryStep(`${tag} windows`, async () => {
     await tab(page, 'home');

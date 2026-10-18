@@ -204,10 +204,12 @@ export function computeShopLayout(
   // MU-03 (s1-shop-scene): the places of the «Витрина» strip — 4 in a row (5 from 9 places), the size of a card picture.
   const sCols = n <= 8 ? 4 : 5;
   const sGap = 10;
-  const sSize = Math.min(78, (shelf.w - (sCols - 1) * sGap) / sCols);
+  // s1: a place 76 wide and 64 high (the round of fixes, the mockup check).
+  const sSize = Math.min(76, (shelf.w - (sCols - 1) * sGap) / sCols);
+  const sH = Math.round(sSize * 0.84);
   const strip: Rect[] = [];
-  for (let i = 0; i < n; i++) strip.push({ x: shelf.x + (i % sCols) * (sSize + sGap), y: shelf.y + Math.floor(i / sCols) * (sSize + sGap), w: sSize, h: sSize });
+  for (let i = 0; i < n; i++) strip.push({ x: shelf.x + (i % sCols) * (sSize + sGap), y: shelf.y + Math.floor(i / sCols) * (sH + sGap), w: sSize, h: sH });
   const rowsN = Math.ceil(n / sCols);
-  const stripBox: Rect = { x: shelf.x, y: shelf.y, w: shelf.w, h: rowsN * sSize + (rowsN - 1) * sGap };
+  const stripBox: Rect = { x: shelf.x, y: shelf.y, w: shelf.w, h: rowsN * sH + (rowsN - 1) * sGap };
   return { stage: full, unit: u, wall, floor: { ...floor, h: full.y + full.h - floorY }, counter, counterTop, incubator, incubators, showcase: stripBox, slots: strip, slotGap: sGap, door, queue, decor, outline, radius, strip: true, frame: { ...showcase, w: Math.min(showcase.w, slot + gap * 2), h: showcase.h }, roomBottom: stage.y + stage.h };
 }

@@ -121,6 +121,103 @@ function chest(g: Graphics, R: number, c: Colors, outline: number): void {
   g.rect(-R * 0.04, -R * 0.12, R * 0.08, R * 0.16).fill(c.outline);
 }
 
+/** The signs of the finds (s4-finds: each find has its own picture, never the coin of its reward). */
+function findSign(g: Graphics, thing: string, R: number, c: Colors, outline: number): boolean {
+  const stroke = { width: outline * 0.8, color: c.outline, join: 'round' as const };
+  const star = (x: number, y: number, r: number, color: string): void => {
+    const pts: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + (Math.PI * i) / 5;
+      const d = i % 2 === 0 ? r : r * 0.45;
+      pts.push(x + Math.cos(a) * d, y + Math.sin(a) * d);
+    }
+    g.poly(pts).fill(color).stroke(stroke);
+  };
+  switch (thing) {
+    case 'penny':
+      // The first penny: one big coin standing on its edge a little, a shine — the find, not a price.
+      g.ellipse(0, 0, R * 0.62, R * 0.7).fill(c.uiAccent).stroke(stroke);
+      g.ellipse(0, 0, R * 0.42, R * 0.5).fill(c.counterTop).stroke({ width: outline * 0.5, color: c.outline });
+      g.rect(-R * 0.06, -R * 0.28, R * 0.12, R * 0.56).fill(c.uiAccent);
+      return true;
+    case 'house':
+      g.poly([-R * 0.85, -R * 0.1, 0, -R * 0.85, R * 0.85, -R * 0.1]).fill(c.rarityEpic).stroke(stroke);
+      g.rect(-R * 0.65, -R * 0.1, R * 1.3, R * 0.85).fill(c.wall).stroke(stroke);
+      g.roundRect(-R * 0.18, R * 0.25, R * 0.36, R * 0.5, R * 0.08).fill(c.door).stroke(stroke);
+      g.rect(-R * 0.55, R * 0.05, R * 0.28, R * 0.24).fill(c.incubatorGlass).stroke({ width: outline * 0.5, color: c.outline });
+      return true;
+    case 'bag':
+      g.poly([-R * 0.3, -R * 0.55, R * 0.3, -R * 0.55, R * 0.15, -R * 0.3, -R * 0.15, -R * 0.3]).fill(c.counter).stroke(stroke);
+      g.ellipse(0, R * 0.2, R * 0.7, R * 0.6).fill(c.counterTop).stroke(stroke);
+      g.rect(-R * 0.3, -R * 0.38, R * 0.6, R * 0.1).fill(c.blush).stroke({ width: outline * 0.5, color: c.outline });
+      star(0, R * 0.22, R * 0.26, c.uiAccent);
+      return true;
+    case 'star':
+      star(0, 0, R * 0.85, c.rarityLegendary);
+      return true;
+    case 'bubble':
+      g.roundRect(-R * 0.85, -R * 0.7, R * 1.7, R * 1.1, R * 0.35).fill(c.eyeWhite).stroke(stroke);
+      g.poly([-R * 0.3, R * 0.38, -R * 0.5, R * 0.8, R * 0.05, R * 0.4]).fill(c.eyeWhite).stroke(stroke);
+      g.rect(-R * 0.3, R * 0.33, R * 0.5, R * 0.1).fill(c.eyeWhite);
+      for (const x of [-0.4, 0, 0.4]) g.circle(x * R, -R * 0.15, R * 0.1).fill(c.outline);
+      return true;
+    case 'album':
+      g.roundRect(-R * 0.75, -R * 0.8, R * 1.5, R * 1.6, R * 0.12).fill(c.rarityRare).stroke(stroke);
+      g.rect(-R * 0.75, -R * 0.8, R * 0.22, R * 1.6).fill(c.outline);
+      g.roundRect(-R * 0.3, -R * 0.45, R * 0.8, R * 0.62, R * 0.1).fill(c.eyeWhite).stroke({ width: outline * 0.5, color: c.outline });
+      g.circle(R * 0.1, -R * 0.14, R * 0.17).fill(c.blush);
+      return true;
+    case 'city':
+      for (const [x, w, h, color] of [
+        [-0.85, 0.55, 1.1, c.wall],
+        [-0.25, 0.55, 1.55, c.rarityEpic],
+        [0.35, 0.5, 0.9, c.counterTop],
+      ] as const) {
+        g.rect(x * R, R * 0.75 - h * R, w * R, h * R).fill(color).stroke(stroke);
+        for (let y = 0.75 - h + 0.2; y < 0.55; y += 0.32) g.rect((x + 0.14) * R, y * R, w * 0.36 * R, R * 0.14).fill(c.incubatorGlass);
+      }
+      return true;
+    case 'plant':
+      g.poly([-R * 0.45, R * 0.15, R * 0.45, R * 0.15, R * 0.32, R * 0.85, -R * 0.32, R * 0.85]).fill(c.blush).stroke(stroke);
+      for (const [x, y] of [
+        [-0.32, -0.3],
+        [0.32, -0.3],
+        [0, -0.55],
+      ] as const)
+        g.ellipse(x * R, y * R, R * 0.2, R * 0.42).fill(c.uiGood).stroke({ width: outline * 0.6, color: c.outline });
+      return true;
+    case 'door':
+      g.roundRect(-R * 0.5, -R * 0.85, R * 1.0, R * 1.7, R * 0.12).fill(c.door).stroke(stroke);
+      g.roundRect(-R * 0.35, -R * 0.68, R * 0.7, R * 0.5, R * 0.08).fill(c.doorFrame);
+      g.circle(R * 0.28, R * 0.12, R * 0.08).fill(c.counterTop).stroke({ width: outline * 0.5, color: c.outline });
+      return true;
+    case 'lamp':
+      g.moveTo(0, -R * 0.95).lineTo(0, -R * 0.45).stroke({ width: outline * 0.7, color: c.outline });
+      g.circle(0, R * 0.2, R * 0.8).fill({ color: c.counterTop, alpha: 0.35 });
+      g.circle(0, R * 0.18, R * 0.3).fill(c.counterTop).stroke(stroke);
+      g.moveTo(-R * 0.65, R * 0.05).quadraticCurveTo(-R * 0.5, -R * 0.55, 0, -R * 0.55).quadraticCurveTo(R * 0.5, -R * 0.55, R * 0.65, R * 0.05).closePath().fill(c.rarityEpic).stroke(stroke);
+      return true;
+    case 'gem_vip':
+    case 'gem_exclusive': {
+      const color = thing === 'gem_vip' ? c.rarityLegendary : c.uiBad;
+      g.poly([-R * 0.75, -R * 0.2, -R * 0.4, -R * 0.65, R * 0.4, -R * 0.65, R * 0.75, -R * 0.2, 0, R * 0.8]).fill(color).stroke(stroke);
+      g.poly([-R * 0.4, -R * 0.65, 0, -R * 0.2, R * 0.4, -R * 0.65]).fill({ color: c.eyeWhite, alpha: 0.45 });
+      return true;
+    }
+    case 'crown':
+      g.poly([-R * 0.8, R * 0.45, -R * 0.8, -R * 0.45, -R * 0.4, -R * 0.05, 0, -R * 0.7, R * 0.4, -R * 0.05, R * 0.8, -R * 0.45, R * 0.8, R * 0.45]).fill(c.rarityLegendary).stroke(stroke);
+      for (const x of [-0.45, 0, 0.45]) g.circle(x * R, R * 0.2, R * 0.1).fill(c.uiBad);
+      return true;
+    case 'cart':
+      g.poly([-R * 0.85, -R * 0.55, -R * 0.6, -R * 0.55, -R * 0.4, R * 0.25, R * 0.65, R * 0.25, R * 0.8, -R * 0.35, -R * 0.52, -R * 0.35]).fill(c.uiPanelHi).stroke(stroke);
+      for (const x of [-0.25, 0.5]) g.circle(x * R, R * 0.55, R * 0.16).fill(c.outline);
+      g.rect(-R * 0.3, -R * 0.75, R * 0.45, R * 0.4).fill(c.counterTop).stroke({ width: outline * 0.5, color: c.outline });
+      return true;
+    default:
+      return false;
+  }
+}
+
 /** The picture of a thing to buy at 0,0 inside radius R, with its shadow; thing — the upgrade's decor (content/upgrades.json) or its id. */
 export function drawUpgradeIcon(box: Container, thing: string, R: number, c: Colors, outline: number): void {
   const art = new Container();
@@ -139,6 +236,11 @@ function drawThing(box: Container, thing: string, R: number, c: Colors, outline:
   if (thing === 'showcase') return showcase(g, R, c, outline);
   if (thing === 'tags') return tags(g, R, c, outline);
   if (thing === 'chest') return chest(g, R, c, outline);
+  if (thing === 'egg') {
+    drawEgg(g, R * 1.15, c, outline, 0);
+    return;
+  }
+  if (findSign(g, thing, R, c, outline)) return;
   if (thing === 'point_repair') return repair(g, R, c, outline);
   if (thing === 'point_furnish') return shelves(g, R, c, outline);
   if (thing === 'point_passive') return locker(g, R, c, outline);

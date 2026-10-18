@@ -299,9 +299,12 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let showcaseFits = true;
   /** UB-10: the caption stays on the counter front — two lines at most, smaller when the counter is low. */
   let counterH = 0;
+  let captionFits = true;
   const fitCaption = (): void => {
     caption.scale.set(1);
     if (counterH > 0 && caption.height > counterH * 0.82) caption.scale.set((counterH * 0.82) / caption.height);
+    // 07 rule 19: a sign in the world reads or hides — never smaller than 11 px.
+    captionFits = Number(caption.style.fontSize) * caption.scale.y >= 11;
   };
 
   // M4-09: the city the shop is in — every new city has its own walls and floor (style.json cities).
@@ -409,10 +412,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       const low = cv.rarity === 'common' || cv.rarity === 'good' || cv.rarity === 'valuable';
       selection.roundRect(s.x, s.y, s.w, s.h, l.strip ? 14 : l.radius * 0.7).stroke({ width: cv.rarity === 'common' ? 1 : 2.5, color: cv.rarity === 'common' ? c.rarityEdge : rarityColor(style.rarity, cv.rarity), alpha: low ? 0.7 : 1 });
     });
-    const slot = l.slots[index];
-    if (!slot || l.strip) return;
-    const pad = l.outline * 1.2;
-    selection.roundRect(slot.x - pad, slot.y - pad, slot.w + pad * 2, slot.h + pad * 2, l.radius * 0.9).stroke({ width: l.outline * 1.2, color: c.uiAccent });
+    // The round of fixes, item 5: no orange frame of the picked pet on the shelf either — one bright shape, as on the strip (s1).
+    void index;
   }
 
   function placeLabels(l: ShopLayout): void {
@@ -437,7 +438,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
 
   /** Q-037: a price pill and a level badge on the places of the «Витрина» (B); off by the mockup s1 (A). */
   const PLACE_TAGS = false;
-  const slotCenter = (slot: Rect) => ({ x: slot.x + slot.w / 2, y: slot.y + slot.h * 0.56, r: slot.w * 0.36 });
+  // The round of fixes (the art review): on the shelf sideways the pet stays inside its ring.
+  const slotCenter = (slot: Rect) => (current && !current.strip ? { x: slot.x + slot.w / 2, y: slot.y + slot.h * 0.52, r: slot.w * 0.31 } : { x: slot.x + slot.w / 2, y: slot.y + slot.h * 0.56, r: slot.w * 0.36 });
   const easeOutBack = (k: number): number => 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);
 
   const fmt = (n: number): string => n.toLocaleString(document.documentElement.lang || 'ru');
@@ -971,7 +973,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     const lines = [bubble, talk].filter((b) => b.box.visible).sort((a, b) => b.life - a.life);
     const line = !quietOn && !words ? lines[0] : undefined;
     for (const b of [bubble, talk]) b.box.renderable = b === line;
-    const sign = !quietOn && !words && !line && Boolean(caption.text);
+    const sign = !quietOn && !words && !line && Boolean(caption.text) && captionFits;
     caption.renderable = sign;
     texts.showcase.visible = showcaseFits && !quietOn && !words && !line && !sign;
     // The shop draws on demand: a caption that came or went is a change to draw.

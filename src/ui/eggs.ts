@@ -85,6 +85,13 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
     key = next;
     const mine: string[] = [];
     // MU-04: «Мои яйца» — the eggs in the incubators (progress, a portion of food, «Покормить» in orange), then the free one.
+    // 07 rule 7: one main button on the screen — «Открыть» of a ready egg first, else the first «Покормить»; the others are dark.
+    let main = view.incubators.some((inc) => inc.egg && inc.ready) ? 'open' : 'feed';
+    const mainOf = (kind: 'open' | 'feed'): string => {
+      if (main !== kind) return '';
+      main = '';
+      return ' main';
+    };
     view.incubators.forEach((inc, i) => {
       if (!inc.egg) return;
       const tint = inc.careLevel > 0 ? look.careShell[inc.careLevel] : undefined;
@@ -93,10 +100,10 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
       let btn: string;
       if (inc.ready) {
         meta = esc(look.t('eggs.ready'));
-        btn = `<button type="button" class="mu-btn main" data-action="egg-open-${i}">${esc(look.t('eggs.open'))}</button>`;
+        btn = `<button type="button" class="mu-btn${mainOf('open')}" data-action="egg-open-${i}">${esc(look.t('eggs.open'))}</button>`;
       } else if (inc.feedPrice !== null) {
         meta = `${Math.round(inc.share * 100)} % · ${esc(look.t('eggs.food'))} ${money(inc.feedPrice, fmt)}`;
-        btn = `<button type="button" class="mu-btn main" data-action="egg-feed-${i}" aria-disabled="${coins + 1e-9 < inc.feedPrice}">${esc(look.t('eggs.feed'))}</button>`;
+        btn = `<button type="button" class="mu-btn${mainOf('feed')}" data-action="egg-feed-${i}" aria-disabled="${coins + 1e-9 < inc.feedPrice}">${esc(look.t('eggs.feed'))}</button>`;
       } else {
         meta = `${Math.round(inc.share * 100)} % · ${esc(look.t('eggs.fed'))}`;
         btn = `<button type="button" class="mu-btn off" data-action="egg-wait-${i}" aria-disabled="true">${esc(look.t('eggs.warming'))}</button>`;

@@ -34,11 +34,12 @@ interface Report {
   cutByBar: string[];
   windowScroll: string[];
   mainCut: string[];
+  mains: number;
 }
 
 function check(page: Page): Promise<Report> {
   return page.evaluate((holders) => {
-    const r: Report = { tiny: [], small: [], cut: [], covered: [], overlap: [], windows: 0, underBar: [], outside: [], noRarity: [], clipped: [], cutByBar: [], windowScroll: [], mainCut: [] };
+    const r: Report = { tiny: [], small: [], cut: [], covered: [], overlap: [], windows: 0, underBar: [], outside: [], noRarity: [], clipped: [], cutByBar: [], windowScroll: [], mainCut: [], mains: 0 };
     const name = (el: Element): string => {
       const h = el as HTMLElement;
       const hook = h.dataset.action ?? h.dataset.tab ?? h.className.toString().split(' ')[0] ?? el.tagName;
@@ -177,6 +178,8 @@ function check(page: Page): Promise<Report> {
         for (const t of range.getClientRects()) if (t.top < edge - fade - 1 && t.bottom > edge + 1) r.cutByBar.push(name(el));
       }
     }
+    // 07 rule 7: one main action on a screen (in the open window, when there is one).
+    r.mains = [...document.querySelectorAll('#ui .mu-btn.main, #ui .btn-primary')].filter((el) => shown(el) && visible(el) && (!win || win.contains(el))).length;
     // The main button of a screen is seen whole, never half under the tab bar or the edge of its list.
     for (const el of document.querySelectorAll('#ui .mu-btn.main, #ui .btn-primary')) {
       if (!shown(el) || (win && !win.contains(el))) continue;
@@ -209,6 +212,7 @@ async function expectClean(page: Page, where: string): Promise<void> {
   expect.soft(r.cutByBar, `${where}: a name or a price cut by the tab bar`).toEqual([]);
   expect.soft(r.windowScroll, `${where}: a window scrolls inside`).toEqual([]);
   expect.soft(r.mainCut, `${where}: the main button cut`).toEqual([]);
+  expect.soft(r.mains, `${where}: main buttons on the screen`).toBeLessThanOrEqual(1);
 }
 
 /** Every screen of 07 in turn; fn checks each one. */
@@ -449,6 +453,46 @@ test.describe('the round of fixes, item 6: the small things', () => {
     await page.locator('[data-sheet=market] [data-action^="lot-open-"]').first().click();
     const bargain = page.locator('[data-action=lot-bargain]');
     if (await bargain.count()) expect((await bargain.boundingBox())!.height).toBeLessThanOrEqual(46);
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe('the round of fixes, item 8: a toast moves nothing, a hint lies on no card', () => {
+  test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
+
+  test('a toast over «Рынок» leaves every card where the finger aims', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, SEED);
+    await open(page);
+    await page.locator('[data-tab=market]').click();
+    await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 });
+    const card = page.locator('[data-sheet=market] .mu-card').first();
+    const before = (await card.boundingBox())!;
+    await page.evaluate(() => (window as unknown as { __TEST__: { toast(t: string): void } }).__TEST__.toast('Подарок: 50'));
+    await expect(page.locator('.toast').first()).toBeVisible();
+    await page.waitForTimeout(500);
+    expect((await card.boundingBox())!.y).toBe(before.y);
+    expect(errors).toEqual([]);
+  });
+
+  test('the hint over a tab of the bar takes its own band: no card of the open screen under it', async ({ page }) => {
+    const errors = collectErrors(page);
+    // showcase_m3: the save is new enough — an empty shelf stays empty (older saves put every pet on it).
+    await seedSave(page, { ...SEED, showcase: [], flags: { ...SEED.flags, showcase_m3: true } });
+    await open(page);
+    // The game stands still (no buyer, nothing put on the shelf): the hint of an empty shelf comes after 8 s without a tap.
+    await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
+    await page.locator('[data-tab=shop]').click();
+    const hint = page.locator('.hint:not([hidden])');
+    await expect(hint).toBeVisible({ timeout: 15000 });
+    const under = await page.evaluate(() => {
+      const h = document.querySelector('.hint:not([hidden])')!.getBoundingClientRect();
+      const body = document.querySelector('[data-sheet=shop] .sheet-body')!.getBoundingClientRect();
+      return [...document.querySelectorAll('[data-sheet=shop] .mu-card')]
+        .map((c) => c.getBoundingClientRect())
+        .filter((c) => Math.min(c.bottom, body.bottom) - Math.max(c.top, body.top) > 1 && c.left < h.right && c.right > h.left && Math.max(c.top, body.top) < h.bottom && Math.min(c.bottom, body.bottom) > h.top).length;
+    });
+    expect(under).toBe(0);
     expect(errors).toEqual([]);
   });
 });

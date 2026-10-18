@@ -172,6 +172,19 @@ async function boot(): Promise<void> {
   // M4-00: one panel model for every tab — the same panel by the shop (right of it on a PC and sideways, under it on a phone);
   // ✕, a tap on the active tab or on the shop closes a tab to the home «Eggs»; «Back» lives only inside a tab; each keeps its scroll.
   const portraits = createPortraits(scene.app, styleData);
+  /** The sign of a find by what it counts (s4-finds: its own picture, not the coin of its reward). */
+  const findSign = (f: (typeof achievements.items)[number]): string => {
+    const w = f.when;
+    if (f.id === 'first_deal') return 'penny';
+    if (w.type === 'stat') return ({ dealsAll: 'house', hatched: 'egg', coinsEarned: 'bag', levelUps: 'bowl', haggles: 'bubble' } as Record<string, string>)[w.stat] ?? 'star';
+    if (w.type === 'collected' || w.type === 'rows') return 'album';
+    if (w.type === 'city') return 'city';
+    if (w.type === 'upgrades') return 'sign';
+    if (w.type === 'guest') return 'plant';
+    if (w.type === 'flag')
+      return ({ seen_secret_sign_glow: 'sign', seen_secret_door_knock: 'door', seen_secret_door_stranger: 'door', seen_secret_lamp_disco: 'lamp', seen_rarity_vip: 'gem_vip', seen_rarity_exclusive: 'gem_exclusive', seen_event_golden: 'crown', seen_event_merchant: 'cart' } as Record<string, string>)[w.id] ?? 'star';
+    return 'star';
+  };
   /** M4-23: the mood chip of a species today. */
   const moodOf = (id: string): string => {
     const m = play.mood();
@@ -269,7 +282,7 @@ async function boot(): Promise<void> {
     find: (id) => {
       const f = achievements.items.find((x) => x.id === id);
       const lang = i18n.lang();
-      return { name: f?.name[lang] ?? id, desc: f?.desc[lang] ?? '', coins: f?.reward.coins ?? 0, crystals: f?.reward.crystals ?? 0 };
+      return { name: f?.name[lang] ?? id, desc: f?.desc[lang] ?? '', coins: f?.reward.coins ?? 0, crystals: f?.reward.crystals ?? 0, picture: portraits.thing(f ? findSign(f) : 'star') };
     },
     // MU-06: «На продажу» opens the pet's «Цена» page; «Выставить на продажу» there puts it on the shelf.
     list: (uid) => {

@@ -5,29 +5,33 @@
 import { Container, Graphics, Rectangle, type Application } from 'pixi.js';
 import type { RarityName, StyleData } from '../content/schemas.ts';
 import { drawCreature, drawEgg } from './art.ts';
+import { drawUpgradeIcon } from './icons.ts';
 
 export interface Portraits {
   /** A creature portrait (square, transparent). */
   creature(species: string, rarity: RarityName): string;
   /** An egg picture; tint is a care shell color (M3-02) or none. */
   egg(id: string, tint?: string): string;
+  /** A thing to buy (an upgrade's decor or id, content/upgrades.json); size — the picture's side in px. */
+  thing(name: string, size?: number): string;
 }
 
 const SIZE = 96;
 
 export function createPortraits(app: Application, style: StyleData): Portraits {
   const cache = new Map<string, string>();
-  const render = (key: string, draw: (g: Graphics) => void): string => {
+  const render = (key: string, draw: (g: Graphics, box: Container) => void, size = SIZE): string => {
     const hit = cache.get(key);
     if (hit !== undefined) return hit;
     const box = new Container();
     const g = new Graphics();
     box.addChild(g);
-    draw(g);
-    g.position.set(SIZE / 2, SIZE / 2);
+    draw(g, box);
+    // Every piece is drawn around 0,0: the box centres them all.
+    for (const child of box.children) child.position.set(child.position.x + size / 2, child.position.y + size / 2);
     let url = '';
     try {
-      const canvas = app.renderer.extract.canvas({ target: box, resolution: 1, frame: new Rectangle(0, 0, SIZE, SIZE) });
+      const canvas = app.renderer.extract.canvas({ target: box, resolution: 1, frame: new Rectangle(0, 0, size, size) });
       url = (canvas as HTMLCanvasElement).toDataURL?.('image/png') ?? '';
     } catch {
       url = '';
@@ -47,6 +51,9 @@ export function createPortraits(app: Application, style: StyleData): Portraits {
     egg(id, tint) {
       const look = style.eggs[id];
       return render(`e:${id}:${tint ?? ''}`, (g) => drawEgg(g, SIZE * 0.5, c, outline, 0, tint ? { shell: tint, spots: look?.spots ?? c.eggSpots } : look));
+    },
+    thing(name, size = SIZE) {
+      return render(`t:${name}:${size}`, (_g, box) => drawUpgradeIcon(box, name, size * 0.44, c, outline * (size / SIZE)), size);
     },
   };
 }

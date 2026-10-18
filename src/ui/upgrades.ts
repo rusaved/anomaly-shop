@@ -20,6 +20,8 @@ export interface UpgradeLookups {
   themeName(theme: string): string;
   /** The seller level the lease of the point opens at. */
   pointLevel: number;
+  /** The picture of a thing to buy: its decor or its id (the scene art). */
+  icon(thing: string): string;
 }
 
 export interface ShopTab {
@@ -89,7 +91,7 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
       ? `<button type="button" class="mu-btn off is-max" data-action="buy-upgrade" data-id="${id}" aria-disabled="true">${esc(look.t('upgrades.max'))}</button>`
       : `<button type="button" class="mu-btn${item.affordable ? '' : ' off'}" data-action="buy-upgrade" data-id="${id}" aria-disabled="${!item.affordable}">${money(item.price, fmt, gem)}</button>`;
     return (
-      `<div class="mu-card shop-item" data-upgrade="${id}"><span class="mu-pic"><span class="shop-icon shop-icon-${u.effect.type}" aria-hidden="true"></span>${item.fresh ? '<i class="mu-new" data-new></i>' : ''}</span>` +
+      `<div class="mu-card shop-item" data-upgrade="${id}"><span class="mu-pic"><img alt="" src="${look.icon(u.decor ?? u.id)}">${item.fresh ? '<i class="mu-new" data-new></i>' : ''}</span>` +
       `<span class="mu-name">${esc(u.name[look.lang() === 'en' ? 'en' : 'ru'])}</span><span class="mu-line"><span class="mu-meta">${esc(effectText(u, look))}</span>${lvl}${short}</span>${btn}</div>`
     );
   }

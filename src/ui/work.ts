@@ -9,6 +9,8 @@ import { iconize } from './kit.ts';
 export interface WorkLookups {
   t(key: string, vars?: Record<string, string | number>): string;
   lang(): string;
+  /** The bowl of the shop (the scene art, the same as on the «Миска» card). */
+  bowl(): string;
 }
 
 export interface WorkWindow {
@@ -16,16 +18,12 @@ export interface WorkWindow {
   render(): void;
 }
 
-const BOWL =
-  '<svg viewBox="0 0 120 80" aria-hidden="true"><ellipse cx="60" cy="30" rx="50" ry="12" fill="var(--c-counterTop)" stroke="var(--c-outline)" stroke-width="5"/>' +
-  '<path d="M10 30 Q60 100 110 30" fill="var(--c-rarityRare)" stroke="var(--c-outline)" stroke-width="5"/><circle cx="45" cy="26" r="6" fill="var(--c-uiAccent)"/><circle cx="62" cy="24" r="6" fill="var(--c-uiAccent)"/><circle cx="76" cy="27" r="5" fill="var(--c-uiAccent)"/></svg>';
-
 export function createWorkWindow(parent: HTMLElement, game: Game, look: WorkLookups): WorkWindow {
   const overlay = createOverlay(parent, 'work', () => overlay.hide());
   overlay.card.classList.add('card-work');
   overlay.card.innerHTML =
     '<h2 data-i18n="work.title"></h2><p class="card-sub" data-i18n="work.hint"></p>' +
-    `<button type="button" class="work-bowl" data-action="work-tap">${BOWL}</button>` +
+    `<button type="button" class="work-bowl" data-action="work-tap"><img alt="" src="${look.bowl()}"></button>` +
     '<p class="work-level" data-work-level></p>';
   const up = button('work-up', 'work.up', 'btn-primary');
   // The label carries the price («Прокачать за N»), set on render.

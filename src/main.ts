@@ -253,6 +253,7 @@ async function boot(): Promise<void> {
       const u = upgrades.upgrades.find((x) => x.id === 'point_rent')?.unlock;
       return u?.type === 'level' ? u.n : 1;
     })(),
+    icon: (thing) => portraits.thing(thing),
   });
   shopTab.section('upgrades');
   const inventoryTab = createInventoryTab(sheets.get('inventory')!, play, {
@@ -406,7 +407,7 @@ async function boot(): Promise<void> {
     '<button type="button" class="hud-btn" data-action="gifts" data-i18n="gifts.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16v9H4z"/><path d="M3 7h18v4H3z"/><path d="M12 7v13"/><path d="M12 7c-2-4-6-3-5 0M12 7c2-4 6-3 5 0"/></svg><span class="nav-badge nav-dot" data-gifts-dot hidden></span></button>',
   );
   (hud.side.querySelector('[data-action="gifts"]') as HTMLElement).addEventListener('click', () => giftsWindow.open());
-  const workWindow = createWorkWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang });
+  const workWindow = createWorkWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, bowl: () => portraits.thing('bowl', 192) });
   // M4-06: the move to a new city — asked in a popup (the Next card when ready, the city line of the seller level panel).
   const rebirthWindow = createRebirthWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, eggName: (id) => eggs.eggs.find((g) => g.id === id)?.name[i18n.lang()] ?? id });
   // UB-08: the seller level in the top bar; a tap shows what the next levels open.

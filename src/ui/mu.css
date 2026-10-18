@@ -203,18 +203,28 @@
 }
 
 /* ---- Icons: one coin and one crystal picture (not a font glyph) ---- */
+/* One coin everywhere (07 «Знаки»; the round of fixes, item 4): an orange disc with a ring and a light face inside and a dark contour
+   around it — on an orange button too it reads as a coin, never as the letter «O». */
+.coin,
 .coin.coin-sm,
 .mu-coin {
   display: inline-block;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 42%, var(--c-counterTop) 0 44%, color-mix(in srgb, var(--c-uiAccent) 78%, var(--c-outline)) 46% 54%, var(--c-uiAccent) 56%);
+  box-shadow: 0 0 0 max(1.5px, 0.09em) var(--c-outline);
+  flex: 0 0 auto;
+}
+/* A price in a button keeps its spaces: «Прокачать за ◉ 40». */
+.btn {
+  gap: 0.3em;
+}
+.coin.coin-sm,
+.mu-coin {
   width: 1em;
   height: 1em;
   min-width: 12px;
   min-height: 12px;
-  border-radius: 50%;
-  background: var(--c-uiAccent);
-  box-shadow: inset 0 0 0 0.16em var(--c-counterTop), inset 0 0 0 0.24em var(--c-uiAccentText);
   vertical-align: -0.14em;
-  flex: 0 0 auto;
 }
 .mu-gem {
   display: inline-block;
@@ -1037,9 +1047,7 @@ button.mu-card {
   line-height: 1;
 }
 .price-big .mu-coin {
-  font-size: 32px;
-  background: var(--c-uiText);
-  box-shadow: inset 0 0 0 0.16em var(--c-uiBg), inset 0 0 0 0.3em var(--c-uiText);
+  font-size: 28px;
 }
 .price-chip {
   min-height: 36px;
@@ -2062,11 +2070,6 @@ button.mu-card {
 .price-hint {
   font-size: 13px;
 }
-.price-big .mu-coin {
-  font-size: 28px;
-  background: var(--c-uiAccent);
-  box-shadow: inset 0 0 0 0.16em var(--c-counterTop), inset 0 0 0 0.24em var(--c-uiAccentText);
-}
 
 .price-pet .rar-ring {
   border-radius: 16px;
@@ -2748,4 +2751,15 @@ button.mu-card {
 }
 .landscape [data-overlay='settings'] .code-answer:empty {
   display: none;
+}
+/* The things to buy and the side job bowl: the scene's own art (no flat stand-ins, no orange disc next to the coin). */
+.mu-card.shop-item .mu-pic img {
+  max-width: 52px;
+  max-height: 52px;
+}
+.work-bowl img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
 }

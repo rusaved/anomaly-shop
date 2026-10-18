@@ -444,24 +444,24 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   /** picked: the customer at the counter bids for this one — its pill takes the offer bubble's accent color. */
   function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout, picked: boolean, order: 'none' | 'wanted' | 'ready'): void {
     const size = Math.max(12, r * 0.42);
-    // MU-03 (s1-shop-scene): a place of the «Витрина» strip shows the pet in its rarity ring, no tags (the price is on «Продажи»).
-    if (l.strip) {
-      node.tag.clear();
-      node.price.text = '';
-      node.level.text = '';
-      return;
-    }
+    // MU-12 (the mockup check, s1 + s3): a place of the «Витрина» strip — the pet in its rarity ring (no dash), a dark price pill
+    // at the bottom of the place and the level badge, as the cards of «Продажи».
+    const strip = Boolean(l.strip);
     node.price.text = fmt(cv.price);
     node.price.style.fontSize = size;
     const coinR = size * 0.42;
     node.price.style.fill = c.outline;
     const pillW = node.price.width + coinR * 2 + size * 0.9;
     const pillH = size * 1.35;
-    const py = r * 1.12;
+    const py = strip ? r * 1.02 : r * 1.12;
     node.tag.clear();
-    // Color discipline (Q-022, M3-17): the rarity is a short dash under the creature, above its price tag.
-    node.tag.roundRect(-r * 0.32, py - pillH / 2 - r * 0.2, r * 0.64, Math.max(3, r * 0.09), r * 0.05).fill(rarityColor(style.rarity, cv.rarity));
-    node.tag.roundRect(-pillW / 2, py - pillH / 2, pillW, pillH, pillH / 2).fill(picked ? c.uiAccent : decorItems.tags ? c.rarityCommon : c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+    // Color discipline (Q-022, M3-17): the rarity is a short dash under the creature, above its price tag (on the strip — the ring).
+    if (!strip) node.tag.roundRect(-r * 0.32, py - pillH / 2 - r * 0.2, r * 0.64, Math.max(3, r * 0.09), r * 0.05).fill(rarityColor(style.rarity, cv.rarity));
+    node.tag
+      .roundRect(-pillW / 2, py - pillH / 2, pillW, pillH, pillH / 2)
+      .fill(picked ? c.uiAccent : strip ? c.uiBg : decorItems.tags ? c.rarityCommon : c.eyeWhite)
+      .stroke({ width: l.outline * 0.6, color: c.outline });
+    if (strip) node.price.style.fill = picked ? c.outline : c.uiText;
     node.tag.circle(-pillW / 2 + size * 0.4 + coinR, py, coinR).fill(c.uiAccent).stroke({ width: Math.max(1, l.outline * 0.4), color: c.outline });
     node.price.position.set(coinR + size * 0.2, py);
     const max = cv.level >= cv.maxLevel;

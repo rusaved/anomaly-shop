@@ -2321,3 +2321,11 @@ button.mu-card {
 .rate-text {
   margin: 0;
 }
+
+/* MU-12 (the usability recheck): on «Лавка» lying, a toast stays over the scene, not over the list of eggs. */
+.landscape #ui:has(> .sheet[data-sheet='home']:not([hidden])) > .toasts {
+  width: var(--stage-w, 45%);
+}
+.landscape #ui:has(> .toasts > .toast) > .home-ui .home-next {
+  visibility: hidden;
+}

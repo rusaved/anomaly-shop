@@ -2214,7 +2214,7 @@ button.mu-card {
 }
 /* MU-12: a hint inside a tab screen keeps its own room at the top of the screen. */
 /* (specificity over .portrait/.landscape .sheet[data-kind='dock']) */
-#ui .sheet[data-kind='dock'] {
+#ui .sheet[data-kind='dock']:not([data-sheet='home']) {
   padding-top: calc(8px + var(--hint-space, 0px) + var(--toast-space, 0px));
   transition: padding-top 0.15s ease-out;
 }
@@ -2223,7 +2223,7 @@ button.mu-card {
   transition: padding-top 0.15s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
-  #ui .sheet[data-kind='dock'],
+  #ui .sheet[data-kind='dock']:not([data-sheet='home']),
   #ui .overlay[data-kind='screen'] > .card {
     transition: none;
   }

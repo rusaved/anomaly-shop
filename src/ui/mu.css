@@ -2148,18 +2148,6 @@ button.mu-card {
     height: 96px;
   }
 }
-/* MU-12: a hint inside a tab screen keeps its own room at the top of the screen. */
-/* (specificity over .portrait/.landscape .sheet[data-kind='dock']) */
-#ui .sheet[data-kind='dock']:not([data-sheet='home']) {
-  padding-top: calc(8px + var(--hint-space, 0px));
-  transition: padding-top 0.15s ease-out;
-}
-@media (prefers-reduced-motion: reduce) {
-  #ui .sheet[data-kind='dock']:not([data-sheet='home']),
-  #ui .overlay[data-kind='screen'] > .card {
-    transition: none;
-  }
-}
 .hint.roomed {
   animation: none;
 }
@@ -2266,8 +2254,8 @@ button.mu-card {
   padding-right: 0;
 }
 #ui .sheet[data-kind='dock']:not([data-sheet='home']) {
-  padding-top: var(--hint-space, 0px);
-  /* The usability review: a hint over a tab of the bar takes a band at the bottom of the screen; the list ends above it, nothing moves. */
+  padding-top: 0;
+  /* The usability review: a hint takes a band at the bottom of the screen; the list ends above it, nothing moves under a finger. */
   padding-bottom: var(--hint-bottom, 0px);
 }
 /* s4, s7: the segments 10 px under the top bar; s1-eggs, s2, s3, s8: the first section head 10 px under it (07: 8–14). */
@@ -2915,4 +2903,21 @@ button.mu-card {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
   padding-bottom: 32px;
+}
+/* The art recheck: a find's sign fits 80 % of its picture box (never cut by it). */
+.mu-grid.finds .mu-pic img {
+  max-width: 36px;
+  max-height: 36px;
+}
+/* «Дальше»: the icon says what is counted — the one coin for coins, a star for the seller level (xp), never an empty orange disc. */
+.next[data-unit='coins'] .next-icon {
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, color-mix(in srgb, var(--c-counterTop) 70%, var(--c-eyeWhite)) 0 14%, var(--c-counterTop) 16% 56%, color-mix(in srgb, var(--c-uiAccent) 72%, var(--c-outline)) 60%);
+  box-shadow: 0 0 0 1.5px var(--c-outline);
+}
+.next[data-unit='xp'] .next-icon {
+  border-radius: 0;
+  background: var(--c-rarityLegendary);
+  box-shadow: none;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
 }

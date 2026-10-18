@@ -496,3 +496,24 @@ test.describe('the round of fixes, item 8: a toast moves nothing, a hint lies on
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('the round of fixes, item 8 (the recheck): the first hint of a tab moves nothing when it goes', () => {
+  test.use({ viewport: { width: 812, height: 330 }, hasTouch: true, isMobile: true });
+
+  test('«Рынок» on its first visit: the hint stands in a band at the bottom, the lots stay put after the first tap', async ({ page }) => {
+    const errors = collectErrors(page);
+    const flags = { ...SEED.flags } as Record<string, boolean>;
+    delete flags.tab_market;
+    await seedSave(page, { ...SEED, flags });
+    await open(page);
+    await page.locator('[data-tab=market]').click();
+    await expect(page.locator('.hint:not([hidden])')).toBeVisible({ timeout: 8000 });
+    const lot = page.locator('[data-sheet=market] .mu-card').first();
+    const before = (await lot.boundingBox())!.y;
+    // The first tap on the screen (its head) hides the hint: the lot under a finger does not move.
+    await page.locator('[data-sheet=market] .mu-head h3').tap();
+    await page.waitForTimeout(400);
+    expect((await lot.boundingBox())!.y).toBe(before);
+    expect(errors).toEqual([]);
+  });
+});

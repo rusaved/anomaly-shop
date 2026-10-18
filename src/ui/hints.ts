@@ -40,19 +40,6 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
   let lastKey = '';
   let glow: HTMLElement | null = null;
   let outside = false;
-  /** MU-12: the screen whose top keeps room for the hint (its content moves down, nothing lies under the bubble). */
-  let roomy: HTMLElement | null = null;
-  const room = (sheet: HTMLElement | null, h = 0): void => {
-    if (roomy && roomy !== sheet) {
-      roomy.classList.remove('hint-room');
-      roomy.style.removeProperty('--hint-space');
-    }
-    roomy = sheet;
-    if (!sheet) return;
-    sheet.classList.add('hint-room');
-    sheet.style.setProperty('--hint-space', `${Math.ceil(h)}px`);
-  };
-
   /** The usability review (the round of fixes): a bubble over a tab of the bar takes a band at the bottom of the open screen — its list ends above. */
   let lowered: HTMLElement | null = null;
   const lower = (sheet: HTMLElement | null, h = 0): void => {
@@ -69,7 +56,6 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
   };
 
   const hide = (): void => {
-    room(null);
     lower(null);
     if (lastKey === '') return;
     lastKey = '';
@@ -154,8 +140,8 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         setGlow(button);
         return;
       }
-      // MU-12 (07 rule 16, the usability review): inside a tab screen the bubble takes its own room at the top of the screen —
-      // the content moves down under it, so it covers no text; the target wears the green frame.
+      // MU-12 (07 rule 16, the usability review): inside a tab screen the bubble takes its own room in the screen — a band at its
+      // bottom (the list ends above it), so it covers no text; the target wears the green frame.
       const sheet = button?.closest<HTMLElement>('.sheet') ?? null;
       if (button && sheet && !button.closest('#nav')) {
         lower(null);
@@ -167,7 +153,7 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         }
         const key = `room:${hint.key ?? hint.step}:${text}:${sheet.dataset.sheet}`;
         setGlow(button);
-        if (key === lastKey && roomy === sheet) return;
+        if (key === lastKey && lowered === sheet) return;
         lastKey = key;
         outside = false;
         label.textContent = text;
@@ -175,18 +161,23 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         root.dataset.hint = hint.step;
         root.classList.remove('side', 'below');
         root.classList.add('roomed');
+        // The round of fixes (the usability recheck): the bubble takes a band at the bottom of the screen, not the top — when the
+        // first tap hides it, the list above stays where the finger is (a band on top made it jump 50 px under the finger).
+        root.classList.add('below');
         const s = sheet.getBoundingClientRect();
         const w = root.offsetWidth;
         const hh = root.offsetHeight;
-        room(sheet, hh + 12);
+        lower(sheet, hh + 24);
+        // The target stays in sight above the band (only when the band would cover it: the screen just opened, no finger yet).
+        const list = button.closest<HTMLElement>('.sheet-body, .sheet-detail');
+        if (list && button.getBoundingClientRect().bottom > s.bottom - hh - 24) button.scrollIntoView({ block: 'nearest' });
         const b = button.getBoundingClientRect();
         const left = Math.max(16, Math.min(base.width - w - 16, b.left + b.width / 2 - base.left - w / 2));
         root.style.left = `${left}px`;
-        root.style.top = `${s.top - base.top + 8}px`;
+        root.style.top = `${s.bottom - base.top - hh - 12}px`;
         root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, b.left + b.width / 2 - base.left - left))}px`);
         return;
       }
-      room(null);
       root.classList.remove('roomed');
       outside = false;
       root.classList.remove('side');

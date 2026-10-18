@@ -79,7 +79,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     root.innerHTML =
       `<div class="mu-head"><h3>${esc(look.t('sales.title'))}</h3><span>${esc(look.t('sales.places', { n: view.creatures.length, all: view.slots }))}</span></div>` +
       `<div class="mu-grid">${cards.join('')}</div>`;
-    root.querySelector('[data-action="sale-add"]')?.addEventListener('click', () => tab.show(PICK));
+    root.querySelectorAll('[data-action="sale-add"]').forEach((b) => b.addEventListener('click', () => tab.show(PICK)));
     for (const c of view.creatures) {
       root.querySelector(`[data-action="sale-${c.uid}"]`)?.addEventListener('click', () => tab.show(c.uid));
       root.querySelector(`[data-action="sale-off-${c.uid}"]`)?.addEventListener('click', () => game.unlist(c.uid));

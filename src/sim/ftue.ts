@@ -23,7 +23,8 @@ export interface FtueHint {
 
 /** UB-06: the steps that lead the player through a tab (the open chat, the sell button; the free place of «My sales»). */
 const SELL: FtueTarget = { kind: 'el', selectors: ['[data-action="chat-sell"]', '[data-sheet="chats"] .chat-row:not(.closed)', '[data-action="tab-chats"]'] };
-const LIST: FtueTarget = { kind: 'el', selectors: ['[data-detail="sale"] [data-action^="sale-go-"]', '[data-detail="sale"] [data-action^="sale-list-"]', '[data-sheet="sales"] [data-action="sale-add"]', '[data-action="tab-sales"]'] };
+// The round of fixes (the usability recheck): on «Лавка» the «+» of a free place of the «Витрина» before the tab — the arrow stays near.
+const LIST: FtueTarget = { kind: 'el', selectors: ['[data-detail="sale"] [data-action^="sale-go-"]', '[data-detail="sale"] [data-action^="sale-list-"]', '[data-sheet="sales"] [data-action="sale-add"]', '[data-action="shelf-add"]', '[data-action="tab-sales"]'] };
 
 export function ftueHint(state: SaveData, view: GameView): FtueHint | null {
   if (state.flags[FLAGS.done]) return null;

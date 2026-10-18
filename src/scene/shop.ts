@@ -402,13 +402,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     if (key === selectedKey) return;
     selectedKey = key;
     selection.clear();
-    // MU-01: on the «Витрина» strip every pet wears the ring of its rarity (07 «Редкость»: 2.5 px, the lower steps at 70 %).
-    if (l.strip)
-      view.creatures.slice(0, l.slots.length).forEach((cv, i) => {
-        const s = l.slots[i]!;
-        const low = cv.rarity === 'common' || cv.rarity === 'good' || cv.rarity === 'valuable';
-        selection.roundRect(s.x, s.y, s.w, s.h, 14).stroke({ width: cv.rarity === 'common' ? 1 : 2.5, color: cv.rarity === 'common' ? c.rarityEdge : rarityColor(style.rarity, cv.rarity), alpha: low ? 0.7 : 1 });
-      });
+    // MU-01: on the «Витрина» every pet wears the ring of its rarity (07 «Редкость»: 2.5 px, the lower steps at 70 %) —
+    // on the strip and, the round of fixes item 5, on the shelf sideways too.
+    view.creatures.slice(0, l.slots.length).forEach((cv, i) => {
+      const s = l.slots[i]!;
+      const low = cv.rarity === 'common' || cv.rarity === 'good' || cv.rarity === 'valuable';
+      selection.roundRect(s.x, s.y, s.w, s.h, l.strip ? 14 : l.radius * 0.7).stroke({ width: cv.rarity === 'common' ? 1 : 2.5, color: cv.rarity === 'common' ? c.rarityEdge : rarityColor(style.rarity, cv.rarity), alpha: low ? 0.7 : 1 });
+    });
     const slot = l.slots[index];
     if (!slot || l.strip) return;
     const pad = l.outline * 1.2;
@@ -435,6 +435,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     texts.queue.visible = false;
   }
 
+  /** Q-037: a price pill and a level badge on the places of the «Витрина» (B); off by the mockup s1 (A). */
+  const PLACE_TAGS = false;
   const slotCenter = (slot: Rect) => ({ x: slot.x + slot.w / 2, y: slot.y + slot.h * 0.56, r: slot.w * 0.36 });
   const easeOutBack = (k: number): number => 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);
 
@@ -444,9 +446,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   /** picked: the customer at the counter bids for this one — its pill takes the offer bubble's accent color. */
   function drawTags(node: CreatureNode, cv: GameView['creatures'][number], r: number, l: ShopLayout, picked: boolean, order: 'none' | 'wanted' | 'ready'): void {
     const size = Math.max(12, r * 0.42);
-    // MU-03 (s1-shop-scene, «макет главнее кода»): a place of the «Витрина» strip shows the pet in its rarity ring, no tags —
-    // the price is on «Продажи» (s3). Q-037 B (a dark price pill on the place) is one line: drop this return.
-    if (l.strip) {
+    // MU-03 (s1-shop-scene, «макет главнее кода»), the round of fixes item 5: a place of the «Витрина» — the strip and the shelf
+    // sideways alike — shows the pet in its rarity ring, no tags; the price is on «Продажи» (s3). Q-037 B: PLACE_TAGS = true.
+    if (!PLACE_TAGS) {
       node.tag.clear();
       node.bar.clear();
       node.price.text = '';

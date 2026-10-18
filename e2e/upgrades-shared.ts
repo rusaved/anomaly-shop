@@ -24,9 +24,9 @@ export async function upgradesPanel(page: Page, shots?: string): Promise<void> {
   const id = await first.getAttribute('data-id');
   const order = () => panel.locator('[data-section=upgrades] [data-upgrade]').evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.upgrade));
   const before = await order();
-  await first.click();
   // MU-12 (the usability review): a purchase never moves the cards — the next tap lands where the finger expects; a tap at once after it is ignored.
-  await first.click();
+  // A real double tap (two clicks in a row, no waiting between them): two separate clicks of a slow test machine can be 450 ms apart.
+  await first.dblclick();
   expect(await order()).toEqual(before);
   expect(((await state(page)) as unknown as { upgrades: Record<string, number> }).upgrades[id ?? ''] ?? 0).toBe(1);
   await expect.poll(async () => ((await state(page)) as unknown as { upgradeFx: string }).upgradeFx).toMatch(/\d/);

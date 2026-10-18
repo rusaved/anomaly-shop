@@ -91,6 +91,8 @@ export function computeShopLayout(
   // MU-03: with a shelf strip the room is the top roomH of the stage (the floor runs on under the strip).
   const full = stage;
   if (shelf) stage = { x: stage.x, y: stage.y, w: stage.w, h: Math.max(1, roomH || shelf.y - stage.y) };
+  // The round of fixes, item 5: sideways on a phone the room is the top roomH of the stage — the scene buttons stand on the floor under it.
+  else if (roomH > 0 && roomH < stage.h) stage = { x: stage.x, y: stage.y, w: stage.w, h: roomH };
   const u = Math.max(SHOP.minUnit, Math.min(stage.w, stage.h) / 10);
   const outline = Math.max(2, Math.min(outlineWidth, u * 0.2));
   const radius = Math.min(cornerRadius, u * 0.6);
@@ -198,7 +200,7 @@ export function computeShopLayout(
   const k = decor.clock;
   if (k.x + k.r * 1.1 > decor.radio.x && k.x - k.r * 1.1 < decor.radio.x + decor.radio.w && k.y + k.r * 1.7 > decor.radio.y - decor.radio.h) k.x = decor.radio.x - k.r * 1.6;
 
-  if (!shelf) return { stage, unit: u, wall, floor, counter, counterTop, incubator, incubators, showcase, slots, slotGap: gap, door, queue, decor, outline, radius, strip: false, frame: showcase, roomBottom: stage.y + stage.h };
+  if (!shelf) return { stage: full, unit: u, wall, floor: { ...floor, h: full.y + full.h - floorY }, counter, counterTop, incubator, incubators, showcase, slots, slotGap: gap, door, queue, decor, outline, radius, strip: false, frame: showcase, roomBottom: stage.y + stage.h };
   // MU-03 (s1-shop-scene): the places of the «Витрина» strip — 4 in a row (5 from 9 places), the size of a card picture.
   const sCols = n <= 8 ? 4 : 5;
   const sGap = 10;

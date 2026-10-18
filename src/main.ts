@@ -18,7 +18,7 @@ import './ui/mu.css';
 import style from '@content/style.json';
 import { applyTheme } from './ui/theme.ts';
 import { createHud } from './ui/hud.ts';
-import { sceneTop, watchLayout } from './ui/layout.ts';
+import { roomHeight, sceneTop, watchLayout } from './ui/layout.ts';
 import { createI18n } from './ui/i18n.ts';
 import { createPauseWindow } from './ui/pause.ts';
 import { createSettingsWindow } from './ui/settings.ts';
@@ -791,7 +791,7 @@ async function boot(): Promise<void> {
     scene.resize(layout.width, layout.height);
     // MU-03: portrait — the room under the top bar and the «Витрина» strip under it; landscape — the room left of the eggs (l1).
     if (layout.shelf) shop.layout(layout.stage, sceneTop(layout), layout.shelf, layout.panel.y);
-    else shop.layout(layout.stage, sceneTop(layout));
+    else shop.layout(layout.stage, sceneTop(layout), null, roomHeight(layout));
     shelfKey = '';
     renderShelf();
     renderTabs();

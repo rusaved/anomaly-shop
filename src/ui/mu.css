@@ -2262,9 +2262,6 @@ button.mu-card {
 .landscape #ui:has(> .sheet[data-sheet='home']:not([hidden])) > .toasts {
   width: var(--stage-w, 45%);
 }
-.landscape #ui:has(> .toasts > .toast) > .home-ui .home-next {
-  visibility: hidden;
-}
 
 /* ---- MU, круг правок (18.10): the lists under the tab bar by the mockups ---- */
 /* The 16 px screen field lives inside the scrolling list: a rarity frame, a ready find's frame, the open chat's frame and a glow are never cut by its edge. */
@@ -2552,22 +2549,24 @@ button.mu-card {
 .landscape #ui .sheet[data-sheet='inventory'] > .sheet-head:not(:empty) + .sheet-body {
   padding-top: 6px;
 }
-/* l2: sideways the chat rows are compact — the avatar and the pet 36 px, the name 14 px, the last line 12 px. */
-.landscape .chat-row {
-  min-height: 56px;
-  gap: 8px;
-  padding: 6px 8px;
-}
-.landscape .chat-row .chat-avatar,
-.landscape .chat-row .chat-pet {
-  width: 36px !important;
-  height: 36px !important;
-}
-.landscape .chat-row .chat-who {
-  font-size: 14px;
-}
-.landscape .chat-row .chat-last {
-  font-size: 12px;
+/* l2: a phone sideways has compact chat rows — the avatar and the pet 36 px, the name 14 px, the last line 12 px (a PC keeps 14 px text). */
+@media (max-height: 520px) {
+  .landscape .chat-row {
+    min-height: 56px;
+    gap: 8px;
+    padding: 6px 8px;
+  }
+  .landscape .chat-row .chat-avatar,
+  .landscape .chat-row .chat-pet {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .landscape .chat-row .chat-who {
+    font-size: 14px;
+  }
+  .landscape .chat-row .chat-last {
+    font-size: 12px;
+  }
 }
 /* A phone sideways (a short screen): the windows that do not fit 343 px in height lie in two columns; a PC keeps the 343 px card (07 rule 13). */
 @media (max-height: 520px) {
@@ -2763,3 +2762,19 @@ button.mu-card {
   object-fit: contain;
   pointer-events: none;
 }
+/* The round of fixes item 5: sideways «Дальше» is the first row of the list right of the room — never a strip over the «Витрина» shelf. */
+.landscape .home-next {
+  z-index: 6;
+  left: calc(var(--panel-x, 45%) + 12px);
+  right: calc(var(--mu-pad) + var(--safe-right));
+  width: auto;
+  top: calc(var(--hud-height, 48px) + 10px);
+}
+.landscape .home-next .next {
+  min-height: 50px;
+  padding: 6px 12px 10px;
+}
+#app.landscape:has(.home-ui:not([hidden]) .home-next > .next:not([hidden])) .sheet[data-sheet='home'] > .sheet-body {
+  padding-top: 70px;
+}
+

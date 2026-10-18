@@ -51,6 +51,9 @@ export const PANEL = {
   navHeightShort: 48,
   /** The shelf strip keeps the screen margins (07 rule 1: 16 px). */
   pad: 16,
+  /** A phone sideways (the stage lower than this): the scene buttons get a band of floor under the room (44 + 12 + 12 px). */
+  landscapeShort: 400,
+  landscapeBand: 68,
 };
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -95,6 +98,12 @@ export function computeLayout(width: number, height: number, safe: Insets = NO_I
     hudHeight,
     safe,
   };
+}
+
+/** Sideways on a phone: the height of the room over the band of the scene buttons (0 — the room takes the whole stage). */
+export function roomHeight(layout: Layout): number {
+  if (layout.shelf || layout.stage.h >= PANEL.landscapeShort) return 0;
+  return Math.max(1, layout.stage.h - PANEL.landscapeBand);
 }
 
 /** The top inset the shop room keeps for the top bar: portrait — the bar lies over the room; landscape — the room is under the bar already. */

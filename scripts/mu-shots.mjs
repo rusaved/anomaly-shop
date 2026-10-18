@@ -53,6 +53,8 @@ const shot = async (page, name) => {
   if (only.length && !only.includes(name.split('.')[0])) return;
   // After the animation: a toast moves the screen down while it shows.
   await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 }).catch(() => {});
+  // A window still opening is half transparent: the finite animations end first.
+  await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {})))).catch(() => {});
   await page.waitForTimeout(350);
   await page.screenshot({ path: `${out}/${name}.png` });
 };

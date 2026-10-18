@@ -32,11 +32,12 @@ interface Report {
   noRarity: string[];
   clipped: string[];
   cutByBar: string[];
+  windowScroll: string[];
 }
 
 function check(page: Page): Promise<Report> {
   return page.evaluate((holders) => {
-    const r: Report = { tiny: [], small: [], cut: [], covered: [], overlap: [], windows: 0, underBar: [], outside: [], noRarity: [], clipped: [], cutByBar: [] };
+    const r: Report = { tiny: [], small: [], cut: [], covered: [], overlap: [], windows: 0, underBar: [], outside: [], noRarity: [], clipped: [], cutByBar: [], windowScroll: [] };
     const name = (el: Element): string => {
       const h = el as HTMLElement;
       const hook = h.dataset.action ?? h.dataset.tab ?? h.className.toString().split(' ')[0] ?? el.tagName;
@@ -174,6 +175,10 @@ function check(page: Page): Promise<Report> {
         for (const t of range.getClientRects()) if (t.top < edge - fade - 1 && t.bottom > edge + 1) r.cutByBar.push(name(el));
       }
     }
+    // A window with a few buttons fits between the bars whole, without a scroll inside (the level's list and «Подарки» scroll).
+    const card = win?.querySelector<HTMLElement>(':scope > .card');
+    if (card && win && !['reputation', 'gifts'].includes((win as HTMLElement).dataset.overlay ?? '') && card.scrollHeight > card.clientHeight + 1)
+      r.windowScroll.push(`${(win as HTMLElement).dataset.overlay} ${card.scrollHeight}>${card.clientHeight}`);
     for (const k of ['tiny', 'small', 'cut', 'covered', 'overlap', 'underBar', 'outside', 'noRarity', 'clipped', 'cutByBar'] as const) r[k] = [...new Set(r[k])];
     return r;
   }, PET_HOLDERS);
@@ -193,6 +198,7 @@ async function expectClean(page: Page, where: string): Promise<void> {
   expect.soft(r.noRarity, `${where}: a pet without its rarity`).toEqual([]);
   expect.soft(r.clipped, `${where}: a frame cut by its list`).toEqual([]);
   expect.soft(r.cutByBar, `${where}: a name or a price cut by the tab bar`).toEqual([]);
+  expect.soft(r.windowScroll, `${where}: a window scrolls inside`).toEqual([]);
 }
 
 /** Every screen of 07 in turn; fn checks each one. */

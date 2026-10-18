@@ -13,6 +13,11 @@
   --mu-btn: 44px;
   --mu-btn-main: 46px;
   --mu-win: 343px;
+  /* 07 «Токены», the type scale of the mockups: a screen or window title, a pet's name, the big price, a section caption. */
+  --mu-fs-title: 18px;
+  --mu-fs-pet: 18px;
+  --mu-fs-price: 32px;
+  --mu-fs-section: 12.5px;
 }
 
 /* ---- Rarity (07 «Редкость»): one component — frame, badge, ring, word. ---- */
@@ -357,14 +362,14 @@ button.mu-card {
 }
 .mu-head h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--mu-fs-section);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--c-uiMuted);
 }
 .mu-head span {
-  font-size: 13px;
+  font-size: var(--mu-fs-section);
   font-weight: 500;
   color: var(--c-uiMuted);
 }
@@ -602,14 +607,14 @@ button.mu-card {
 }
 .shelf-head h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--mu-fs-section);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--c-showcaseSlot);
 }
 .shelf-head span {
-  font-size: 13px;
+  font-size: var(--mu-fs-section);
   font-weight: 500;
   color: var(--c-showcaseSlot);
 }
@@ -726,7 +731,7 @@ button.mu-card {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
-  font-size: 20px;
+  font-size: var(--mu-fs-title);
   font-weight: 800;
   line-height: 1.2;
   overflow-wrap: anywhere;
@@ -1009,7 +1014,7 @@ button.mu-card {
   min-width: 0;
 }
 .price-pet-text .mu-name {
-  font-size: 20px;
+  font-size: var(--mu-fs-pet);
 }
 .price-slider {
   --zc: var(--c-uiText);
@@ -1026,8 +1031,8 @@ button.mu-card {
 .price-big {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 40px;
+  gap: 8px;
+  font-size: var(--mu-fs-price);
   font-weight: 800;
   line-height: 1;
 }
@@ -1228,7 +1233,7 @@ button.mu-card {
 }
 .overlay > .card h2 {
   margin: 0 40px 2px;
-  font-size: 22px;
+  font-size: var(--mu-fs-title);
   font-weight: 800;
   line-height: 1.2;
   text-align: center;
@@ -1491,7 +1496,7 @@ button.mu-card {
 }
 .hatch-result h3 {
   margin: 0 0 10px;
-  font-size: 22px;
+  font-size: var(--mu-fs-pet);
   font-weight: 800;
 }
 .hatch-range {
@@ -2058,10 +2063,11 @@ button.mu-card {
   font-size: 13px;
 }
 .price-big .mu-coin {
-  font-size: 34px;
+  font-size: 28px;
   background: var(--c-uiAccent);
   box-shadow: inset 0 0 0 0.16em var(--c-counterTop), inset 0 0 0 0.24em var(--c-uiAccentText);
 }
+
 .price-pet .rar-ring {
   border-radius: 16px;
 }
@@ -2095,7 +2101,7 @@ button.mu-card {
 }
 /* The seller level title on one line or two whole words. */
 .overlay .rep-title {
-  font-size: 20px;
+  font-size: var(--mu-fs-title);
 }
 /* l3: the count of pets right of the segments; the badge and «ур. · цена» one line. */
 .sheet-head:has(.seg-count) {
@@ -2449,7 +2455,7 @@ button.mu-card {
   margin: 0;
 }
 .landscape [data-detail='lot'] .lot-pet .mu-name {
-  font-size: 17px;
+  font-size: var(--mu-fs-pet);
 }
 .landscape [data-detail='lot'] .chat-lines {
   grid-area: lines;
@@ -2716,4 +2722,30 @@ button.mu-card {
   .landscape .card-hatch .hatch-buttons {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) max-content;
   }
+}
+/* A window title stands level with its ✕ (44 px), so the ✕ never reaches the first button under it. */
+#ui .overlay > .card:has(> .win-x) {
+  padding-top: 22px;
+}
+#ui .overlay > .card:has(> .win-x) > h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: -8px;
+}
+.landscape .overlay[data-overlay='work'] > .card > .card-sub,
+.landscape .overlay[data-overlay='work'] > .card > .work-level {
+  margin: 0;
+}
+/* Settings sideways fit between the bars: tighter rows. */
+.landscape .overlay[data-overlay='settings'] > .card {
+  row-gap: 6px;
+  padding-bottom: 10px;
+}
+.landscape [data-overlay='settings'] .group {
+  padding: 2px;
+}
+.landscape [data-overlay='settings'] .code-answer:empty {
+  display: none;
 }

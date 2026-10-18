@@ -2778,3 +2778,42 @@ button.mu-card {
   padding-top: 70px;
 }
 
+/* ---- MU, круг правок п. 6 ---- */
+/* s4-finds: a find to take wears a 2 px green frame a little away from the card (no 3 px outline). */
+.mu-card.mu-ready {
+  outline: 2px solid var(--c-uiGood);
+  outline-offset: 3px;
+}
+/* 07 «Токены»: the top bar elements 44 px to the eye as well as to the finger. */
+.hud-btn {
+  padding: 0;
+  background-clip: border-box;
+}
+.hud-level b,
+.hud-pill {
+  height: 44px;
+  border-radius: 22px;
+}
+.hud-plus {
+  width: 36px;
+  height: 36px;
+}
+/* 07 «Токены»: the tab labels 12 px. */
+.nav-label {
+  font-size: 12px;
+}
+/* lot.p: the answers take the width their words need — «Скидка? Возьму за…» on one line. */
+.lot-buttons {
+  grid-template-columns: repeat(2, auto);
+}
+/* «Продажи» at 12 px needs 55 px of a 53 px tab: a label may take 4 px of the air beside it (the neighbours' labels are short); the edges stay inside. */
+.portrait .nav-label {
+  margin: 0 -4px;
+  max-width: calc(100% + 8px);
+}
+.portrait .nav-tab:first-child .nav-label {
+  margin-left: 0;
+}
+.portrait .nav-tab:last-child .nav-label {
+  margin-right: 0;
+}

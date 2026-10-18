@@ -103,6 +103,8 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
     key = next;
     const got = finds.filter((f) => f.got).length;
     const sorted = [...finds].sort((a, b) => Number(b.got && !b.claimed) - Number(a.got && !a.claimed) || Number(b.got) - Number(a.got) || Number(a.hidden) - Number(b.hidden));
+    // The round of fixes, item 6 (07 rule 7): one green fill on the screen — the first find to take; the others say «Забрать» in green on a dark button.
+    let green = true;
     const cards = sorted.map((f) => {
       const d = look.find(f.id);
       const secret = f.hidden && !f.got;
@@ -111,10 +113,11 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
       const icon = secret ? '<b class="find-icon">?</b>' : `<b class="find-icon">${d.crystals ? GEM : COIN}</b>`;
       const meta = ready ? `${esc(look.t('finds.reward'))} ${reward}` : secret ? esc(look.t('finds.secret')) : `${esc(d.desc)}${f.need > 1 && !f.got ? ` · ${fmt.format(Math.min(f.have, f.need))}/${fmt.format(f.need)}` : ''}`;
       const btn = ready
-        ? `<button type="button" class="mu-btn good" data-action="find-take-${f.id}">${esc(look.t('finds.take'))}</button>`
+        ? `<button type="button" class="mu-btn ${green ? 'good' : 'good-text'}" data-action="find-take-${f.id}">${esc(look.t('finds.take'))}</button>`
         : f.claimed
           ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('finds.got'))}</button>`
           : `<button type="button" class="mu-btn off" aria-disabled="true">${secret ? '?' : reward}</button>`;
+      if (ready) green = false;
       return `<div class="mu-card find${f.got ? ' got' : ''}${ready ? ' mu-ready' : ''}${secret ? ' secret' : ''}" data-find="${f.id}"><span class="mu-pic">${icon}</span><span class="mu-name find-name">${esc(secret ? '???' : d.name)}</span><span class="mu-meta find-progress">${meta}</span>${btn}</div>`;
     });
     list.innerHTML =

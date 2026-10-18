@@ -3,7 +3,7 @@ import { collectErrors, open, seedSave } from './helpers.ts';
 
 /**
  * MU-12: the automatic check of docs/07-mobile-ui.md on every screen — portrait 375×650 (the zone a phone leaves to the game) and 812×330 (sideways, 07 «Приёмка»).
- * Taps ≥ 44 px, text ≥ 12 px (the 11 px tab labels and rarity badges of 07 aside), buttons ≥ 14 px, nothing cut or covered,
+ * Taps ≥ 44 px, text ≥ 12 px (the 11 px rarity badges of 07 aside), buttons ≥ 14 px, nothing cut or covered,
  * tap targets apart, one window, the content above the tab bar, the root at 130 % — nothing out of the screen; MU-01: every pet shows its rarity.
  */
 const pet = (uid: string, species: string, level = 1) => ({ uid, species, level, fed: 0, hatchedAt: 0, age: 0 });
@@ -94,7 +94,8 @@ function check(page: Page): Promise<Report> {
       const cs = getComputedStyle(el);
       const size = parseFloat(cs.fontSize);
       if (text) {
-        const eleven = el.closest('.nav-label, .rar-badge, .nav-badge') !== null;
+        // 07: the rarity badge word 11 px (the tab labels are 12 since the round of fixes, item 6).
+        const eleven = el.closest('.rar-badge, .nav-badge') !== null;
         // 07: button labels 14 px; the small lines inside a card that is a button (its meta) 12 px.
         const label = el.matches('button, .mu-btn') || el.parentElement?.matches('button.mu-btn, .mu-btn') === true;
         const min = eleven ? 10.5 : label ? 13.5 : 11.5;
@@ -407,6 +408,38 @@ test.describe('the round of fixes, item 2: sideways 812×330 is «list + detail�
       return { nameWhole: name.scrollWidth <= name.clientWidth + 1 && r('[data-hatch-name]').height < 30, rangeOver: r('[data-hatch-range]').bottom <= r('.hatch-buttons').top + 1, buttonsIn: r('.hatch-buttons').bottom <= r('.card-hatch').bottom };
     });
     expect(hatch).toEqual({ nameWhole: true, rangeOver: true, buttonsIn: true });
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe('the round of fixes, item 6: the small things', () => {
+  test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
+
+  test('tab names and 12 px labels, the top bar 44 px, one green fill among the finds, «Скидка? Возьму за…» on one line', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, SEED);
+    await open(page);
+    const tabs = await page.locator('#nav .nav-tab:not([hidden])').evaluateAll((els) =>
+      els.map((b) => {
+        const label = b.querySelector('.nav-label')!;
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        return { name: b.getAttribute('aria-label'), text: (label.textContent ?? '').trim(), size: getComputedStyle(label).fontSize, lines: Math.round(range.getBoundingClientRect().height / 13) };
+      }),
+    );
+    expect(tabs.length).toBe(7);
+    for (const t of tabs) expect(t, t.text).toEqual({ name: t.text, text: t.text, size: '12px', lines: 1 });
+    await expect(page.getByRole('button', { name: 'Продажи' })).toBeVisible();
+    // The top bar: every element 44 px to the eye (its own fill, not a 40 px pill inside a 44 px tap).
+    const hud = await page.locator('.hud-btn:not([hidden]), .hud-level b, .hud-pill').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height) + (getComputedStyle(e).backgroundClip === 'content-box' ? -4 : 0)));
+    expect(hud.every((h) => h === 44), `${hud}`).toBe(true);
+    await page.locator('[data-tab=inventory]').click();
+    await page.locator('[data-sheet=inventory] [data-sub=finds]').click();
+    expect(await page.locator('[data-sheet=inventory] .mu-btn.good').count()).toBeLessThanOrEqual(1);
+    await page.locator('[data-tab=market]').click();
+    await page.locator('[data-sheet=market] [data-action^="lot-open-"]').first().click();
+    const bargain = page.locator('[data-action=lot-bargain]');
+    if (await bargain.count()) expect((await bargain.boundingBox())!.height).toBeLessThanOrEqual(46);
     expect(errors).toEqual([]);
   });
 });

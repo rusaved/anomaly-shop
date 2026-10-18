@@ -1,6 +1,6 @@
 // What: the bottom tab bar (docs/07 «Словарь», rules 8–12; MU-02): Market · Storage · Sales · Shop (center, the scene) · Eggs · Chats · Store.
 // Called by: src/main.ts (create once; badges and open tabs on every commit); a tap selects its tab, a tap on the active one goes to its main screen.
-// Keep: tab ids are stable data-tab hooks for e2e; labels are nav.<id> keys in i18n (11 px under every icon); icons are inline SVG; a closed tab (Q-026 B) has no button.
+// Keep: tab ids are stable data-tab hooks for e2e; labels are nav.<id> keys in i18n (12 px under every icon, the button's aria-label too); icons are inline SVG; a closed tab (Q-026 B) has no button.
 
 export const TABS = ['market', 'inventory', 'sales', 'home', 'eggs', 'chats', 'shop'] as const;
 export type TabId = (typeof TABS)[number];
@@ -33,7 +33,8 @@ export function createNav(parent: HTMLElement, onSelect: (tab: TabId, again: boo
   root.className = 'nav';
   root.innerHTML = TABS.map(
     (id) =>
-      `<button type="button" class="nav-tab" data-tab="${id}" data-action="${id === 'shop' ? 'upgrades' : `tab-${id}`}">` +
+      // The round of fixes, item 6: every tab has its accessible name (the label, as the eye reads it).
+      `<button type="button" class="nav-tab" data-tab="${id}" data-action="${id === 'shop' ? 'upgrades' : `tab-${id}`}" data-i18n="nav.${id}" data-i18n-attr="aria-label">` +
       `<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[id]}</svg></span>` +
       `<span class="nav-label" data-i18n="nav.${id}"></span>` +
       '<span class="nav-badge" data-badge hidden></span></button>',

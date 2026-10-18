@@ -2410,3 +2410,310 @@ button.mu-card {
 #ui .overlay[data-kind='screen'] > .card {
   padding-bottom: 32px;
 }
+
+/* ---- MU, круг правок п. 2: the phone sideways is 812×330 — «list + detail» like l2 and l3 ---- */
+/* A hidden element stays hidden whatever layout a screen gives it (the hatch result until the strip stops, «Продать сразу» of a held pet). */
+#ui [hidden] {
+  display: none !important;
+}
+/* A window sideways: 4 px from the top bar and from the tab bar — all the height between them is its room. */
+.landscape .overlay:not([data-kind='screen']) {
+  padding-top: calc(var(--hud-height, 48px) + 4px);
+  padding-bottom: calc(var(--nav-size, 48px) + 4px);
+}
+/* 07: sideways the main button is never wider than 360 px. */
+.landscape .mu-btn.main,
+.landscape .overlay > .card .mu-btn.main,
+.landscape .overlay > .card .btn-primary {
+  max-width: 360px;
+}
+/* The lot (s2 style): the pet, the seller's lines and the answers in one row, whole. */
+.landscape [data-detail='lot'] .detail-page {
+  display: grid;
+  grid-template-columns: minmax(0, 180px) minmax(0, 1fr) minmax(0, 360px);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: 'back back back' 'pet lines buttons';
+  column-gap: 16px;
+  height: 100%;
+  min-height: 0;
+}
+.landscape [data-detail='lot'] .detail-page > .mu-back {
+  grid-area: back;
+}
+.landscape [data-detail='lot'] .lot-pet {
+  grid-area: pet;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: start;
+  gap: 8px;
+  margin: 0;
+}
+.landscape [data-detail='lot'] .lot-pet .mu-name {
+  font-size: 17px;
+}
+.landscape [data-detail='lot'] .chat-lines {
+  grid-area: lines;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 0 0 12px;
+}
+.landscape [data-detail='lot'] .lot-buttons {
+  grid-area: buttons;
+  position: static;
+  align-self: end;
+  padding: 0 0 12px;
+  border-top: 0;
+}
+.landscape [data-detail='lot'] .lot-buttons > .mu-btn.main {
+  max-width: none;
+}
+/* The egg card: the egg and its buy buttons left, «Что внутри» right from the first line. */
+.landscape .detail-page:has(> .cards-odds) {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  grid-template-areas: 'back back' 'hero inside' 'buy odds' '. odds';
+  grid-template-rows: auto auto auto 1fr;
+  column-gap: 20px;
+  row-gap: 8px;
+  align-content: start;
+}
+.landscape .detail-page:has(> .cards-odds) > .mu-back {
+  grid-area: back;
+  margin-bottom: 0;
+}
+.landscape .detail-page:has(> .cards-odds) > .mu-hero {
+  grid-area: hero;
+}
+.landscape .detail-page:has(> .cards-odds) > .mu-hero .mu-pic {
+  width: 64px;
+  height: 64px;
+}
+.landscape .detail-page:has(> .cards-odds) > .mu-buy {
+  grid-area: buy;
+  margin: 0;
+  align-self: start;
+}
+.landscape .detail-page:has(> .cards-odds) > .mu-head {
+  grid-area: inside;
+  margin: 0;
+  align-self: end;
+}
+.landscape .detail-page:has(> .cards-odds) > .cards-odds {
+  grid-area: odds;
+  align-self: start;
+}
+/* «Подарки» sideways: the seven days in one row and «Забрать подарок дня» under them without a scroll; the group and the review right. */
+.landscape #ui .overlay[data-overlay='gifts'] > .card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  grid-auto-flow: row;
+  column-gap: 20px;
+  align-content: start;
+}
+.landscape .overlay[data-overlay='gifts'] > .card > * {
+  grid-column: 1;
+}
+.landscape .overlay[data-overlay='gifts'] > .card > .mu-back {
+  grid-column: 1 / -1;
+}
+.landscape .overlay[data-overlay='gifts'] > .card > .gift-top {
+  grid-column: 2;
+  grid-row: 2 / span 3;
+  grid-template-columns: 1fr;
+  align-self: start;
+}
+.landscape .overlay[data-overlay='gifts'] .days {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.landscape .overlay[data-overlay='gifts'] .day {
+  min-height: 52px;
+  padding: 6px 2px;
+}
+.landscape .overlay[data-overlay='gifts'] .day[data-day='7'] {
+  grid-column: auto;
+}
+.landscape .overlay[data-overlay='gifts'] .gift-take {
+  margin-top: 10px;
+}
+/* «Коллекция» sideways: the segments closer, two rows of pets in sight. */
+.landscape #ui .sheet[data-sheet='inventory'] > .sheet-head {
+  margin-top: 6px;
+}
+.landscape #ui .sheet[data-sheet='inventory'] > .sheet-head:not(:empty) + .sheet-body {
+  padding-top: 6px;
+}
+/* l2: sideways the chat rows are compact — the avatar and the pet 36 px, the name 14 px, the last line 12 px. */
+.landscape .chat-row {
+  min-height: 56px;
+  gap: 8px;
+  padding: 6px 8px;
+}
+.landscape .chat-row .chat-avatar,
+.landscape .chat-row .chat-pet {
+  width: 36px !important;
+  height: 36px !important;
+}
+.landscape .chat-row .chat-who {
+  font-size: 14px;
+}
+.landscape .chat-row .chat-last {
+  font-size: 12px;
+}
+/* A phone sideways (a short screen): the windows that do not fit 343 px in height lie in two columns; a PC keeps the 343 px card (07 rule 13). */
+@media (max-height: 520px) {
+  /* The seller level sideways: the level, its bar and the city left; what the next levels open right. */
+  .landscape .overlay[data-overlay='reputation'] > .card {
+    width: min(100%, 680px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-auto-flow: row dense;
+    column-gap: 24px;
+    row-gap: 8px;
+    align-content: start;
+    padding: 16px 20px;
+  }
+  .landscape .overlay[data-overlay='reputation'] > .card > * {
+    grid-column: 1;
+  }
+  .landscape .overlay[data-overlay='reputation'] > .card > .mu-head {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 4px 0 0;
+  }
+  .landscape .overlay[data-overlay='reputation'] > .card > .rep-list {
+    grid-column: 2;
+    grid-row: 2 / span 5;
+    margin: 0;
+  }
+  .landscape .overlay[data-overlay='reputation'] > .card > .mu-head h3 {
+    margin-right: 44px;
+  }
+  /* «Вылупился!» sideways: the pet left; its rarity, the whole name and the price line right; the three ways out in one row under them. */
+  .landscape .overlay > .card.card-hatch {
+    width: min(100%, 600px);
+    padding: 12px 20px 12px;
+  }
+  .landscape .card-hatch h2 {
+    margin-bottom: 8px !important;
+  }
+  .landscape .card-hatch .hatch-result {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    grid-template-areas: 'pic word' 'pic name' 'pic range' 'buttons buttons';
+    column-gap: 20px;
+    align-items: center;
+    text-align: left;
+  }
+  .landscape .card-hatch .hatch-pic {
+    grid-area: pic;
+    width: 132px;
+    height: 96px;
+    margin: 0;
+  }
+  .landscape .card-hatch .hatch-pic img {
+    max-width: 76px;
+    max-height: 76px;
+  }
+  .landscape .card-hatch .rar-word {
+    grid-area: word;
+    margin: 0;
+    align-self: end;
+  }
+  .landscape .card-hatch .hatch-result h3 {
+    grid-area: name;
+    margin: 2px 0;
+  }
+  .landscape .card-hatch .hatch-range {
+    grid-area: range;
+    margin: 0;
+    align-self: start;
+  }
+  .landscape .card-hatch .hatch-buttons {
+    grid-area: buttons;
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .landscape .overlay .card .hatch-buttons .hatch-sell {
+    margin-top: 0;
+  }
+  .landscape .card-hatch .hatch-buttons > .mu-btn.main {
+    max-width: none;
+  }
+  /* «Коллекция» sideways: «Собрано» right of the segments, a row's head and its bonus on one line — two rows of pets in sight. */
+  .landscape .sheet[data-sheet='inventory'] .cards-sum[data-collected] {
+    display: none;
+  }
+  .landscape .col-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 12px;
+  }
+  .landscape .col-row .mu-head {
+    flex: 0 0 auto;
+    margin: 0 0 6px;
+  }
+  .landscape .col-row + .col-row .mu-head {
+    margin-top: 8px;
+  }
+  .landscape .col-row .col-bonus {
+    flex: 1 1 0;
+    margin: 0;
+  }
+  .landscape .col-row > .mu-grid {
+    flex: 0 0 100%;
+  }
+  .landscape #ui .sheet[data-kind='dock'] > .sheet-head:not(:empty) + .sheet-body {
+    padding-top: 8px;
+  }
+  .landscape .sheet-head .mu-seg {
+    padding: 3px;
+  }
+  /* «Пауза» sideways keeps its 343 px (s6-pause): «Продолжить» and «Настройки» side by side, the communities under them. */
+  .landscape .overlay[data-overlay='pause'] > .card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 10px;
+    row-gap: 10px;
+    align-content: start;
+    padding: 14px 16px 16px;
+  }
+  .landscape .overlay[data-overlay='pause'] > .card > :not(.btn) {
+    grid-column: 1 / -1;
+  }
+  .landscape .overlay[data-overlay='pause'] > .card > .community {
+    margin: 0;
+  }
+  /* The review window sideways keeps 343 px: the egg left of the words, the button under them. */
+  .landscape .overlay > .card.card-rate {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    grid-template-areas: 'title title' 'pic text' 'go go';
+    column-gap: 14px;
+    row-gap: 10px;
+    text-align: left;
+    align-items: center;
+    padding: 14px 16px 16px;
+  }
+  .landscape .card-rate > h2 {
+    grid-area: title;
+  }
+  .landscape .card-rate > .rate-pic {
+    grid-area: pic;
+    width: 84px;
+    height: 76px;
+  }
+  .landscape .card-rate > .rate-text {
+    grid-area: text;
+  }
+  .landscape .card-rate > .mu-btn {
+    grid-area: go;
+  }
+  .landscape .card-hatch .hatch-buttons {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) max-content;
+  }
+}

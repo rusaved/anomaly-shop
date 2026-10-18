@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { collectErrors, open, seedSave } from './helpers.ts';
 
 /**
- * MU-12: the automatic check of docs/07-mobile-ui.md on every screen — portrait 375×650 (the zone a phone leaves to the game) and 812×375.
+ * MU-12: the automatic check of docs/07-mobile-ui.md on every screen — portrait 375×650 (the zone a phone leaves to the game) and 812×330 (sideways, 07 «Приёмка»).
  * Taps ≥ 44 px, text ≥ 12 px (the 11 px tab labels and rarity badges of 07 aside), buttons ≥ 14 px, nothing cut or covered,
  * tap targets apart, one window, the content above the tab bar, the root at 130 % — nothing out of the screen; MU-01: every pet shows its rarity.
  */
@@ -170,8 +170,8 @@ function check(page: Page): Promise<Report> {
         if (n.nodeType !== Node.TEXT_NODE || !(n.textContent ?? '').trim()) continue;
         const range = document.createRange();
         range.selectNodeContents(n);
-        const t = range.getBoundingClientRect();
-        if (t.top < edge - fade - 1 && t.bottom > edge + 1) r.cutByBar.push(name(el));
+        // Line by line: a line going under the edge lies in the fade.
+        for (const t of range.getClientRects()) if (t.top < edge - fade - 1 && t.bottom > edge + 1) r.cutByBar.push(name(el));
       }
     }
     for (const k of ['tiny', 'small', 'cut', 'covered', 'overlap', 'underBar', 'outside', 'noRarity', 'clipped', 'cutByBar'] as const) r[k] = [...new Set(r[k])];
@@ -247,7 +247,7 @@ async function walk(page: Page, fn: (where: string) => Promise<void>): Promise<v
 
 for (const [w, h] of [
   [375, 650],
-  [812, 375],
+  [812, 330],
 ] as const) {
   test.describe(`MU-12 docs/07 at ${w}×${h}`, () => {
     test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
@@ -333,6 +333,74 @@ test.describe('the round of fixes, item 1: lists by the mockups at 375×650', ()
     await page.locator('[data-action=gifts]').click();
     const gifts = await heights(page, '[data-overlay=gifts] .gift-top .mu-card');
     expect(near(gifts, 122), `gifts ${gifts}`).toBe(true);
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe('the round of fixes, item 2: sideways 812×330 is «list + detail»', () => {
+  test.use({ viewport: { width: 812, height: 330 }, hasTouch: true, isMobile: true });
+
+  /** The part of el above the tab bar and under the top bar, px. */
+  const inSight = (page: Page, sel: string) =>
+    page.locator(sel).first().evaluate((el) => {
+      const b = el.getBoundingClientRect();
+      const bar = document.getElementById('nav')!.getBoundingClientRect().top;
+      const hud = document.querySelector('.hud')!.getBoundingClientRect().bottom;
+      return { top: Math.round(b.top - hud), bottom: Math.round(bar - b.bottom), h: Math.round(Math.min(b.bottom, bar) - Math.max(b.top, hud)) };
+    });
+  const widestMain = (page: Page) =>
+    page.evaluate(() => Math.max(0, ...[...document.querySelectorAll<HTMLElement>('#ui .mu-btn.main, #ui .btn-primary')].filter((b) => b.offsetParent).map((b) => b.getBoundingClientRect().width)));
+
+  test('rows 44–52 px; the lot, the egg card, the collection, the gifts and «Вылупился!» whole', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, SEED);
+    await open(page);
+    const tab = (id: string) => page.locator(`[data-tab=${id}]`).click();
+    for (const id of ['eggs', 'inventory', 'sales', 'market', 'shop']) {
+      await tab(id);
+      const rows = await heights(page, `[data-sheet=${id}] .sheet-body .mu-card`);
+      expect(rows.length, id).toBeGreaterThan(0);
+      expect(rows.every((h) => h >= 44 && h <= 52), `${id} rows ${rows}`).toBe(true);
+      expect(await widestMain(page), id).toBeLessThanOrEqual(360);
+    }
+    await tab('market');
+    await page.locator('[data-sheet=market] [data-action^="lot-open-"]').first().click();
+    // The pet, the lines and the answers in one row: every answer whole, the lines with room.
+    const lines = await inSight(page, '[data-detail=lot] .chat-lines');
+    expect(lines.h, 'the seller lines').toBeGreaterThanOrEqual(120);
+    for (const sel of ['[data-detail=lot] .lot-pet', '[data-detail=lot] .lot-buttons']) expect((await inSight(page, sel)).bottom, sel).toBeGreaterThanOrEqual(0);
+    expect(await widestMain(page)).toBeLessThanOrEqual(360);
+    await tab('eggs');
+    await page.locator('[data-sheet=eggs] [data-action="egg-card-egg_basic"]').click();
+    const odds = await inSight(page, '[data-sheet=eggs] .cards-odds .mu-card');
+    expect(odds.bottom, '«Что внутри»: the first row whole').toBeGreaterThanOrEqual(0);
+    await tab('inventory');
+    await page.locator('[data-sheet=inventory] [data-sub=collection]').click();
+    const tops = await page.locator('[data-sheet=inventory] .card-col').evaluateAll((els) => {
+      const bar = document.getElementById('nav')!.getBoundingClientRect().top;
+      return [...new Set(els.filter((e) => e.getBoundingClientRect().top + 24 <= bar).map((e) => Math.round(e.getBoundingClientRect().top)))];
+    });
+    expect(tops.length, 'two rows of the collection in sight').toBeGreaterThanOrEqual(2);
+    await tab('home');
+    await page.locator('[data-action=gifts]').click();
+    expect((await inSight(page, '[data-action=gift-daily]')).bottom, '«Забрать подарок дня» without a scroll').toBeGreaterThanOrEqual(0);
+    await page.locator('[data-action=gifts-close]').click();
+    // «Вылупился!»: the whole name and the price line over the buttons.
+    await tab('eggs');
+    await page.evaluate(() => (window as unknown as { __TEST__: { grant(n: number): void } }).__TEST__.grant(500));
+    await page.locator('[data-sheet=eggs] [data-action="egg-buy-egg_basic"]').click();
+    const openEgg = page.locator('[data-sheet=eggs] [data-action^="egg-open-"]').first();
+    for (let i = 0; i < 40 && !(await openEgg.isVisible()); i++) await page.evaluate(() => (window as unknown as { __TEST__: { runSim(s: number): number } }).__TEST__.runSim(5));
+    await openEgg.click();
+    const skip = page.locator('[data-action=hatch-skip]');
+    if (await skip.isVisible()) await skip.click();
+    await expect(page.locator('[data-hatch-name]')).toBeVisible();
+    const hatch = await page.evaluate(() => {
+      const r = (sel: string) => document.querySelector(sel)!.getBoundingClientRect();
+      const name = document.querySelector<HTMLElement>('[data-hatch-name]')!;
+      return { nameWhole: name.scrollWidth <= name.clientWidth + 1 && r('[data-hatch-name]').height < 30, rangeOver: r('[data-hatch-range]').bottom <= r('.hatch-buttons').top + 1, buttonsIn: r('.hatch-buttons').bottom <= r('.card-hatch').bottom };
+    });
+    expect(hatch).toEqual({ nameWhole: true, rangeOver: true, buttonsIn: true });
     expect(errors).toEqual([]);
   });
 });

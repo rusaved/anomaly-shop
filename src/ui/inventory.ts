@@ -130,6 +130,8 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
     if (next === key) return;
     key = next;
     const pct = (x: number): number => Math.round(x * 100);
+    // Sideways «Собрано N/M» stands right of the segments, like the count of pets (l3).
+    count.textContent = look.t('inventory.found', { n: view.have, all: view.all });
     list.innerHTML =
       `<p class="mu-meta cards-sum" data-collected="${view.have}/${view.all}">${esc(look.t('inventory.found', { n: view.have, all: view.all }))}</p>` +
       view.rows
@@ -153,7 +155,7 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
       sheet.setTitle(look.t('nav.inventory'));
       sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) => b.classList.toggle('active', b.dataset.sub === mode));
       const fmt = new Intl.NumberFormat(look.lang());
-      count.hidden = mode !== 'items';
+      count.hidden = mode === 'finds';
       if (mode === 'items') renderItems(fmt);
       else if (mode === 'finds') renderFinds(fmt);
       else renderCollection();

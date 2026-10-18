@@ -163,7 +163,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
         .map(
           (o) =>
             `<div class="mu-card rar card-odds" data-rarity="${o.rarity}" data-species="${o.species}" data-chance="${o.chance}"><span class="mu-pic"><img alt="" src="${look.portrait(o.species, o.rarity)}"></span>` +
-            `<span class="mu-name">${esc(look.speciesName(o.species))}</span><span>${rarityBadge(o.rarity, look.t(`rarity.${o.rarity}`))}</span><span class="mu-meta">${pct(o.chance)}</span></div>`,
+            `<span class="mu-name">${esc(look.speciesName(o.species))}</span><span class="mu-line"><span>${rarityBadge(o.rarity, look.t(`rarity.${o.rarity}`))}</span><span class="mu-meta">${pct(o.chance)}</span></span></div>`,
         )
         .join('')}</div>`;
     panel.card.querySelector('[data-action="egg-back"]')?.addEventListener('click', () => tab.show(null));

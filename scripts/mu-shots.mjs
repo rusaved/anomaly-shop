@@ -1,5 +1,5 @@
 // MU-12: screenshots of every screen of docs/07 next to its mockup (docs/mockups) — portrait 375×650 (the zone of a phone) and landscape 812×330.
-// Run after `npm run build:e2e`: node scripts/mu-shots.mjs [outDir=docs/evidence/MU/screens] [--only=name,name]
+// Run after `npm run build:e2e`: node scripts/mu-shots.mjs [outDir=docs/evidence/MU/screens] [--only=name,name] [--font130]
 // The save is seeded past the first minute with one pet of every rarity; console errors are printed and fail the run.
 import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
@@ -9,7 +9,8 @@ import { resolve } from 'node:path';
 const args = process.argv.slice(2);
 const out = resolve(args.find((a) => !a.startsWith('--')) ?? 'docs/evidence/MU/screens');
 const only = (args.find((a) => a.startsWith('--only='))?.slice(7) ?? '').split(',').filter(Boolean);
-const scale = Number(args.find((a) => a.startsWith('--font='))?.slice(7) ?? 0);
+// --font130: a system font at 130 % the way the check of 07 emulates it — every text of the HTML layer 1.3 times larger (the game sets px).
+const font130 = args.includes('--font130');
 mkdirSync(out, { recursive: true });
 const port = 4198;
 const srv = spawn('npx', ['vite', 'preview', '--outDir', process.env.MU_DIST || 'dist-e2e', '--port', String(port), '--strictPort', '--host', '127.0.0.1'], { stdio: 'ignore', detached: true });
@@ -31,19 +32,19 @@ const save = () => ({
 });
 
 const errors = [];
-async function session(w, h, tag) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+async function session(w, h, tag, fresh = false) {
+  // The 130 % set is for overflow only: 1× pictures keep the evidence small.
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true, deviceScaleFactor: font130 ? 1 : 2 });
   const page = await ctx.newPage();
   page.on('console', (m) => m.type() === 'error' && errors.push(`${tag}: ${m.text()}`));
   page.on('pageerror', (e) => errors.push(`${tag}: ${e.message}`));
-  await page.addInitScript(({ text, font }) => {
-    if (!sessionStorage.getItem('mu-seeded')) {
+  await page.addInitScript(({ text }) => {
+    if (text && !sessionStorage.getItem('mu-seeded')) {
       localStorage.setItem('anomaly-shop:save', text);
       localStorage.setItem('__yasdk_mock_player__', JSON.stringify({ save: text }));
       sessionStorage.setItem('mu-seeded', '1');
     }
-    if (font) document.addEventListener('DOMContentLoaded', () => (document.documentElement.style.fontSize = `${font}%`));
-  }, { text: JSON.stringify(save()), font: scale });
+  }, { text: fresh ? '' : JSON.stringify(save()) });
   await page.goto(`http://127.0.0.1:${port}/`);
   await page.waitForFunction(() => window.__TEST__?.state().controllable);
   await page.waitForTimeout(600);
@@ -55,6 +56,16 @@ const shot = async (page, name) => {
   await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 }).catch(() => {});
   // A window still opening is half transparent: the finite animations end first.
   await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {})))).catch(() => {});
+  if (font130)
+    await page.evaluate(() => {
+      // Read every size first, then set them (a scaled parent must not scale its children twice); scaled ones stay marked.
+      const els = [...document.querySelectorAll('#ui *')].filter((el) => !el.dataset.mu130);
+      const sizes = els.map((el) => parseFloat(getComputedStyle(el).fontSize));
+      els.forEach((el, i) => {
+        el.dataset.mu130 = '1';
+        el.style.fontSize = `${Math.round((sizes[i] ?? 16) * 13) / 10}px`;
+      });
+    });
   await page.waitForTimeout(350);
   await page.screenshot({ path: `${out}/${name}.png` });
 };
@@ -109,7 +120,9 @@ for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']]) {
     await page.evaluate(() => window.__TEST__.runSim(60));
     await tab(page, 'chats');
     await shot(page, `chats.${tag}`);
-    const row = page.locator('[data-sheet=chats] .chat-row:not(.closed)').first();
+    // Portrait: the list, then a dialog; sideways the newest chat stands open next to the list (l2) — chat.l is another one.
+    const rows = page.locator('[data-sheet=chats] .chat-row:not(.closed)');
+    const row = tag === 'l' && (await rows.count()) > 1 ? rows.nth(1) : rows.first();
     if (await row.isVisible()) await row.click();
     await shot(page, `chat.${tag}`);
   });
@@ -150,9 +163,28 @@ for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']]) {
       if (await skip.isVisible()) await skip.click();
       await page.waitForTimeout(900);
       await shot(page, `hatch.${tag}`);
-    }
+      await page.locator('[data-action=hatch-keep]').click();
+    } else throw new Error('the egg did not get ready');
   });
+  // «Вылупился!» of the seed's VIP and exclusive pets (r1, s6): the frame, the shine and the pulse, «1 из N яиц».
+  for (const [uid, name] of [['e', 'hatch-vip'], ['f', 'hatch-exclusive']])
+    await tryStep(`${tag} ${name}`, async () => {
+      await tab(page, 'home');
+      if (!(await page.evaluate((id) => window.__TEST__.hatch(id), uid))) throw new Error(`no pet ${uid}`);
+      await page.waitForTimeout(400);
+      await page.locator('[data-action=hatch-skip]').click();
+      await page.waitForTimeout(900);
+      await shot(page, `${name}.${tag}`);
+      await page.locator('[data-action=hatch-keep]').click();
+    });
   await ctx.close();
+  // The hint of the first minute (07 rule 16): a new player, the hint next to its target in a green frame.
+  await tryStep(`${tag} hint`, async () => {
+    const first = await session(w, h, `${tag}-hint`, true);
+    await first.page.locator('.hint:not([hidden]) [data-hint-text]').waitFor();
+    await shot(first.page, `hint.${tag}`);
+    await first.ctx.close();
+  });
 }
 await browser.close();
 // The preview server and its children go with the run (npx starts vite as a child).

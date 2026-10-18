@@ -849,6 +849,13 @@ async function boot(): Promise<void> {
       },
       toast: (text) => toasts.show(text, 'info'),
       event: (id) => play.startEventNow(id),
+      hatch: (uid, egg) => {
+        const v = play.view();
+        const cr = [...v.inventory, ...v.creatures].find((c) => c.uid === uid);
+        if (!cr) return false;
+        hatchShow.play({ uid, species: cr.species, rarity: cr.rarity, egg });
+        return true;
+      },
     });
   }
 

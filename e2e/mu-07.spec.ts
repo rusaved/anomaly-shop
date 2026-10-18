@@ -33,11 +33,12 @@ interface Report {
   clipped: string[];
   cutByBar: string[];
   windowScroll: string[];
+  mainCut: string[];
 }
 
 function check(page: Page): Promise<Report> {
   return page.evaluate((holders) => {
-    const r: Report = { tiny: [], small: [], cut: [], covered: [], overlap: [], windows: 0, underBar: [], outside: [], noRarity: [], clipped: [], cutByBar: [], windowScroll: [] };
+    const r: Report = { tiny: [], small: [], cut: [], covered: [], overlap: [], windows: 0, underBar: [], outside: [], noRarity: [], clipped: [], cutByBar: [], windowScroll: [], mainCut: [] };
     const name = (el: Element): string => {
       const h = el as HTMLElement;
       const hook = h.dataset.action ?? h.dataset.tab ?? h.className.toString().split(' ')[0] ?? el.tagName;
@@ -176,6 +177,13 @@ function check(page: Page): Promise<Report> {
         for (const t of range.getClientRects()) if (t.top < edge - fade - 1 && t.bottom > edge + 1) r.cutByBar.push(name(el));
       }
     }
+    // The main button of a screen is seen whole, never half under the tab bar or the edge of its list.
+    for (const el of document.querySelectorAll('#ui .mu-btn.main, #ui .btn-primary')) {
+      if (!shown(el) || (win && !win.contains(el))) continue;
+      const v = visible(el);
+      const b = el.getBoundingClientRect();
+      if (v && b.height - v.height > 2) r.mainCut.push(`${name(el)} ${Math.round(v.height)}/${Math.round(b.height)}`);
+    }
     // A window with a few buttons fits between the bars whole, without a scroll inside (the level's list and «Подарки» scroll).
     const card = win?.querySelector<HTMLElement>(':scope > .card');
     if (card && win && !['reputation', 'gifts'].includes((win as HTMLElement).dataset.overlay ?? '') && card.scrollHeight > card.clientHeight + 1)
@@ -200,6 +208,7 @@ async function expectClean(page: Page, where: string): Promise<void> {
   expect.soft(r.clipped, `${where}: a frame cut by its list`).toEqual([]);
   expect.soft(r.cutByBar, `${where}: a name or a price cut by the tab bar`).toEqual([]);
   expect.soft(r.windowScroll, `${where}: a window scrolls inside`).toEqual([]);
+  expect.soft(r.mainCut, `${where}: the main button cut`).toEqual([]);
 }
 
 /** Every screen of 07 in turn; fn checks each one. */

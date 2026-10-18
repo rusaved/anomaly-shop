@@ -2817,3 +2817,14 @@ button.mu-card {
 .portrait .nav-tab:last-child .nav-label {
   margin-right: 0;
 }
+/* «Цена» sideways at 330: «Выставить на продажу» under the pet (left), the price and the slider right — the button whole above the tab bar. */
+@media (max-height: 520px) {
+  .landscape [data-detail='sale'] .detail-page:has(.price-slider) {
+    grid-template-areas: 'back back' 'pet slider' 'go slider';
+    grid-template-rows: auto auto 1fr;
+  }
+  .landscape [data-detail='sale'] .detail-page:has(.price-slider) > .price-go {
+    align-self: start;
+    padding: 4px 0 8px;
+  }
+}

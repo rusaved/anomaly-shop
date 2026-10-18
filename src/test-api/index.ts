@@ -35,6 +35,8 @@ export interface TestHooks {
   toast?(text: string): void;
   /** e2e only (M4-21): starts a random event by its id now, when it may come. */
   event?(id: string): boolean;
+  /** e2e and the shots of 07 only: «Вылупился!» for a pet the save already has (its rarity frame without luck). */
+  hatch?(uid: string, egg: string): boolean;
 }
 
 export function installTestApi(hooks: TestHooks): void {
@@ -87,6 +89,10 @@ export function installTestApi(hooks: TestHooks): void {
     },
     toast(text: string): void {
       hooks.toast?.(text);
+    },
+    /** «Вылупился!» for a pet of the save (the egg for its «1 из N яиц» line). */
+    hatch(uid: string, egg = 'egg_gold'): boolean {
+      return hooks.hatch?.(uid, egg) ?? false;
     },
     /** Reads a translated string (to compare UI texts in e2e without hard-coding them). */
     t(key: string): string {

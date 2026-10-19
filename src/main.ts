@@ -294,6 +294,7 @@ async function boot(): Promise<void> {
       const u = upgrades.upgrades.find((x) => x.id === 'point_rent')?.unlock;
       return u?.type === 'level' ? u.n : 1;
     })(),
+    pointSteps: upgrades.upgrades.filter((u) => u.group === 'point'),
     icon: (thing) => portraits.thing(thing),
   };
   const shopTab = createShopTab(sheets.get('shop')!, play, shopLook);

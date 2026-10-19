@@ -249,3 +249,45 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       expect(errors).toEqual([]);
     });
   });
+
+/** п. 6: a toast never covers the «‹» row of an inner screen or the first minute's hint and its target; the locked «Пункт» says what
+ *  grows there. */
+const toastClear = (page: Page) =>
+  page.evaluate(() => {
+    const t = document.querySelector('.toast')!.getBoundingClientRect();
+    const hits = [...document.querySelectorAll('.sheet:not([hidden]) .mu-back, .overlay:not([hidden]) .mu-back, .hint:not([hidden]), .hint-ring:not([hidden]), .is-hinted')]
+      .map((e) => e.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.top < t.bottom && r.bottom > t.top && r.left < t.right && r.right > t.left);
+    return { hits: hits.length, top: t.top };
+  });
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB-2 п. 6 ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('a toast clears the «‹» row and the hint; «Пункт» is not blank', async ({ page }) => {
+      const errors = collectErrors(page);
+      await seedSave(page, { coins: 120, creatures: pets, showcase: [] });
+      await open(page);
+      await openLot(page, false);
+      await page.evaluate(() => (window as unknown as { __TEST__: { toast(t: string): void } }).__TEST__.toast('Новые находки: 2!'));
+      await expect(page.locator('.toast')).toBeVisible();
+      await page.waitForTimeout(350);
+      expect((await toastClear(page)).hits).toBe(0);
+      await page.locator('[data-detail=lot] [data-action=lot-back]').click();
+      await page.locator('[data-tab=shop]').click();
+      await page.locator('[data-sheet=shop] [data-sub=point]').click();
+      await expect(page.locator('[data-sheet=shop] [data-point-soon]')).toBeVisible();
+      await expect(page.locator('[data-sheet=shop] [data-point-locked]')).toBeVisible();
+      expect(await page.locator('[data-sheet=shop] [data-point-steps] .point-step').count()).toBeGreaterThan(2);
+      expect(errors).toEqual([]);
+    });
+    test('a toast in the first minute clears the hint and its target', async ({ page }) => {
+      const errors = collectErrors(page);
+      await open(page);
+      await page.locator('.hint:not([hidden]) [data-hint-text]').waitFor();
+      await page.evaluate(() => (window as unknown as { __TEST__: { toast(t: string): void } }).__TEST__.toast('Новые находки: 2!'));
+      await expect(page.locator('.toast')).toBeVisible();
+      await page.waitForTimeout(350);
+      expect((await toastClear(page)).hits).toBe(0);
+      expect(errors).toEqual([]);
+    });
+  });

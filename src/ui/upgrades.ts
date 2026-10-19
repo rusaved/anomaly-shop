@@ -20,6 +20,8 @@ export interface UpgradeLookups {
   themeName(theme: string): string;
   /** The seller level the lease of the point opens at. */
   pointLevel: number;
+  /** Круг правок FB-2 п. 6: the steps of the point (upgrades of the group «point»), shown dimmed while it is locked. */
+  pointSteps: ReadonlyArray<UpgradeData>;
   /** The picture of a thing to buy: its decor or its id (the scene art). */
   icon(thing: string): string;
 }
@@ -103,6 +105,13 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
     );
   }
 
+  // Круг правок FB-2 п. 6: a locked point is not a blank page — what grows here, when it opens, its steps dimmed.
+  const lockedPoint = (): string =>
+    `<p class="mu-meta point-soon" data-point-soon>${esc(look.t('point.soon'))}</p>` +
+    `<p class="mu-meta" data-point-locked>${esc(look.t('point.locked', { n: look.pointLevel }))}</p>` +
+    `<div class="mu-grid point-steps" data-point-steps>${look.pointSteps
+      .map((u) => `<div class="mu-card shop-item mu-dim point-step"><span class="mu-pic"><img alt="" src="${look.icon(u.decor ?? u.id)}"></span><span class="mu-name">${esc(u.name[look.lang() === 'en' ? 'en' : 'ru'])}</span><span class="mu-line"><span class="mu-meta">${esc(effectText(u, look))}</span></span></div>`)
+      .join('')}</div>`;
   function renderGuest(fmt: Intl.NumberFormat): string {
     const z = game.guestZone();
     const pct = (x: number): string => new Intl.NumberFormat(look.lang(), { maximumFractionDigits: 1 }).format(x * 100);
@@ -155,7 +164,7 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
       box.innerHTML = `<div class="mu-grid">${shop.map((x) => upgradeCard(x.id, fmt, coins, crystals)).join('')}</div>`;
       pointBox.innerHTML =
         `<div class="mu-head"><h3>${esc(look.t('shop.section.point'))}</h3><span></span></div>` +
-        (point.length ? `<div class="mu-grid" data-point-list>${point.map((x) => upgradeCard(x.id, fmt, coins, crystals)).join('')}</div>` : `<p class="mu-meta" data-point-locked>${esc(look.t('point.locked', { n: look.pointLevel }))}</p>`) +
+        (point.length ? `<div class="mu-grid" data-point-list>${point.map((x) => upgradeCard(x.id, fmt, coins, crystals)).join('')}</div>` : lockedPoint()) +
         `<div class="guest" data-guest>${renderGuest(fmt)}</div>`;
       // A second tap right after a purchase is the same finger again, not a new choice.
       sheet.body.querySelectorAll<HTMLElement>('[data-action="buy-upgrade"]').forEach((b) =>

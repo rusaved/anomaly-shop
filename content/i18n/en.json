@@ -58,6 +58,7 @@
   "shop.section.point": "Pickup point",
   "shop.section.deals": "Deals",
   "point.locked": "Opens at seller level {n} ★",
+  "point.soon": "Your own sales point appears here: step by step from a lease to coins while you're away",
   "upgrade.effect.passive": "+{n} coins a minute",
   "guest.title": "Guest zone",
   "guest.locked": "Opens with the point lease",

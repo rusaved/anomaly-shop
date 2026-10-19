@@ -3847,5 +3847,20 @@ button.mu-card {
   min-height: 68px;
 }
 #app.landscape #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item {
-  min-height: 56px;
+  min-height: 52px;
+}
+/* Круг правок FB-2 п. 6 (07: the pet ~60 % of its tile in «Вылупился!»): the portrait's own fields are wide (the pet is ~47 % of it), so the
+   picture is drawn larger than the tile — only its empty fields go past the edge. */
+.overlay .card-hatch .hatch-pic img {
+  flex: none;
+  width: 122px;
+  height: 122px;
+  max-width: none;
+  max-height: none;
+}
+@media (max-height: 520px) {
+  .landscape .overlay .card-hatch .hatch-pic img {
+    width: 102px;
+    height: 102px;
+  }
 }

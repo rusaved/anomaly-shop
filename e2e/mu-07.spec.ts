@@ -580,6 +580,8 @@ test.describe('the round of fixes, item 8 (the recheck): the first hint of a tab
     delete flags.tab_market;
     await seedSave(page, { ...SEED, flags });
     await open(page);
+    // The game stands still: the market never refreshes its lots under the check (it measures the hint, not the market's timer).
+    await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
     await page.locator('[data-tab=market]').click();
     await expect(page.locator('.hint:not([hidden])')).toBeVisible({ timeout: 8000 });
     const lot = page.locator('[data-sheet=market] .mu-card').first();

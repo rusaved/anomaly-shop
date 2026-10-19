@@ -1522,8 +1522,8 @@ button.mu-card {
   gap: 10px;
   width: 100%;
 }
-.overlay .card .hatch-buttons .hatch-sell {
-  margin-top: 14px;
+.overlay .card .hatch-sell {
+  margin: 0 0 6px;
   min-height: var(--mu-btn);
   background: transparent;
   color: var(--c-uiMuted);
@@ -2616,7 +2616,7 @@ button.mu-card {
   .landscape .card-hatch .hatch-result {
     display: grid;
     grid-template-columns: 132px minmax(0, 1fr);
-    grid-template-areas: 'pic word' 'pic name' 'pic range' 'buttons buttons';
+    grid-template-areas: 'pic word' 'pic name' 'pic range' 'pic sell' 'buttons buttons';
     column-gap: 20px;
     align-items: center;
     text-align: left;
@@ -2649,12 +2649,15 @@ button.mu-card {
     grid-area: buttons;
     position: static;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
     margin-top: 10px;
   }
-  .landscape .overlay .card .hatch-buttons .hatch-sell {
-    margin-top: 0;
+  .landscape .overlay .card .hatch-sell {
+    grid-area: sell;
+    justify-self: start;
+    margin: 0;
+    padding-left: 0;
   }
   .landscape .card-hatch .hatch-buttons > .mu-btn.main {
     max-width: none;
@@ -3106,10 +3109,26 @@ button.mu-card {
 
 /* ---- FB-14 (07 rule 6, the reviewers of MU): a tab label or a segment never breaks inside a word — it gets smaller (≥ 12 px, src/ui/fit.ts) ---- */
 #ui .nav-label,
-#ui .mu-seg > button {
+#ui .mu-seg > button,
+#ui .day > b,
+#ui .day > span,
+#ui .mu-name {
   overflow-wrap: normal;
   word-break: keep-all;
   hyphens: manual;
+}
+#ui .day > b {
+  white-space: nowrap;
+}
+/* 07: sideways a section switcher is never wider than 420 px. */
+.landscape #ui .mu-seg {
+  max-width: 420px;
+}
+/* The lot sideways at a large font: the pet's column scrolls in its place, nothing goes under the tab bar. */
+.landscape [data-detail='lot'] .lot-pet {
+  align-self: stretch;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* M2-04 sideways (812×375): «Пока тебя не было» with «▶ Реклама: ×2» keeps both buttons in one row, the window fits. */
@@ -3130,4 +3149,35 @@ button.mu-card {
 /* FB-14 (s5): «Аномалия дня» keeps its three lines (the name, «цена ×N первые M минут») — a VIP or exclusive frame (overflow hidden for its shine) must not let the window squeeze it. */
 .overlay .card .day-anomaly {
   min-height: min-content;
+}
+
+/* FB-14: a card the bottom edge of its screen cuts shows only its picture (src/ui/peek.ts) — no name or price cut by the line. */
+#ui .mu-card.peek > :not(.mu-pic):not(.mu-pic-btn):not(.rar-ring) {
+  visibility: hidden;
+}
+/* The lot sideways: a smaller picture and tighter gaps — at a large font the pet's lines stay above the tab bar. */
+@media (max-height: 520px) {
+  .landscape [data-detail='lot'] .lot-pet {
+    gap: 4px;
+  }
+  .landscape [data-detail='lot'] .lot-pet .mu-pic {
+    width: 48px;
+    height: 48px;
+  }
+  .landscape [data-detail='lot'] .lot-pet .mu-pic img {
+    max-width: 40px;
+    max-height: 40px;
+  }
+}
+/* s5: «Аномалия дня» in three lines — the name on one (smaller when it must, ≥ 12 px), «цена ×N первые M минут» on two, a narrower button. */
+.overlay .card .day-anomaly {
+  column-gap: 10px;
+  padding: 10px;
+}
+.overlay .card .day-anomaly .day-text .mu-name {
+  white-space: nowrap;
+}
+.overlay .card .day-anomaly > .mu-btn {
+  padding-left: 12px;
+  padding-right: 12px;
 }

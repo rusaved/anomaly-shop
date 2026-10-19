@@ -54,7 +54,9 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   const keep = button('hatch-keep', 'hatch.keep', 'mu-btn');
   const sell = button('hatch-sell', 'hatch.sell', 'mu-btn quiet hatch-sell');
   const toShop = button('hatch-shop', 'hatch.toShop', 'mu-btn main');
-  q('.hatch-buttons').append(toShop, keep, sell);
+  // FB-14 (07 rule 2): «Продать сразу» — irreversible — stands above the buttons, out of the bottom third of the screen.
+  q('.hatch-buttons').append(toShop, keep);
+  q('.hatch-buttons').before(sell);
   let egg = '';
   let uid = '';
   let raf = 0;

@@ -1,9 +1,9 @@
-// What: whole words in tight labels (FB-14, 07 rule 6): a tab label or a segment whose word does not fit gets a smaller font, never below 12 px.
+// What: whole words in tight labels (FB-14, 07 rule 6): a tab label, a segment, a gift day or a card name whose word does not fit gets a smaller font, never below 12 px.
 // Called by: src/main.ts once (layout, language, and any font change of those labels — a system font of 130 % included).
 // Keep: words never break inside (CSS keep-all on these labels); only a label that overflows changes; a font change of its own is not a new change.
 
 const MIN_PX = 12;
-const SELECTOR = '.nav-label, .mu-seg > button';
+const SELECTOR = '.nav-label, .mu-seg > button, .day > b, .day > span, .mu-name';
 
 /** Shrinks one label until its longest word fits its box (0.5 px steps), not below MIN_PX; true when it changed. */
 function fit(el: HTMLElement): boolean {

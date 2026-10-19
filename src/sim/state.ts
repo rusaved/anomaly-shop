@@ -73,7 +73,7 @@ export interface SaveData {
   /** M4-05: the guest zone of the pickup point — decorations standing; unpaid: the upkeep failed (the bonus waits); due: upkeep owed (< 1 coin). */
   guest: { items: string[]; unpaid: boolean; due: number };
   /** xp — reputation points of the seller level (UB-08); saves made before it count their deals. */
-  stats: { deals: number; coinsEarned: number; hatched: number; taps: number; levelUps: number; haggles: number; xp?: number; dealsAll?: number };
+  stats: { deals: number; coinsEarned: number; hatched: number; taps: number; levelUps: number; haggles: number; xp?: number; dealsAll?: number; income?: number };
   settings: { sound: boolean; lang: Lang | null };
   /** Once-per-player analytics flags and tutorial marks. */
   flags: Record<string, boolean>;
@@ -174,7 +174,7 @@ export function newSave(now: number): SaveData {
     cityEarnedAt: 0,
     guest: { items: [], unpaid: false, due: 0 },
     daily: { day: '', base: {}, goals: [], claimed: [], egg: false },
-    stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0, xp: 0, dealsAll: 0 },
+    stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0, xp: 0, dealsAll: 0, income: 0 },
     settings: { sound: true, lang: null },
     flags: {},
     secrets: {},
@@ -270,6 +270,8 @@ export function normalize(raw: unknown, now: number): SaveData {
       xp: Math.max(0, num(st.xp, num(st.deals, 0))),
       // M4-20: deals in all cities (a move to a new city starts the city's own count over).
       dealsAll: Math.max(num(st.dealsAll, 0), num(st.deals, 0)),
+      // FB-02: coins a minute of live play (a moving average): free rewards are measured in it.
+      income: Math.max(0, num(st.income, 0)),
     },
     settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null },
     flags: Object.fromEntries(Object.entries(rec(r.flags)).filter(([, v]) => v === true).map(([k]) => [k, true])),

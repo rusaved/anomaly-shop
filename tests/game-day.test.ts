@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../src/core/rng.ts';
 import { createGame } from '../src/sim/game.ts';
+import { hatchMult } from '../src/sim/rules.ts';
 import { newSave, normalize, type SaveData } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
@@ -63,7 +64,13 @@ describe('M4-07 the day', () => {
     }
     const cr = game.state.creatures[0]!;
     expect(cr.species).toBe(day.species);
-    expect(cr.mult).toBeGreaterThanOrEqual(cal.daily.priceMultiplier);
+    // FB-02: ×priceMultiplier of what the egg of the day gives that rarity, never above rewardCapMin minutes of income.
+    const egg = content.eggs.eggs.find((e) => e.id === cal.daily.eggId)!;
+    const spec = content.species.species.find((x) => x.id === cr.species)!;
+    const income = Math.max(content.eggs.income.floorPerMin, game.state.stats.income ?? 0);
+    const want = Math.min(cal.daily.priceMultiplier * hatchMult(egg, spec.rarity, content.species, income), (content.eggs.income.rewardCapMin * income) / spec.basePrice);
+    expect(cr.mult).toBeCloseTo(want, 6);
+    expect(cr.mult).toBeGreaterThan(hatchMult(egg, spec.rarity, content.species, income) * 0.99);
     expect(cr.hold).toBeGreaterThan(0);
     expect(game.sellNow(cr.uid)).toBe(false);
     for (let i = 0; i < cal.daily.holdMinutes * 6 + 2; i++) game.tick(10);

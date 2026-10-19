@@ -112,6 +112,30 @@ export function pickSpecies(data: SpeciesData, rarity: RarityName, roll: number)
   return data.species[0] as SpeciesEntry;
 }
 
+/** FB-02: the mean base price of the species of a rarity (a value table names the rarity's worth; species keep their spread). */
+export function rarityMean(data: SpeciesData, rarity: RarityName): number {
+  const pool = data.species.filter((s) => s.rarity === rarity);
+  return pool.length ? pool.reduce((n, s) => n + s.basePrice, 0) / pool.length : 1;
+}
+
+/** FB-02: the price an egg's value table counts from — its coin price, valuePrice, or minutes of the player's income. */
+export function eggValuePrice(egg: EggData, incomePerMin: number): number {
+  if (egg.valueIncomeMin !== undefined) return Math.max(egg.valuePrice ?? 1, incomePerMin * egg.valueIncomeMin);
+  return egg.valuePrice ?? Math.max(1, egg.price.coins);
+}
+
+/** FB-02: the price multiplier of a creature hatched from the egg: value[rarity] × the egg's price over the rarity's mean (valueMult without a table). */
+export function hatchMult(egg: EggData, rarity: RarityName, data: SpeciesData, incomePerMin: number): number {
+  if (!egg.value) return egg.valueMult ?? 1;
+  return (eggValuePrice(egg, incomePerMin) * egg.value[rarity]) / rarityMean(data, rarity);
+}
+
+/** FB-02: the moving average of income — coins earned in dt seconds into coins a minute, over tau seconds. */
+export function incomeStep(rate: number, earned: number, dt: number, tauSec: number): number {
+  const k = Math.min(1, dt / tauSec);
+  return Math.max(0, rate + ((earned * 60) / Math.max(dt, 1e-9) - rate) * k);
+}
+
 /** Appraisal of a creature: basePrice × growth^(level − 1) (docs/01a, section 3); the customer offers a share of it. */
 export function creatureValue(spec: SpeciesEntry, level: number): number {
   return spec.basePrice * Math.pow(spec.growth, Math.max(0, Math.min(level, spec.maxLevel) - 1));

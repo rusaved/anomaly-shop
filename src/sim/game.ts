@@ -2,13 +2,13 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { AchievementsData, CalendarData, CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { AchievementsData, CalendarData, CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
 import { emptyIncubator, type Chat, type Creature, type Incubator, type Lot, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, cityMult, coins, dayHash, marketMood, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchNeedSec, hatchShare, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, cityMult, coins, dayHash, marketMood, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchMult, hatchNeedSec, hatchShare, incomeStep, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -442,6 +442,12 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (!quiet) store.commit(opts);
   };
   const { eggs, species, customers } = content;
+  /** FB-02: coins earned by live play since the last tick (sales and the pickup point; not gifts, not away). */
+  let liveEarned = 0;
+  /** FB-02: the player's income, coins a minute (never below the floor of the first minute). */
+  const incomeNow = (): number => Math.max(eggs.income.floorPerMin, s().stats.income ?? 0);
+  /** FB-02: the most a free reward is worth: rewardCapMin minutes of income. */
+  const rewardCap = (): number => eggs.income.rewardCapMin * incomeNow();
   const basicEgg = content.ftue.starterEgg;
   const s = (): SaveData => store.state;
   /** The creatures on sale (M3-07): the showcase of the shop is the slots of «My sales»; the rest wait in the inventory. */
@@ -511,6 +517,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const gain = (passive * dt) / 60;
       st.coins += gain;
       st.stats.coinsEarned += gain;
+      if (!quiet) liveEarned += gain;
     }
     const upkeep = guestUpkeep();
     if (upkeep <= 0) {
@@ -972,6 +979,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     // UB-08: reputation — every deal, more for a rare one (the level before counts the deals before this one).
     const levelBefore = sellerLevel();
     st.coins += price;
+    if (!quiet) liveEarned += price;
     st.stats.deals += 1;
     st.stats.dealsAll = Math.max(st.stats.dealsAll ?? 0, st.stats.deals - 1) + 1;
     st.stats.coinsEarned += price;
@@ -1190,8 +1198,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const pool = species.species.filter((x) => content.calendar.daily.rarities.includes(x.rarity));
     return day && pool.length ? pool[dayHash(day, s().createdAt) % pool.length] : undefined;
   }
-  /** ×priceMultiplier over the best open ladder egg: in a dear city the anomaly is still an event. */
-  const dayMult = (): number => content.calendar.daily.priceMultiplier * Math.max(1, ...eggs.eggs.filter((e) => e.section === 'ladder' && eggOpen(e)).map((e) => e.valueMult ?? 1));
+  /** FB-02: ×priceMultiplier over what its egg (the egg of the day) gives that rarity — the egg counts from the player's income. */
+  const dayMult = (kind: (typeof species.species)[number], egg: EggData): number => content.calendar.daily.priceMultiplier * hatchMult(egg, kind.rarity, species, incomeNow());
   /** A new device date: three goals from the pool (stable for the day and save), progress counts from here, the egg waits again. */
   function rollDay(day: string): void {
     const st = s();
@@ -1313,10 +1321,13 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const uid = `c${st.stats.hatched.toString(36)}${rng.int(1296).toString(36)}`;
     // M4-25: a mark now and then — not on the first two (the first minute is the same for everyone) nor on the anomaly of the day.
     const mark = forced || dayKind ? undefined : markFor(uid);
-    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: dayKind ? dayMult() : (egg.valueMult ?? 1), ...(dayKind ? { hold: content.calendar.daily.holdMinutes * 60 } : {}), ...(mark ? { mark } : {}) });
+    // FB-02: the value table of the egg; a free egg (no coin price: a gift, a reward, the egg of the day) is worth at most rewardCap.
+    let mult = dayKind ? dayMult(kind, egg) : hatchMult(egg, kind.rarity, species, incomeNow());
+    if (egg.price.coins <= 0) mult = Math.min(mult, rewardCap() / kind.basePrice);
+    st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult, ...(dayKind ? { hold: content.calendar.daily.holdMinutes * 60 } : {}), ...(mark ? { mark } : {}) });
     // M4-21: twins — the egg of the event gives two of a kind (the second waits in the inventory).
     if (activeOf('twins')) {
-      st.creatures.push({ uid: `${uid}t`, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult: egg.valueMult ?? 1 });
+      st.creatures.push({ uid: `${uid}t`, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult });
       twinsDone = true;
     }
     // Tapped (UB-03): the player decides in the result (keep, sell now, to the shop). By itself (helpers, away) it goes on sale if there is room.
@@ -1735,6 +1746,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     tick(dt) {
       idleSec += dt;
       const st = s();
+      if (!quiet && dt > 0) {
+        st.stats.income = incomeStep(st.stats.income ?? 0, liveEarned, dt, eggs.income.tauSec);
+        liveEarned = 0;
+      }
       runPoint(dt);
       // M4-20: the finds look at the save once a second (cheap: 30 conditions).
       findsIn -= dt;

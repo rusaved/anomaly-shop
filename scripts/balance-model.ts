@@ -401,6 +401,8 @@ export interface WeekResult {
   /** M4-05: what the guest zone added to the deals (its share of each offer) against what it cost (decorations and upkeep). */
   zoneGain: number;
   zoneCost: number;
+  /** FB-02: per ladder egg — the best it can give (its exclusive) and what each hatch gave, in 5 minutes of income at that moment. */
+  rewards: Record<string, { best: number[]; got: number[] }>;
 }
 
 /** M4-08: a week of a player — 30 active minutes and 8 hours away a day, moving to a new city whenever it is ready. */
@@ -418,7 +420,20 @@ export function playWeek(bot: Bot, seed: number, content: GameContent = loadGame
   let zoneCost = 0;
   const decor = new Map<string, { price: number; upkeep: number }>(content.decor.items.map((x) => [x.id, x]));
   const upkeep = (): number => (game.state.guest.unpaid ? 0 : game.state.guest.items.reduce((n, id) => n + (decor.get(id)?.upkeep ?? 0), 0));
+  const rewards: WeekResult['rewards'] = {};
+  const fiveMin = (): number => 5 * Math.max(content.eggs.income.floorPerMin, game.state.stats.income ?? 0);
+  const eggOf = new Map(content.eggs.eggs.map((x) => [x.id, x]));
   game.events.on((e: GameEvent) => {
+    const egg = e.type === 'eggBought' || e.type === 'hatched' ? eggOf.get(e.egg) : undefined;
+    if (egg && egg.section === 'ladder') {
+      const r = (rewards[egg.id] ??= { best: [], got: [] });
+      if (e.type === 'eggBought' && e.by === 'player') r.best.push((egg.price.coins * (egg.value?.exclusive ?? 0)) / fiveMin());
+      if (e.type === 'hatched') {
+        const cr = game.state.creatures.find((x) => x.uid === e.uid);
+        const spec = content.species.species.find((x) => x.id === e.species);
+        if (cr && spec) r.got.push((spec.basePrice * (cr.mult ?? 1)) / fiveMin());
+      }
+    }
     // The zone's bonus is a share of the buyer's offer (cashBonus): its part of the price, other bonuses left aside (a little in its favor).
     if (e.type === 'sold' && e.by !== 'now') {
       const b = game.guestZone().bonus;
@@ -454,7 +469,7 @@ export function playWeek(bot: Bot, seed: number, content: GameContent = loadGame
       game.offline(AWAY_SEC);
     }
   }
-  return { moves, cityEgg, opens, earned: game.state.stats.coinsEarned, zoneGain, zoneCost };
+  return { moves, cityEgg, opens, earned: game.state.stats.coinsEarned, zoneGain, zoneCost, rewards };
 }
 
 const quantile = (xs: number[], q: number): number => {
@@ -561,6 +576,20 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
         ` · guest zone pays back ×${decorRatio.toFixed(2)} (≥ ${LIMITS.F17decorMin}) ${fDecor ? 'ok' : 'FAIL'}` +
         ` · F18 moves on day ${fmt(first, 1)}, the next ${fmt(gap, 1)} days later (${LIMITS.F18gapDays.join('–')}), the city egg on day ${fmt(egg, 1)} ${f18 ? 'ok' : 'FAIL'}`,
     );
+  }
+  // FB-02: the share of the best reward in 5 minutes of income by ladder step — what the egg can give at most (its exclusive)
+  // when bought (p50) and the dearest hatch seen (p90 of hatches, all runs): info, the free rewards are capped in the game itself.
+  {
+    const casual = BOTS.find((b) => b.name === 'casual')!;
+    const runs = Array.from({ length: longSeeds }, (_, i) => playWeek(casual, 5000 + i * 104729, content));
+    const cells = content.eggs.eggs
+      .filter((e) => e.section === 'ladder')
+      .flatMap((e) => {
+        const best = runs.flatMap((r) => r.rewards[e.id]?.best ?? []);
+        const got = runs.flatMap((r) => r.rewards[e.id]?.got ?? []);
+        return best.length || got.length ? [`${e.id.replace('egg_', '')} ${fmt(quantile(best, 0.5), 1)}/${fmt(quantile(got, 0.9), 2)}`] : [];
+      });
+    lines.push(`rewards FB-02 best reward in 5 min of income by ladder step (exclusive when bought p50 / hatch p90): ${cells.join(' · ')}; free rewards ≤ ${content.eggs.income.rewardCapMin} min (capped)`);
   }
   lines.push('F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)');
   lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F18: all green`);

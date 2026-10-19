@@ -35,6 +35,8 @@ export const Unlock = v.variant('type', [
   v.object({ type: v.literal('city'), n: Count }),
 ]);
 
+/** A non-negative multiplier (FB-02: the value table of an egg). */
+const Times = v.pipe(v.number(), v.minValue(0));
 export const Egg = v.object({
   id: Id,
   name: Text,
@@ -47,6 +49,13 @@ export const Egg = v.object({
   section: v.picklist(EGG_SECTIONS),
   /** Creatures from this egg are worth this many times more (the ×10 price ladder keeps eggs worth their price). */
   valueMult: v.optional(v.pipe(v.number(), v.minValue(1))),
+  /** FB-02: what a creature of each rarity is worth at hatching, in prices of this egg (valuePrice or the egg's price); species of a
+   * rarity keep their spread around it. Replaces valueMult when set. */
+  value: v.optional(v.object(Object.fromEntries(RARITIES.map((r) => [r, Times])) as Record<(typeof RARITIES)[number], typeof Times>)),
+  /** FB-02: the price the value table counts from for a free or reward egg (no coin price of its own). */
+  valuePrice: v.optional(v.pipe(v.number(), v.minValue(1))),
+  /** FB-02: the price the value table counts from is this many minutes of the player's income (reward eggs grow with the shop). */
+  valueIncomeMin: v.optional(v.pipe(v.number(), v.minValue(0))),
   /** A free egg comes back after this many seconds (section free; with M5 also for an ad). */
   freeEverySec: v.optional(v.pipe(v.number(), v.minValue(1))),
   /** The first egg of this kind gives at least this rarity (a good first impression of a dearer egg). */
@@ -64,7 +73,12 @@ export const Care = v.object({
   maxBonus: Share,
   shell: v.pipe(v.array(Color), v.minLength(2)),
 });
-export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, rescueEgg: Id, care: Care, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
+/**
+ * FB-02: the player's income — coins a minute of live play (sales and the pickup point), a moving average over tauSec; floorPerMin
+ * at the start. A free reward (a gift egg, the anomaly of the day, a gift, a find) is worth at most rewardCapMin minutes of it.
+ */
+export const Income = v.object({ tauSec: v.pipe(v.number(), v.minValue(1)), floorPerMin: v.pipe(v.number(), v.minValue(1)), rewardCapMin: v.pipe(v.number(), v.minValue(0)) });
+export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, rescueEgg: Id, care: Care, income: Income, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
 
 export const Species = v.object({
   id: Id,

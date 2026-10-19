@@ -359,3 +359,86 @@ test.describe('Круг правок FB п. 6 portrait 375×650 at 130 %', () =>
     expect(Math.abs(home.x + home.width / 2 - 375 / 2)).toBeLessThanOrEqual(2);
   });
 });
+
+/** п. 7: the small things — «Забрать подарок дня» ≤ 360 px; the pet of «Вылупился!» fills its tile; «Сытный корм» is not the bowl of «Подработка»;
+ * the tabs stand on their own places from the first minute; the pets in chats are a group of their own; «Купи новое яйцо» points its tail at «10»;
+ * a PC keeps the right half of «Лавка» full. */
+test.describe('Круг правок FB п. 7 portrait 375×650', () => {
+  test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
+
+  test('the tabs on their own places from the first minute; «Купи новое яйцо» with its tail on «10»', async ({ page }) => {
+    await open(page);
+    const first = await page.locator('#nav > .nav-tab:not([hidden])').evaluateAll((els) => els.map((e) => [(e as HTMLElement).dataset.tab, Math.round(e.getBoundingClientRect().left)]));
+    expect(first.map(([t]) => t)).toEqual(['home', 'eggs']);
+    const home = (await page.locator('[data-tab=home] .nav-icon').boundingBox())!;
+    expect(Math.abs(home.x + home.width / 2 - 375 / 2)).toBeLessThanOrEqual(2);
+    // The same places once more tabs are open.
+    await seedSave(page, { coins: 30, creatures: [], showcase: [], stats: { deals: 1, coinsEarned: 30, hatched: 1, taps: 10, levelUps: 0, haggles: 0 }, flags: { ftue_starter: true, ftue_fed: true, tab_eggs: true, tab_sales: true, tab_chats: true } });
+    await page.evaluate(() => sessionStorage.clear());
+    await open(page);
+    const later = await page.locator('#nav > .nav-tab:not([hidden])').evaluateAll((els) => Object.fromEntries(els.map((e) => [(e as HTMLElement).dataset.tab, Math.round(e.getBoundingClientRect().left)])));
+    for (const [t, x] of first) expect(later[t as string], `${t}`).toBe(x);
+    await page.locator('[data-tab=eggs]').click();
+    const hint = page.locator('.hint[data-hint=buyEgg]:not([hidden])');
+    await expect(hint).toBeVisible({ timeout: 8000 });
+    await page.waitForTimeout(400);
+    const tail = await page.evaluate(() => {
+      const h = document.querySelector<HTMLElement>('.hint[data-hint=buyEgg]')!;
+      const a = h.querySelector('.hint-arrow')!.getBoundingClientRect();
+      const b = document.querySelector('[data-sheet=eggs] [data-action="egg-buy-egg_basic"]')!.getBoundingClientRect();
+      const r = h.getBoundingClientRect();
+      return { x: a.left + a.width / 2 >= b.left && a.left + a.width / 2 <= b.right, near: Math.min(Math.abs(r.top - b.bottom), Math.abs(b.top - r.bottom)) <= 24 };
+    });
+    expect(tail).toEqual({ x: true, near: true });
+  });
+
+  test('«Забрать подарок дня» ≤ 360; the pet fills its tile; «Сытный корм» has its own picture; chats apart from the places', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 500, creatures: pets, showcase: ['p0'], upgrades: {}, stats: { deals: 8, coinsEarned: 300, hatched: 10, taps: 100, levelUps: 3, haggles: 1 } });
+    await open(page);
+    await page.locator('[data-action=gifts]').click();
+    const take = page.locator('[data-action=gift-daily]');
+    if (await take.isVisible()) expect((await take.boundingBox())!.width).toBeLessThanOrEqual(360);
+    await page.locator('[data-action=gifts-close]').click();
+    // The shop row of the food: its own name and a picture other than the side job's bowl.
+    const row = page.locator('[data-sheet=home] [data-upgrade=bowl]');
+    await expect(row.locator('.mu-name')).toHaveText('Сытный корм');
+    const rowPic = await row.locator('.mu-pic img').getAttribute('src');
+    await page.locator('[data-action=work]').click();
+    const bowlPic = await page.locator('[data-overlay=work] .work-bowl img').getAttribute('src');
+    expect(rowPic).not.toBe(bowlPic);
+    await page.keyboard.press('Escape');
+    // «Вылупился!»: the picture ~60 % of its tile.
+    expect(await page.evaluate(() => (window as unknown as { __TEST__: { hatch(uid: string): boolean } }).__TEST__.hatch('p4'))).toBe(true);
+    await page.waitForTimeout(450);
+    await page.locator('[data-action=hatch-skip]').dispatchEvent('click');
+    await expect(page.locator('[data-hatch-result]')).toBeVisible();
+    // Layout sizes (the rare pop animation scales the picture for 0.55 s).
+    const fill = await page.evaluate(() => document.querySelector<HTMLElement>('[data-hatch-pic]')!.offsetWidth / document.querySelector<HTMLElement>('.hatch-pic')!.offsetWidth);
+    expect(fill).toBeGreaterThanOrEqual(0.75);
+    await page.locator('[data-action=hatch-keep]').click();
+    // A buyer writes about the pet on the shelf: it leaves the places for its own group, the counter counts the shelf only.
+    await page.evaluate(() => (window as unknown as { __TEST__: { runSim(s: number): number } }).__TEST__.runSim(60));
+    await page.locator('[data-tab=sales]').click();
+    const groups = await page.evaluate(() => {
+      const heads = [...document.querySelectorAll('[data-sheet=sales] .mu-head')].map((h) => h.textContent);
+      const talking = document.querySelectorAll('[data-sheet=sales] .sales-chats + .mu-grid .card-sale').length;
+      return { heads, talking };
+    });
+    const st = (await state(page)) as unknown as { shelf: unknown[] };
+    expect(groups.heads[0]).toContain(`${st.shelf.length} из`);
+    if (groups.talking) expect(groups.heads[1]).toContain('В переписке');
+    expect(errors).toEqual([]);
+  });
+});
+test.describe('Круг правок FB п. 7 PC 1280×720', () => {
+  test.use({ viewport: { width: 1280, height: 720 } });
+  test('«Лавка»: the right half holds the Store and the eggs', async ({ page }) => {
+    await seedSave(page, { coins: 120 });
+    await open(page);
+    await expect(page.locator('[data-sheet=home] .eggs .mu-head').first()).toBeVisible();
+    const bottom = await page.evaluate(() => Math.max(...[...document.querySelectorAll('[data-sheet=home] .mu-card')].map((c) => c.getBoundingClientRect().bottom)));
+    const bar = (await page.locator('#nav').boundingBox())!.y;
+    expect(bottom).toBeGreaterThanOrEqual(bar - 120);
+  });
+});

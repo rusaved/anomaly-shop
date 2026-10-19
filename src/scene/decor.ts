@@ -146,12 +146,20 @@ export function drawDecor(g: Graphics, items: Record<string, number>, l: ShopLay
     for (let i = 0; i < coins; i++) g.ellipse(r.x + r.w * 0.5, r.y - r.h * (0.06 + i * 0.1), r.w * 0.18, r.h * 0.07).fill(c.uiAccent).stroke({ width: w * 0.5, color: c.outline });
   }
   if (items.bowl) {
+    // Круг правок FB п. 7: «Сытный корм» is a sack of food, not the bowl of «Подработка» (the side job keeps the bowl, drawFoodBowl).
     const b = d.bowl;
-    g.ellipse(b.x, b.y - b.r * 0.15, b.r * 0.85, b.r * 0.3).fill(c.eggSpots).stroke({ width: w * 0.7, color: c.outline });
-    // A mound of food (the round of fixes: never three golden discs — they read as coins).
-    g.ellipse(b.x, b.y - b.r * 0.22, b.r * 0.62, b.r * 0.3).fill(c.blush).stroke({ width: w * 0.5, color: c.outline });
-    for (const [dx, dy] of [[-0.3, -0.26], [0.05, -0.38], [0.32, -0.24], [-0.05, -0.18]] as const) g.circle(b.x + b.r * dx, b.y + b.r * dy, b.r * 0.06).fill(c.counter);
-    g.moveTo(b.x - b.r, b.y - b.r * 0.15).quadraticCurveTo(b.x, b.y + b.r * 1.05, b.x + b.r, b.y - b.r * 0.15).closePath().fill(c.rarityRare).stroke(stroke);
+    const r = b.r * 0.85;
+    const y = b.y - r * 0.1;
+    g.moveTo(b.x - r * 0.62, y - r * 0.5)
+      .quadraticCurveTo(b.x - r * 0.95, y + r * 0.45, b.x - r * 0.6, y + r * 0.72)
+      .lineTo(b.x + r * 0.6, y + r * 0.72)
+      .quadraticCurveTo(b.x + r * 0.95, y + r * 0.45, b.x + r * 0.62, y - r * 0.5)
+      .closePath()
+      .fill(c.counterTop)
+      .stroke(stroke);
+    g.roundRect(b.x - r * 0.72, y - r * 0.72, r * 1.44, r * 0.3, r * 0.14).fill(c.counter).stroke(stroke);
+    g.circle(b.x, y + r * 0.14, r * 0.26).fill(c.blush).stroke({ width: w * 0.6, color: c.outline });
+    for (const [dx, dy] of [[0.86, 0.66], [1.06, 0.6], [0.98, 0.74]] as const) g.circle(b.x + r * dx, y + r * dy, r * 0.08).fill(c.eggSpots).stroke({ width: w * 0.4, color: c.outline });
   }
   if (items.stool) {
     const s = d.stool;
@@ -244,4 +252,14 @@ export function drawBell(g: Graphics, r: number, c: Colors, outline: number): vo
   g.moveTo(0, -r * 1.2).lineTo(0, -r * 0.7).stroke({ width: w, color: c.outline });
   g.moveTo(-r * 0.75, r * 0.45).quadraticCurveTo(-r * 0.7, -r * 0.75, 0, -r * 0.75).quadraticCurveTo(r * 0.7, -r * 0.75, r * 0.75, r * 0.45).closePath().fill(c.rarityLegendary).stroke({ width: w, color: c.outline, join: 'round' });
   g.circle(0, r * 0.55, r * 0.2).fill(c.counter).stroke({ width: w * 0.6, color: c.outline });
+}
+
+/** The bowl of «Подработка» (the side job and the find of the first level-ups): a bowl with a mound of food. */
+export function drawFoodBowl(g: Graphics, x: number, y: number, r: number, c: Colors, w: number): void {
+  const stroke = { width: w, color: c.outline };
+  g.ellipse(x, y - r * 0.15, r * 0.85, r * 0.3).fill(c.eggSpots).stroke({ width: w * 0.7, color: c.outline });
+  // A mound of food (the round of fixes: never three golden discs — they read as coins).
+  g.ellipse(x, y - r * 0.22, r * 0.62, r * 0.3).fill(c.blush).stroke({ width: w * 0.5, color: c.outline });
+  for (const [dx, dy] of [[-0.3, -0.26], [0.05, -0.38], [0.32, -0.24], [-0.05, -0.18]] as const) g.circle(x + r * dx, y + r * dy, r * 0.06).fill(c.counter);
+  g.moveTo(x - r, y - r * 0.15).quadraticCurveTo(x, y + r * 1.05, x + r, y - r * 0.15).closePath().fill(c.rarityRare).stroke(stroke);
 }

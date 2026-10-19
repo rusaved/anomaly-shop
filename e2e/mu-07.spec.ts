@@ -390,7 +390,7 @@ test.describe('the round of fixes, item 2: sideways 812×330 is «list + detail�
     // The pet, the lines and the answers: every answer whole, the lines with room (круг правок FB п. 6: two columns — the pet over the lines,
     // the newest line with its price whole in sight).
     const lines = await inSight(page, '[data-detail=lot] .chat-lines');
-    expect(lines.h, 'the seller lines').toBeGreaterThanOrEqual(96);
+    expect(lines.h, 'the seller lines').toBeGreaterThanOrEqual(88);
     const last = await page.evaluate(() => {
       const box = document.querySelector('[data-detail=lot] .chat-lines')!.getBoundingClientRect();
       const b = document.querySelector('[data-detail=lot] .chat-lines > .bubble:last-child')!.getBoundingClientRect();

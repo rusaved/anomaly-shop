@@ -140,8 +140,9 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         setGlow(button);
         return;
       }
-      // MU-12 (07 rule 16, the usability review): inside a tab screen the bubble takes its own room in the screen — a band at its
-      // bottom (the list ends above it), so it covers no text; the target wears the green frame.
+      // MU-12 (07 rule 16): inside a tab screen the target wears the green frame and the bubble stands next to it in its own layer
+      // (круг правок FB п. 7: its tail on the target, «Купи новое яйцо» on «10») — under it, or over it when the screen ends;
+      // nothing in the list moves when it goes (no band), the bubble follows the target when the list scrolls.
       const sheet = button?.closest<HTMLElement>('.sheet') ?? null;
       if (button && sheet && !button.closest('#nav')) {
         lower(null);
@@ -151,30 +152,30 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
           setGlow(button);
           return;
         }
-        const key = `room:${hint.key ?? hint.step}:${text}:${sheet.dataset.sheet}`;
+        const s = sheet.getBoundingClientRect();
+        let b = button.getBoundingClientRect();
+        // The target in sight first (the screen just opened, no finger yet).
+        if (b.top < s.top || b.bottom > s.bottom) {
+          button.scrollIntoView({ block: 'nearest' });
+          b = button.getBoundingClientRect();
+        }
+        const key = `room:${hint.key ?? hint.step}:${text}:${sheet.dataset.sheet}:${Math.round(b.left)}:${Math.round(b.top)}:${Math.round(b.width)}`;
         setGlow(button);
-        if (key === lastKey && lowered === sheet) return;
+        if (key === lastKey) return;
         lastKey = key;
         outside = false;
         label.textContent = text;
         root.hidden = false;
         root.dataset.hint = hint.step;
-        root.classList.remove('side', 'below');
+        root.classList.remove('side');
         root.classList.add('roomed');
-        // The round of fixes (the usability recheck): the bubble takes a band at the bottom of the screen, not the top — when the
-        // first tap hides it, the list above stays where the finger is (a band on top made it jump 50 px under the finger).
-        root.classList.add('below');
-        const s = sheet.getBoundingClientRect();
         const w = root.offsetWidth;
         const hh = root.offsetHeight;
-        lower(sheet, hh + 24);
-        // The target stays in sight above the band (only when the band would cover it: the screen just opened, no finger yet).
-        const list = button.closest<HTMLElement>('.sheet-body, .sheet-detail');
-        if (list && button.getBoundingClientRect().bottom > s.bottom - hh - 24) button.scrollIntoView({ block: 'nearest' });
-        const b = button.getBoundingClientRect();
+        const under = b.bottom + 12 + hh <= s.bottom - 4 || b.top - 12 - hh < s.top;
+        root.classList.toggle('below', under);
         const left = Math.max(16, Math.min(base.width - w - 16, b.left + b.width / 2 - base.left - w / 2));
         root.style.left = `${left}px`;
-        root.style.top = `${s.bottom - base.top - hh - 12}px`;
+        root.style.top = `${under ? b.bottom - base.top + 12 : b.top - base.top - 12 - hh}px`;
         root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, b.left + b.width / 2 - base.left - left))}px`);
         return;
       }

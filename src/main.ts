@@ -197,7 +197,7 @@ async function boot(): Promise<void> {
   const findSign = (f: (typeof achievements.items)[number]): string => {
     const w = f.when;
     if (f.id === 'first_deal') return 'penny';
-    if (w.type === 'stat') return ({ dealsAll: 'house', hatched: 'egg', coinsEarned: 'bag', levelUps: 'bowl', haggles: 'bubble' } as Record<string, string>)[w.stat] ?? 'star';
+    if (w.type === 'stat') return ({ dealsAll: 'house', hatched: 'egg', coinsEarned: 'bag', levelUps: 'workBowl', haggles: 'bubble' } as Record<string, string>)[w.stat] ?? 'star';
     if (w.type === 'collected' || w.type === 'rows') return 'album';
     if (w.type === 'city') return 'city';
     if (w.type === 'upgrades') return 'sign';
@@ -362,11 +362,14 @@ async function boot(): Promise<void> {
       openPrice(uid);
     },
   });
+  // Круг правок FB п. 7: a PC (1280×720) has room under the Store of «Лавка» — the eggs there too, the right half is never empty.
+  const pcWide = window.matchMedia('(min-width: 1000px) and (min-height: 560px)');
+  const homeHasEggs = (): boolean => appRoot.classList.contains('landscape') && (!homeShopTab || pcWide.matches);
   // Timers on the egg screen (free egg, hatching) tick each second while it is open.
   window.setInterval(() => {
     if (nav.active() === 'eggs') eggsTab.render();
     if (nav.active() === 'inventory') inventoryTab.render();
-    if (nav.active() === 'home' && appRoot.classList.contains('landscape') && !homeShopTab) homeEggs.render();
+    if (nav.active() === 'home' && homeHasEggs()) homeEggs.render();
   }, 1000);
   const salesTab = createSalesTab(sheets.get('sales')!, play, {
     t: i18n.t,
@@ -463,7 +466,7 @@ async function boot(): Promise<void> {
     '<button type="button" class="hud-btn" data-action="gifts" data-i18n="gifts.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16v9H4z"/><path d="M3 7h18v4H3z"/><path d="M12 7v13"/><path d="M12 7c-2-4-6-3-5 0M12 7c2-4 6-3 5 0"/></svg><span class="nav-badge nav-dot" data-gifts-dot hidden></span></button>',
   );
   (hud.side.querySelector('[data-action="gifts"]') as HTMLElement).addEventListener('click', () => giftsWindow.open());
-  const workWindow = createWorkWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, bowl: () => portraits.thing('bowl', 192) });
+  const workWindow = createWorkWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, bowl: () => portraits.thing('workBowl', 192) });
   // M4-06: the move to a new city — asked in a popup (the Next card when ready, the city line of the seller level panel).
   const rebirthWindow = createRebirthWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, eggName: (id) => eggs.eggs.find((g) => g.id === id)?.name[i18n.lang()] ?? id });
   // UB-08: the seller level in the top bar; a tap shows what the next levels open.
@@ -548,8 +551,8 @@ async function boot(): Promise<void> {
     if (tab === 'home') renderShelf();
     // MU-02: the eggs of sideways «Лавка» (l1) exist only there; the «Яйца» tab drops its cards when out of sight.
     if (tab === 'home' && homeShopTab) homeShopTab.render();
-    else if (tab === 'home' && appRoot.classList.contains('landscape')) homeEggs.render();
-    if (homeShopTab || tab !== 'home' || !appRoot.classList.contains('landscape')) homeEggs.clear();
+    if (tab === 'home' && homeHasEggs()) homeEggs.render();
+    else homeEggs.clear();
     if (tab === 'market') marketTab.render();
     if (tab === 'chats') chatsTab.render();
     if (tab === 'inventory') inventoryTab.render();

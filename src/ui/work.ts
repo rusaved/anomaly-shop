@@ -9,7 +9,7 @@ import { iconize } from './kit.ts';
 export interface WorkLookups {
   t(key: string, vars?: Record<string, string | number>): string;
   lang(): string;
-  /** The bowl of the shop (the scene art, the same as on the «Миска» card). */
+  /** The bowl of the side job (the scene art; «Сытный корм» of the Store is a sack, not this bowl). */
   bowl(): string;
 }
 

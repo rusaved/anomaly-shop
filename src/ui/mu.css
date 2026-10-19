@@ -3473,7 +3473,7 @@ button.mu-card {
 }
 .landscape #ui [data-detail='lot'] .lot-pet {
   display: grid;
-  grid-template-columns: 48px auto minmax(0, 1fr);
+  grid-template-columns: 40px auto minmax(0, 1fr);
   grid-template-areas: 'pic name name' 'pic badge meta';
   align-content: start;
   align-items: center;
@@ -3509,4 +3509,39 @@ button.mu-card {
 /* «Лидеры» sideways at 130 %: a wider window — the words in one line, «Таблица пока пустая» in sight. */
 .landscape #ui .overlay[data-overlay='leaders'] > .card {
   width: min(100%, 520px);
+}
+/* Круг правок FB п. 7: a PC — «Мои яйца» and the eggs under the Store of «Лавка», with their section heads. */
+@media (min-width: 1000px) and (min-height: 560px) {
+  .landscape #ui .sheet[data-sheet='home'] .eggs .mu-head {
+    display: flex;
+  }
+  .landscape #ui .sheet[data-sheet='home'] .eggs {
+    margin-top: 16px;
+  }
+}
+/* «Подарки» sideways: the group and the review — the name over its button (at 130 % «Загляни в группу» keeps its words whole). */
+.landscape #ui .overlay[data-overlay='gifts'] .gift-top .mu-card.gift-card {
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  grid-template-areas: 'pic name' 'pic btn';
+  row-gap: 4px;
+}
+.landscape #ui .overlay[data-overlay='gifts'] .gift-top .gift-card > .mu-pic {
+  grid-area: pic;
+}
+.landscape #ui .overlay[data-overlay='gifts'] .gift-top .gift-card > .mu-name {
+  grid-area: name;
+}
+.landscape #ui .overlay[data-overlay='gifts'] .gift-top .gift-card > .mu-btn {
+  grid-area: btn;
+  justify-self: start;
+  min-width: 0;
+}
+.landscape #ui [data-detail='lot'] .lot-pet > .mu-pic {
+  width: 40px;
+  height: 40px;
+}
+.landscape #ui [data-detail='lot'] .lot-pet > .mu-pic img {
+  max-width: 34px;
+  max-height: 34px;
 }

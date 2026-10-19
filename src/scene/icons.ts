@@ -5,7 +5,7 @@
 import { Container, Graphics } from 'pixi.js';
 import type { StyleData } from '../content/schemas.ts';
 import { drawEgg, drawRing } from './art.ts';
-import { drawBell, drawDecor, drawSign } from './decor.ts';
+import { drawBell, drawDecor, drawFoodBowl, drawSign } from './decor.ts';
 import type { ShopLayout } from './shop-layout.ts';
 
 type Colors = StyleData['colors'];
@@ -236,6 +236,7 @@ function drawThing(box: Container, thing: string, R: number, c: Colors, outline:
   if (thing === 'showcase') return showcase(g, R, c, outline);
   if (thing === 'tags') return tags(g, R, c, outline);
   if (thing === 'chest') return chest(g, R, c, outline);
+  if (thing === 'workBowl') return drawFoodBowl(g, 0, R * 0.05, R * 0.95, c, outline * 0.8);
   if (thing === 'egg') {
     drawEgg(g, R * 1.15, c, outline, 0);
     return;

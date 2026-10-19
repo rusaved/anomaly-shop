@@ -167,7 +167,8 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         label.textContent = text;
         root.hidden = false;
         root.dataset.hint = hint.step;
-        root.classList.remove('side');
+        root.classList.remove('side', 'right');
+        root.style.maxWidth = '';
         root.classList.add('roomed');
         const w = root.offsetWidth;
         const hh = root.offsetHeight;
@@ -181,7 +182,6 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       }
       root.classList.remove('roomed');
       outside = false;
-      root.classList.remove('side');
       // Above the target; below it when the HUD is in the way. A button in the upper half of a screen (the first card under
       // a tab title, UB-06) gets its bubble below, so the title stays readable; a tab of the bar — above.
       const inBar = button !== null && button.closest('#nav') !== null;
@@ -191,6 +191,8 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       const key = `${hint.key ?? hint.step}:${Math.round(x)}:${Math.round(y)}:${Math.round(r)}:${above}:${text}:${openSheet?.dataset.sheet ?? ''}`;
       if (key === lastKey) return;
       lastKey = key;
+      root.classList.remove('side', 'right');
+      root.style.maxWidth = '';
       label.textContent = text;
       root.hidden = false;
       root.dataset.hint = hint.step;
@@ -215,6 +217,31 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
           const leftOf = fx - 8 - w;
           if (x >= right + 14 && right + w <= stageW - 8) left = right;
           else if (x <= leftOf + w - 14 && leftOf >= 8) left = leftOf;
+        }
+      }
+      // Круг правок FB-3 п. 6: a place of the shelf — the bubble right of the shelf's frame, its arrow left at the pet: under the shelf it
+      // would lie on the incubators («Покорми его тапами» over the egg). Too narrow a room keeps the old place.
+      if (target.kind === 'slot' && a && a.slots.length) {
+        const fr = Math.max(...a.slots.map((s) => s.x + s.w)) + 12 + (canvas.left - base.left);
+        const from = fr + 14;
+        const room = stageW - 8 - from;
+        if (room >= 110) {
+          root.classList.add('side', 'right');
+          root.classList.remove('below');
+          root.style.maxWidth = `${Math.floor(room)}px`;
+          const hh = root.offsetHeight;
+          const top = Math.max(deps.topInset() + 4, y - hh / 2);
+          root.style.left = `${from}px`;
+          root.style.top = `${top}px`;
+          root.style.setProperty('--arrow-y', `${Math.max(14, Math.min(hh - 14, y - top))}px`);
+          ring.hidden = r === 0;
+          if (r > 0) {
+            ring.style.left = `${x - r}px`;
+            ring.style.top = `${y - r}px`;
+            ring.style.width = ring.style.height = `${r * 2}px`;
+          }
+          setGlow(button);
+          return;
         }
       }
       root.style.left = `${left}px`;

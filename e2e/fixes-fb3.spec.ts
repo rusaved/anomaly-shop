@@ -227,3 +227,129 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       expect(errors).toEqual([]);
     });
   });
+
+/** sRGB contrast of two CSS colors (rgb()/rgba() as the browser computes them). */
+const ratio = (a: string, b: string): number => {
+  const lum = (c: string) => {
+    const [r, g, bl] = (c.match(/[\d.]+/g) ?? ['0', '0', '0']).slice(0, 3).map((x) => Number(x) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * bl!;
+  };
+  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+  return (x! + 0.05) / (y! + 0.05);
+};
+
+/** п. 6: the small ones — the lot sideways (the main button at the column's left edge), the closed «Пункт» (short words, no ★, its steps
+ *  ≥ 4.5:1 and opaque), the bell, the mat and the sign of one visible mass, an empty level dot ≥ 3:1, «Покорми его тапами» off the
+ *  incubator, a ready gift egg gets the «new egg» hint. */
+test.describe('Круг правок FB-3 п. 6 812×330', () => {
+  test.use({ viewport: { width: 812, height: 330 }, hasTouch: true, isMobile: true });
+  test('the lot sideways: the main button at the left edge of its column', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 120 });
+    await open(page);
+    await page.locator('[data-tab=market]').click();
+    await page.locator('[data-sheet=market] [data-action^="lot-open-"]').first().click();
+    await page.waitForTimeout(300);
+    const g = await page.evaluate(() => {
+      const r = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      return { main: r('[data-action=lot-buy]').left, col: r('[data-detail=lot] .lot-buttons').left, answer: r('[data-detail=lot] .lot-buttons > .mu-btn:not(.main)').left };
+    });
+    expect(Math.abs(g.main - g.col)).toBeLessThanOrEqual(1);
+    expect(Math.abs(g.main - g.answer)).toBeLessThanOrEqual(1);
+    expect(errors).toEqual([]);
+  });
+});
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB-3 п. 6 ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('«Пункт» closed, the icons of one mass, the empty dots ≥ 3:1', async ({ page }) => {
+      const errors = collectErrors(page);
+      await seedSave(page, { coins: 120, upgrades: { showcase: 2, incubator: 1 } });
+      await open(page);
+      await page.locator('[data-tab=shop]').click();
+      await page.waitForTimeout(300);
+      // The level dots: an empty one is a ring ≥ 3:1 to the background.
+      const dots = await page.evaluate(() => {
+        const dot = document.querySelector<HTMLElement>('[data-sheet=shop] .lvl-dots i:not(.on)')!;
+        // A mixed color computes as color(srgb r g b) in 0…1, a plain one as rgb().
+        const shadow = getComputedStyle(dot).boxShadow;
+        const srgb = shadow.match(/color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/);
+        return srgb ? `rgb(${srgb.slice(1, 4).map((v) => Math.round(Number(v) * 255)).join(', ')})` : shadow.match(/rgba?\([^)]*\)/)![0];
+      });
+      expect(ratio(dots, 'rgb(42, 33, 64)')).toBeGreaterThanOrEqual(3);
+      // The bell, the mat and the sign: their drawn pixels within 1.6 times of one another.
+      const mass = await page.evaluate(async () => {
+        const out: number[] = [];
+        for (const name of ['Колокольчик', 'Коврик', 'Вывеска']) {
+          const row = [...document.querySelectorAll<HTMLElement>('[data-sheet=shop] .shop-item')].find((r) => r.querySelector('.mu-name')?.textContent === name);
+          const img = row?.querySelector<HTMLImageElement>('img');
+          if (!img) continue;
+          await img.decode().catch(() => {});
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          const x = c.getContext('2d')!;
+          x.drawImage(img, 0, 0);
+          const d = x.getImageData(0, 0, c.width, c.height).data;
+          let n = 0;
+          for (let i = 3; i < d.length; i += 4) if (d[i]! > 200) n++;
+          out.push(n / (c.width * c.height));
+        }
+        return out;
+      });
+      expect(mass).toHaveLength(3);
+      expect(Math.max(...mass) / Math.min(...mass)).toBeLessThanOrEqual(1.6);
+      // The closed «Пункт»: short words without ★, its steps opaque, their words ≥ 4.5:1.
+      await page.locator('[data-sheet=shop] [data-sub=point]').click();
+      await page.waitForTimeout(300);
+      const p = await page.evaluate(() => {
+        const step = document.querySelector<HTMLElement>('[data-sheet=shop] .point-step')!;
+        return {
+          soon: document.querySelector('[data-sheet=shop] [data-point-soon]')!.textContent ?? '',
+          locked: document.querySelector('[data-sheet=shop] [data-point-locked]')!.textContent ?? '',
+          opacity: getComputedStyle(step).opacity,
+          meta: getComputedStyle(step.querySelector('.mu-meta')!).color,
+          name: getComputedStyle(step.querySelector('.mu-name')!).color,
+        };
+      });
+      expect(p.locked).not.toContain('★');
+      expect(p.soon.length + p.locked.length).toBeLessThanOrEqual(80);
+      expect(p.opacity).toBe('1');
+      expect(ratio(p.meta, 'rgb(42, 33, 64)')).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(p.name, 'rgb(42, 33, 64)')).toBeGreaterThanOrEqual(4.5);
+      expect(errors).toEqual([]);
+    });
+    test('«Покорми его тапами» off the incubator; a ready gift egg gets the «new egg» hint', async ({ page }) => {
+      const errors = collectErrors(page);
+      await open(page);
+      const egg = await page.evaluate(() => (window as unknown as { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }> } } }).__TEST__.targets().incubators[0]!);
+      await page.touchscreen.tap(egg.x, egg.y);
+      await page.waitForTimeout(500);
+      await page.locator('[data-action=hatch-skip]').dispatchEvent('click');
+      await page.locator('[data-action=hatch-shop]').click();
+      for (const b of ['[data-action=price-ok]', '[data-detail=sale] [data-action^=sale-go-]']) if (await page.locator(b).isVisible()) await page.locator(b).click();
+      await expect.poll(() => page.evaluate(() => (window as unknown as { __TEST__: { state(): { ftue: string } } }).__TEST__.state().ftue)).toBe('feed');
+      await page.locator('[data-tab=home]').click();
+      await page.locator('.hint[data-hint=feed]:not([hidden])').waitFor();
+      await page.waitForTimeout(500);
+      const f = await page.evaluate(() => {
+        const h = document.querySelector('.hint[data-hint=feed]')!.getBoundingClientRect();
+        const t = (window as unknown as { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }> } } }).__TEST__.targets().incubators;
+        // An incubator is about 60 px across around its point.
+        return t.filter((i) => i.x + 30 > h.left && i.x - 30 < h.right && i.y + 30 > h.top && i.y - 30 < h.bottom).length;
+      });
+      expect(f).toBe(0);
+      // A new game after the first deal with the gift egg ready: the hint at «Забрать» of it, not at a purchase.
+      await page.goto('about:blank');
+      await seedSave(page, { coins: 30, creatures: [], showcase: [], stats: { deals: 1, coinsEarned: 30, hatched: 1, taps: 10, levelUps: 0, haggles: 0 }, flags: { ftue_starter: true, ftue_fed: true, tab_eggs: true, tab_sales: true, tab_chats: true } });
+      await open(page);
+      await page.locator('[data-tab=eggs]').click();
+      const hint = page.locator('.hint[data-hint=buyEgg]:not([hidden])');
+      await expect(hint).toBeVisible({ timeout: 8000 });
+      await expect(hint).toContainText('Забери подарочное яйцо');
+      await expect(page.locator('[data-action=egg-free-egg_gift]')).toBeVisible();
+      await page.locator('[data-action=egg-free-egg_gift]').click();
+      await expect.poll(() => page.evaluate(() => (window as unknown as { __TEST__: { state(): { ftue: string } } }).__TEST__.state().ftue)).toBe('hatchRare');
+      expect(errors).toEqual([]);
+    });
+  });

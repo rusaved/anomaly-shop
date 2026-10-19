@@ -26,7 +26,8 @@ const SELL: FtueTarget = { kind: 'el', selectors: ['[data-action="chat-sell"]', 
 // The round of fixes (the usability recheck): on «Лавка» the «+» of a free place of the «Витрина» before the tab — the arrow stays near.
 const LIST: FtueTarget = { kind: 'el', selectors: ['[data-detail="sale"] [data-action^="sale-go-"]', '[data-detail="sale"] [data-action^="sale-list-"]', '[data-sheet="sales"] [data-action="sale-add"]', '[data-action="shelf-add"]', '[data-action="tab-sales"]'] };
 
-export function ftueHint(state: SaveData, view: GameView): FtueHint | null {
+/** freeEgg — a free egg ready to take now (eggShop: freeIn 0 and open), or null: the «new egg» step leads to it, not to a purchase. */
+export function ftueHint(state: SaveData, view: GameView, freeEgg: string | null = null): FtueHint | null {
   if (state.flags[FLAGS.done]) return null;
   const eggAt = view.incubators.findIndex((i) => i.egg);
   if (state.stats.hatched === 0) return eggAt >= 0 ? { step: 'tapEgg', target: { kind: 'incubator', index: eggAt } } : null;
@@ -40,8 +41,12 @@ export function ftueHint(state: SaveData, view: GameView): FtueHint | null {
     if (view.creatures.length > 0) return { step: 'waitCustomer', target: { kind: 'queue' } };
     return view.inventory.length > 0 ? { step: 'list', target: LIST } : null;
   }
-  // MU-04: the price button of the basic egg on «Яйца» (the tab first when another screen is open).
-  if (!state.flags[FLAGS.bought]) return { step: 'buyEgg', target: { kind: 'button', action: 'egg-buy-egg_basic|tab-eggs' } };
+  // MU-04: the price button of the basic egg on «Яйца» (the tab first when another screen is open); круг правок FB-3 п. 6: a free gift egg
+  // ready to take comes first — «Забрать» of it.
+  if (!state.flags[FLAGS.bought])
+    return freeEgg
+      ? { step: 'buyEgg', key: 'ftue.freeEgg', target: { kind: 'button', action: `egg-free-${freeEgg}|tab-eggs` } }
+      : { step: 'buyEgg', target: { kind: 'button', action: 'egg-buy-egg_basic|tab-eggs' } };
   if (state.stats.hatched < 2 && eggAt >= 0) return { step: 'hatchRare', target: { kind: 'incubator', index: eggAt } };
   return null;
 }

@@ -96,6 +96,35 @@ describe('M1-09 first minute', () => {
   });
 });
 
+describe('Круг правок FB-3 п. 6: a free gift egg in the first minute', () => {
+  it('the «new egg» hint leads to the gift egg ready to take; taking it is the step done, the rare one still hatches', () => {
+    const store = createStore(newSave(0), () => 0);
+    const game = createGame(store, content, createRng(7));
+    const free = (): string | null => game.eggShop().eggs.find((e) => e.section === 'free' && e.open && e.freeIn === 0)?.id ?? null;
+    const steps: string[] = [];
+    const rarities: string[] = [];
+    game.events.on((e) => e.type === 'hatched' && rarities.push(e.rarity));
+    for (let guard = 0; guard < 4000; guard++) {
+      const hint = ftueHint(game.state, game.view(), free());
+      if (!hint) break;
+      const name = hint.key ?? hint.step;
+      if (steps.at(-1) !== name) steps.push(name);
+      if (hint.step === 'tapEgg' || hint.step === 'hatchRare') game.tapIncubator(hint.target.kind === 'incubator' ? hint.target.index : 0);
+      else if (hint.step === 'list') game.list(game.view().inventory[0]!.uid);
+      else if (hint.step === 'feed') game.tapCreature(game.view().creatures[0]!.uid);
+      else if (hint.step === 'sell') game.chatSell(game.chats().find((c) => c.state === 'open')!.id);
+      else if (hint.step === 'buyEgg') {
+        expect(hint.target).toEqual({ kind: 'button', action: 'egg-free-egg_gift|tab-eggs' });
+        expect(game.claimFree('egg_gift')).toBe(true);
+      }
+      for (let x = 0; x < 0.25; x += STEP_SEC) game.tick(STEP_SEC);
+    }
+    expect(steps.filter((x) => x !== 'waitCustomer')).toEqual(['tapEgg', 'list', 'feed', 'sell', 'ftue.freeEgg', 'hatchRare']);
+    expect(rarities).toEqual(['common', 'valuable']);
+    expect(game.state.coins).toBeGreaterThan(0);
+  });
+});
+
 describe('M4-09 empty shelf hint', () => {
   it('after the first minute, an empty shelf with pets in the inventory brings «List it» back once the player is idle', () => {
     const save = newSave(0);

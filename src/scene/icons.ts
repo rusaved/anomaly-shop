@@ -5,7 +5,7 @@
 import { Container, Graphics } from 'pixi.js';
 import type { StyleData } from '../content/schemas.ts';
 import { drawEgg, drawRing } from './art.ts';
-import { drawBell, drawDecor, drawFoodBowl, drawSign } from './decor.ts';
+import { drawDecor, drawFoodBowl, drawSign } from './decor.ts';
 import type { ShopLayout } from './shop-layout.ts';
 
 type Colors = StyleData['colors'];
@@ -137,6 +137,40 @@ function chest(g: Graphics, R: number, c: Colors, outline: number): void {
   g.rect(-R * 0.04, -R * 0.12, R * 0.08, R * 0.16).fill(c.outline);
 }
 
+function bellIcon(g: Graphics, R: number, c: Colors, outline: number): void {
+  const w = outline * 0.8;
+  const r = R * 0.9;
+  g.moveTo(-r * 0.8, r * 0.5).quadraticCurveTo(-r * 0.74, -r * 0.75, 0, -r * 0.75).quadraticCurveTo(r * 0.74, -r * 0.75, r * 0.8, r * 0.5).closePath().fill(c.rarityLegendary).stroke({ width: w, color: c.outline, join: 'round' });
+  g.roundRect(-r * 0.9, r * 0.42, r * 1.8, r * 0.2, r * 0.1).fill(c.rarityLegendary).stroke({ width: w, color: c.outline });
+  g.circle(0, -r * 0.86, r * 0.14).fill(c.counter).stroke({ width: w * 0.7, color: c.outline });
+  g.circle(0, r * 0.72, r * 0.2).fill(c.counter).stroke({ width: w * 0.6, color: c.outline });
+}
+
+function matIcon(g: Graphics, R: number, c: Colors, outline: number): void {
+  const w = outline * 0.8;
+  const top = -R * 0.5;
+  const bottom = R * 0.5;
+  // Fringe on the near and the far edge.
+  for (let i = 0; i <= 6; i++) {
+    const t = i / 6;
+    const xt = -R * 0.6 + R * 1.2 * t;
+    const xb = -R * 0.92 + R * 1.84 * t;
+    g.moveTo(xt, top).lineTo(xt, top - R * 0.16).stroke({ width: w * 0.7, color: c.outline, cap: 'round' });
+    g.moveTo(xb, bottom).lineTo(xb, bottom + R * 0.18).stroke({ width: w * 0.7, color: c.outline, cap: 'round' });
+  }
+  g.poly([-R * 0.66, top, R * 0.66, top, R * 0.98, bottom, -R * 0.98, bottom]).fill(c.blush).stroke({ width: w, color: c.outline, join: 'round' });
+  // Two light stripes across, a heart in the middle.
+  for (const k of [0.25, 0.75]) {
+    const y = top + (bottom - top) * k;
+    const half = R * (0.66 + 0.32 * k) - w;
+    g.rect(-half, y - R * 0.05, half * 2, R * 0.1).fill(c.eyeWhite);
+  }
+  const s = R * 0.16;
+  g.circle(-s * 0.5, -s * 0.3, s * 0.55).fill(c.uiBad);
+  g.circle(s * 0.5, -s * 0.3, s * 0.55).fill(c.uiBad);
+  g.poly([-s * 1.02, -s * 0.15, s * 1.02, -s * 0.15, 0, s * 1.05]).fill(c.uiBad);
+}
+
 /** The signs of the finds (s4-finds: each find has its own picture, never the coin of its reward). */
 function findSign(g: Graphics, thing: string, R: number, c: Colors, outline: number): boolean {
   const stroke = { width: outline * 0.8, color: c.outline, join: 'round' as const };
@@ -262,14 +296,13 @@ function drawThing(box: Container, thing: string, R: number, c: Colors, outline:
   if (thing === 'point_repair') return repair(g, R, c, outline);
   if (thing === 'point_furnish') return shelves(g, R, c, outline);
   if (thing === 'point_passive') return locker(g, R, c, outline);
-  if (thing === 'bell') {
-    drawBell(g, R * 0.72, c, outline);
-    g.position.set(0, R * 0.12);
-    return;
-  }
+  // Круг правок FB-3 п. 6: the bell, the mat and the sign of one visible mass in a list — a short knob for the bell (no long cord), the mat
+  // lying in perspective with its fringe, a taller sign board.
+  if (thing === 'bell') return bellIcon(g, R, c, outline);
+  if (thing === 'mat') return matIcon(g, R, c, outline);
   if (thing === 'sign') {
     const badge = new Graphics();
-    drawSign(g, badge, R * 1.8, R * 0.95, 3, false, c, outline);
+    drawSign(g, badge, R * 1.8, R * 1.3, 3, false, c, outline);
     g.position.set(0, -R * 0.55);
     badge.position.set(badge.position.x, badge.position.y - R * 0.55);
     box.addChild(badge);

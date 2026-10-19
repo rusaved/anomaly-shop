@@ -386,7 +386,8 @@ test.describe('Круг правок FB п. 7 portrait 375×650', () => {
     const home = (await page.locator('[data-tab=home] .nav-icon').boundingBox())!;
     expect(Math.abs(home.x + home.width / 2 - 375 / 2)).toBeLessThanOrEqual(2);
     // The same places once more tabs are open.
-    await seedSave(page, { coins: 30, creatures: [], showcase: [], stats: { deals: 1, coinsEarned: 30, hatched: 1, taps: 10, levelUps: 0, haggles: 0 }, flags: { ftue_starter: true, ftue_fed: true, tab_eggs: true, tab_sales: true, tab_chats: true } });
+    // The gift egg already taken (круг правок FB-3 п. 6: a ready one gets the hint instead).
+    await seedSave(page, { coins: 30, creatures: [], showcase: [], freeIn: { egg_gift: 300 }, stats: { deals: 1, coinsEarned: 30, hatched: 1, taps: 10, levelUps: 0, haggles: 0 }, flags: { ftue_starter: true, ftue_fed: true, tab_eggs: true, tab_sales: true, tab_chats: true } });
     await page.evaluate(() => sessionStorage.clear());
     await open(page);
     const later = await page.locator('#nav > .nav-tab:not([hidden])').evaluateAll((els) => Object.fromEntries(els.map((e) => [(e as HTMLElement).dataset.tab, Math.round(e.getBoundingClientRect().left)])));

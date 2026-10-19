@@ -860,6 +860,9 @@ async function boot(): Promise<void> {
     window: () => topWindow()?.card ?? null,
   });
   const finger = createFinger(uiRoot);
+  // Круг правок FB-3 п. 6: the first minute's «new egg» leads to a free gift egg ready to take (only until the step is done).
+  const freeEggReady = (): string | null =>
+    store.state.flags.ftue_bought ? null : (play.eggShop().eggs.find((e) => e.section === 'free' && e.open && e.freeIn === 0)?.id ?? null);
   // UB-07: the milestone label is a dev trace — only with ?debug=1 (the producer link keeps it there).
   if (new URLSearchParams(location.search).has('debug')) renderBuildLabel(uiRoot, __BUILD_LABEL__);
   i18n.apply(uiRoot);
@@ -916,7 +919,7 @@ async function boot(): Promise<void> {
         queue: play.view().queue.length,
         chats: play.chats().filter((c) => c.state === 'open').map((c) => ({ id: c.id, uid: c.uid, offer: c.offer })),
         hint: hints.text(),
-        ftue: ftueHint(store.state, play.view())?.step ?? null,
+        ftue: ftueHint(store.state, play.view(), freeEggReady())?.step ?? null,
         rarities: store.state.creatures.map((c) => speciesById(c.species)?.rarity ?? ''),
         event: play.view().event?.kind ?? null,
         tab: nav.active(),
@@ -963,7 +966,7 @@ async function boot(): Promise<void> {
     // MU-12: the «+» places follow the scene's own layout (it relayouts on its frame when the shelf grows).
     if (nav.active() === 'home') renderShelf();
     // UB-01, UB-02: a hint at the shop shows on the home screen only, and never over a window.
-    const hint = controllable ? (ftueHint(store.state, view) ?? shelfHint(store.state, view, (performance.now() - lastInputAt) / 1000, ftue.shelfHintSec)) : null;
+    const hint = controllable ? (ftueHint(store.state, view, freeEggReady()) ?? shelfHint(store.state, view, (performance.now() - lastInputAt) / 1000, ftue.shelfHintSec)) : null;
     const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';
     const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
     // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.

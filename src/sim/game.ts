@@ -1720,6 +1720,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       if (!egg || egg.section !== 'free' || !egg.freeEverySec || !eggUnlocked(egg, facts()) || (st.freeIn[eggId] ?? 0) > 0) return false;
       st.freeIn[eggId] = egg.freeEverySec;
       st.myEggs[eggId] = (st.myEggs[eggId] ?? 0) + 1;
+      // Круг правок FB-3 п. 6: a gift egg taken is the first minute's «new egg» too.
+      st.flags[FLAGS.bought] = true;
       commit({ flush: true });
       emit({ type: 'freeEgg', egg: eggId });
       placeMine();

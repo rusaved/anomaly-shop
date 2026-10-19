@@ -4065,3 +4065,34 @@ button.mu-card {
 #ui .toast.out {
   pointer-events: none;
 }
+/* Круг правок FB-3 п. 6: the closed «Пункт» — its steps quiet but opaque (muted words ≥ 4.5:1 to the background, pictures a little
+   paler), never a see-through card. */
+#ui .mu-card.point-step.mu-dim {
+  opacity: 1;
+}
+#ui .point-step :is(.mu-name, .mu-meta) {
+  color: var(--c-uiMuted);
+}
+#ui .point-step .mu-pic img {
+  filter: saturate(0.55) brightness(0.85);
+}
+/* Круг правок FB-3 п. 6: the lot sideways — the main button at the left edge of its column, like the answers under it. */
+.landscape #ui [data-detail='lot'] .lot-buttons > .mu-btn.main {
+  margin-right: auto;
+}
+/* Круг правок FB-3 п. 6: an empty level dot is a ring ≥ 3:1 to the background (a bought one is filled with the accent). */
+#ui .lvl-dots i {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c-uiMuted) 70%, var(--c-uiBg));
+}
+#ui .lvl-dots i.on {
+  background: var(--c-uiAccent);
+  box-shadow: none;
+}
+/* Круг правок FB-3 п. 6: a bubble right of its target (the shelf's pet) — the arrow on its left side, pointing left. */
+#ui .hint.side.right .hint-arrow {
+  right: auto;
+  left: -9px;
+  border-left: 0;
+  border-right: 10px solid var(--c-uiText);
+}

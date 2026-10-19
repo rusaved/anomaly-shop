@@ -54,3 +54,17 @@ describe('M3-01 frame data', () => {
     expect(validateContent(c, game).errors).toContainEqual(expect.stringContaining('unknown egg "egg_nope"'));
   });
 });
+
+describe('FB-09 burst levels', () => {
+  it('stronger by rarity, ≤ 1.5 s, VIP and exclusive with their own sound, the exclusive one on the whole screen', async () => {
+    const b = (JSON.parse(readFileSync(resolve(import.meta.dirname, '../content/feel.json'), 'utf8')) as { burst: import('../src/content/schemas.ts').FeelData['burst'] }).burst;
+    expect(b.sec).toBeLessThanOrEqual(1.5);
+    const order = [b.good, b.valuable, b.premium, b.vip, b.exclusive];
+    for (let i = 1; i < order.length; i++) expect(order[i]!.sparks + order[i]!.salutes * 20).toBeGreaterThan(order[i - 1]!.sparks + order[i - 1]!.salutes * 20);
+    expect(b.valuable.flash).toBeGreaterThan(0);
+    expect(b.premium.salutes).toBeGreaterThan(0);
+    expect(b.vip.sound).toBe('vip');
+    expect(b.exclusive.sound).toBe('exclusive');
+    expect(b.exclusive.full && b.exclusive.shake > 0).toBe(true);
+  });
+});

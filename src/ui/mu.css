@@ -2928,3 +2928,10 @@ button.mu-card {
 .tap-finger svg { display: block; transform-origin: 40% 10%; animation: tap-finger 1.1s ease-in-out infinite; }
 @keyframes tap-finger { 0%, 100% { transform: translate(6px, 10px) scale(1); } 45% { transform: translate(0, 0) scale(0.92); } }
 @media (prefers-reduced-motion: reduce) { .tap-finger svg { animation: none; } }
+
+/* FB-09: the celebration of a rarity — over everything, never catches a tap. */
+.burst { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 60; pointer-events: none; }
+.burst[hidden], .burst-flash[hidden] { display: none; }
+.burst-flash { position: absolute; inset: 0; z-index: 59; pointer-events: none; background: radial-gradient(circle at 50% 42%, var(--burst-color, #fff) 0%, transparent 55%); opacity: 0; animation: burst-flash var(--burst-sec, 0.9s) ease-out 1; }
+.burst-flash.full { background: radial-gradient(circle at 50% 42%, #fff 0%, var(--burst-color, #fff) 30%, transparent 75%); }
+@keyframes burst-flash { 0% { opacity: var(--burst-flash, 0.4); } 100% { opacity: 0; } }

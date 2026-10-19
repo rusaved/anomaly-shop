@@ -29,6 +29,7 @@ import { createShopTab } from './ui/upgrades.ts';
 import { moodChip } from './ui/mood.ts';
 import { createRebirthWindow } from './ui/rebirth.ts';
 import { createLeadersWindow } from './ui/leaders.ts';
+import { createBurst } from './ui/burst.ts';
 import { createFinger } from './ui/finger.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
@@ -312,6 +313,7 @@ async function boot(): Promise<void> {
   const eggsTab = createEggsTab(sheets.get('eggs')!, play, eggsLook);
   // MU-02 (l1-home-landscape): sideways «Лавка» keeps the eggs in rows right of the room.
   const homeEggs = createEggsTab(sheets.get('home')!, play, eggsLook, 'egg-card-home');
+  const burst = createBurst(uiRoot, feel.burst, appRoot, () => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const hatchShow = createHatchShow(uiRoot, play, {
     t: i18n.t,
     lang: i18n.lang,
@@ -323,7 +325,11 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
     spinSec: () => feel.hatchShowSec,
-    onReveal: (rarity) => sfx.play(rarity === 'common' ? 'hatch' : 'rare'),
+    // FB-09: the result shows — its rarity's sound and celebration (VIP and exclusive have their own sounds).
+    onReveal: (rarity) => {
+      const lvl = burst.play(rarity, uiRoot.querySelector<HTMLElement>('[data-hatch-pic]'), rarityColor(styleData.rarity, rarity));
+      sfx.play(lvl?.sound ?? (rarity === 'common' ? 'hatch' : 'rare'));
+    },
     // UB-10: past the first minute «To the shop» opens the price slider (the first minute stays one tap: FTUE, UB-06).
     onListed: (uid) => {
       if (!store.state.flags.ftue_done) return;

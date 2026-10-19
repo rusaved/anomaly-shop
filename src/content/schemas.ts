@@ -145,6 +145,9 @@ export const Character = v.object({
   /** What the person writes in «Chats» (M3-08), by context; {n} — coins. */
   lines: v.object(Object.fromEntries(CHAT_CONTEXTS.map((k) => [k, Lines])) as Record<(typeof CHAT_CONTEXTS)[number], typeof Lines>),
 });
+/** FB-06 (Q-040 A): what a seller on the Market says — hello, yes to a bargain, «no discount», a polite no, thanks, bye; {n} — coins. */
+export const SELLER_CONTEXTS = ['greet', 'accept', 'noDiscount', 'refuse', 'thanks', 'bye'] as const;
+export const SellerLines = v.object(Object.fromEntries(SELLER_CONTEXTS.map((k) => [k, Lines])) as Record<(typeof SELLER_CONTEXTS)[number], typeof Lines>);
 /** Hobbies: «How are you?» with a seller who shares it gives a discount (M3-10). */
 export const Hobby = v.object({ id: Id, name: Text, line: Text });
 export const CustomersFile = v.object({
@@ -158,6 +161,7 @@ export const CustomersFile = v.object({
    */
   chat: v.object({ keep: Count, holdOnShelf: v.boolean(), firstCounter: v.boolean(), gentleDeals: v.optional(Count, 0), gentleMinOffer: v.optional(v.pipe(v.number(), v.minValue(0)), 0) }),
   hobbies: v.pipe(v.array(Hobby), v.minLength(2)),
+  seller: SellerLines,
   orders: Orders,
   districts: v.pipe(v.array(District), v.minLength(1)),
 });
@@ -521,6 +525,7 @@ export type DecorData = v.InferOutput<typeof DecorFile>;
 export type AchievementsData = v.InferOutput<typeof AchievementsFile>;
 export type TabUnlockData = v.InferOutput<typeof TabUnlock>;
 export type CodesData = v.InferOutput<typeof CodesFile>;
+export type SellerLinesData = v.InferOutput<typeof SellerLines>;
 export type RewardData = v.InferOutput<typeof Reward>;
 export type FtueData = v.InferOutput<typeof FtueFile>;
 export type FeelData = v.InferOutput<typeof FeelFile>;

@@ -368,6 +368,7 @@ async function boot(): Promise<void> {
   const sellerLook = {
     t: i18n.t,
     lang: () => i18n.lang(),
+    sellerLines: customers.seller,
     speciesName: (id: string) => speciesById(id)?.name[i18n.lang()] ?? id,
     portrait: (id: string, r: Parameters<typeof portraits.creature>[1]) => portraits.creature(id, r),
     rarityColor: (r: Parameters<typeof portraits.creature>[1]) => rarityColor(styleData.rarity, r),

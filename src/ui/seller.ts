@@ -1,8 +1,8 @@
 // What: a market lot with its seller chat (docs/01 §3 p. 14; M3-09, M3-10; MU-11 in the chat style of s2): «What about it?», «How are you?» + hobby discount, bargain slider, take it, bye.
 // Called by: src/ui/market.ts (openLot) through src/main.ts.
-// Keep: commands only through the game (buyLot, lotHobby, lotBargain); seller lines come from customers.json (character lines, hobbies) and i18n.
+// Keep: commands only through the game (buyLot, lotHobby, lotBargain); seller lines come from customers.json (FB-06: its own seller pool, hobbies) and i18n.
 
-import type { CharacterData, HobbyData, RarityName } from '../content/schemas.ts';
+import type { CharacterData, HobbyData, RarityName, SellerLinesData } from '../content/schemas.ts';
 import type { Game, LotView } from '../sim/game.ts';
 import { esc, iconize, money, rarityBadge } from './kit.ts';
 
@@ -13,6 +13,8 @@ export interface SellerLookups {
   portrait(species: string, rarity: RarityName): string;
   rarityColor(r: RarityName): string;
   character(id: string): CharacterData | undefined;
+  /** FB-06 (Q-040 A): the seller's own lines (customers.json seller), not a buyer's. */
+  sellerLines: SellerLinesData;
   hobby(id: string): HobbyData | undefined;
   person(i: number): { name: string; f: boolean };
   /** The lowest «I'll take it for…» as a share of the asking price (market.json bargainFloor). */
@@ -28,8 +30,8 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
   const lines: Array<{ me: boolean; text: string }> = [];
   const ch = look.character(first.character);
   const hobby = look.hobby(first.hobby);
-  const say = (ctx: keyof CharacterData['lines'], n?: number): string => {
-    const pool = ch?.lines[ctx] ?? [];
+  const say = (ctx: keyof SellerLinesData, n?: number): string => {
+    const pool = look.sellerLines[ctx];
     const line = pool[Math.floor(Math.random() * pool.length)]?.[look.lang()] ?? '';
     return n === undefined ? line : line.replaceAll('{n}', `◉ ${new Intl.NumberFormat(look.lang()).format(n)}`);
   };
@@ -95,7 +97,7 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
           lines.push({ me: false, text: say('accept') });
           done = 'bought';
         } else if (r === 'coins') lines.push({ me: false, text: look.t('seller.coins') });
-        else lines.push({ me: false, text: say('refuse') });
+        else lines.push({ me: false, text: say('noDiscount') });
         draw();
       });
       return;
@@ -122,7 +124,7 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
         lines.push({ me: true, text: look.t('seller.me.hobby', { hobby: hobby.name[look.lang()].toLowerCase() }) });
         const off = game.lotHobby(l.id);
         const now = lot()?.price ?? l.price;
-        lines.push({ me: false, text: off > 0 ? look.t('seller.discount', { n: `◉ ${fmt.format(now)}` }) : say('greet') });
+        lines.push({ me: false, text: off > 0 ? look.t('seller.discount', { n: `◉ ${fmt.format(now)}` }) : say('refuse') });
         draw();
       });
     if (!l.bargained)

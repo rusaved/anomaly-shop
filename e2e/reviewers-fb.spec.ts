@@ -56,8 +56,10 @@ test.describe('FB-14 portrait 375×650', () => {
     await page.waitForTimeout(300);
     if (await page.locator('[data-action=hatch-skip]').isVisible()) await page.locator('[data-action=hatch-skip]').click();
     await expect(page.locator('[data-action=hatch-sell]')).toBeVisible();
+    // Круг правок FB-2 п. 4 (the HQ re-check): «Продать сразу» is a quiet line under «На склад», not between the strip and the buttons.
     const sell = (await page.locator('[data-action=hatch-sell]').boundingBox())!;
-    expect(sell.y + sell.height).toBeLessThanOrEqual((650 * 2) / 3);
+    const keep = (await page.locator('[data-action=hatch-keep]').boundingBox())!;
+    expect(sell.y).toBeGreaterThanOrEqual(keep.y + keep.height);
     await page.locator('[data-action=hatch-keep]').click();
     await page.locator('[data-tab=sales]').click();
     await page.waitForTimeout(300);

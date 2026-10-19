@@ -3792,3 +3792,47 @@ button.mu-card {
 .portrait #ui [data-detail='lot'] .bubble {
   max-width: 90%;
 }
+/* Круг правок FB-2 п. 4: «Продать сразу» — a quiet line under «На склад» (portrait, PC); sideways under the price, next to the pet —
+   never in the corner where the other windows keep ✕. */
+.overlay .card.card-hatch .hatch-result > .hatch-sell {
+  margin: 24px 0 0;
+  width: 100%;
+}
+@media (max-height: 520px) {
+  .landscape .card-hatch .hatch-result {
+    grid-template-areas: 'pic word' 'pic name' 'pic range' 'pic sell' 'buttons buttons';
+  }
+  .landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+    position: relative;
+    top: auto;
+    right: auto;
+    grid-area: sell;
+    justify-self: start;
+    width: auto;
+    min-height: 40px;
+    margin: 0 0 0 -12px;
+    padding: 0 12px;
+  }
+  /* 07 rule 2: the sell line 24 px from the buttons under it; the card's fields a little thinner — it fits 330 at 130 % too. */
+  .landscape #ui .card-hatch .hatch-buttons {
+    margin-top: 24px;
+  }
+  .landscape #ui .overlay > .card.card-hatch {
+    padding-top: 7px;
+    padding-bottom: 4px;
+  }
+  .landscape #ui .card-hatch > h2 {
+    margin-bottom: 0 !important;
+  }
+  /* The strip keeps its place unseen after the run: the rows over «Продать сразу» stay as tall as the strip was, so taps that skip it
+     land on the pet's words, never on the sell line. */
+  .landscape .card-hatch.shown .hatch-result > .hatch-window {
+    display: block;
+    visibility: hidden;
+  }
+}
+@media (max-height: 520px) {
+  .landscape #ui .card-hatch > h2 {
+    min-height: 0;
+  }
+}

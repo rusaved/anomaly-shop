@@ -57,9 +57,10 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   const keep = button('hatch-keep', 'hatch.keep', 'mu-btn');
   const sell = button('hatch-sell', 'hatch.sell', 'mu-btn quiet hatch-sell');
   const toShop = button('hatch-shop', 'hatch.toShop', 'mu-btn main');
-  // FB-14 (07 rule 2): «Продать сразу» — irreversible — stands above the buttons, out of the bottom third of the screen, 24 px over «На витрину».
+  // Круг правок FB-2 п. 4: «Продать сразу» — irreversible — is a quiet line under «На склад», far from the strip and its hint
+  // (a run of taps that skips the strip lands on the pet and its words, never on it); sideways it stands under the price.
   q('.hatch-buttons').append(toShop, keep);
-  q('.hatch-buttons').before(sell);
+  q('.hatch-buttons').after(sell);
   const choices = [toShop, keep, sell];
   let egg = '';
   let uid = '';
@@ -126,6 +127,10 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
       return;
     }
     fill(cr);
+    // Круг правок FB-2 п. 4: a full shelf makes «На склад» the main choice («На витрину» would only say the shelf is full).
+    const full = game.freeSlots() <= 0;
+    toShop.classList.toggle('main', !full);
+    keep.classList.toggle('main', full);
     look.onReveal?.(cr.rarity);
     // MU-01: the card wears the frame of the rarity (premium glows, VIP shines, exclusive pulses); a valuable one and above also flashes.
     const rare = cr.rarity !== 'common' && cr.rarity !== 'good';

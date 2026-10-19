@@ -152,3 +152,40 @@ test.describe('Круг правок FB-2 п. 3 375×650 130 %', () => {
     expect(errors).toEqual([]);
   });
 });
+
+/** п. 4: «Продать сразу» — portrait a quiet line under «На склад»; sideways under the price, not in the window's top right corner (✕ of the
+ *  other windows); a full shelf makes «На склад» the main choice. */
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB-2 п. 4 ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('«Продать сразу» away from the strip and the corner; a full shelf — «На склад» main', async ({ page }) => {
+      const errors = collectErrors(page);
+      await seedSave(page, { coins: 120, creatures: pets, showcase: ['p0', 'p1'], upgrades: {} });
+      await open(page);
+      const hatch = (uid: string) => page.evaluate((id) => (window as unknown as { __TEST__: { hatch(id: string): boolean } }).__TEST__.hatch(id), uid);
+      expect(await hatch('p2')).toBe(true);
+      await page.waitForTimeout(400);
+      await page.locator('[data-action=hatch-skip]').click();
+      await page.waitForTimeout(700);
+      const box = async (sel: string) => (await page.locator(sel).boundingBox())!;
+      const [sell, keep, card, range] = await Promise.all([
+        box('[data-action=hatch-sell]'),
+        box('[data-action=hatch-keep]'),
+        box('[data-overlay=hatch] > .card'),
+        box('[data-hatch-range]'),
+      ]);
+      if (w < h) expect(sell.y).toBeGreaterThanOrEqual(keep.y + keep.height + 7.5);
+      else {
+        expect(sell.y).toBeGreaterThanOrEqual(range.y + range.height - 1);
+        expect(sell.y + sell.height).toBeLessThanOrEqual(keep.y);
+        expect(sell.y).toBeGreaterThan(card.y + 44);
+      }
+      for (const b of [sell, keep]) expect(b.y + b.height).toBeLessThanOrEqual(card.y + card.height);
+      // The shelf of the seed: 2 places, both taken — «На склад» is the main one, «На витрину» is dark.
+      const full = await page.evaluate(() => (window as unknown as { __TEST__: { state(): { shelf: unknown[] } } }).__TEST__.state().shelf.length);
+      await expect(page.locator('[data-action=hatch-keep]')).toHaveClass(full >= 2 ? /\bmain\b/ : /^(?!.*\bmain\b)/);
+      await page.locator('[data-action=hatch-keep]').click();
+      await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+      expect(errors).toEqual([]);
+    });
+  });

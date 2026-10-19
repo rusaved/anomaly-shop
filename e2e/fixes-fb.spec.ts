@@ -48,7 +48,8 @@ async function doubleTapSkip(page: Page): Promise<void> {
   expect(inside(center(strip), sell, 8)).toBe(false);
   expect(gap(sell, hint)).toBeGreaterThan(0);
   expect(gap(sell, shop)).toBeGreaterThanOrEqual(23.5);
-  // The buttons work after the lock.
+  // The buttons work after the lock (круг правок FB-2: it waits 0.5 s with no taps).
+  await page.waitForTimeout(700);
   await page.locator('[data-action=hatch-keep]').click();
   await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
   expect(errors).toEqual([]);

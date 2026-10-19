@@ -291,3 +291,36 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       expect(errors).toEqual([]);
     });
   });
+
+/** Ревизор удобства круга 2: a run of skip taps 300 ms apart for 3 s — on the dim under the strip (portrait), on the strip's lower edge and on
+ *  the dim right of the card (sideways) — never sells the pet, never closes the window, never buys in the shop under it. */
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB-2 серия тапов ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('a run of taps while the egg hatches sells nothing', async ({ page }) => {
+      const errors = collectErrors(page);
+      // A new game: its first egg is ready under the finger (as in the round of fixes FB п. 1).
+      await open(page);
+      const st = () => page.evaluate(() => (window as unknown as { __TEST__: { state(): { coins: number; creatures: unknown[] } } }).__TEST__.state());
+      const before = await st();
+      const t = await page.evaluate(() => (window as unknown as { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }> } } }).__TEST__.targets().incubators[0]!);
+      await page.touchscreen.tap(t.x, t.y);
+      await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+      await page.waitForTimeout(450);
+      const strip = (await page.locator('[data-action=hatch-skip]').boundingBox())!;
+      const points = w < h ? [[w / 2, h * 0.78]] : [[strip.x + strip.width / 2, strip.y + strip.height - 2], [w - 60, 145]];
+      for (let i = 0; i < 10; i++) {
+        const [x, y] = points[i % points.length]!;
+        await page.touchscreen.tap(x!, y!);
+        await page.waitForTimeout(300);
+      }
+      await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+      const after = await st();
+      expect(after.coins).toBe(before.coins);
+      expect(after.creatures.length).toBe(before.creatures.length + 1);
+      await page.waitForTimeout(700);
+      await page.locator('[data-action=hatch-keep]').click();
+      await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+      expect(errors).toEqual([]);
+    });
+  });

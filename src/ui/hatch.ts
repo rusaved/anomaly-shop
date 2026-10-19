@@ -40,7 +40,9 @@ const ITEM = 76;
 
 export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLookups): HatchShow {
   // UB-02: a tap outside skips the run; after the result it keeps the creature («Take»); a tab tap does the same.
-  const overlay = createOverlay(parent, 'hatch', () => (done ? !locked && keepIt() : skip()), { dismiss: () => keepIt() });
+  // Круг правок FB-2 (ревизор удобства): after the result a tap on the dim does nothing — a run of taps that skipped the strip never
+  // closes the window and lands on the shop under it; a tab tap still keeps the pet.
+  const overlay = createOverlay(parent, 'hatch', () => (done ? undefined : skip()), { dismiss: () => keepIt() });
   overlay.card.classList.add('card-hatch');
   // MU-09 (s6-hatch-result, r1, r2): the pet, its rarity word over the name, the price range (and the chance from VIP up), three ways out.
   // The strip and «тап — пропустить» live in the result's frame (CSS: in its pet and rarity-word places) until it shows.
@@ -100,6 +102,17 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     game.sellNow(uid);
     close();
   });
+  // Круг правок FB-2 (ревизор удобства): the buttons wake up after lockSec with no taps — every tap while they wait starts the wait again,
+  // so a run of skip taps (300 ms apart) never sells, wherever the result's buttons land under the finger.
+  overlay.root.addEventListener(
+    'pointerdown',
+    () => {
+      if (!done || !locked) return;
+      clearTimeout(unlock);
+      unlock = window.setTimeout(() => setLocked(false), Math.max(0, look.lockSec()) * 1000);
+    },
+    { capture: true },
+  );
   // UB-10: the tap that cracked the egg is not a skip (touch: its click lands on the strip that just opened under the finger).
   overlay.card.addEventListener('click', () => {
     if (!done && performance.now() - start >= 400) skip();

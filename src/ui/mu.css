@@ -3864,3 +3864,7 @@ button.mu-card {
     height: 102px;
   }
 }
+/* Круг правок FB-2 (ревизоры): the salute's sparks fly under the windows too — never over the words of «Вылупился!». */
+#ui .burst {
+  z-index: 29;
+}

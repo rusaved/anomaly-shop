@@ -19,12 +19,17 @@ const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width &
 /** Opens the first lot with the longest seller greeting (the pool's first line). */
 async function openLot(page: Page, big: boolean): Promise<void> {
   await page.locator('[data-tab=market]').click();
+  // The seller's first line from the pool's start: Math.random is 0 until the lot has opened (a timer could give it back before a slow click).
   await page.evaluate(() => {
-    const real = Math.random;
+    const w = window as unknown as { realRandom?: () => number };
+    w.realRandom = Math.random;
     Math.random = () => 0;
-    setTimeout(() => (Math.random = real), 0);
   });
   await page.locator('[data-sheet=market] [data-action^="lot-open-"]').first().click();
+  await page.evaluate(() => {
+    const w = window as unknown as { realRandom?: () => number };
+    if (w.realRandom) Math.random = w.realRandom;
+  });
   if (big) await scale130(page);
   await page.waitForTimeout(400);
 }

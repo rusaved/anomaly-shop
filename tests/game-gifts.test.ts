@@ -45,7 +45,7 @@ describe('M3-11 gifts', () => {
     expect(game.giftsView('2026-10-14')).toMatchObject({ day: 0, dailyReady: true });
     const coins = game.state.coins;
     expect(game.claimDaily('2026-10-14')).toBe(true);
-    expect(game.state.coins).toBe(coins + (content.gifts.daily[0]!.reward.coins ?? 0));
+    expect(game.state.coins).toBe(coins + (game.rewardFor(content.gifts.daily[0]!.reward).coins ?? 0));
     expect(game.claimDaily('2026-10-14')).toBe(false);
     expect(game.giftsView('2026-10-14').dailyReady).toBe(false);
     // Three days away: the next one is day 2, not day 1.

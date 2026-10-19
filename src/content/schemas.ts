@@ -14,7 +14,8 @@ const Pct = v.pipe(v.number(), v.minValue(0), v.maxValue(100));
 const Range = v.object({ min: Share, max: Share });
 const Color = v.pipe(v.string(), v.regex(/^(#[0-9a-fA-F]{6}|rgba?\([0-9., ]+\))$/, 'color: #rrggbb or rgb()/rgba()'));
 /** A reward: coins, crystals and an egg into «my eggs» (gifts, codes, tasks). */
-const Reward = v.object({ coins: v.optional(Money), crystals: v.optional(Money), egg: v.optional(Id) });
+/** A reward; incomeMin (FB-04): coins worth this many minutes of the player's income (at least coins), so it grows with the shop. */
+const Reward = v.object({ coins: v.optional(Money), crystals: v.optional(Money), egg: v.optional(Id), incomeMin: v.optional(v.pipe(v.number(), v.minValue(0))) });
 
 /** Six rarities from grey to red (Q-022 A): one color scale for creatures, upgrade tiers and the price slider. */
 export const RARITIES = ['common', 'good', 'valuable', 'premium', 'vip', 'exclusive'] as const;
@@ -265,6 +266,8 @@ export const FtueFile = v.object({
 const IsoDate = v.pipe(v.string(), v.isoDate());
 export const CalendarFile = v.object({
   daily: v.object({ eggId: Id, holdMinutes: Money, priceMultiplier: v.pipe(v.number(), v.minValue(1)), rarities: v.pipe(v.array(Rarity), v.minLength(1)) }),
+  /** FB-04: the bonus for coming back on a new day (once a day, not on the first). */
+  returnBonus: v.optional(Reward),
   tasks: v.object({
     perDay: Count,
     pool: v.pipe(v.array(v.object({ id: Id, type: v.picklist(['deals', 'hatch', 'feed', 'earn', 'haggle']), count: Count, name: Text, reward: Reward })), v.minLength(1)),

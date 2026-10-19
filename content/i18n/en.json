@@ -342,6 +342,7 @@
   "gifts.coins": "{n} coins",
   "gifts.crystals": "◆ {n}",
   "gifts.toast": "Gift: {what}",
+  "gifts.return": "Welcome back! {what}",
   "work.title": "Side job",
   "work.hint": "Tap the bowl: the neighbours' pets are fed, you get coins",
   "work.level": "Level {n} · +{pay} per tap",

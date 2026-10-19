@@ -50,7 +50,7 @@ import { renderLot } from './ui/seller.ts';
 import { createGiftsWindow } from './ui/gifts.ts';
 import { createWorkWindow } from './ui/work.ts';
 import { createReputation } from './ui/reputation.ts';
-import { RARITIES } from './content/schemas.ts';
+import { RARITIES, type RewardData } from './content/schemas.ts';
 import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
@@ -395,8 +395,9 @@ async function boot(): Promise<void> {
     const d = new Date(platform.now());
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
-  const rewardText = (r: { coins?: number | undefined; crystals?: number | undefined; egg?: string | undefined }): string => {
+  const rewardText = (reward: RewardData): string => {
     const fmt = new Intl.NumberFormat(i18n.lang());
+    const r = play.rewardFor(reward);
     if (r.egg) return eggs.eggs.find((e) => e.id === r.egg)?.name[i18n.lang()] ?? r.egg;
     if (r.crystals) return i18n.t('gifts.crystals', { n: fmt.format(r.crystals) });
     return i18n.t('gifts.coins', { n: fmt.format(r.coins ?? 0) });
@@ -408,7 +409,10 @@ async function boot(): Promise<void> {
     links,
     today,
     rewardText,
-    rewardShort: (r) => (r.egg ? i18n.t(`egg.short.${r.egg}`) : `${r.crystals ? '◆' : '◉'} ${new Intl.NumberFormat(i18n.lang()).format(r.coins ?? r.crystals ?? 0)}`),
+    rewardShort: (reward) => {
+      const r = play.rewardFor(reward);
+      return r.egg ? i18n.t(`egg.short.${r.egg}`) : `${r.crystals ? '◆' : '◉'} ${new Intl.NumberFormat(i18n.lang()).format(r.coins ?? r.crystals ?? 0)}`;
+    },
     eggPicture: (id) => portraits.egg(id),
     thing: (name) => portraits.thing(name),
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
@@ -777,7 +781,7 @@ async function boot(): Promise<void> {
     else if (e.type === 'work') sfx.play('coin');
     else if (e.type === 'workUp') sfx.play('levelUp');
     else if (e.type === 'gift') {
-      toasts.show(i18n.t('gifts.toast', { what: rewardText(e.reward) }), 'good', 2400);
+      toasts.show(i18n.t(e.from === 'return' ? 'gifts.return' : 'gifts.toast', { what: rewardText(e.reward) }), 'good', 2400);
       sfx.play('rare');
     }
 

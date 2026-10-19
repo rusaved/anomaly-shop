@@ -123,7 +123,7 @@ export type GameEvent =
   | { type: 'chatNew'; id: number }
   | { type: 'work'; coins: number }
   | { type: 'workUp'; level: number }
-  | { type: 'gift'; from: 'subscribe' | 'review' | 'daily' | 'code'; reward: RewardData }
+  | { type: 'gift'; from: 'subscribe' | 'review' | 'daily' | 'code' | 'return'; reward: RewardData }
   | { type: 'lotBought'; id: number; uid: string; price: number }
   | { type: 'marketNew' }
   | { type: 'chatReply'; id: number; ctx: string }
@@ -417,6 +417,8 @@ export interface Game {
   dayView(day: string): DayView;
   claimDayEgg(day: string): boolean;
   claimDayGoal(day: string, id: string): boolean;
+  /** FB-04: a reward as it pays now (incomeMin in coins of the current income). */
+  rewardFor(r: RewardData): RewardData;
   /** M4-23: the species in fashion and the one everybody is fed up with today, with their price multipliers (null: no day yet). */
   mood(): { hot: string; cold: string; hotMult: number; coldMult: number } | null;
   /** UB-08: the seller level of reputation.json. */
@@ -1185,8 +1187,15 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const lotValue = (l: { species: string; level: number }): number => appraisal({ uid: '', species: l.species, level: l.level, fed: 0, hatchedAt: 0, age: 0 });
   const verdict = (price: number, value: number): LotView['verdict'] => (price < value * 0.95 ? 'below' : price <= value * 1.05 ? 'market' : 'above');
   /** Coins, crystals and an egg into «my eggs» (gifts, codes). */
-  function giveReward(r: RewardData, from: 'subscribe' | 'review' | 'daily' | 'code'): void {
+  /** FB-04: a reward with incomeMin in whole coins of the current income (at least its coins). */
+  function rewardFor(r: RewardData): RewardData {
+    if (r.incomeMin === undefined) return r;
+    const { incomeMin, ...rest } = r;
+    return { ...rest, coins: Math.max(r.coins ?? 0, coins(incomeMin * incomeNow())) };
+  }
+  function giveReward(reward: RewardData, from: 'subscribe' | 'review' | 'daily' | 'code' | 'return'): void {
     const st = s();
+    const r = rewardFor(reward);
     if (r.coins) st.coins += r.coins;
     if (r.crystals) st.crystals += r.crystals;
     if (r.egg && eggData(r.egg)) st.myEggs[r.egg] = (st.myEggs[r.egg] ?? 0) + 1;
@@ -1211,8 +1220,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const t = content.calendar.tasks;
     const order = (id: string): number => dayHash(`${day}:${id}`, st.createdAt);
     const goals = [...t.pool].sort((a, b) => order(a.id) - order(b.id)).slice(0, t.perDay).map((x) => x.id);
+    const back = Boolean(st.daily.day);
     st.daily = { day, base: { ...st.stats }, goals, claimed: [], egg: false };
     commit({ flush: true });
+    // FB-04: the bonus for coming back — once a new day, not on the very first one.
+    if (back && content.calendar.returnBonus) giveReward(content.calendar.returnBonus, 'return');
   }
   function dayGoals(): DayView['goals'] {
     const st = s();
@@ -1222,7 +1234,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const stat = TASK_STAT[g.type];
       const now = st.stats[stat] ?? 0;
       const have = Math.max(0, Math.floor(now - (st.daily.base[stat] ?? now)));
-      return [{ id, have: Math.min(have, g.count), need: g.count, done: have >= g.count, claimed: st.daily.claimed.includes(id), reward: g.reward }];
+      return [{ id, have: Math.min(have, g.count), need: g.count, done: have >= g.count, claimed: st.daily.claimed.includes(id), reward: rewardFor(g.reward) }];
     });
   }
 
@@ -2085,6 +2097,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       giveReward({ egg: content.calendar.daily.eggId }, 'daily');
       return true;
     },
+    rewardFor,
     claimDayGoal(day, id) {
       rollDay(day);
       const st = s();

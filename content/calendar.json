@@ -1,14 +1,15 @@
 {
   "$schema": "calendar.schema.json",
-  "note": "Календарь из docs/01a-content.md §7: аномалий дня, задание дня (3 цели из пула), событие недели как конфиг. Даты событий — ISO, включительно. Стартовые значения, уточняются на M3. Календарь 7 дней — в gifts.json (daily). M4-07: всё по дате устройства; вид дня — среди редкостей daily.rarities; цена ×priceMultiplier от множителя лучшего открытого яйца лестницы (чтобы в дорогих городах он оставался событием); прогресс целей — прирост счётчиков за день (feed — тапы в лавке).",
+  "note": "Календарь из docs/01a-content.md §7: аномалий дня, задание дня (3 цели из пула), событие недели как конфиг. Даты событий — ISO, включительно. Стартовые значения, уточняются на M3. Календарь 7 дней — в gifts.json (daily). M4-07: всё по дате устройства; вид дня — среди редкостей daily.rarities; цена ×priceMultiplier от множителя лучшего открытого яйца лестницы (чтобы в дорогих городах он оставался событием); прогресс целей — прирост счётчиков за день (feed — тапы в лавке). FB-02: аномалия дня ×priceMultiplier от цены своей редкости в яйце дня, не больше 5 минут дохода. FB-04 (Q-031 B): награда цели — incomeMin минут дохода игрока (растёт с лавкой); returnBonus — раз в новый день за возвращение.",
   "daily": {"eggId": "egg_daily", "holdMinutes": 10, "priceMultiplier": 1.75, "rarities": ["valuable", "premium", "vip"]},
+  "returnBonus": {"incomeMin": 5},
   "tasks": {
     "perDay": 3,
     "pool": [
-      {"id": "deals_3", "type": "deals", "count": 3, "name": {"ru": "Продай 3 существа", "en": "Sell 3 creatures"}, "reward": {"coins": 40}},
-      {"id": "hatch_2", "type": "hatch", "count": 2, "name": {"ru": "Вылупи 2 яйца", "en": "Hatch 2 eggs"}, "reward": {"coins": 30}},
-      {"id": "feed_20", "type": "feed", "count": 20, "name": {"ru": "Покорми 20 раз", "en": "Feed 20 times"}, "reward": {"coins": 25}},
-      {"id": "earn_200", "type": "earn", "count": 200, "name": {"ru": "Заработай 200 монет", "en": "Earn 200 coins"}, "reward": {"coins": 60}},
+      {"id": "deals_3", "type": "deals", "count": 3, "name": {"ru": "Продай 3 существа", "en": "Sell 3 creatures"}, "reward": {"incomeMin": 2.5}},
+      {"id": "hatch_2", "type": "hatch", "count": 2, "name": {"ru": "Вылупи 2 яйца", "en": "Hatch 2 eggs"}, "reward": {"incomeMin": 2}},
+      {"id": "feed_20", "type": "feed", "count": 20, "name": {"ru": "Покорми 20 раз", "en": "Feed 20 times"}, "reward": {"incomeMin": 2}},
+      {"id": "earn_200", "type": "earn", "count": 200, "name": {"ru": "Заработай 200 монет", "en": "Earn 200 coins"}, "reward": {"incomeMin": 3}},
       {"id": "haggle_2", "type": "haggle", "count": 2, "name": {"ru": "Выторгуй 2 раза", "en": "Win 2 haggles"}, "reward": {"crystals": 1}}
     ]
   },

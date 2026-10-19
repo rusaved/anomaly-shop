@@ -342,6 +342,7 @@
   "gifts.coins": "{n} монет",
   "gifts.crystals": "◆ {n}",
   "gifts.toast": "Подарок: {what}",
+  "gifts.return": "С возвращением! {what}",
   "work.title": "Подработка",
   "work.hint": "Тапай миску: соседские питомцы сыты, тебе монеты",
   "work.level": "Уровень {n} · +{pay} за тап",

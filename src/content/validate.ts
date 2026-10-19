@@ -114,7 +114,7 @@ function checkEggs(eggs: EggsData, customers: CustomersData | null, errors: stri
 /** Rewards point at real eggs (gifts, codes). */
 function checkReward(file: string, path: string, reward: RewardData, eggs: EggsData | null, errors: string[]): void {
   if (reward.egg && eggs && !eggs.eggs.some((e) => e.id === reward.egg && !e.special)) errors.push(`${file}: ${path}.egg — unknown egg "${reward.egg}"`);
-  if (!reward.egg && !reward.coins && !reward.crystals) errors.push(`${file}: ${path} — an empty reward`);
+  if (!reward.egg && !reward.coins && !reward.crystals && !reward.incomeMin) errors.push(`${file}: ${path} — an empty reward`);
 }
 
 function playerLine(file: string, path: string, text: { ru: string; en: string }, errors: string[]): void {

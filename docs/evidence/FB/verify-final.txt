@@ -1,0 +1,408 @@
+verify (milestone): 13 stages, full log /home/user/anomaly-shop/docs/evidence/FB/verify-final.txt
+
+== verify: typecheck
+ok   typecheck 1.8 s
+
+== verify: test
+
+ RUN  v5.0.3 /home/user/anomaly-shop
+
+
+ Test Files  63 passed (63)
+      Tests  300 passed (300)
+   Start at  03:43:54
+   Duration  20.12s (tests 87%, import 7%, transform 6%, worker 1%)
+
+    Isolate  63 workers spawned · ~151ms startup each (spawn + environment, per file)
+             at least ~3.03s faster with isolate: false — reuses workers across files instead of one per file
+
+ok   test 20.8 s
+
+== verify: validate:content
+validate:content: game.json and 25 content files — ok
+ok   validate:content 0.3 s
+
+== verify: sim:balance
+sim:balance — 4 bots × 24 seeds × 10 min; p50 / p90 of game seconds (limit in brackets)
+casual  F1 16/16 (40) ok · F2 37/54 (120) ok · F3 43/46 (180) ok · F4 24/24 (300) ok · F13 11/12 (60) ok · F14 51/93 (600) ok · F15 196/321 (600) ok · F16.2 35/36 (90) ok · F16.3 81/92 (180) ok · F16.4 142/160 (270) ok · F16.5 207/232 (360) ok · F5 ×1.7 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 653 coins; 10 min: 1604 coins (p50)
+rusher  F1 17/17 (40) ok · F2 48/66 (120) ok · F3 44/48 (180) ok · F4 25/25 (300) ok · F13 11/12 (60) ok · F14 52/166 (600) ok · F15 226/301 (600) ok · F16.2 36/38 (90) ok · F16.3 84/88 (180) ok · F16.4 142/153 (270) ok · F16.5 200/227 (360) ok · F5 ×2.0 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 564 coins; 10 min: 1613 coins (p50)
+tapper  F1 15/15 (40) ok · F2 34/39 (120) ok · F3 43/47 (180) ok · F4 23/23 (300) ok · F13 12/16 (60) ok · F14 52/112 (600) ok · F15 180/257 (600) ok · F16.2 34/39 (90) ok · F16.3 87/94 (180) ok · F16.4 146/163 (270) ok · F16.5 219/237 (360) ok · F5 ×2.3 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 806 coins; 10 min: 2010 coins (p50)
+slow    F1 20/20 (40) ok · F2 65/76 (120) ok · F3 53/60 (180) ok · F4 32/32 (300) ok · F13 12/12 (60) ok · F14 61/174 (600) ok · F15 203/284 (600) ok · F16.2 43/44 (90) ok · F16.3 92/100 (180) ok · F16.4 146/165 (270) ok · F16.5 224/239 (360) ok · F5 ×1.5 ok · F10 ok · F11 0/24 ok · 5 min: 18 deals, 577 coins; 10 min: 1369 coins (p50)
+long run — casual and slow × 8 seeds: 3 days of 30 active minutes + 8 h away
+casual  F19 income an hour of play / away: 35412 / 11675 (33 %, want 30–50 %), seller levels away +1 (≤ 1) ok
+casual  F6 8 h away = 45 min of play (30–60) ok · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 275 s, square 939 s p90 (600 / 2400) ok
+slow    F19 income an hour of play / away: 24840 / 9766 (39 %, want 30–50 %), seller levels away +1 (≤ 1) ok
+slow    F6 8 h away = 48 min of play (30–60) info · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 283 s, square 1022 s p90 (600 / 2400) ok
+keeper  F12 10 min = ×1.16 of casual (≤ ×2) · rebirth threshold on day 1.8 (≥ 1.0) ok
+week    F17 new things by day 49 / 34 / 54 / 22 / 60 / 22 / 18 (≥ 1 a day) ok · guest zone pays back ×3.30 (≥ 1) ok · F18 moves on day 2.0, the next 2.2 days later (1–3), the city egg on day 4.1 ok
+rewards FB-02 best reward in 5 min of income by ladder step (exclusive when bought p50 / hatch p90): basic 0.1/0.02 · warm 0.9/0.16 · odd 6.2/0.59 · glow 30.6/3.96 · star 82.4/6.17 · crystal 190.6/10.33; free rewards ≤ 5 min (capped)
+care    F20 VIP+exclusive without → with full care (b 0.5, top 0.35), EV in egg prices less food: basic 0.5→1.3 % · ×2.56→×3.46 · warm 2.0→4.4 % · ×1.03→×1.32 · odd 3.0→6.0 % · ×0.90→×1.11 · glow 3.0→6.0 % · ×0.91→×1.15 · star 3.0→6.0 % · ×0.97→×1.17 · crystal 3.0→6.1 % · ×0.95→×1.15 · rainbow 3.0→6.0 % · ×0.99→×1.16 · royal 3.0→6.0 % · ×1.01→×1.15 ok
+F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)
+F1–F8, F10, F11, F12–F20: all green
+(85.7 s)
+ok   sim:balance 86.1 s
+
+== verify: build:e2e
+vite v8.3.2 building client environment for e2e...
+transforming...
+✓ 828 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-e2e/index.html                                         2.18 kB │ gzip:   1.06 kB
+dist-e2e/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-e2e/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-e2e/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-e2e/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-e2e/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-e2e/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-e2e/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-e2e/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-e2e/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-e2e/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-e2e/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-e2e/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-e2e/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-e2e/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-e2e/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-e2e/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-e2e/assets/index-BvZDJunO.css                         80.28 kB │ gzip:  15.42 kB
+dist-e2e/assets/webworkerAll-DcihuTRG.js                    0.05 kB │ gzip:   0.06 kB
+dist-e2e/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-e2e/assets/test-api-BcJt2x3C.js                        1.22 kB │ gzip:   0.60 kB
+dist-e2e/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-e2e/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-e2e/assets/yandex-D5b4cFzf.js                          8.55 kB │ gzip:   2.97 kB
+dist-e2e/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-e2e/assets/init-Bssg08gy.js                           15.31 kB │ gzip:   4.80 kB
+dist-e2e/assets/panel-n49_uol0.js                          31.93 kB │ gzip:   8.60 kB
+dist-e2e/assets/browserAll-Bn180_cs.js                     42.64 kB │ gzip:  11.19 kB
+dist-e2e/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-e2e/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-e2e/assets/index-DETDSvak.js                         663.72 kB │ gzip: 207.22 kB
+
+✓ built in 1.09s
+ok   build:e2e 1.7 s
+
+== verify: e2e [e2e: end of milestone only]
+
+Running 114 tests using 2 workers
+
+  ✓    1 [desktop] › e2e/back-fb.spec.ts:14:1 › FB-07 from «Склад»: «На продажу» → «Цена» → «‹» back to «Склад» (4.9s)
+  ✓    2 [desktop] › e2e/back-fb.spec.ts:26:1 › FB-07 from «Лавка»: «+» of the shelf → the pick → «Цена» → «‹» back to «Лавка» (4.9s)
+  ✓    3 [desktop] › e2e/back-fb.spec.ts:38:1 › FB-07 from «Продажи»: «+ Выставить» → the pick → «Цена» → «‹» back to the pick, then the list (3.5s)
+  ✓    5 [desktop] › e2e/burst-fb.spec.ts:41:1 › FB-09 prefers-reduced-motion — the flash only (4.7s)
+  ✓    4 [desktop] › e2e/burst-fb.spec.ts:20:1 › FB-09 common — no burst; VIP — sparks and salute; a tap skips; exclusive — the whole screen (10.0s)
+  ✓    6 [desktop] › e2e/eggs-m3.spec.ts:10:1 › M3-04 egg card: odds match eggs.json, buy one and ×3 (6.8s)
+  ✓    8 [desktop] › e2e/hatch-ub.spec.ts:10:1 › UB-03 the first egg opens with one tap; the creature is nowhere until the strip stops; a tap skips; three choices (5.2s)
+  ✓    7 [desktop] › e2e/gifts-m3.spec.ts:7:1 › M3-11 gifts: the daily gift and the review egg once, kept after a reload (10.2s)
+  ✓   10 [desktop] › e2e/leaders-m4.spec.ts:5:1 › M4-04 leaders: sign in by the button, the score on the board, no SDK violations (5.0s)
+  ✓    9 [desktop] › e2e/hatch-ub.spec.ts:39:1 › M3-05 hatch show: 4–5 s, the roll on the card, sell now = the low end (11.2s)
+  ✓   12 [desktop] › e2e/loop.spec.ts:46:1 › M1-08 the upgrade shop: buying the second incubator changes the shop and survives F5 (8.7s)
+  ✓   11 [desktop] › e2e/loop.spec.ts:26:1 › SAV-01 F5 after a deal: coins, the deal count and the creatures come back (30.1s)
+  ✓   14 [desktop] › e2e/market-m3.spec.ts:5:1 › M3-09 market: lots, timer, a lot page opens, a quick buy (5.2s)
+  ✓   13 [desktop] › e2e/loop.spec.ts:66:1 › LOC-03 English: the home screen, the chats, the tab bar and the upgrade shop have no Russian text (26.6s)
+  ✓   15 [desktop] › e2e/mu-07.spec.ts:275:5 › MU-12 docs/07 at 375×650 › every screen keeps the rules of 07 and shows the rarity of every pet (18.2s)
+  ✓   16 [desktop] › e2e/mu-07.spec.ts:283:5 › MU-12 docs/07 at 375×650 › a system font at 130 %: nothing runs out of the screen or under the tab bar (17.1s)
+  ✓   17 [desktop] › e2e/mu-07.spec.ts:275:5 › MU-12 docs/07 at 812×330 › every screen keeps the rules of 07 and shows the rarity of every pet (18.4s)
+  ✓   18 [desktop] › e2e/mu-07.spec.ts:283:5 › MU-12 docs/07 at 812×330 › a system font at 130 %: nothing runs out of the screen or under the tab bar (17.1s)
+  ✓   19 [desktop] › e2e/mu-07.spec.ts:331:3 › the round of fixes, item 1: lists by the mockups at 375×650 › finds 172, the two gift cards 122, the sales places 200; the first line 8–14 px under the top bar (8.9s)
+  ✓   20 [desktop] › e2e/mu-07.spec.ts:374:3 › the round of fixes, item 2: sideways 812×330 is «list + detail» › rows 44–52 px; the lot, the egg card, the collection, the gifts and «Вылупился!» whole (9.9s)
+  ✓   21 [desktop] › e2e/mu-07.spec.ts:461:5 › the round of fixes, item 3: the font scale of 07 at 375×650 › titles 18 on one line, pet names 18, the big price 32, section labels 12.5 (5.4s)
+  ✓   23 [desktop] › e2e/mu-07.spec.ts:491:3 › the round of fixes, item 6: the small things › tab names and 12 px labels, the top bar 44 px, one green fill among the finds, «Скидка? Возьму за…» on one line (4.4s)
+  ✓   22 [desktop] › e2e/mu-07.spec.ts:461:5 › the round of fixes, item 3: the font scale of 07 at 812×330 › titles 18 on one line, pet names 18, the big price 32, section labels 12.5 (5.5s)
+  ✓   24 [desktop] › e2e/mu-07.spec.ts:523:3 › the round of fixes, item 8: a toast moves nothing, a hint lies on no card › a toast over «Рынок» leaves every card where the finger aims (5.8s)
+  ✓   25 [desktop] › e2e/mu-07.spec.ts:538:3 › the round of fixes, item 8: a toast moves nothing, a hint lies on no card › the hint over a tab of the bar takes its own band: no card of the open screen under it (10.9s)
+  ✓   26 [desktop] › e2e/mu-07.spec.ts:563:3 › the round of fixes, item 8 (the recheck): the first hint of a tab moves nothing when it goes › «Рынок» on its first visit: the hint stands in a band at the bottom, the lots stay put after the first tap (6.0s)
+  ✓   27 [desktop] › e2e/nav-ub.spec.ts:5:1 › UB-01 PC: one tab bar at the bottom, Eggs is home, every tab opens its screen (6.2s)
+  ✓   29 [desktop] › e2e/press-fb.spec.ts:46:1 › FB-13 every button: the squeeze 0.95 and the press sound — «Лавка», «Яйца», «Склад», «Продажи», «Магазин», «Пауза» (9.7s)
+  ✓   30 [desktop] › e2e/rebirth-m4.spec.ts:6:1 › M4-06 rebirth: ready → the popup asks → a new city, the collection stays (7.4s)
+  ✓   28 [desktop] › e2e/noise-m3.spec.ts:5:1 › M3-18 one text at a time; the ticker is quiet without a reason (27.9s)
+  ✓   31 [desktop] › e2e/reputation-ub.spec.ts:7:1 › UB-08 a deal brings the seller level up: the chip flashes, a toast, the panel lists what opens (7.1s)
+  ✓   32 [desktop] › e2e/reviewers-fb.spec.ts:32:3 › FB-14 portrait 375×650 › 130 %: tab labels, segments and names keep whole words (≥ 12 px) (4.7s)
+  ✓   33 [desktop] › e2e/reviewers-fb.spec.ts:45:3 › FB-14 portrait 375×650 › «Аномалия дня» in three lines; «Продать сразу» out of the bottom third; a cut card shows only its picture (3.8s)
+  ✓   34 [desktop] › e2e/reviewers-fb.spec.ts:79:3 › FB-14 sideways 812×330 › the section switcher ≤ 420 px, the main button ≤ 360 px (3.6s)
+  ✓   35 [desktop] › e2e/reviewers-fb.spec.ts:99:3 › FB-15 the round of fixes (usability review) › a second tap right after skipping the strip never sells the pet (3.1s)
+  ✓   36 [desktop] › e2e/reviewers-fb.spec.ts:115:3 › FB-15 the round of fixes (usability review) › «Пока тебя не было»: the ad button says its coins, away longer than the shop works says both times (2.2s)
+  ✓   37 [desktop] › e2e/sales-ub.spec.ts:8:1 › UB-05 one path: listed with the slider, a buyer writes, the creature is off the shelf meanwhile, sold from the chat (6.0s)
+  ✓   38 [desktop] › e2e/seller-m3.spec.ts:7:1 › M3-10 bought below the market → on sale → sold dearer (7.1s)
+  ✓   39 [desktop] › e2e/smoke.spec.ts:9:1 › environment: the game boots on the mock, WebGL renders, the test API answers (4.1s)
+  ✓   40 [desktop] › e2e/smoke.spec.ts:19:1 › SDK-02 ready() once, after the shop is drawn, within 4 s; the loading screen is gone (4.0s)
+  ✓   42 [desktop] › e2e/smoke.spec.ts:43:1 › SDK-03 startup ad: pause before ready, gameplay starts only after the resume (3.7s)
+  ✓   41 [desktop] › e2e/smoke.spec.ts:31:1 › SCR-09 zero console errors, page errors and dialogs through pause, settings and a reload (9.8s)
+  ✓   43 [desktop] › e2e/smoke.spec.ts:56:1 › SDK-04 GameplayAPI stop on pause and start on resume, only on transitions (5.0s)
+  ✓   45 [desktop] › e2e/smoke.spec.ts:83:1 › SAV-05 a corrupted save gives a fresh profile, no crash (3.5s)
+  ✓   44 [desktop] › e2e/smoke.spec.ts:67:1 › SAV-01 coins and a creature survive F5 (debug panel actions) (11.1s)
+  ✓   46 [desktop] › e2e/smoke.spec.ts:97:1 › SDK-05 LOC-03 language from the SDK: en → English UI, uk → Russian (6.5s)
+  ✓   48 [desktop] › e2e/smoke.spec.ts:122:1 › CNT-08 community buttons open the game.json addresses in a new tab, no reward, game paused (5.6s)
+  ✓   47 [desktop] › e2e/smoke.spec.ts:110:1 › LOC-05 manual language choice wins over the platform language and survives F5 (7.9s)
+  ✓   49 [desktop] › e2e/smoke.spec.ts:140:1 › SCR-01 1280×720: the top bar, «Лавка», the tab bar, pause and settings windows fit the screen (4.8s)
+  ✓   50 [desktop] › e2e/upgrades-ub.spec.ts:5:1 › UB-04 upgrades: a panel from the right by a button, the shop in view, the purchase shines (5.4s)
+  ✓   51 [desktop] › e2e/usability-ub.spec.ts:6:1 › UB-09 PC: a tab tap closes any window (7.2s)
+  ✓   52 [desktop] › e2e/usability-ub.spec.ts:7:1 › UB-09 PC: one window at a time (8.3s)
+  ✓   53 [desktop] › e2e/usability-ub.spec.ts:8:1 › UB-09 PC: hints never lie over a window (9.8s)
+  ✓   54 [desktop] › e2e/usability-ub.spec.ts:9:1 › UB-09 PC: the hatch reward only after the strip (9.0s)
+  ✓   55 [desktop] › e2e/usability-ub.spec.ts:10:1 › UB-09 PC: hidden gestures are signed (12.8s)
+  ✓   57 [desktop] › e2e/usability-ub.spec.ts:12:1 › UB-09 PC: every tab has its label (2.9s)
+  ✓   56 [desktop] › e2e/usability-ub.spec.ts:11:1 › UB-09 PC: text 12 px and up (14 px and no cut text on a PC, M4-00), buttons 44 px and up on every screen (16.9s)
+  ✓   58 [desktop] › e2e/usability-ub.spec.ts:13:1 › UB-09 PC: no service marks (7.4s)
+  ✓   59 [desktop] › e2e/usability-ub.spec.ts:14:1 › M4-00 PC: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (6.4s)
+  ✓   61 [desktop] › e2e/windows-ub.spec.ts:4:1 › UB-02 PC: one window at a time, a tab works from any window, a tap outside closes it (9.6s)
+  ✓   62 [desktop] › e2e/windows-ub.spec.ts:5:1 › UB-02 PC: hints never lie over a window or another screen (5.4s)
+  ✓   63 [desktop] › e2e/work-m3.spec.ts:5:1 › M3-12 side job: a tap gives +N (4.3s)
+  ✓   60 [desktop] › e2e/usability-ub.spec.ts:15:1 › M4-00 PC: one caption on the shop at a time (29.5s)
+  ✓   65 [phone] › e2e/ftue-ub.spec.ts:51:1 › UB-06 each tab gets one hint on its first visit, none on the next; never at a closed thing (14.0s)
+  ✓   64 [phone] › e2e/ftue-ub.spec.ts:16:1 › UB-06 first minute by taps only: egg → To the shop → a letter → Sell with no counter → a new egg, within 60 s; no hint at a closed thing (24.4s)
+  ✓   67 [phone] › e2e/layout-collection-m4.spec.ts:7:1 › M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold (4.2s)
+  ✓   68 [phone] › e2e/layout-collection-m4.spec.ts:32:1 › M4-23 market mood: the chip in the sale card of the species in fashion (3.3s)
+  ✓   69 [phone] › e2e/layout-collection-m4.spec.ts:46:1 › M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked (3.3s)
+  ✓   70 [phone] › e2e/layout-m2.spec.ts:5:1 › M2-04 away window after two hours with the helpers (3.6s)
+  ✓   71 [phone] › e2e/layout-nav-ub.spec.ts:5:1 › UB-01 phone: one tab bar at the bottom, Eggs is home, every tab opens its screen (5.3s)
+  ✓   66 [phone] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (23.2s)
+  ✓   73 [phone] › e2e/layout-upgrades-ub.spec.ts:5:1 › UB-04 phone: the upgrades panel from the right keeps the shop in view (2.8s)
+  ✓   72 [phone] › e2e/layout-sales-m3.spec.ts:7:1 › M3-06 phone: the price slider works by tap and by drag (4.3s)
+  ✓   74 [phone] › e2e/layout-usability-ub.spec.ts:7:1 › UB-09 phone: a tab tap closes any window (5.6s)
+  ✓   75 [phone] › e2e/layout-usability-ub.spec.ts:8:1 › UB-09 phone: one window at a time (8.0s)
+  ✓   76 [phone] › e2e/layout-usability-ub.spec.ts:9:1 › UB-09 phone: hints never lie over a window (5.8s)
+  ✓   77 [phone] › e2e/layout-usability-ub.spec.ts:10:1 › UB-09 phone: the hatch reward only after the strip (7.5s)
+  ✓   78 [phone] › e2e/layout-usability-ub.spec.ts:11:1 › UB-09 phone: hidden gestures are signed (10.8s)
+  ✓   80 [phone] › e2e/layout-usability-ub.spec.ts:13:1 › UB-09 phone: every tab has its label (2.4s)
+  ✓   81 [phone] › e2e/layout-usability-ub.spec.ts:14:1 › UB-09 phone: no service marks (5.5s)
+  ✓   79 [phone] › e2e/layout-usability-ub.spec.ts:12:1 › UB-09 phone: text 12 px and up (M4-00: 14 px on a PC), buttons 44 px and up on every screen (14.3s)
+  ✓   82 [phone] › e2e/layout-usability-ub.spec.ts:15:1 › M4-00 phone: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (5.2s)
+  ✓   84 [phone] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it (6.3s)
+  ✓   85 [phone] › e2e/layout-windows-ub.spec.ts:5:1 › UB-02 phone: hints never lie over a window or another screen (4.0s)
+  ✓   86 [phone] › e2e/layout.spec.ts:5:1 › SCR-01 phone: the top bar, «Лавка» with its shelf and the Store under it, the tab bar inside the viewport, no scroll (2.7s)
+  ✓   87 [phone] › e2e/layout.spec.ts:21:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (5.6s)
+  ✓   88 [phone] › e2e/layout.spec.ts:34:1 › SAV-03 rotation keeps the state and the layout follows (4.5s)
+  ✓   83 [phone] › e2e/layout-usability-ub.spec.ts:16:1 › M4-00 phone: one caption on the shop at a time (28.3s)
+  ✓   90 [phone-landscape] › e2e/ftue-ub.spec.ts:51:1 › UB-06 each tab gets one hint on its first visit, none on the next; never at a closed thing (13.9s)
+  ✓   89 [phone-landscape] › e2e/ftue-ub.spec.ts:16:1 › UB-06 first minute by taps only: egg → To the shop → a letter → Sell with no counter → a new egg, within 60 s; no hint at a closed thing (23.5s)
+  ✓   92 [phone-landscape] › e2e/layout-collection-m4.spec.ts:7:1 › M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold (4.6s)
+  ✓   93 [phone-landscape] › e2e/layout-collection-m4.spec.ts:32:1 › M4-23 market mood: the chip in the sale card of the species in fashion (3.4s)
+  ✓   94 [phone-landscape] › e2e/layout-collection-m4.spec.ts:46:1 › M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked (3.6s)
+  ✓   91 [phone-landscape] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (22.2s)
+  ✓   95 [phone-landscape] › e2e/layout-m2.spec.ts:5:1 › M2-04 away window after two hours with the helpers (3.3s)
+  ✓   96 [phone-landscape] › e2e/layout-nav-ub.spec.ts:5:1 › UB-01 phone: one tab bar at the bottom, Eggs is home, every tab opens its screen (5.4s)
+  ✓   97 [phone-landscape] › e2e/layout-sales-m3.spec.ts:7:1 › M3-06 phone: the price slider works by tap and by drag (5.0s)
+  ✓   98 [phone-landscape] › e2e/layout-upgrades-ub.spec.ts:5:1 › UB-04 phone: the upgrades panel from the right keeps the shop in view (3.7s)
+  ✓   99 [phone-landscape] › e2e/layout-usability-ub.spec.ts:7:1 › UB-09 phone: a tab tap closes any window (5.3s)
+  ✓  100 [phone-landscape] › e2e/layout-usability-ub.spec.ts:8:1 › UB-09 phone: one window at a time (7.9s)
+  ✓  101 [phone-landscape] › e2e/layout-usability-ub.spec.ts:9:1 › UB-09 phone: hints never lie over a window (4.9s)
+  ✓  102 [phone-landscape] › e2e/layout-usability-ub.spec.ts:10:1 › UB-09 phone: the hatch reward only after the strip (7.0s)
+  ✓  103 [phone-landscape] › e2e/layout-usability-ub.spec.ts:11:1 › UB-09 phone: hidden gestures are signed (10.7s)
+  ✓  105 [phone-landscape] › e2e/layout-usability-ub.spec.ts:13:1 › UB-09 phone: every tab has its label (2.7s)
+  ✓  106 [phone-landscape] › e2e/layout-usability-ub.spec.ts:14:1 › UB-09 phone: no service marks (5.5s)
+  ✓  104 [phone-landscape] › e2e/layout-usability-ub.spec.ts:12:1 › UB-09 phone: text 12 px and up (M4-00: 14 px on a PC), buttons 44 px and up on every screen (14.9s)
+  ✓  107 [phone-landscape] › e2e/layout-usability-ub.spec.ts:15:1 › M4-00 phone: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (4.8s)
+  ✓  109 [phone-landscape] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it (6.0s)
+  ✓  110 [phone-landscape] › e2e/layout-windows-ub.spec.ts:5:1 › UB-02 phone: hints never lie over a window or another screen (2.8s)
+  ✓  111 [phone-landscape] › e2e/layout.spec.ts:5:1 › SCR-01 phone: the top bar, «Лавка» with its shelf and the Store under it, the tab bar inside the viewport, no scroll (3.0s)
+  ✓  112 [phone-landscape] › e2e/layout.spec.ts:21:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (4.4s)
+  ✓  113 [phone-landscape] › e2e/layout.spec.ts:34:1 › SAV-03 rotation keeps the state and the layout follows (4.2s)
+  ✓  108 [phone-landscape] › e2e/layout-usability-ub.spec.ts:16:1 › M4-00 phone: one caption on the shop at a time (28.0s)
+  ✓  114 [perf] › e2e/perf.spec.ts:8:1 › perf: ready within 5 s and under 5 MB downloaded on a 4× slower CPU (5.2s)
+
+  114 passed (8.3m)
+ok   e2e [e2e: end of milestone only] 498.9 s
+
+== verify: build
+vite v8.3.2 building client environment for production...
+transforming...
+✓ 825 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                         2.18 kB │ gzip:   1.06 kB
+dist/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist/assets/index-BvZDJunO.css                         80.28 kB │ gzip:  15.42 kB
+dist/assets/webworkerAll-Cxlxjdqr.js                    0.05 kB │ gzip:   0.06 kB
+dist/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist/assets/yandex-D5b4cFzf.js                          8.55 kB │ gzip:   2.97 kB
+dist/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist/assets/init-CMGlWxkd.js                           15.31 kB │ gzip:   4.79 kB
+dist/assets/browserAll-BESUhnSu.js                     42.64 kB │ gzip:  11.19 kB
+dist/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist/assets/index-Dd9PezTF.js                         661.74 kB │ gzip: 206.56 kB
+
+✓ built in 1.17s
+ok   build 1.6 s
+
+== verify: size
+size: dist
+  assets/browserAll-BESUhnSu.js                       41.6 KB gzip 10.8 KB
+  assets/BufferResource-7657QUKQ.js                   10.8 KB gzip 2.7 KB
+  assets/CanvasPool-BZOfdiYK.js                      107.7 KB gzip 32.5 KB
+  assets/canvasUtils-_2Xt0X_j.js                       5.9 KB gzip 2.0 KB
+  assets/getTextureBatchBindGroup-Bz0KTaOB.js          0.3 KB gzip 0.3 KB
+  assets/index-BvZDJunO.css                           78.4 KB 
+  assets/index-Dd9PezTF.js                           646.2 KB gzip 200.1 KB
+  assets/init-CMGlWxkd.js                             15.0 KB gzip 4.7 KB
+  assets/RenderTargetSystem-k-tnMFYl.js               76.2 KB gzip 21.4 KB
+  assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2      7.7 KB 
+  assets/rubik-cyrillic-400-normal-D5R8xuhl.woff       9.6 KB 
+  assets/rubik-cyrillic-500-normal-BH_pkKR0.woff       9.7 KB 
+  assets/rubik-cyrillic-500-normal-Didq2w9O.woff2      7.7 KB 
+  assets/rubik-cyrillic-600-normal-AdySaCq0.woff2      7.7 KB 
+  assets/rubik-cyrillic-600-normal-CtS_KWzi.woff       9.7 KB 
+  assets/rubik-cyrillic-700-normal-C_jxLOfU.woff       9.6 KB 
+  assets/rubik-cyrillic-700-normal-DFnztZBh.woff2      7.7 KB 
+  assets/rubik-cyrillic-800-normal-DocVmW4N.woff       9.6 KB 
+  assets/rubik-cyrillic-800-normal-wonQiwhm.woff2      7.7 KB 
+  assets/rubik-latin-400-normal-BV1Ho3GG.woff         23.4 KB 
+  assets/rubik-latin-400-normal-j0pmKyiQ.woff2        18.5 KB 
+  assets/rubik-latin-500-normal-1os41rQk.woff2        18.6 KB 
+  assets/rubik-latin-500-normal-LZYVHeqz.woff         23.6 KB 
+  assets/rubik-latin-600-normal-7iWW07_k.woff2        18.6 KB 
+  assets/rubik-latin-600-normal-Bd1rsTk4.woff         23.6 KB 
+  assets/rubik-latin-700-normal-D-tMm-eS.woff2        18.7 KB 
+  assets/rubik-latin-700-normal-KHOtubUA.woff         23.7 KB 
+  assets/rubik-latin-800-normal-BtaGuVpR.woff2        18.6 KB 
+  assets/rubik-latin-800-normal-Dq1miTTj.woff         23.6 KB 
+  assets/webworkerAll-Cxlxjdqr.js                      0.1 KB gzip 0.1 KB
+  assets/yandex-D5b4cFzf.js                            8.4 KB gzip 2.9 KB
+  assets/ZzFX-C1HKDoVW.js                              2.0 KB gzip 1.1 KB
+  index.html                                           2.1 KB 
+  total 1292.4 KB (target 15360.0 KB, limit 30720.0 KB)
+  js 914.1 KB → gzip 278.5 KB (target 400.0 KB, limit 600.0 KB)
+ok   size 0.3 s
+
+== verify: pack
+pack: 33 files, 1292.4 KB → release/anomaly-shop-0.1.0.zip 605.0 KB
+ok   pack 0.4 s
+
+== verify: check-release
+check-release: release/anomaly-shop-0.1.0.zip
+date: 2026-10-19T03:54:04.965Z
+files: 33
+  assets/BufferResource-7657QUKQ.js  10.8 KB
+  assets/CanvasPool-BZOfdiYK.js  107.7 KB
+  assets/RenderTargetSystem-k-tnMFYl.js  76.2 KB
+  assets/ZzFX-C1HKDoVW.js  2.0 KB
+  assets/browserAll-BESUhnSu.js  41.6 KB
+  assets/canvasUtils-_2Xt0X_j.js  5.9 KB
+  assets/getTextureBatchBindGroup-Bz0KTaOB.js  0.3 KB
+  assets/index-BvZDJunO.css  78.4 KB
+  assets/index-Dd9PezTF.js  646.2 KB
+  assets/init-CMGlWxkd.js  15.0 KB
+  assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2  7.7 KB
+  assets/rubik-cyrillic-400-normal-D5R8xuhl.woff  9.6 KB
+  assets/rubik-cyrillic-500-normal-BH_pkKR0.woff  9.7 KB
+  assets/rubik-cyrillic-500-normal-Didq2w9O.woff2  7.7 KB
+  assets/rubik-cyrillic-600-normal-AdySaCq0.woff2  7.7 KB
+  assets/rubik-cyrillic-600-normal-CtS_KWzi.woff  9.7 KB
+  assets/rubik-cyrillic-700-normal-C_jxLOfU.woff  9.6 KB
+  assets/rubik-cyrillic-700-normal-DFnztZBh.woff2  7.7 KB
+  assets/rubik-cyrillic-800-normal-DocVmW4N.woff  9.6 KB
+  assets/rubik-cyrillic-800-normal-wonQiwhm.woff2  7.7 KB
+  assets/rubik-latin-400-normal-BV1Ho3GG.woff  23.4 KB
+  assets/rubik-latin-400-normal-j0pmKyiQ.woff2  18.5 KB
+  assets/rubik-latin-500-normal-1os41rQk.woff2  18.6 KB
+  assets/rubik-latin-500-normal-LZYVHeqz.woff  23.6 KB
+  assets/rubik-latin-600-normal-7iWW07_k.woff2  18.6 KB
+  assets/rubik-latin-600-normal-Bd1rsTk4.woff  23.6 KB
+  assets/rubik-latin-700-normal-D-tMm-eS.woff2  18.7 KB
+  assets/rubik-latin-700-normal-KHOtubUA.woff  23.7 KB
+  assets/rubik-latin-800-normal-BtaGuVpR.woff2  18.6 KB
+  assets/rubik-latin-800-normal-Dq1miTTj.woff  23.6 KB
+  assets/webworkerAll-Cxlxjdqr.js  0.1 KB
+  assets/yandex-D5b4cFzf.js  8.4 KB
+  index.html  2.1 KB
+
+PASS  1. index.html at the root, paths only [A-Za-z0-9._/-]
+PASS  2. unpacked ≤ 30 MB and JS gzip ≤ 600 KB
+        zip 605.0 KB, unpacked 1292.4 KB, js gzip 278.5 KB
+PASS  3. no external addresses except /sdk.js and mc.yandex.ru (namespaces allowed)
+PASS  4. <script src="/sdk.js"> exactly once
+        found 1
+PASS  5. no <audio>, <video>, new Audio(
+PASS  6. no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, youtube.com/game_api
+PASS  7. no development or stop-list words in shipped texts
+
+RESULT: PASS
+
+ok   check-release 0.6 s
+
+== verify: e2e:release [e2e: end of milestone only]
+e2e:release: unpacked /home/user/anomaly-shop/release/anomaly-shop-0.1.0.zip (33 entries) to /home/user/anomaly-shop/.cache/release-unpacked
+
+Running 1 test using 1 worker
+
+  ✓  1 e2e/smoke-release.spec.ts:4:1 › BLD-04 release boots on the mock, ready once, no console errors, no debug or test API (2.2s)
+
+  1 passed (4.2s)
+ok   e2e:release [e2e: end of milestone only] 5.8 s
+
+== verify: build:youtube
+vite v8.3.2 building client environment for youtube...
+transforming...
+✓ 824 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-youtube/index.html                                         2.17 kB │ gzip:   1.01 kB
+dist-youtube/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-youtube/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-youtube/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-youtube/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-youtube/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-youtube/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-youtube/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-youtube/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-youtube/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-youtube/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-youtube/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-youtube/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-youtube/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-youtube/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-youtube/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-youtube/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-youtube/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-youtube/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-youtube/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-youtube/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-youtube/assets/index-BvZDJunO.css                         80.28 kB │ gzip:  15.42 kB
+dist-youtube/assets/webworkerAll-C181EmHO.js                    0.05 kB │ gzip:   0.06 kB
+dist-youtube/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-youtube/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-youtube/assets/youtube-Dti8rIE0.js                         4.32 kB │ gzip:   1.66 kB
+dist-youtube/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-youtube/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-youtube/assets/init-BUZTpcOX.js                           15.31 kB │ gzip:   4.79 kB
+dist-youtube/assets/browserAll-C-V5Nd3V.js                     42.64 kB │ gzip:  11.19 kB
+dist-youtube/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-youtube/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-youtube/assets/index-ClhqMUss.js                         661.30 kB │ gzip: 206.47 kB
+
+✓ built in 1.11s
+ok   build:youtube 1.6 s
+
+== verify: check:youtube
+check-bundle-urls: bundle 1.26 MiB, first load 1.26 MiB
+check-bundle-urls (youtube): 33 files, no external addresses — ok
+ok   check:youtube 0.2 s
+verify (milestone): all 13 stages green in 620 s
+EXIT=0

@@ -3204,3 +3204,7 @@ button.mu-card {
   border-top: 10px solid var(--c-counter);
   box-shadow: inset 0 6px 8px -4px color-mix(in srgb, var(--c-outline) 60%, transparent);
 }
+/* FB-15 (verify): sideways a list row is 44–52 px — its name stays on one line (fit.ts makes a long one smaller, ≥ 12 px), never two lines of whole words. */
+.landscape #ui .sheet .mu-card > .mu-name {
+  white-space: nowrap;
+}

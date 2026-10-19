@@ -165,3 +165,65 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       expect(errors).toEqual([]);
     });
   });
+
+/** п. 5: a toast — portrait over the tab bar, off the scene's incubators and the hint's hand; over an inner screen off its «‹» row and
+ *  segments (portrait and sideways); a tap on the toast is its own — it closes, nothing under it is bought. */
+const toastHits = (page: Page) =>
+  page.evaluate(() => {
+    const t = document.querySelector('.toast')!.getBoundingClientRect();
+    const sel = '.sheet:not([hidden]) .mu-back, .sheet:not([hidden]) .mu-seg, .hint:not([hidden]), .hint-ring, .is-hinted, .tap-finger:not([hidden])';
+    const hits = [...document.querySelectorAll(sel)]
+      .map((e) => e.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.top < t.bottom && r.bottom > t.top && r.left < t.right && r.right > t.left).length;
+    return { hits, top: t.top, bottom: t.bottom, x: t.x + t.width / 2, y: t.y + t.height / 2, bar: document.getElementById('nav')!.getBoundingClientRect().top };
+  });
+const say = (page: Page, text: string) => page.evaluate((t) => (window as unknown as { __TEST__: { toast(t: string): void } }).__TEST__.toast(t), text);
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB-3 п. 5 ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('a toast clears the scene, the hint, «‹» and the segments; a tap on it is its own', async ({ page }) => {
+      const errors = collectErrors(page);
+      // The first minute: the hint and its hand on the first egg.
+      await open(page);
+      await page.locator('.hint:not([hidden]) [data-hint-text]').waitFor();
+      await say(page, 'Новые находки: 2!');
+      await expect(page.locator('.toast')).toBeVisible();
+      await page.waitForTimeout(400);
+      let t = await toastHits(page);
+      expect(t.hits).toBe(0);
+      if (w < h) {
+        // Portrait: over the tab bar, under the scene's incubators.
+        expect(t.bar - t.bottom).toBeGreaterThanOrEqual(8);
+        expect(t.bar - t.bottom).toBeLessThanOrEqual(60);
+        const eggs = await page.evaluate(() => (window as unknown as { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }> } } }).__TEST__.targets().incubators);
+        for (const e of eggs) expect(e.y < t.top - 30 || e.y > t.bottom + 30).toBe(true);
+      }
+      // An inner screen: the segments of «Склад» and the «‹» row of a lot.
+      await page.goto('about:blank');
+      await seedSave(page, { coins: 500, upgrades: { showcase: 2, incubator: 1 } });
+      await open(page);
+      await page.locator('[data-tab=inventory]').click();
+      await say(page, 'Новые находки: 3!');
+      await page.waitForTimeout(400);
+      expect((await toastHits(page)).hits).toBe(0);
+      await page.waitForTimeout(2600);
+      await page.locator('[data-tab=market]').click();
+      await page.locator('[data-sheet=market] [data-action^="lot-open-"]').first().click();
+      await say(page, 'Новые находки: 4!');
+      await page.waitForTimeout(400);
+      expect((await toastHits(page)).hits).toBe(0);
+      await page.waitForTimeout(2600);
+      // A tap on the toast over «Лавка»'s list: the toast goes, the coins stay.
+      await page.locator('[data-tab=home]').click();
+      await say(page, 'Новые находки: 5!');
+      await page.waitForTimeout(400);
+      t = await toastHits(page);
+      const before = await snap(page);
+      await page.touchscreen.tap(t.x, t.y);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 1500 });
+      const after = await snap(page);
+      expect(after.coins).toBe(before.coins);
+      expect(JSON.stringify(after.upgrades)).toBe(JSON.stringify(before.upgrades));
+      expect(errors).toEqual([]);
+    });
+  });

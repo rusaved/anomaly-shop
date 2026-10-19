@@ -1,6 +1,7 @@
 // What: short toasts over the shop ("Not enough coins", "Rare!"): one line at a time (M3-18: a queue, at least 2 s each), fade in and out.
 // Called by: src/main.ts (game events → text through t()), src/ui/* when an action is refused; hold() keeps the queue during «Lv N!» in the scene.
-// Keep: toasts never block taps (pointer-events: none); texts come translated from the caller; a text already shown or waiting is not repeated.
+// Keep: a tap on a toast stays on it and closes it (круг правок FB-3 п. 5: nothing under it gets the tap; its column lets taps through);
+// texts come translated from the caller; a text already shown or waiting is not repeated. Portrait: over the tab bar; sideways: under the top bar.
 
 import { iconize } from './kit.ts';
 
@@ -39,8 +40,10 @@ export function enqueue(queue: ToastItem[], item: ToastItem, showing: string | n
   }
 }
 
-/** Круг правок FB-2 п. 6: what a toast never covers — the «‹» row of an inner screen and the target of a first-minute hint. */
-const AVOID = '.sheet:not([hidden]) .mu-back, .overlay:not([hidden]) .mu-back, .hint:not([hidden]), .hint-ring, .is-hinted';
+/** Круг правок FB-2 п. 6, FB-3 п. 5: what a toast never covers — the «‹» row and the segments of a screen, a first-minute hint, its target
+ *  and its hand. */
+const AVOID =
+  '.sheet:not([hidden]) .mu-back, .overlay:not([hidden]) .mu-back, .sheet:not([hidden]) .mu-seg, .hint:not([hidden]), .hint-ring, .is-hinted, .tap-finger:not([hidden])';
 
 const meets = (a: DOMRect, top: number, bottom: number, r: DOMRect): boolean =>
   r.width > 0 && r.height > 0 && r.top < bottom && r.bottom > top && r.left < a.right && r.right > a.left;
@@ -54,6 +57,17 @@ function place(el: HTMLElement, extra: () => DOMRect[]): void {
   const box = el.getBoundingClientRect();
   const avoid = (): DOMRect[] => [...[...document.querySelectorAll(AVOID)].map((e) => e.getBoundingClientRect()), ...extra()];
   if (!avoid().some((r) => meets(box, box.top, box.bottom, r))) return;
+  // Круг правок FB-3 п. 5: portrait — the toast stands over the tab bar and goes up past whatever it would lie on.
+  if (root.closest('.portrait')) {
+    let up = 0;
+    for (let i = 0; i < 4; i++) {
+      const hit = avoid().filter((r) => meets(box, box.top - up, box.bottom - up, r));
+      if (!hit.length) break;
+      up = box.bottom - Math.min(...hit.map((r) => r.top)) + 8;
+    }
+    if (up > 0) root.style.transform = `translateY(${-Math.round(up)}px)`;
+    return;
+  }
   const hud = document.querySelector('.hud')?.getBoundingClientRect();
   if (hud && box.height <= hud.height) {
     // The widest free stretch of the bar between its buttons: the toast stands in its middle when it fits there.
@@ -114,18 +128,30 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
     root.appendChild(el);
     current = el;
     place(el, extra);
+
     // A screen that opens under a toast already shown (a lot, a hint) moves it too.
     const follow = window.setInterval(() => (current === el ? place(el, extra) : window.clearInterval(follow)), 250);
-    // The round of fixes (the usability review): a toast never moves the screen under a finger — it lies over the top
-    // of the screen for a moment and lets every tap through (pointer-events: none), 07 rule 17.
-    window.setTimeout(() => {
+    // The round of fixes (the usability review): a toast never moves the screen under a finger — it lies over the screen for a moment
+    // (07 rule 17); a tap on it stays on it (круг правок FB-3 п. 5).
+    let gone = false;
+    const leave = (): void => {
+      if (gone) return;
+      gone = true;
       el.classList.add('out');
       window.setTimeout(() => {
         el.remove();
         current = null;
         next();
       }, FADE_MS);
-    }, Math.max(TOAST_MIN_MS, item.ms));
+    };
+    const stay = window.setTimeout(leave, Math.max(TOAST_MIN_MS, item.ms));
+    // A tap on the toast is the toast's: it goes away now and the screen under it gets nothing.
+    el.addEventListener('pointerdown', (e) => e.stopPropagation());
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.clearTimeout(stay);
+      leave();
+    });
   };
 
   return {

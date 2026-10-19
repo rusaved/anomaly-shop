@@ -4050,3 +4050,18 @@ button.mu-card {
 #app #ui .card-hatch .hatch-result > .hatch-sell {
   transition: background-color 0.3s ease-out, color 0.3s ease-out;
 }
+/* Круг правок FB-3 п. 5: portrait — the toast stands over the tab bar (never on the incubators, the shelf or the hint's hand); a tap on
+   it is its own (it closes; nothing under it gets the tap), its column lets taps through. */
+#app.portrait #ui > .toasts {
+  top: auto;
+  bottom: calc(var(--nav-size, 56px) + 12px);
+  flex-direction: column-reverse;
+}
+#ui .toast {
+  pointer-events: auto;
+  border: 1.5px solid var(--c-uiPanelHi);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--c-outline) 55%, transparent);
+}
+#ui .toast.out {
+  pointer-events: none;
+}

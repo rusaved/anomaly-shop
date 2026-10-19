@@ -535,6 +535,8 @@ test.describe('the round of fixes, item 8: a toast moves nothing, a hint lies on
     const errors = collectErrors(page);
     await seedSave(page, SEED);
     await open(page);
+    // The game stands still: the market never refreshes under the check (it measures the toast, not the market's timer).
+    await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
     await page.locator('[data-tab=market]').click();
     await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 });
     const card = page.locator('[data-sheet=market] .mu-card').first();

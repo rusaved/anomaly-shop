@@ -63,15 +63,13 @@ test.describe('FB-14 portrait 375×650', () => {
     await page.locator('[data-action=hatch-keep]').click();
     await page.locator('[data-tab=sales]').click();
     await page.waitForTimeout(300);
-    const cut = await page.evaluate(() => {
+    // Круг правок FB-3 п. 4 (the HQ's third check): a row the scroll edge cuts is drawn whole — its name, price and button under the edge,
+    // never a lone icon.
+    const hidden = await page.evaluate(() => {
       const list = document.querySelector<HTMLElement>('[data-sheet=sales] > .sheet-body')!;
-      const bottom = list.getBoundingClientRect().bottom;
-      return [...list.querySelectorAll<HTMLElement>('.mu-card:not(.peek) .mu-name')].filter((n) => {
-        const r = n.getBoundingClientRect();
-        return r.top < bottom && r.bottom > bottom + 1;
-      }).length;
+      return [...list.querySelectorAll<HTMLElement>('.mu-card *')].filter((el) => getComputedStyle(el).visibility === 'hidden').length;
     });
-    expect(cut).toBe(0);
+    expect(hidden).toBe(0);
   });
 });
 

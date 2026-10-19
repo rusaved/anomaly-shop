@@ -32,7 +32,6 @@ import { createLeadersWindow } from './ui/leaders.ts';
 import { createBurst } from './ui/burst.ts';
 import { createFinger } from './ui/finger.ts';
 import { installPress } from './ui/press.ts';
-import { installPeek } from './ui/peek.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
 import { createNewsTicker } from './ui/news.ts';
@@ -861,8 +860,6 @@ async function boot(): Promise<void> {
     window: () => topWindow()?.card ?? null,
   });
   const finger = createFinger(uiRoot);
-  // FB-14: the bottom of a list — a card cut by the edge shows only its picture.
-  installPeek(uiRoot);
   // UB-07: the milestone label is a dev trace — only with ?debug=1 (the producer link keeps it there).
   if (new URLSearchParams(location.search).has('debug')) renderBuildLabel(uiRoot, __BUILD_LABEL__);
   i18n.apply(uiRoot);

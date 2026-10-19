@@ -3156,10 +3156,6 @@ button.mu-card {
   min-height: min-content;
 }
 
-/* FB-14: a card the bottom edge of its screen cuts shows only its picture (src/ui/peek.ts) — no name or price cut by the line. */
-#ui .mu-card.peek > :not(.mu-pic):not(.mu-pic-btn):not(.rar-ring) {
-  visibility: hidden;
-}
 /* The lot sideways: a smaller picture and tighter gaps — at a large font the pet's lines stay above the tab bar. */
 @media (max-height: 520px) {
   .landscape [data-detail='lot'] .lot-pet {

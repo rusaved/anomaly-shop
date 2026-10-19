@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { collectErrors, open } from './helpers.ts';
+import { collectErrors, open, seedSave } from './helpers.ts';
 
 /** The third round of fixes of FB (the HQ's third check, 19.10): what it still found. */
 type Snap = { coins: number; creatures: unknown[]; upgrades?: unknown };
@@ -126,6 +126,42 @@ for (const big of [false, true])
       expect(gap(g.sell, { x: g.buttons.left, y: g.buttons.top, width: g.buttons.width, height: g.buttons.height })).toBeGreaterThanOrEqual(24);
       expect(g.sell.height).toBeGreaterThanOrEqual(44);
       expect(g.price).toBeLessThanOrEqual(g.nameFs);
+      expect(errors).toEqual([]);
+    });
+  });
+
+/** п. 4: a row the scroll edge cuts is drawn whole — its name, its words and its price under the edge, never a lone icon («Магазин»,
+ *  «Пункт», «Продажи», «Яйца», «Находки», «Коллекция»; portrait and sideways). */
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB-3 п. 4 ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('a row cut by the scroll edge is whole', async ({ page }) => {
+      const errors = collectErrors(page);
+      await seedSave(page, { coins: 120, upgrades: { showcase: 2, incubator: 1 } });
+      await open(page);
+      let cut = 0;
+      for (const [tab, sub] of [['shop', ''], ['shop', 'point'], ['sales', ''], ['eggs', ''], ['inventory', 'finds'], ['inventory', 'collection']] as const) {
+        await page.locator(`[data-tab=${tab}]`).click();
+        if (sub) await page.locator(`[data-sheet=${tab}] [data-sub=${sub}]`).click();
+        await page.waitForTimeout(300);
+        const r = await page.evaluate((tab) => {
+          const list = document.querySelector<HTMLElement>(`[data-sheet=${tab}] > .sheet-body`)!;
+          const bottom = list.getBoundingClientRect().bottom;
+          const cards = [...list.querySelectorAll<HTMLElement>('.mu-card')].filter((c) => c.offsetParent !== null);
+          const edge = cards.filter((c) => {
+            const b = c.getBoundingClientRect();
+            return b.top < bottom - 1 && b.bottom > bottom + 1;
+          });
+          return {
+            hidden: cards.flatMap((c) => [...c.querySelectorAll<HTMLElement>('*')]).filter((el) => getComputedStyle(el).visibility === 'hidden').length,
+            edge: edge.length,
+          };
+        }, tab);
+        expect(r.hidden, `${tab} ${sub}`).toBe(0);
+        cut += r.edge;
+      }
+      // The check saw rows under the edge, not only whole screens.
+      expect(cut).toBeGreaterThan(0);
       expect(errors).toEqual([]);
     });
   });

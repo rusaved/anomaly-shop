@@ -61,9 +61,11 @@ const shot = async (page, name, keepToast = false) => {
       // Read every size first, then set them (a scaled parent must not scale its children twice); scaled ones stay marked.
       const els = [...document.querySelectorAll('#ui *')].filter((el) => !el.dataset.mu130);
       const sizes = els.map((el) => parseFloat(getComputedStyle(el).fontSize));
+      // A piece drawn anew inside a scaled parent (a window filled after it opened) already inherits the larger size: only marked, not scaled twice.
+      const inherits = els.map((el) => el.parentElement?.dataset.mu130 === '1' && Math.abs(parseFloat(getComputedStyle(el.parentElement).fontSize) - parseFloat(getComputedStyle(el).fontSize)) < 0.01);
       els.forEach((el, i) => {
         el.dataset.mu130 = '1';
-        el.style.fontSize = `${Math.round((sizes[i] ?? 16) * 13) / 10}px`;
+        if (!inherits[i]) el.style.fontSize = `${Math.round((sizes[i] ?? 16) * 13) / 10}px`;
       });
     });
   await page.waitForTimeout(350);

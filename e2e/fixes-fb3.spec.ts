@@ -220,7 +220,8 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       t = await toastHits(page);
       const before = await snap(page);
       await page.touchscreen.tap(t.x, t.y);
-      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 1500 });
+      // (the game's own toasts may queue after it — this one goes.)
+      await expect(page.locator('.toast', { hasText: '5!' })).toHaveCount(0, { timeout: 1500 });
       const after = await snap(page);
       expect(after.coins).toBe(before.coins);
       expect(JSON.stringify(after.upgrades)).toBe(JSON.stringify(before.upgrades));
@@ -350,6 +351,43 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       await expect(page.locator('[data-action=egg-free-egg_gift]')).toBeVisible();
       await page.locator('[data-action=egg-free-egg_gift]').click();
       await expect.poll(() => page.evaluate(() => (window as unknown as { __TEST__: { state(): { ftue: string } } }).__TEST__.state().ftue)).toBe('hatchRare');
+      expect(errors).toEqual([]);
+    });
+  });
+
+/** Ревизор удобства круга 3: a tap on the tab bar never closes «Вылупился!» (while the strip runs and after the result); on «Яйца» the gift
+ *  egg's hint wins over the tab's first hint. */
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB-3 ревизор удобства ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('the tab bar under «Вылупился!» does nothing; the gift hint on «Яйца»', async ({ page }) => {
+      const errors = collectErrors(page);
+      await open(page);
+      const egg = await page.evaluate(() => (window as unknown as { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }> } } }).__TEST__.targets().incubators[0]!);
+      await page.touchscreen.tap(egg.x, egg.y);
+      await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+      const tab = (await page.locator('[data-tab=eggs]').boundingBox())!;
+      await page.touchscreen.tap(tab.x + tab.width / 2, tab.y + tab.height / 2);
+      await page.waitForTimeout(300);
+      await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+      await page.locator('[data-action=hatch-skip]').dispatchEvent('click');
+      await page.waitForTimeout(1000);
+      await page.touchscreen.tap(tab.x + tab.width / 2, tab.y + tab.height / 2);
+      await page.waitForTimeout(300);
+      await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+      expect(await page.evaluate(() => (window as unknown as { __TEST__: { state(): { tab: string } } }).__TEST__.state().tab)).toBe('home');
+      await page.locator('[data-action=hatch-keep]').click();
+      await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+      // The first visit of «Яйца» with the gift ready: the hint is the gift's, at its «Забрать».
+      await page.goto('about:blank');
+      await seedSave(page, { coins: 30, creatures: [], showcase: [], stats: { deals: 1, coinsEarned: 30, hatched: 1, taps: 10, levelUps: 0, haggles: 0 }, flags: { ftue_starter: true, ftue_fed: true, tab_sales: true, tab_chats: true } });
+      await open(page);
+      await page.locator('[data-tab=eggs]').click();
+      const hint = page.locator('.hint:not([hidden])');
+      await expect(hint).toContainText('Забери подарочное яйцо', { timeout: 8000 });
+      await page.waitForTimeout(500);
+      await expect(hint).toContainText('Забери подарочное яйцо');
+      await expect(page.locator('[data-action=egg-free-egg_gift].is-hinted')).toHaveCount(1);
       expect(errors).toEqual([]);
     });
   });

@@ -4096,3 +4096,70 @@ button.mu-card {
   border-left: 0;
   border-right: 10px solid var(--c-uiText);
 }
+/* Круг правок FB-3, арт-ревизия: sideways the strip runs in the pet's place (left, as tall as its tile), «тап — пропустить» in the place
+   of the rarity word and the name (right); «Продать сразу» 24 px under the tile — off the strip — and a column gap off the buttons. */
+@media (max-height: 520px) {
+  #app.landscape #ui .overlay > .card.card-hatch {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+  #app.landscape #ui .card-hatch .hatch-pic {
+    align-self: start;
+    height: 96px;
+  }
+  #app.landscape #ui .card-hatch .hatch-window {
+    grid-area: 1 / 1 / 5 / 2;
+    align-self: start;
+    height: 96px;
+    min-height: 0;
+  }
+  #app.landscape #ui .card-hatch .hatch-skip {
+    grid-area: 2 / 2 / 5 / 3;
+    align-self: center;
+    text-align: left;
+  }
+  #app.landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+    align-self: start;
+    margin-top: 24px;
+  }
+}
+/* Круг правок FB-3, арт-ревизия: the buttons go to sleep and wake at once — a fade between orange and the dark one reads brown. */
+#app #ui .card-hatch .hatch-buttons > .mu-btn,
+#app #ui .card-hatch .hatch-result > .hatch-sell {
+  transition: none;
+}
+/* The toast clears the raised «Лавка» of the tab bar by 8 px and more. */
+#app.portrait #ui > .toasts {
+  bottom: calc(var(--nav-size, 56px) + 24px);
+}
+/* Круг правок FB-3, проверка: at 130 % sideways «Вылупился!» fits over the tab bar — «Продать сразу» spans the pet's column and stands at
+   its foot, at least 24 px under the tile (96 + 24 = its top margin), so its words never add a row under the right column. */
+@media (max-height: 520px) {
+  #app.landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+    grid-area: 1 / 1 / 6 / 2;
+    align-self: end;
+    margin-top: 120px;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 1.2;
+  }
+}
+/* Круг правок FB-3 (ревизор удобства): a tight «Вылупился!» (portrait at 130 %) — smaller gaps instead of a scroll; the chance whole. */
+.hatch-range .nowrap {
+  white-space: nowrap;
+}
+.portrait #ui .card-hatch.hatch-tight {
+  padding-top: 16px;
+  padding-bottom: 12px;
+}
+.portrait #ui .card-hatch.hatch-tight > h2 {
+  margin-bottom: 8px !important;
+}
+.portrait #ui .card-hatch.hatch-tight .hatch-pic {
+  margin-bottom: 8px;
+}
+.portrait #ui .card-hatch.hatch-tight .hatch-range {
+  margin-bottom: 10px;
+}
+.portrait #ui .card.card-hatch.hatch-tight .hatch-result > .hatch-sell {
+  margin-top: 16px;
+}

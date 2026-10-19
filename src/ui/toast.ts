@@ -53,16 +53,50 @@ function place(el: HTMLElement, extra: () => DOMRect[]): void {
   const root = el.parentElement;
   if (!root) return;
   root.style.removeProperty('transform');
-  const box = el.getBoundingClientRect();
-  const avoid = (): DOMRect[] => [...[...document.querySelectorAll(AVOID)].map((e) => e.getBoundingClientRect()), ...extra()];
+  root.style.removeProperty('align-items');
+  root.style.removeProperty('padding-left');
+  el.style.removeProperty('max-width');
+  const portrait = root.closest('.portrait') !== null;
+  // Круг правок FB-3 (сверка с макетом): portrait — the buttons of the list under the toast are kept clear too (a tap on the toast is its own).
+  const rects = (sel: string): DOMRect[] => [...document.querySelectorAll(sel)].map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
+  const list = portrait ? document.querySelector('.sheet:not([hidden]) > .sheet-body')?.getBoundingClientRect() : undefined;
+  const listButtons = (): DOMRect[] =>
+    list ? rects('.sheet:not([hidden]) > .sheet-body button').filter((r) => r.bottom > list.top + 1 && r.top < list.bottom - 1) : [];
+  let box = el.getBoundingClientRect();
+  if (portrait) {
+    // A toast on a column of buttons (the prices of «Лавка» and «Магазин») narrows to the left of it when it still reads there.
+    const hit = listButtons().filter((r) => meets(box, box.top, box.bottom, r));
+    const room = hit.length ? Math.min(...hit.map((r) => r.left)) - 8 - 16 : 0;
+    if (room >= 160) {
+      root.style.alignItems = 'flex-start';
+      root.style.paddingLeft = '16px';
+      el.style.maxWidth = `${Math.floor(room)}px`;
+      box = el.getBoundingClientRect();
+    }
+  }
+  const avoid = (): DOMRect[] => [...rects(AVOID), ...listButtons(), ...extra()];
   if (!avoid().some((r) => meets(box, box.top, box.bottom, r))) return;
   // Круг правок FB-3 п. 5: portrait — the toast stands over the tab bar and goes up past whatever it would lie on.
-  if (root.closest('.portrait')) {
+  if (portrait) {
     let up = 0;
-    for (let i = 0; i < 4; i++) {
+    let clear = false;
+    for (let i = 0; i < 8; i++) {
       const hit = avoid().filter((r) => meets(box, box.top - up, box.bottom - up, r));
-      if (!hit.length) break;
+      if (!hit.length) {
+        clear = true;
+        break;
+      }
       up = box.bottom - Math.min(...hit.map((r) => r.top)) + 8;
+    }
+    // No free band over the list (a grid of egg cards): the toast stays over the tab bar for its 2 s — a tap on it only closes it.
+    if (!clear || (list && box.top - up < list.top)) {
+      const hard = rects(AVOID).concat(extra());
+      up = 0;
+      for (let i = 0; i < 4; i++) {
+        const hit = hard.filter((r) => meets(box, box.top - up, box.bottom - up, r));
+        if (!hit.length) break;
+        up = box.bottom - Math.min(...hit.map((r) => r.top)) + 8;
+      }
     }
     if (up > 0) root.style.transform = `translateY(${-Math.round(up)}px)`;
     return;

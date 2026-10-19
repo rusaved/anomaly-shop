@@ -119,7 +119,8 @@ function check(page: Page): Promise<Report> {
         const x = v.left + v.width / 2;
         const y = v.top + v.height / 2;
         const hit = document.elementFromPoint(x, y);
-        if (hit && !el.contains(hit) && !hit.contains(el) && !(hit.closest('.overlay') && !el.closest('.overlay'))) r.covered.push(`${name(el)} under ${name(hit)}`);
+        // A toast lies over a list for its 2 s where no free band is left and takes the tap itself (07 rule 17, круг правок FB-3 п. 5).
+        if (hit && !el.contains(hit) && !hit.contains(el) && !(hit.closest('.overlay') && !el.closest('.overlay')) && !hit.closest('.toast')) r.covered.push(`${name(el)} under ${name(hit)}`);
         if (!el.closest('#nav')) taps.push({ el, b: v });
       }
     }

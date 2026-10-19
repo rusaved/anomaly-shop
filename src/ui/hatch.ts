@@ -39,7 +39,7 @@ const TARGET = 30;
 const ITEM = 76;
 
 export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLookups): HatchShow {
-  // UB-02: a tap outside skips the run; after the result it keeps the creature («Take»); a tab tap does the same.
+  // UB-02: a tap outside skips the run; after the result it keeps the creature («Take»); круг правок FB-3: a tab tap does nothing while it is open.
   // Круг правок FB-2 (ревизор удобства): after the result a tap on the dim does nothing — a run of taps that skipped the strip never
   // closes the window and lands on the shop under it; a tab tap still keeps the pet.
   const overlay = createOverlay(parent, 'hatch', () => (done ? undefined : skip()), { dismiss: () => keepIt() });
@@ -163,7 +163,7 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     const chance = cr.rarity === 'vip' || cr.rarity === 'exclusive' ? look.odds(egg).find((o) => o.species === cr.species)?.chance ?? 0 : 0;
     q('[data-hatch-range]').innerHTML =
       `${esc(look.t('hatch.range'))} ${COIN}<b>${fmt.format(cr.low)}–${fmt.format(cr.high)}</b>` +
-      (chance > 0 ? ` · ${esc(look.t('hatch.chance', { n: fmt.format(Math.max(1, Math.round(100 / chance))) }))}` : '');
+      (chance > 0 ? ` · <span class="nowrap">${esc(look.t('hatch.chance', { n: fmt.format(Math.max(1, Math.round(100 / chance))) }))}</span>` : '');
     // M4-07: the anomaly of the day settles in first — no «sell now».
     sell.hidden = cr.hold > 0;
     sell.innerHTML = `${esc(look.t('hatch.sell'))} <span class="nowrap">${COIN}${fmt.format(cr.low)}</span>`;
@@ -181,6 +181,9 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     const room = overlay.root.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     const shown = card.classList.contains('shown');
     card.classList.add('shown');
+    // Круг правок FB-3 (ревизор удобства): a card that does not fit (130 %, a long chance line) closes its gaps before it would scroll.
+    card.classList.remove('hatch-tight');
+    if (card.offsetHeight > room || card.scrollHeight > card.clientHeight + 1) card.classList.add('hatch-tight');
     const full = card.offsetHeight;
     card.classList.toggle('shown', shown);
     const top = Math.max(0, Math.floor((room - full) / 2));

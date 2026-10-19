@@ -278,7 +278,12 @@ async function boot(): Promise<void> {
     shopTab.section('upgrades');
   };
   stageButton.addEventListener('click', openUpgrades);
-  const nav = createNav(uiRoot, showTab);
+  // Круг правок FB-3 (ревизор удобства): «Вылупился!» is never closed by a tab tap — the pet is chosen in the window (a run of taps that
+  // slips onto the dimmed tab bar does nothing).
+  const nav = createNav(uiRoot, (tab, again) => {
+    if (hatchShow.isOpen()) nav.mark(shown);
+    else showTab(tab, again);
+  });
   // 07 rule 8: the «+» of the balance opens the Store (its deals from the ads milestone; the upgrades till then).
   hud.wallet.addEventListener('click', openUpgrades);
   const shopLook: Parameters<typeof createShopTab>[2] = {
@@ -971,8 +976,11 @@ async function boot(): Promise<void> {
     const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
     // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.
     const toastNow = toasts.showing();
-    const wanted = tabIntro ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
-    const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) ? null : wanted;
+    // Круг правок FB-3 п. 6: the gift egg's hint wins over the first visit of «Яйца» (both would point at an egg; the gift is the free one).
+    const gift = hint?.key === 'ftue.freeEgg' && nav.active() === 'eggs';
+    const wanted = (gift ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
+    // Круг правок FB-3 п. 5: portrait the toast stands over the tab bar, off the scene — the scene's hint stays.
+    const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) && !appRoot.classList.contains('portrait') ? null : wanted;
     hints.update(shownHint, Boolean(toastNow));
     // FB-08: a ready egg waits for the tap — the finger taps it for the first hatches after the first minute (not over a hint or a window).
     const fingerOn = controllable && !shownHint && !topWindow() && store.state.flags.ftue_done && !store.state.flags[`tap_hatch_${ftue.fingerHatches}`];

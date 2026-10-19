@@ -148,7 +148,9 @@ export async function listFromInventory(page: Page): Promise<void> {
  * UB-07: what on screen now is too small to read or to tap — visible text under 12 px, buttons under 44 px on the short side.
  * The debug panel (only with ?debug=1) is not part of the game.
  */
-export function readability(page: Page): Promise<{ small: string[]; tiny: string[]; covered: string[]; cut: string[] }> {
+export async function readability(page: Page): Promise<{ small: string[]; tiny: string[]; covered: string[]; cut: string[] }> {
+  // A window still opening is scaled by its animation (44 px read as 42): the finite animations end first (FB-15, as the shots of 07 do).
+  await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {})))).catch(() => {});
   return page.evaluate(() => {
     const small: string[] = [];
     // M4-00: on a PC (a big screen read from afar) text is 14 px at least and never cut with «…».

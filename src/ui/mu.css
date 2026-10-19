@@ -3035,61 +3035,6 @@ button.mu-card {
 .landscape.home-shop .sheet[data-sheet='home'] .mu-grid {
   grid-template-columns: 1fr;
 }
-/* An upgrade the coins already cover: a light edge and a light price (green stays for «good» and «Забрать»; the rest are dimmed). */
-.shop-item.can {
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c-uiText) 45%, transparent);
-}
-.shop-item.can .mu-btn:not(.off) {
-  color: var(--c-uiText);
-  background: var(--c-uiPanelHi);
-}
-/* Portrait: the Store under the room in rows (as sideways l1): the picture, the name over its line, the price in the row. */
-.home-shop.portrait #ui .sheet[data-sheet='home'] .mu-grid {
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-.home-shop.portrait #ui .sheet[data-sheet='home'] .mu-card {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  align-items: center;
-  align-content: center;
-  column-gap: 10px;
-  row-gap: 0;
-  min-height: 56px;
-  padding: 4px 8px 4px 6px;
-  text-align: left;
-}
-.home-shop.portrait #ui .sheet[data-sheet='home'] .mu-card > .mu-pic {
-  grid-column: 1;
-  grid-row: 1 / span 2;
-  width: 44px;
-  height: 44px;
-}
-.home-shop.portrait #ui .sheet[data-sheet='home'] .mu-card .mu-pic img {
-  max-width: 36px;
-  max-height: 36px;
-}
-.home-shop.portrait #ui .sheet[data-sheet='home'] .mu-card > :not(.mu-pic):not(.mu-btn) {
-  grid-column: 2;
-  justify-self: start;
-}
-.home-shop.portrait #ui .sheet[data-sheet='home'] .mu-card .mu-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px 8px;
-}
-.home-shop.portrait #ui .sheet[data-sheet='home'] .mu-card > .mu-btn {
-  grid-column: 3;
-  grid-row: 1 / span 2;
-  margin: 0;
-  min-width: 88px;
-  padding: 0 14px;
-}
-.home-shop.portrait #ui .sheet[data-sheet='home'] .mu-short {
-  display: none;
-}
 /* The goal card «Дальше» is not in the list: the Store is the goal list itself. */
 #app.landscape.home-shop .sheet[data-sheet='home'] > .sheet-body {
   padding-top: 10px !important;
@@ -3127,11 +3072,6 @@ button.mu-card {
   color: var(--c-uiAccentText) !important;
   font-size: 26px !important;
   font-weight: 600;
-}
-.home-shop .shelf-free {
-  min-width: 44px;
-  min-height: 44px;
-  margin: -2px 0 0 -2px;
 }
 
 /* FB-12: a bought upgrade's row flashes (a repeat — shorter). */
@@ -3264,4 +3204,88 @@ button.mu-card {
 /* FB-15 (verify): sideways a list row is 44–52 px — its name stays on one line (fit.ts makes a long one smaller, ≥ 12 px), never two lines of whole words. */
 .landscape #ui .sheet .mu-card > .mu-name {
   white-space: nowrap;
+}
+
+/* ---- Круг правок FB п. 2 (просьба продюсера: «Лавка» без стены из закрашенных форм): one look of the upgrades in «Лавка» and in «Магазин» —
+   rows without a fill, a 1 px line under each, the icon 40 without a tile; only a price the coins cover is filled. ---- */
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-grid:has(> .shop-item) {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+/* Sideways «Магазин» is the whole width: rows in 2 columns (07 rule 11); «Лавка» keeps one column right of the room. */
+#app.landscape #ui .sheet[data-sheet='shop'] .mu-grid:has(> .shop-item) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  align-content: center;
+  column-gap: 12px;
+  row-gap: 2px;
+  min-height: 60px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--c-uiPanelHi);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  text-align: left;
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item:not(:has(> .mu-pic)) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item > .mu-pic {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 0;
+  background: none;
+  overflow: visible;
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item > .mu-pic img {
+  max-width: 40px;
+  max-height: 40px;
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item > :not(.mu-pic):not(.mu-btn) {
+  grid-column: 2;
+  justify-self: start;
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item:not(:has(> .mu-pic)) > :not(.mu-btn) {
+  grid-column: 1;
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item .mu-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item .lvl-dots {
+  justify-content: flex-start;
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item > .mu-btn {
+  grid-column: -2;
+  grid-row: 1 / span 4;
+  margin: 0;
+  min-width: 88px;
+  padding: 0 12px;
+  background: none;
+  color: var(--c-uiMuted);
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item.can > .mu-btn:not(.off),
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item > .mu-btn:not(.off):not([data-action='buy-upgrade']) {
+  background: var(--c-uiPanelHi);
+  color: var(--c-uiText);
+}
+/* The dimmed price says it: no «не хватает N» under the name. */
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item .mu-short {
+  display: none;
+}
+/* l1, l3: sideways a row is 44–52 px. */
+#app.landscape #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item {
+  min-height: 52px;
+  padding: 3px 0;
 }

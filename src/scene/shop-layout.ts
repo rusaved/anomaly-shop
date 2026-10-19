@@ -74,7 +74,7 @@ export interface Decor {
   poster: Rect;
 }
 
-export const SHOP = { showcaseSlots: 3, queueSpots: 3, minUnit: 18 };
+export const SHOP = { showcaseSlots: 3, queueSpots: 3, minUnit: 18, minSlot: 44, slotGap: 8 };
 
 export function computeShopLayout(
   stage: Rect,
@@ -124,8 +124,11 @@ export function computeShopLayout(
   const availW = Math.max(stage.w * 0.6 - u * 0.8, door.x - u * 0.6 - shelfX);
   // Rows sit apart so the price pill of the upper row stays clear of the lower one.
   const rowGap = rows > 1 ? 0.34 : 0;
-  const slot = Math.min(u * 1.75, (n <= 3 ? stage.w * 0.6 - u * 0.8 : availW) / (cols + 0.18 * (cols + 1)), (wallFree * 0.8) / (1.36 * rows + rowGap));
-  const gap = slot * 0.18;
+  // Круг правок FB п. 2: a place is 44 px or more (07 rule 4), places stand 8 px apart; the frame grows with them, a «+» never leaves it.
+  const gap = SHOP.slotGap;
+  const byW = ((n <= 3 ? stage.w * 0.6 - u * 0.8 : availW) - (cols + 1) * gap) / cols;
+  const byH = (wallFree * 0.8 - (rows + 1) * gap) / (1.18 * rows + rowGap);
+  const slot = Math.max(SHOP.minSlot, Math.min(u * 1.75, byW, byH));
   const showcaseW = cols * slot + (cols + 1) * gap;
   const showcaseH = rows * slot + (rows + 1) * gap + (rows - 1) * slot * rowGap;
   const showcase: Rect = { x: shelfX, y: top + Math.max(0, wallFree * 0.5 - showcaseH / 2 - (rows > 1 ? slot * 0.15 : 0)), w: showcaseW, h: showcaseH };

@@ -1,4 +1,4 @@
-// What: the «Магазин» tab (docs/01 §6; Q-021 B, M4-05; MU-10 by s7-shop): segments Улучшения · Пункт продаж · Акции (off till the ads milestone), cards 2 in a row.
+// What: the «Магазин» tab (docs/01 §6; Q-021 B, M4-05; MU-10 by s7-shop): segments Улучшения · Пункт продаж · Акции (off till the ads milestone); rows of one look here and under «Лавка» (круг правок FB п. 2).
 // Called by: src/main.ts (create once into its sheet; rendered on every commit; the «Улучшения» button on the scene opens this section).
 // Keep: purchases go through game.buyUpgrade / buyGuest; sections come from content/nav.json; a price button is dark, «не хватает N» is a meta line, never red.
 

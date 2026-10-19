@@ -88,7 +88,8 @@ export async function rewardAfterAnimation(page: Page): Promise<void> {
   await expect(hatch).toBeVisible();
   // While the strip runs: no result, no buttons, the creature is not on the shelf.
   const during = Date.now();
-  await expect(page.locator('[data-hatch-result]')).toBeHidden();
+  // (the pet's name: sideways the result's box holds the strip too — круг правок FB-3, the strip in the pet's place)
+  await expect(page.locator('[data-hatch-name]')).toBeHidden();
   await expect(hatch.locator('[data-action=hatch-shop]')).toBeHidden();
   expect(((await state(page)) as unknown as { shelf: unknown[] }).shelf).toEqual([]);
   // The result comes only when the strip stops (3 s and more), with its timing in the test API.

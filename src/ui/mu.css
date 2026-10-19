@@ -3498,9 +3498,44 @@ button.mu-card {
 .landscape #ui [data-detail='lot'] .lot-pet .price-pet-text > .mu-meta {
   grid-area: meta;
 }
+/* Круг правок FB-2 п. 1, 6: sideways the seller («‹») and the lines left, the pet in one row and the answers right —
+   «Заберу сейчас» whole and away from the bar at 130 % too, the seller's first line and «Отдам за N» whole over the tab bar. */
+.landscape #ui [data-detail='lot'] .detail-page {
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: 'back pet' 'lines buttons';
+}
 .landscape #ui [data-detail='lot'] .lot-buttons {
-  grid-row: 2 / span 2;
+  grid-row: auto;
   justify-content: center;
+  align-content: end;
+  align-self: stretch;
+  min-height: 0;
+  padding-bottom: 4px;
+}
+.landscape #ui [data-detail='lot'] .lot-pet {
+  align-self: center;
+}
+.landscape #ui [data-detail='lot'] .detail-page > .mu-back {
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+/* Круг правок FB-2 п. 6: the pet in two rows (name with its rarity, the market under them) and wider lines —
+   at 130 % the seller's first line and «Отдам за N» both whole, not under the pet. */
+.landscape #ui [data-detail='lot'] .lot-pet {
+  grid-template-columns: 40px auto minmax(0, 1fr);
+  grid-template-areas: 'pic name badge' 'pic meta meta';
+}
+.landscape #ui [data-detail='lot'] .lot-pet .price-pet-text > span:not(.mu-meta) {
+  justify-self: start;
+}
+.landscape #ui [data-detail='lot'] .bubble {
+  max-width: 100%;
+}
+.landscape #ui [data-detail='lot'] .detail-page {
+  row-gap: 4px;
+}
+.landscape #ui [data-detail='lot'] .chat-lines {
+  padding-bottom: 4px;
 }
 /* 07: sideways the main button is never wider than 360 px; the answers use the column's 400 (two to a row at 130 %). */
 .landscape #ui [data-detail='lot'] .lot-buttons > .mu-btn.main {

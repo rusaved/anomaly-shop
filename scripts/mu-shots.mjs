@@ -227,6 +227,38 @@ for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']]) {
     await first.ctx.close();
   });
 }
+// Круг правок FB-2 п. 7: the salute of VIP and exclusive at 0, 150 and 300 ms after the reveal (the CSS animations paused and stepped; the
+// window's own fade-in finished), portrait and sideways; a PC 1280×720 «Лавка».
+for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']])
+  for (const [uid, name] of [['e', 'vip'], ['f', 'exclusive']])
+    await tryStep(`${tag} salute ${name}`, async () => {
+      if (only.length && !only.includes('salute-ms')) return;
+      const s = await session(w, h, `${tag}-salute`);
+      await s.page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 }).catch(() => {});
+      if (!(await s.page.evaluate((id) => window.__TEST__.hatch(id), uid))) throw new Error(`no pet ${uid}`);
+      await s.page.waitForTimeout(400);
+      await s.page.locator('[data-action=hatch-skip]').click();
+      await s.page.evaluate(() => document.getAnimations().forEach((a) => (a.animationName === 'win-in' ? a.finish() : a.pause())));
+      for (const t of [0, 150, 300]) {
+        await s.page.evaluate((t) => {
+          const card = document.querySelector('.card-hatch');
+          for (const a of document.getAnimations()) {
+            const el = a.effect?.target;
+            if (a.animationName !== 'win-in' && el && (el === card || card.contains(el) || el.classList.contains('burst-flash'))) a.currentTime = t;
+          }
+        }, t);
+        await s.page.screenshot({ path: `${out}/salute-${name}-${t}ms.${tag}.png` });
+      }
+      await s.ctx.close();
+    });
+await tryStep('pc home', async () => {
+  if (only.length && !only.includes('pc')) return;
+  const s = await session(1280, 720, 'pc');
+  await s.page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 }).catch(() => {});
+  await s.page.waitForTimeout(350);
+  await s.page.screenshot({ path: `${out}/home.pc.png` });
+  await s.ctx.close();
+});
 await browser.close();
 // The preview server and its children go with the run (npx starts vite as a child).
 try {

@@ -53,7 +53,7 @@ test('M3-05 hatch show: 4–5 s, the roll on the card, sell now = the low end', 
   await expect(page.locator('[data-hatch-name]')).toHaveText(s.newest!.name);
   await expect(page.locator('[data-hatch-range]')).toContainText(/\d/);
   await expect(page.locator('[data-action=hatch-sell]')).toHaveAttribute('data-price', String(s.newest!.low));
-  // FB-15: «Продать сразу» takes a tap 0.6 s after the result shows (a double tap of the skip never sells).
+  // FB-15, круг правок п. 1: the buttons take a tap 0.5 s after the result shows (feel.json hatchLockSec; a double tap of the skip never sells).
   await page.waitForTimeout(650);
   await page.locator('[data-action=hatch-sell]').click();
   await expect(page.locator('[data-overlay=hatch]')).toBeHidden();

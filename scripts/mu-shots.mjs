@@ -170,7 +170,9 @@ for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']]) {
     for (let i = 0; i < 40 && !(await open.isVisible()); i++) await page.evaluate(() => window.__TEST__.runSim(5));
     if (await open.isVisible()) {
       await open.click();
-      await page.waitForTimeout(400);
+      // Круг правок FB п. 8: the strip runs where the pet will stand (a shot mid-run, no animation wait).
+      await page.waitForTimeout(1200);
+      if (!only.length || only.includes('hatch-run')) await page.screenshot({ path: `${out}/hatch-run.${tag}.png` });
       const skip = page.locator('[data-action=hatch-skip]');
       if (await skip.isVisible()) await skip.click();
       await page.waitForTimeout(900);

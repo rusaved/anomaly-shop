@@ -350,6 +350,7 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
     spinSec: () => feel.hatchShowSec,
+    lockSec: () => feel.hatchLockSec,
     // FB-09: the result shows — its rarity's sound and celebration (VIP and exclusive have their own sounds).
     onReveal: (rarity) => {
       const lvl = burst.play(rarity, uiRoot.querySelector<HTMLElement>('[data-hatch-pic]'), rarityColor(styleData.rarity, rarity));

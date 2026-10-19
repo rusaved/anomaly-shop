@@ -255,6 +255,8 @@ export const FeelFile = v.object({
   burst: v.object({ sec: v.pipe(v.number(), v.minValue(0.2), v.maxValue(1.5)), good: BurstLevel, valuable: BurstLevel, premium: BurstLevel, vip: BurstLevel, exclusive: BurstLevel }),
   /** The hatch show (M3-05): seconds the portraits run before the result, 4–5. */
   hatchShowSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(8)),
+  /** Круг правок FB п. 1: the hatch result's buttons take a press this long after it shows (a double tap of the skip never chooses), ≥ 0.5 s. */
+  hatchLockSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(1.5)),
 });
 
 export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade'] as const;

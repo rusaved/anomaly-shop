@@ -1440,8 +1440,8 @@ button.mu-card {
 .hatch-window {
   position: relative;
   width: 100%;
-  height: 92px;
-  margin: 4px 0 8px;
+  height: var(--hatch-stage, 112px);
+  margin: 0 0 18px;
   overflow: hidden;
   border-radius: 16px;
   background: var(--c-uiPanelAlt);
@@ -1450,7 +1450,7 @@ button.mu-card {
 .hatch-strip {
   position: absolute;
   left: 0;
-  top: 14px;
+  top: calc(50% - 32px);
   display: flex;
   will-change: transform;
   pointer-events: none;
@@ -1487,17 +1487,48 @@ button.mu-card {
   flex-direction: column;
   align-items: center;
 }
-.hatch-result[hidden] {
+/* Круг правок FB п. 1: the strip runs in the pet's place, «тап — пропустить» in its rarity word's place; the rest waits unseen
+   (the card's top is set by hatch.ts — it grows down when the result shows, nothing moves under the finger). */
+.card-hatch:not(.shown) .hatch-result {
+  visibility: hidden;
+}
+.card-hatch:not(.shown) .hatch-result > .hatch-window,
+.card-hatch:not(.shown) .hatch-result > .hatch-skip {
+  visibility: visible;
+}
+.card-hatch.shown .hatch-result > :is(.hatch-window, .hatch-skip) {
   display: none;
 }
+/* A column (portrait, PC): the lower part waits out of the flow; sideways on a phone (a grid) it keeps its place unseen. */
+.portrait .card-hatch:not(.shown) .hatch-result > :is(.hatch-pic, .rar-word, h3, .hatch-range, .hatch-sell, .hatch-buttons) {
+  display: none;
+}
+@media (min-height: 521px) {
+  .landscape .card-hatch:not(.shown) .hatch-result > :is(.hatch-pic, .rar-word, h3, .hatch-range, .hatch-sell, .hatch-buttons) {
+    display: none;
+  }
+}
+.overlay[data-overlay='hatch'] {
+  align-items: flex-start;
+}
+/* The result's buttons wake up over hatchLockSec (feel.json): a tap in that time chooses nothing. */
+.card-hatch .hatch-result > .hatch-sell,
+.card-hatch .hatch-buttons > .mu-btn {
+  transition: opacity 0.35s ease-out;
+}
+.card-hatch.hatch-locked .hatch-result > .hatch-sell,
+.card-hatch.hatch-locked .hatch-buttons > .mu-btn {
+  opacity: 0.5;
+}
+/* Круг правок FB п. 7: the pet fills ~60 % of its tile, like the leader's. */
 .hatch-pic {
   width: 128px;
-  height: 104px;
+  height: var(--hatch-stage, 112px);
   margin-bottom: 18px;
 }
 .hatch-pic img {
-  max-width: 76px;
-  max-height: 76px;
+  max-width: 100px;
+  max-height: 100px;
 }
 .card-hatch .rar-word {
   margin-bottom: 8px;
@@ -1523,7 +1554,7 @@ button.mu-card {
   width: 100%;
 }
 .overlay .card .hatch-sell {
-  margin: 0 0 6px;
+  margin: 0 0 24px;
   min-height: var(--mu-btn);
   background: transparent;
   color: var(--c-uiMuted);
@@ -1579,13 +1610,18 @@ button.mu-card {
     margin-bottom: 6px !important;
     font-size: 18px !important;
   }
-  .hatch-pic {
-    width: 88px;
-    height: 56px;
+  .card-hatch {
+    --hatch-stage: 72px;
+  }
+  .hatch-pic,
+  .hatch-window {
     margin-bottom: 6px;
   }
+  .hatch-pic {
+    width: 88px;
+  }
   .hatch-pic img {
-    max-height: 48px;
+    max-height: 64px;
   }
   .hatch-result h3 {
     margin-bottom: 4px;
@@ -2608,10 +2644,18 @@ button.mu-card {
   /* «Вылупился!» sideways: the pet left; its rarity, the whole name and the price line right; the three ways out in one row under them. */
   .landscape .overlay > .card.card-hatch {
     width: min(100%, 600px);
-    padding: 12px 20px 12px;
+    padding: 8px 20px 8px;
   }
   .landscape .card-hatch h2 {
-    margin-bottom: 8px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.15;
+  }
+  /* Круг правок FB п. 4: at 130 % the three ways out stay whole above the tab bar (no scroll). */
+  .landscape .card-hatch :is(.rar-word, .hatch-range) {
+    line-height: 1.15;
+  }
+  .landscape .card-hatch .hatch-result h3 {
+    line-height: 1.15;
   }
   .landscape .card-hatch .hatch-result {
     display: grid;
@@ -2628,8 +2672,22 @@ button.mu-card {
     margin: 0;
   }
   .landscape .card-hatch .hatch-pic img {
-    max-width: 76px;
-    max-height: 76px;
+    max-width: 88px;
+    max-height: 88px;
+  }
+  /* Круг правок FB п. 1: the strip runs over the rarity, name and price rows, «тап — пропустить» under it in the pet's column;
+     «Продать сразу» (the sell row, right) is in neither place. */
+  .landscape .card-hatch .hatch-window {
+    grid-area: 1 / 1 / 4 / 3;
+    align-self: stretch;
+    height: auto;
+    min-height: 72px;
+    margin: 0;
+  }
+  .landscape .card-hatch .hatch-skip {
+    grid-area: 4 / 1 / 5 / 2;
+    align-self: center;
+    text-align: center;
   }
   .landscape .card-hatch .rar-word {
     grid-area: word;
@@ -2651,13 +2709,15 @@ button.mu-card {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin-top: 10px;
+    margin-top: 6px;
   }
+  /* Круг правок FB п. 1: at the far right — 24 px and more from «На витрину» (left), never under the strip or the hint. */
   .landscape .overlay .card .hatch-sell {
     grid-area: sell;
-    justify-self: start;
+    justify-self: end;
+    width: auto;
     margin: 0;
-    padding-left: 0;
+    padding-right: 0;
   }
   .landscape .card-hatch .hatch-buttons > .mu-btn.main {
     max-width: none;
@@ -2731,9 +2791,6 @@ button.mu-card {
   }
   .landscape .card-rate > .mu-btn {
     grid-area: go;
-  }
-  .landscape .card-hatch .hatch-buttons {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) max-content;
   }
 }
 /* A window title stands level with its ✕ (44 px), so the ✕ never reaches the first button under it. */

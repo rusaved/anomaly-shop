@@ -3768,3 +3768,27 @@ button.mu-card {
 #ui .burst-flash {
   z-index: 29;
 }
+/* Круг правок FB-2 п. 3: the lot in portrait — the pet's name and rarity in one row (the market line under them): the seller's lines get
+   the room. A tight page (130 %: the newest line under the answers) drops the mockup's room under the answers and the mood chip. */
+.portrait #ui [data-detail='lot'] .lot-pet .price-pet-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+}
+.portrait #ui [data-detail='lot'] .lot-pet .price-pet-text > .mu-meta {
+  flex-basis: 100%;
+}
+.portrait #ui [data-detail='lot'].lot-tight .lot-buttons {
+  padding-bottom: 16px;
+}
+.portrait #ui [data-detail='lot'].lot-tight .lot-pet .mood-chip {
+  display: none;
+}
+.portrait #ui [data-detail='lot'] .bubble {
+  max-width: 90%;
+}

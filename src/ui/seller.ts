@@ -49,16 +49,21 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
     const linesEl = body.querySelector<HTMLElement>('.chat-lines');
     if (!linesEl) return;
     linesEl.scrollTop = linesEl.scrollHeight;
-    // Круг правок FB-2 п. 1: sideways the pet and the answers share the right column — when they meet (130 % and a mood chip),
-    // the page goes tight (CSS drops the chip, it is on the market card too).
+    // Круг правок FB-2 п. 1, 3: the page goes tight when the answers meet the pet (sideways: one right column, 130 % and a mood chip)
+    // or cover the newest line (portrait at 130 %); CSS then drops the mood chip (it is on the market card too) and the room under the answers.
     const fit = (): void => {
       const page = body.closest<HTMLElement>('[data-detail]');
       const petEl = body.querySelector('.lot-pet');
-      const answers = body.querySelector('.lot-buttons > :first-child')?.getBoundingClientRect();
-      if (!page || !petEl || !answers) return;
+      const answersEl = body.querySelector('.lot-buttons');
+      if (!page || !petEl || !answersEl) return;
       page.classList.remove('lot-tight');
       const pet = petEl.getBoundingClientRect();
-      page.classList.toggle('lot-tight', pet.bottom > answers.top && pet.right > answers.left && answers.right > pet.left);
+      const answers = (answersEl.firstElementChild ?? answersEl).getBoundingClientRect();
+      const last = linesEl.lastElementChild?.getBoundingClientRect();
+      const meets = pet.bottom > answers.top && pet.right > answers.left && answers.right > pet.left;
+      const covers = !!last && last.bottom > answersEl.getBoundingClientRect().top + 1 && last.right > answers.left && answers.right > last.left;
+      page.classList.toggle('lot-tight', meets || covers);
+      if (covers) scroller.scrollTop = scroller.scrollHeight;
     };
     fit();
     // Круг правок FB п. 6: a font that grows (130 %) keeps the newest line, with its price, in sight.

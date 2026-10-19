@@ -124,3 +124,31 @@ test.describe('Круг правок FB-2 п. 2 375×650', () => {
     expect(errors).toEqual([]);
   });
 });
+
+/** п. 3: the lot in portrait at 130 % — ≥ 100 px of the seller's lines in sight, the greeting and «Отдам за N» whole over the answers,
+ *  the pet whole under «‹». */
+test.describe('Круг правок FB-2 п. 3 375×650 130 %', () => {
+  test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
+  test('the lot in portrait: the lines whole over the answers', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 120, creatures: pets, showcase: [] });
+    await open(page);
+    await openLot(page, true);
+    await page.waitForTimeout(300);
+    const g = await page.evaluate(() => {
+      const r = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      const lines = r('[data-detail=lot] .chat-lines');
+      const answers = r('[data-detail=lot] .lot-buttons');
+      const bubbles = [...document.querySelectorAll('[data-detail=lot] .chat-lines > .bubble')].map((e) => e.getBoundingClientRect());
+      return {
+        room: answers.top - Math.max(lines.top, r('[data-detail=lot] .lot-pet').bottom),
+        whole: bubbles.every((b) => b.top >= r('[data-detail=lot] .lot-pet').bottom - 1 && b.bottom <= answers.top + 1),
+        pet: r('[data-detail=lot] .lot-pet').top >= r('[data-detail=lot] .mu-back').bottom - 1,
+      };
+    });
+    expect(g.room).toBeGreaterThanOrEqual(100);
+    expect(g.whole).toBe(true);
+    expect(g.pet).toBe(true);
+    expect(errors).toEqual([]);
+  });
+});

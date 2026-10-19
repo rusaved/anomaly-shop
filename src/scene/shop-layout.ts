@@ -143,11 +143,15 @@ export function computeShopLayout(
   // MU-02: u * 6.4 — four incubators keep their 44 px tap zones in the 45 % room of a landscape phone (l1).
   const counterW = Math.min(stage.w * 0.58, u * 6.4, door.x - spotR * 2.6 - u * 0.6 - stage.x);
   const counterH = Math.min(u * 1.1, floor.h * 0.45);
-  const counter: Rect = { x: stage.x + Math.min(stage.w * 0.42 - counterW / 2, door.x - spotR * 2.6 - counterW - stage.x), y: floorY + floor.h * 0.3, w: counterW, h: counterH };
-  const counterTop: Rect = { x: counter.x - u * 0.15, y: counter.y - u * 0.25, w: counterW + u * 0.3, h: u * 0.35 };
   // Incubators stand side by side on the left part of the counter; the right part stays free for the deal.
   const count = Math.max(1, Math.floor(incubatorCount));
   const incR = Math.min(u * 0.9, counterW * 0.2, counterW / (count * 2.4 + 0.2));
+  // Круг правок FB (арт-ревизия): the shelf never lies on the incubators — the counter steps down onto the free floor (8 px between them).
+  let counterY = floorY + floor.h * 0.3;
+  const clash = showcase.y + showcase.h + 8 - (counterY - u * 0.25 - incR * 1.95);
+  if (clash > 0) counterY = Math.max(counterY, Math.min(counterY + clash, stage.y + stage.h - counterH - u * 0.15));
+  const counter: Rect = { x: stage.x + Math.min(stage.w * 0.42 - counterW / 2, door.x - spotR * 2.6 - counterW - stage.x), y: counterY, w: counterW, h: counterH };
+  const counterTop: Rect = { x: counter.x - u * 0.15, y: counter.y - u * 0.25, w: counterW + u * 0.3, h: u * 0.35 };
   const incubators: Spot[] = [];
   for (let i = 0; i < count; i++) incubators.push({ x: counter.x + incR * 1.3 + i * incR * 2.4, y: counterTop.y - incR * 0.95, r: incR });
   const incubator = incubators[0] as Spot;

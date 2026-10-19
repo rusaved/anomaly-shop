@@ -4,6 +4,7 @@
 
 import type { OfflineReport } from '../sim/game.ts';
 import { button, createOverlay, type Overlay } from './overlay.ts';
+import { iconize } from './kit.ts';
 
 export interface AwayLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -75,7 +76,8 @@ export function createAwayWindow(parent: HTMLElement, look: AwayLookups): AwayWi
       shown = r.coins;
       ad.hidden = !look.adDouble || r.coins < 1;
       ad.disabled = false;
-      ad.textContent = look.t('away.ad', { n: fmt.format(Math.round(r.coins)) });
+      // 07 «Знаки»: the coin as the icon on a reward too (art review of the round of fixes).
+      ad.innerHTML = iconize(look.t('away.ad', { n: `◉${fmt.format(Math.round(r.coins))}` }));
       list.replaceChildren();
       for (const [key, n] of [['away.sold', r.sold], ['away.hatched', r.hatched], ['away.levelUps', r.levelUps]] as const) {
         if (n <= 0) continue;

@@ -2672,7 +2672,7 @@ button.mu-card {
   .landscape .card-hatch .hatch-result {
     display: grid;
     grid-template-columns: 132px minmax(0, 1fr);
-    grid-template-areas: 'pic word' 'pic name' 'pic range' 'pic sell' 'buttons buttons';
+    grid-template-areas: 'pic word' 'pic name' 'pic range' 'buttons buttons';
     column-gap: 20px;
     align-items: center;
     text-align: left;
@@ -2690,14 +2690,14 @@ button.mu-card {
   /* Круг правок FB п. 1: the strip runs over the rarity, name and price rows, «тап — пропустить» under it in the pet's column;
      «Продать сразу» (the sell row, right) is in neither place. */
   .landscape .card-hatch .hatch-window {
-    grid-area: 1 / 1 / 4 / 3;
+    grid-area: 1 / 2 / 4 / 3;
     align-self: stretch;
     height: auto;
     min-height: 72px;
     margin: 0;
   }
   .landscape .card-hatch .hatch-skip {
-    grid-area: 4 / 1 / 5 / 2;
+    grid-area: 1 / 1 / 4 / 2;
     align-self: center;
     text-align: center;
   }
@@ -3544,4 +3544,106 @@ button.mu-card {
 .landscape #ui [data-detail='lot'] .lot-pet > .mu-pic img {
   max-width: 34px;
   max-height: 34px;
+}
+/* Круг правок FB, сверка с макетом: «Пока тебя не было» sideways fits 330 — the coins left of what the shop did, the buttons whole in a row. */
+.landscape #ui .overlay[data-overlay='away'] > .card.card-away {
+  width: min(100%, 600px);
+  grid-template-areas: 'title title' 'time time' 'coins list' 'ad ok';
+  row-gap: 8px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.landscape #ui .card-away > h2 {
+  grid-area: title;
+}
+.landscape #ui .card-away > .away-time {
+  grid-area: time;
+}
+.landscape #ui .card-away > .away-coins {
+  grid-area: coins;
+  grid-column: 1;
+}
+.landscape #ui .card-away > .away-list {
+  grid-area: list;
+  grid-column: 2;
+  align-content: center;
+}
+.landscape #ui .card-away > .away-coins[hidden] + .away-list {
+  grid-column: 1 / -1;
+}
+.landscape #ui .card-away > .btn-ad {
+  grid-area: ad;
+}
+.landscape #ui .card-away > .btn-primary {
+  grid-area: ok;
+}
+.landscape #ui .card-away > .btn-ad[hidden] + .btn-primary {
+  grid-column: 1 / -1;
+}
+/* «Подарки» sideways: «Забрать подарок дня» whole above the fade of the list (tiles 46 px, the button 6 px under them). */
+.landscape #ui .overlay[data-overlay='gifts'] .day {
+  min-height: 46px;
+  padding: 4px 2px;
+}
+.landscape #ui .overlay[data-overlay='gifts'] > .card > .gift-take {
+  margin-top: 6px;
+}
+/* l2: the answers of a chat sideways — the main one wider (≈ 4 : 3, like the mockup). */
+.landscape #ui .chat-buttons:not(.lot-buttons) > .mu-btn.main {
+  flex: 4 1 0;
+}
+.landscape #ui .chat-buttons:not(.lot-buttons) > .mu-btn:not(.main) {
+  flex: 3 1 0;
+}
+/* Круг правок FB (арт-ревизия): the level of an upgrade — small filled dots (the bought ones in the accent), in portrait on a line of their own. */
+#ui .lvl-dots i {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  background: var(--c-uiPanelHi);
+}
+#ui .lvl-dots i.on {
+  background: var(--c-uiAccent);
+}
+#ui .lvl-dots {
+  gap: 4px;
+}
+#app.portrait #ui .sheet .mu-card.shop-item .lvl-dots {
+  flex-basis: 100%;
+}
+
+/* Круг правок FB (арт-ревизия, окна): the pet ~60 % of its tile (s6: 58 × 64 %); a rare flash lies under the words, never over them. */
+.hatch-pic img {
+  max-width: 112px;
+  max-height: 112px;
+}
+.card.hatch-rare::before {
+  z-index: 0;
+}
+.card.hatch-rare > h2,
+.card.hatch-rare .hatch-result > :not(.hatch-sell) {
+  position: relative;
+  z-index: 1;
+}
+/* Sideways «Продать сразу» stands at the right of the title row — far from «На витрину» and «На склад», out of the strip and its hint
+   (the strip runs right, «тап — пропустить» left, in the pet's place). */
+@media (max-height: 520px) {
+  .landscape .card-hatch .hatch-pic img {
+    max-width: 96px;
+    max-height: 96px;
+  }
+  .landscape #ui .card-hatch > h2 {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    margin: 0 0 4px !important;
+    text-align: left;
+  }
+  .landscape #ui .overlay .card.card-hatch .hatch-sell {
+    position: absolute;
+    top: 8px;
+    right: 20px;
+    z-index: 2;
+    grid-area: auto;
+  }
 }

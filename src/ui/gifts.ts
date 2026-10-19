@@ -143,7 +143,7 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
         for (const g of d.goals)
           parts.push(
             `<div class="mu-card day-goal" data-goal="${g.id}"><span class="day-text"><b class="mu-name">${esc(look.goalName(g.id))}</b><span class="goal-bar"><i style="width:${Math.round((Math.min(g.have, g.need) / Math.max(1, g.need)) * 100)}%"></i></span>` +
-              `<span class="mu-meta">${g.have}/${g.need} · ${iconize(look.rewardText(g.reward))}</span></span>` +
+              `<span class="mu-meta">${g.have}/${g.need} · ${iconize(look.rewardShort(g.reward))}</span></span>` +
               (g.claimed
                 ? `<span class="mu-meta day-got">${esc(look.t('gifts.got'))}</span>`
                 : g.done

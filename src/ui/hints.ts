@@ -199,10 +199,27 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       lower(openSheet, root.offsetHeight + 24);
       // Sideways a bubble of the scene stays over the scene — never on the list right of it.
       const stageW = !button && base.width > base.height ? parseFloat(getComputedStyle(parent).getPropertyValue('--stage-w')) || base.width : base.width;
-      const left = Math.max(8, Math.min(stageW - w - 8, x - w / 2));
+      let left = Math.max(8, Math.min(stageW - w - 8, x - w / 2));
+      const top0 = above ? y - r - 12 - root.offsetHeight : (button ? bottom : y + r) + 12;
+      // Круг правок FB (сверка с макетом, правило 3): a bubble of the scene never lies on the places of the shelf — it moves aside
+      // while its arrow still reaches the target.
+      if (!button && a && a.slots.length) {
+        // The frame of the shelf: its places, the 8 px around them and the outline.
+        const pad = 12;
+        const fx = Math.min(...a.slots.map((s) => s.x)) - pad + (canvas.left - base.left);
+        const fy = Math.min(...a.slots.map((s) => s.y)) - pad + (canvas.top - base.top);
+        const fr = Math.max(...a.slots.map((s) => s.x + s.w)) + pad + (canvas.left - base.left);
+        const fb = Math.max(...a.slots.map((s) => s.y + s.h)) + pad + (canvas.top - base.top);
+        if (fx < left + w && fr > left && fy < top0 + root.offsetHeight && fb > top0) {
+          const right = fr + 8;
+          const leftOf = fx - 8 - w;
+          if (x >= right + 14 && right + w <= stageW - 8) left = right;
+          else if (x <= leftOf + w - 14 && leftOf >= 8) left = leftOf;
+        }
+      }
       root.style.left = `${left}px`;
       root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, x - left))}px`);
-      let top = above ? y - r - 12 - root.offsetHeight : (button ? bottom : y + r) + 12;
+      let top = top0;
       // MU-12 (the usability recheck): a bubble over a tab of the bar never lies on the scene buttons above it
       // («Улучшения», «Подработка», the next goal) — it rises over them, the arrow still points down to the tab.
       if (inBar)

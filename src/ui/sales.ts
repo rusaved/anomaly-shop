@@ -72,7 +72,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
           `<button type="button" class="mu-btn" data-action="sale-off-${c.uid}">${esc(look.t('sales.off'))}</button></div>`,
       );
     // 07 rule 7: one main button on the screen — the first pet in a chat; the others say «В чат» on a dark button.
-    // Круг правок FB п. 7: the pets in chats are not on the places — their own group under the places, «N из M мест» counts the shelf only.
+    // Круг правок FB п. 7: the pets in chats are not on the places — their own group, «N из M мест» counts the shelf only.
     const chats: string[] = [];
     view.talking.forEach((c, i) =>
       chats.push(
@@ -81,10 +81,11 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
           `<button type="button" class="mu-btn${i === 0 ? ' main' : ''}" data-action="sale-chat-${c.uid}">${esc(look.t('sales.toChat'))}</button></div>`,
       ),
     );
+    // A buyer who writes is the thing to do now (s3: «В чат» in the first screen) — the chats go first, the places under them.
     root.innerHTML =
-      `<div class="mu-head"><h3>${esc(look.t('sales.title'))}</h3><span>${esc(look.t('sales.places', { n: view.creatures.length, all: view.slots }))}</span></div>` +
-      `<div class="mu-grid">${cards.join('')}</div>` +
-      (chats.length ? `<div class="mu-head sales-chats"><h3>${esc(look.t('sales.inChats'))}</h3><span>${new Intl.NumberFormat(look.lang()).format(chats.length)}</span></div><div class="mu-grid">${chats.join('')}</div>` : '');
+      (chats.length ? `<div class="mu-head sales-chats"><h3>${esc(look.t('sales.inChats'))}</h3><span>${new Intl.NumberFormat(look.lang()).format(chats.length)}</span></div><div class="mu-grid">${chats.join('')}</div>` : '') +
+      `<div class="mu-head sales-places"><h3>${esc(look.t('sales.title'))}</h3><span>${esc(look.t('sales.places', { n: view.creatures.length, all: view.slots }))}</span></div>` +
+      `<div class="mu-grid">${cards.join('')}</div>`;
     root.querySelectorAll('[data-action="sale-add"]').forEach((b) => b.addEventListener('click', () => tab.show(PICK)));
     for (const c of view.creatures) {
       root.querySelector(`[data-action="sale-${c.uid}"]`)?.addEventListener('click', () => tab.show(c.uid));

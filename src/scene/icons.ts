@@ -51,6 +51,22 @@ function incubator(box: Container, R: number, c: Colors, outline: number, speed:
   }
 }
 
+/** Круг правок FB (арт-ревизия): «Скорость вылупления» has its own picture — a stopwatch with speed lines, not a second incubator. */
+function stopwatch(g: Graphics, R: number, c: Colors, outline: number): void {
+  const stroke = { width: outline * 0.8, color: c.outline, cap: 'round' as const };
+  const cx = R * 0.12;
+  const cy = R * 0.12;
+  const r = R * 0.72;
+  for (const [dy, len] of [[-0.3, 0.55], [0.05, 0.75], [0.4, 0.5]] as const)
+    g.moveTo(cx - r - R * 0.12 - R * len, cy + R * dy).lineTo(cx - r - R * 0.12, cy + R * dy).stroke({ width: outline * 1.1, color: c.uiAccent, cap: 'round' });
+  g.roundRect(cx - R * 0.16, cy - r - R * 0.3, R * 0.32, R * 0.24, R * 0.06).fill(c.counter).stroke(stroke);
+  g.circle(cx, cy, r).fill(c.eyeWhite).stroke(stroke);
+  g.circle(cx, cy, r * 0.78).stroke({ width: outline * 0.5, color: c.incubatorGlass });
+  g.moveTo(cx, cy).lineTo(cx, cy - r * 0.55).stroke(stroke);
+  g.moveTo(cx, cy).lineTo(cx + r * 0.42, cy + r * 0.12).stroke(stroke);
+  g.circle(cx, cy, R * 0.07).fill(c.outline);
+}
+
 function showcase(g: Graphics, R: number, c: Colors, outline: number): void {
   const stroke = { width: outline * 0.8, color: c.outline };
   g.roundRect(-R * 0.95, -R * 0.55, R * 1.9, R * 1.1, R * 0.2).fill(c.showcase).stroke(stroke);
@@ -232,7 +248,8 @@ export function drawUpgradeIcon(box: Container, thing: string, R: number, c: Col
 function drawThing(box: Container, thing: string, R: number, c: Colors, outline: number): void {
   const g = new Graphics();
   box.addChild(g);
-  if (thing === 'incubator' || thing === 'incubator_speed') return incubator(box, R, c, outline, thing === 'incubator_speed');
+  if (thing === 'incubator') return incubator(box, R, c, outline, false);
+  if (thing === 'incubator_speed') return stopwatch(g, R, c, outline);
   if (thing === 'showcase') return showcase(g, R, c, outline);
   if (thing === 'tags') return tags(g, R, c, outline);
   if (thing === 'chest') return chest(g, R, c, outline);

@@ -378,6 +378,8 @@ test.describe('the round of fixes, item 2: sideways 812×330 is «list + detail�
     const tab = (id: string) => page.locator(`[data-tab=${id}]`).click();
     for (const id of ['eggs', 'inventory', 'sales', 'market', 'shop']) {
       await tab(id);
+      // A loaded machine draws the tab a frame later: measure once its first card is there.
+      await expect(page.locator(`[data-sheet=${id}] .sheet-body .mu-card`).first()).toBeVisible();
       const rows = await heights(page, `[data-sheet=${id}] .sheet-body .mu-card`);
       expect(rows.length, id).toBeGreaterThan(0);
       // Круг правок FB п. 6: a row of whole words may take a second line (no shrinking) — most rows stay 44–52 (l1, l3).

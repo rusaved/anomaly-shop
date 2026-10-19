@@ -258,6 +258,8 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
         await expect(win).toBeVisible();
         if (big) await scale130(page);
         await page.waitForTimeout(300);
+        // The window's opening scale ends first (a loaded machine measured it mid-way).
+        await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {}))));
         const sound = page.locator('[data-overlay=settings] [data-action=sound]');
         const vib = page.locator('[data-overlay=settings] [data-action=vibrate]');
         await expect(sound).toHaveAttribute('role', 'switch');
@@ -421,13 +423,14 @@ test.describe('Круг правок FB п. 7 portrait 375×650', () => {
     await page.evaluate(() => (window as unknown as { __TEST__: { runSim(s: number): number } }).__TEST__.runSim(60));
     await page.locator('[data-tab=sales]').click();
     const groups = await page.evaluate(() => {
-      const heads = [...document.querySelectorAll('[data-sheet=sales] .mu-head')].map((h) => h.textContent);
+      const places = document.querySelector('[data-sheet=sales] .sales-places')?.textContent ?? '';
+      const chats = document.querySelector('[data-sheet=sales] .sales-chats')?.textContent ?? '';
       const talking = document.querySelectorAll('[data-sheet=sales] .sales-chats + .mu-grid .card-sale').length;
-      return { heads, talking };
+      return { places, chats, talking };
     });
     const st = (await state(page)) as unknown as { shelf: unknown[] };
-    expect(groups.heads[0]).toContain(`${st.shelf.length} из`);
-    if (groups.talking) expect(groups.heads[1]).toContain('В переписке');
+    expect(groups.places).toContain(`${st.shelf.length} из`);
+    if (groups.talking) expect(groups.chats).toContain('В переписке');
     expect(errors).toEqual([]);
   });
 });

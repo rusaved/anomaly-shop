@@ -47,19 +47,30 @@ const meets = (a: DOMRect, top: number, bottom: number, r: DOMRect): boolean =>
 
 /** Moves the toasts' column off whatever of AVOID its toast would lie on (07 rule 17: under the bar, but not over a title): into the free
  *  middle of the bar when it fits there (sideways), else down past it. */
-function place(el: HTMLElement): void {
+function place(el: HTMLElement, extra: () => DOMRect[]): void {
   const root = el.parentElement;
   if (!root) return;
   root.style.removeProperty('transform');
   const box = el.getBoundingClientRect();
-  const avoid = (): DOMRect[] => [...document.querySelectorAll(AVOID)].map((e) => e.getBoundingClientRect());
+  const avoid = (): DOMRect[] => [...[...document.querySelectorAll(AVOID)].map((e) => e.getBoundingClientRect()), ...extra()];
   if (!avoid().some((r) => meets(box, box.top, box.bottom, r))) return;
   const hud = document.querySelector('.hud')?.getBoundingClientRect();
   if (hud && box.height <= hud.height) {
-    const top = hud.top + (hud.height - box.height) / 2;
-    const busy = [...document.querySelectorAll('.hud button')].some((e) => meets(box, top, top + box.height, e.getBoundingClientRect()));
-    if (!busy) {
-      root.style.transform = `translateY(${Math.round(top - box.top)}px)`;
+    // The widest free stretch of the bar between its buttons: the toast stands in its middle when it fits there.
+    const edges = [...document.querySelectorAll('.hud button')]
+      .map((e) => e.getBoundingClientRect())
+      .filter((r) => r.width > 0)
+      .sort((a, b) => a.left - b.left);
+    let from = hud.left;
+    let best = { left: 0, width: 0 };
+    for (const r of [...edges, new DOMRect(hud.right, hud.top, 0, hud.height)]) {
+      if (r.left - from > best.width) best = { left: from, width: r.left - from };
+      from = Math.max(from, r.right);
+    }
+    if (best.width >= box.width + 16) {
+      const top = hud.top + (hud.height - box.height) / 2;
+      const left = best.left + (best.width - box.width) / 2;
+      root.style.transform = `translate(${Math.round(left - box.left)}px, ${Math.round(top - box.top)}px)`;
       return;
     }
   }
@@ -74,7 +85,8 @@ function place(el: HTMLElement): void {
   if (shift > 0) root.style.transform = `translateY(${Math.round(shift)}px)`;
 }
 
-export function createToasts(parent: HTMLElement): Toasts {
+/** extra — rects of the scene a toast never covers either (the shelf frame drawn in the canvas: круг правок FB-2, арт-ревизия). */
+export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () => []): Toasts {
   const root = document.createElement('div');
   root.className = 'toasts';
   root.setAttribute('aria-live', 'polite');
@@ -101,9 +113,9 @@ export function createToasts(parent: HTMLElement): Toasts {
     el.dataset.text = item.text;
     root.appendChild(el);
     current = el;
-    place(el);
+    place(el, extra);
     // A screen that opens under a toast already shown (a lot, a hint) moves it too.
-    const follow = window.setInterval(() => (current === el ? place(el) : window.clearInterval(follow)), 250);
+    const follow = window.setInterval(() => (current === el ? place(el, extra) : window.clearInterval(follow)), 250);
     // The round of fixes (the usability review): a toast never moves the screen under a finger — it lies over the top
     // of the screen for a moment and lets every tap through (pointer-events: none), 07 rule 17.
     window.setTimeout(() => {

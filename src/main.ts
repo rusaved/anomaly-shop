@@ -651,7 +651,15 @@ async function boot(): Promise<void> {
   };
   syncDay();
   window.setInterval(syncDay, 60_000);
-  const toasts = createToasts(uiRoot);
+  // Круг правок FB-2 (арт-ревизия): on «Лавка» a toast never lies on the shelf frame drawn in the scene (its places, 12 px around).
+  const toasts = createToasts(uiRoot, () => {
+    const slots = nav.active() === 'home' ? (shop.anchors()?.slots ?? []) : [];
+    if (!slots.length) return [];
+    const c = canvas.getBoundingClientRect();
+    const x = Math.min(...slots.map((r) => r.x)) - 12 + c.left;
+    const y = Math.min(...slots.map((r) => r.y)) - 12 + c.top;
+    return [new DOMRect(x, y, Math.max(...slots.map((r) => r.x + r.w)) + 12 + c.left - x, Math.max(...slots.map((r) => r.y + r.h)) + 12 + c.top - y)];
+  });
   const merchantWindow = createMerchantWindow(uiRoot, play, {
     t: i18n.t,
     lang: i18n.lang,

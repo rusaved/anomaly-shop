@@ -32,7 +32,7 @@ const save = () => ({
 });
 
 const errors = [];
-async function session(w, h, tag, fresh = false) {
+async function session(w, h, tag, fresh = false, patch = null) {
   // The 130 % set is for overflow only: 1× pictures keep the evidence small.
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true, deviceScaleFactor: font130 ? 1 : 2 });
   const page = await ctx.newPage();
@@ -44,7 +44,7 @@ async function session(w, h, tag, fresh = false) {
       localStorage.setItem('__yasdk_mock_player__', JSON.stringify({ save: text }));
       sessionStorage.setItem('mu-seeded', '1');
     }
-  }, { text: fresh ? '' : JSON.stringify(save()) });
+  }, { text: fresh ? '' : JSON.stringify({ ...save(), ...(patch ?? {}) }) });
   await page.goto(`http://127.0.0.1:${port}/`);
   await page.waitForFunction(() => window.__TEST__?.state().controllable);
   await page.waitForTimeout(600);
@@ -142,6 +142,9 @@ for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']]) {
     await tab(page, 'home');
     await page.locator('[data-action=gifts]').click();
     await shot(page, `gifts.${tag}`);
+    // Круг правок FB п. 8: «Цели дня» — the bottom of «Подарки».
+    await page.locator('[data-overlay=gifts] .day-goal').first().scrollIntoViewIfNeeded();
+    await shot(page, `goals.${tag}`);
     await page.locator('[data-overlay=gifts] [data-action=gift-review]').click();
     await shot(page, `rate.${tag}`);
     await tab(page, 'home');
@@ -187,11 +190,35 @@ for (const [w, h, tag] of [[375, 650, 'p'], [812, 330, 'l']]) {
       if (!(await page.evaluate((id) => window.__TEST__.hatch(id), uid))) throw new Error(`no pet ${uid}`);
       await page.waitForTimeout(400);
       await page.locator('[data-action=hatch-skip]').click();
+      // Круг правок FB п. 8: the salute of the rarity while it plays (no wait for the animations).
+      await page.waitForTimeout(260);
+      const salute = name.replace('hatch-', 'salute-');
+      if (!only.length || only.includes(salute)) await page.screenshot({ path: `${out}/${salute}.${tag}.png` });
       await page.waitForTimeout(900);
       await shot(page, `${name}.${tag}`);
       await page.locator('[data-action=hatch-keep]').click();
     });
   await ctx.close();
+  // Круг правок FB п. 8: «Пока тебя не было» after 5 hours away; «На витрину» with a full shelf (the window closes, a toast says it).
+  await tryStep(`${tag} away`, async () => {
+    const ago = Date.now() - 5 * 3600 * 1000;
+    const away = await session(w, h, `${tag}-away`, false, { savedAt: ago, lastSeenAt: ago, incomeMinutes: [300, 300, 300], stats: { deals: 8, coinsEarned: 300, hatched: 10, taps: 100, levelUps: 3, haggles: 1, income: 300 } });
+    await away.page.locator('[data-overlay=away]:not([hidden])').waitFor();
+    await shot(away.page, `away.${tag}`);
+    await away.ctx.close();
+  });
+  await tryStep(`${tag} full shelf`, async () => {
+    const full = await session(w, h, `${tag}-full`, false, { showcase: ['a', 'b', 'c'] });
+    if (!(await full.page.evaluate(() => window.__TEST__.hatch('d', 'egg_basic')))) throw new Error('no pet d');
+    await full.page.waitForTimeout(450);
+    await full.page.locator('[data-action=hatch-skip]').click();
+    await full.page.waitForTimeout(900);
+    await shot(full.page, `full-shelf-result.${tag}`);
+    await full.page.locator('[data-action=hatch-shop]').click();
+    await full.page.waitForTimeout(300);
+    await shot(full.page, `full-shelf.${tag}`, true);
+    await full.ctx.close();
+  });
   // The hint of the first minute (07 rule 16): a new player, the hint next to its target in a green frame.
   await tryStep(`${tag} hint`, async () => {
     const first = await session(w, h, `${tag}-hint`, true);

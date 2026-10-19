@@ -49,13 +49,28 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
     const linesEl = body.querySelector<HTMLElement>('.chat-lines');
     if (!linesEl) return;
     linesEl.scrollTop = linesEl.scrollHeight;
+    // Круг правок FB-2 п. 1: sideways the pet and the answers share the right column — when they meet (130 % and a mood chip),
+    // the page goes tight (CSS drops the chip, it is on the market card too).
+    const fit = (): void => {
+      const page = body.closest<HTMLElement>('[data-detail]');
+      const petEl = body.querySelector('.lot-pet');
+      const answers = body.querySelector('.lot-buttons > :first-child')?.getBoundingClientRect();
+      if (!page || !petEl || !answers) return;
+      page.classList.remove('lot-tight');
+      const pet = petEl.getBoundingClientRect();
+      page.classList.toggle('lot-tight', pet.bottom > answers.top && pet.right > answers.left && answers.right > pet.left);
+    };
+    fit();
     // Круг правок FB п. 6: a font that grows (130 %) keeps the newest line, with its price, in sight.
     if (typeof ResizeObserver !== 'undefined') {
       const keep = new ResizeObserver(() => {
         if (!linesEl.isConnected) keep.disconnect();
-        else linesEl.scrollTop = linesEl.scrollHeight;
+        else {
+          linesEl.scrollTop = linesEl.scrollHeight;
+          fit();
+        }
       });
-      for (const p of linesEl.children) keep.observe(p);
+      for (const p of [...linesEl.children, body.querySelector('.lot-pet')]) if (p) keep.observe(p);
     }
   }
   function drawPage(): void {

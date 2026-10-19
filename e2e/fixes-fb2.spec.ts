@@ -65,3 +65,62 @@ for (const big of [false, true])
       expect(errors).toEqual([]);
     });
   });
+
+/** WCAG contrast of two CSS colors. */
+const ratio = (a: string, b: string): number => {
+  const lum = (c: string) =>
+    (c.match(/[\d.]+/g) ?? [])
+      .slice(0, 3)
+      .map((v) => Number(v) / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+      .reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i]!, 0);
+  const [x, y] = [lum(a), lum(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+};
+
+/** п. 2: the salute of VIP and exclusive — no dark box under the buttons, the screen flash under the window, the card's own flash under
+ *  its words and brighter the higher the rarity, the rarity word outlined ≥ 4.5:1. */
+test.describe('Круг правок FB-2 п. 2 375×650', () => {
+  test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
+  test('the salute brightens the card and keeps its words readable', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 120, creatures: pets, showcase: [] });
+    await open(page);
+    const peaks: number[] = [];
+    for (const uid of ['p4', 'p5']) {
+      await page.evaluate((id) => (window as unknown as { __TEST__: { hatch(id: string): boolean } }).__TEST__.hatch(id), uid);
+      await page.waitForTimeout(400);
+      await page.locator('[data-action=hatch-skip]').click();
+      await page.waitForTimeout(60);
+      const s = await page.evaluate(() => {
+        const card = document.querySelector<HTMLElement>('.overlay[data-overlay=hatch] > .card')!;
+        const word = card.querySelector<HTMLElement>('.rar-word')!;
+        const before = getComputedStyle(card, '::before');
+        const ws = getComputedStyle(word);
+        const flash = document.querySelector<HTMLElement>('.burst-flash');
+        return {
+          rarity: card.dataset.rarity,
+          box: getComputedStyle(card.querySelector('.hatch-buttons')!).backgroundColor,
+          blend: before.mixBlendMode,
+          peak: Number(getComputedStyle(card).getPropertyValue('--flash-peak')),
+          screenUnder: flash ? Number(getComputedStyle(flash).zIndex) < Number(getComputedStyle(card.parentElement!).zIndex) : true,
+          stroke: parseFloat(ws.getPropertyValue('-webkit-text-stroke-width')),
+          word: ws.color,
+          strokeColor: ws.getPropertyValue('-webkit-text-stroke-color'),
+        };
+      });
+      expect(s.box).toBe('rgba(0, 0, 0, 0)');
+      expect(s.blend).toBe('screen');
+      expect(s.screenUnder).toBe(true);
+      expect(s.stroke).toBeGreaterThanOrEqual(3);
+      expect(ratio(s.word, s.strokeColor)).toBeGreaterThanOrEqual(4.5);
+      peaks.push(s.peak);
+      await page.waitForTimeout(700);
+      await page.locator('[data-action=hatch-keep]').click();
+      await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+    }
+    // «Чем круче, тем ярче»: the exclusive flash is brighter than the VIP one.
+    expect(peaks[1]!).toBeGreaterThan(peaks[0]!);
+    expect(errors).toEqual([]);
+  });
+});

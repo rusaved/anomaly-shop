@@ -3501,19 +3501,28 @@ button.mu-card {
 /* Круг правок FB-2 п. 1, 6: sideways the seller («‹») and the lines left, the pet in one row and the answers right —
    «Заберу сейчас» whole and away from the bar at 130 % too, the seller's first line and «Отдам за N» whole over the tab bar. */
 .landscape #ui [data-detail='lot'] .detail-page {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
   grid-template-rows: auto minmax(0, 1fr);
-  grid-template-areas: 'back pet' 'lines buttons';
+  grid-template-areas: 'back side' 'lines side';
 }
+/* A tight column (130 % and a mood chip): the chip goes — it is on the market card too — and the answers never cover the pet. */
+.landscape #ui [data-detail='lot'].lot-tight .lot-pet .mood-chip {
+  display: none;
+}
+/* The pet at the top and the answers at the bottom of one right column: a long name never pushes the answers off. */
 .landscape #ui [data-detail='lot'] .lot-buttons {
-  grid-row: auto;
+  grid-area: side;
   justify-content: center;
   align-content: end;
-  align-self: stretch;
+  align-self: end;
   min-height: 0;
   padding-bottom: 4px;
 }
 .landscape #ui [data-detail='lot'] .lot-pet {
-  align-self: center;
+  grid-area: side;
+  align-self: start;
+  padding-top: 2px;
+  row-gap: 0;
 }
 .landscape #ui [data-detail='lot'] .detail-page > .mu-back {
   margin-top: 4px;
@@ -3689,4 +3698,73 @@ button.mu-card {
 /* 07 rule 2: «Заберу сейчас» pays — 24 px from the questions under it. */
 #ui .lot-buttons > .mu-btn.main {
   margin-bottom: 16px;
+}
+/* Круг правок FB-2 п. 2: the salute of a rare one brightens the card — a glow of its color under the words (screen, not a veil over them),
+   no dark box under the buttons, the words outlined on the flash; the higher the rarity, the brighter and longer («чем круче, тем ярче»). */
+.overlay > .card.card-hatch {
+  isolation: isolate;
+}
+.card.hatch-rare .hatch-buttons {
+  background: transparent;
+}
+.card.hatch-rare::before {
+  background: radial-gradient(ellipse 75% 60% at 50% 38%, color-mix(in srgb, var(--rc) 70%, var(--c-eyeWhite)) 0%, var(--rc) 45%, color-mix(in srgb, var(--rc) 35%, transparent) 100%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: hatch-flash-up var(--flash-sec, 0.6s) ease-out forwards;
+}
+.card.hatch-rare[data-rarity='valuable'] {
+  --flash-peak: 0.45;
+  --flash-sec: 0.5s;
+}
+.card.hatch-rare[data-rarity='premium'] {
+  --flash-peak: 0.6;
+  --flash-sec: 0.6s;
+}
+.card.hatch-rare[data-rarity='vip'] {
+  --flash-peak: 0.8;
+  --flash-sec: 0.8s;
+}
+.card.hatch-rare[data-rarity='exclusive'] {
+  --flash-peak: 0.95;
+  --flash-sec: 1s;
+}
+@keyframes hatch-flash-up {
+  0% {
+    opacity: var(--flash-peak, 0.6);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.card.hatch-rare > h2,
+.card.hatch-rare .hatch-result > :is(.rar-word, h3, .hatch-range, .hatch-sell) {
+  text-shadow:
+    0 0 2px var(--c-outline),
+    1px 1px 0 var(--c-outline),
+    -1px -1px 0 var(--c-outline),
+    1px -1px 0 var(--c-outline),
+    -1px 1px 0 var(--c-outline),
+    0 0 6px var(--c-outline),
+    0 0 10px color-mix(in srgb, var(--c-outline) 70%, transparent);
+}
+/* The rarity word ≥ 4.5:1 on the flash at its peak too: a dark stroke under its letters. */
+.card.hatch-rare .rar-word {
+  -webkit-text-stroke: 5px var(--c-outline);
+  paint-order: stroke fill;
+}
+.card.hatch-rare .hatch-result > .hatch-sell {
+  position: relative;
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card.hatch-rare::before {
+    animation: none;
+    opacity: 0;
+  }
+}
+/* The screen flash of a salute lies under the windows (z 30): it lights the room around the card, never veils its words —
+   the card has its own flash under them. */
+#ui .burst-flash {
+  z-index: 29;
 }

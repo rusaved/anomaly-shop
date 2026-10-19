@@ -116,6 +116,7 @@
   "away.levelUps": "Level ups: {n}",
   "away.hint": "The seller helper earns while you are away",
   "away.ok": "Great",
+  "away.ad": "▶ Ad: ×2, +{n} more",
   "toast.district": "New district: {name} · {who}",
   "egg.short.egg_odd": "Odd",
   "egg.short.egg_glow": "Glowing",

@@ -116,6 +116,7 @@
   "away.levelUps": "Новых уровней: {n}",
   "away.hint": "Помощник-продавец заработает и без тебя",
   "away.ok": "Отлично",
+  "away.ad": "▶ Реклама: ×2, ещё +{n}",
   "toast.district": "Новый район: {name} · {who}",
   "egg.short.egg_odd": "Странное",
   "egg.short.egg_glow": "Светящееся",

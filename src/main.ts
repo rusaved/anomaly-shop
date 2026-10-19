@@ -623,7 +623,24 @@ async function boot(): Promise<void> {
   showTab('home');
   renderUi();
   store.onCommit(renderUi);
-  const awayWindow = createAwayWindow(uiRoot, { t: i18n.t, lang: i18n.lang });
+  // FB-03: «▶ Ad: ×2» in the return window where the platform has ads; the game waits while the ad runs (docs/03, section 2).
+  const adDouble = platform.caps.ads
+    ? async (): Promise<number> => {
+        runtime.pause.pause('ad');
+        try {
+          const r = await platform.showRewarded('offline_x2');
+          const got = r.rewarded ? play.awayDouble() : 0;
+          if (got > 0) {
+            hud.update(store.state.coins);
+            track('offline_claim', { x2: 1 });
+          }
+          return got;
+        } finally {
+          runtime.pause.resume('ad');
+        }
+      }
+    : undefined;
+  const awayWindow = createAwayWindow(uiRoot, { t: i18n.t, lang: i18n.lang, ...(adDouble ? { adDouble } : {}) });
   catchUp = (awaySec) => {
     if (!(awaySec >= AWAY_MIN_SEC)) return;
     const report = play.offline(awaySec);

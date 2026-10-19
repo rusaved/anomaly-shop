@@ -10,6 +10,7 @@
 //   Q-027 B (M4-00): the bots play at a live tempo — the hatch show and its result, tab switches, chats and cards cost the
 //     seconds of content/pace.json and feel.json hatchShowSec; the limits of F1–F3, F11, F16 are for that tempo.
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
+//     · F19 (FB-03, Q-039 B) an hour away pays 30–50 % of an hour of play (up to 2 hours), the seller level grows ≤ 1 away
 //     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
 //   Week (M4-08, casual): F17 something new opens every day of 7, the guest zone pays its upkeep (M4-05) · F18 the second city
 //     1–3 days after the first, its egg bought.
@@ -352,6 +353,11 @@ export interface DaysResult {
   awayMinutes: number;
   /** Day (1-based, fractional within the active part) the rebirth threshold of coins earned was crossed. */
   rebirthDay: number;
+  /** FB-03: coins an hour of play (the last 10 minutes of day 1) and an hour away (the night of day 1, its counted hours). */
+  onlineHour: number;
+  offlineHour: number;
+  /** FB-03: seller levels gained in the night of day 1. */
+  awayLevels: number;
 }
 
 /** Three days of a player: 30 active minutes, then 8 hours away (the shop works on), twice, then a third active half hour. */
@@ -364,6 +370,9 @@ export function playDays(bot: Bot, seed: number, content: GameContent = loadGame
   let square = Infinity;
   let rebirthDay = Infinity;
   let awayMinutes = 0;
+  let onlineHour = 0;
+  let offlineHour = 0;
+  let awayLevels = 0;
   game.events.on((e: GameEvent) => {
     if (e.type === 'districtOpened' && e.district === 'street') street = Math.min(street, active);
     if (e.type === 'districtOpened' && e.district === 'square') square = Math.min(square, active);
@@ -382,11 +391,17 @@ export function playDays(bot: Bot, seed: number, content: GameContent = loadGame
     if (day === 3) break;
     const perMin = (game.state.stats.coinsEarned - tenMinBefore) / 10;
     const before = game.state.stats.coinsEarned;
+    const level = game.reputation().level;
     const away = game.offline(AWAY_SEC);
-    if (day === 1) awayMinutes = perMin > 0 ? away.coins / perMin : 0;
+    if (day === 1) {
+      awayMinutes = perMin > 0 ? away.coins / perMin : 0;
+      onlineHour = perMin * 60;
+      offlineHour = away.coins / (Math.min(AWAY_SEC, content.upgrades.offlineMaxHours * 3600) / 3600);
+      awayLevels = game.reputation().level - level;
+    }
     if (rebirthDay === Infinity && game.state.stats.coinsEarned >= threshold && before < threshold) rebirthDay = day + 0.0;
   }
-  return { street, square, awayMinutes, rebirthDay };
+  return { street, square, awayMinutes, rebirthDay, onlineHour, offlineHour, awayLevels };
 }
 
 export interface WeekResult {
@@ -536,6 +551,14 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     if (!f6) failures.push(`${bot.name} F6 8 h away = ${fmt(away)} min of play, want ${LIMITS.F6minutes.join('–')}`);
     if (!f7) failures.push(`${bot.name} F7 rebirth threshold on day ${fmt(rebirth, 1)}, want day ${LIMITS.F7days.join('–')}`);
     if (!f8) failures.push(`${bot.name} F8 districts at ${fmt(street)} s / ${fmt(square)} s (p90), want ≤ ${LIMITS.F8street} / ${LIMITS.F8square}`);
+    // FB-03 (Q-039 B): an hour away pays 30–50 % of an hour of play (up to offlineMaxHours), the seller level grows ≤ offlineMaxLevels.
+    const onHour = quantile(runs.map((r) => r.onlineHour), 0.5);
+    const offHour = quantile(runs.map((r) => r.offlineHour), 0.5);
+    const share = onHour > 0 ? offHour / onHour : 0;
+    const lvl = Math.max(...runs.map((r) => r.awayLevels));
+    const f19 = share >= content.upgrades.offlineShare.min - 0.05 && share <= content.upgrades.offlineShare.max + 0.05 && lvl <= content.upgrades.offlineMaxLevels;
+    if (!f19) failures.push(`${bot.name} F19 an hour away = ${Math.round(share * 100)} % of an hour of play, seller levels +${lvl} away`);
+    lines.push(`${bot.name.padEnd(7)} F19 income an hour of play / away: ${fmt(onHour)} / ${fmt(offHour)} (${Math.round(share * 100)} %, want ${content.upgrades.offlineShare.min * 100}–${content.upgrades.offlineShare.max * 100} %), seller levels away +${lvl} (≤ ${content.upgrades.offlineMaxLevels}) ${f19 ? 'ok' : 'FAIL'}`);
     lines.push(
       `${bot.name.padEnd(7)} F6 8 h away = ${fmt(away)} min of play (${LIMITS.F6minutes.join('–')}) ${typical ? (f6 ? 'ok' : 'FAIL') : 'info'}` +
         ` · F7 rebirth threshold on day ${fmt(rebirth, 1)} (${LIMITS.F7days.join('–')}) ${f7 ? 'ok' : 'FAIL'}` +
@@ -592,7 +615,7 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     lines.push(`rewards FB-02 best reward in 5 min of income by ladder step (exclusive when bought p50 / hatch p90): ${cells.join(' · ')}; free rewards ≤ ${content.eggs.income.rewardCapMin} min (capped)`);
   }
   lines.push('F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)');
-  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F18: all green`);
+  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F19: all green`);
   return { ok: failures.length === 0, lines, failures };
 }
 

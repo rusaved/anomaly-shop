@@ -201,6 +201,9 @@ export const Upgrade = v.object({
 export const UpgradesFile = v.object({
   offlineMaxHours: v.pipe(v.number(), v.minValue(0)),
   offlineRate: Share,
+  /** FB-03 (Q-039 B): coins away are this share of the income of live play for the same time (min…max), seller levels up at most maxLevels. */
+  offlineShare: v.object({ min: Share, max: Share }),
+  offlineMaxLevels: v.pipe(v.number(), v.minValue(0)),
   /** Q-027 B (M4-00): while the player is away the shop works on without bought helpers — a slower seller and courier (the first night pays). */
   away: v.object({
     autoSell: v.object({ type: v.literal('autoSell'), priceShare: v.pipe(v.number(), v.minValue(0)), delaySec: v.pipe(v.number(), v.minValue(0)), offline: v.boolean() }),

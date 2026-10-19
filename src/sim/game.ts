@@ -426,6 +426,8 @@ export interface Game {
   showcaseSlots(): number;
   /** The shop works on while the player is away (helpers, incubators): awaySec real seconds, clamped to offlineMaxHours, at offlineRate. */
   offline(awaySec: number): OfflineReport;
+  /** FB-03: the coins of the last time away once more (the ad «×2» in the return window); 0 when already taken. */
+  awayDouble(): number;
 }
 
 /** Tutorial marks in save.flags (docs/01, section 4). */
@@ -444,6 +446,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const { eggs, species, customers } = content;
   /** FB-02: coins earned by live play since the last tick (sales and the pickup point; not gifts, not away). */
   let liveEarned = 0;
+  /** FB-03: the coins of the last time away, for «×2» once (not saved: the return window is shown once). */
+  let lastAway = 0;
   /** FB-02: the player's income, coins a minute (never below the floor of the first minute). */
   const incomeNow = (): number => Math.max(eggs.income.floorPerMin, s().stats.income ?? 0);
   /** FB-02: the most a free reward is worth: rewardCapMin minutes of income. */
@@ -569,7 +573,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return spec ? coins(creatureValue(spec, cr.level) * valueMult(cr)) : 0;
   };
   /** Reputation points (UB-08): at least one per deal, so saves and set-ups from before it count their deals. */
-  const repXp = (): number => Math.max(s().stats.xp ?? 0, s().stats.deals * content.reputation.perDeal);
+  const repXp = (): number => Math.max(s().stats.xp ?? 0, (s().stats.deals - (s().stats.awayDeals ?? 0)) * content.reputation.perDeal);
   /** The seller level (UB-08): reputation points against reputation.json. */
   const sellerLevel = (): number => repLevel(repXp(), content.reputation.levels).level;
   const baseFacts = (): UnlockFacts => {
@@ -983,7 +987,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     st.stats.deals += 1;
     st.stats.dealsAll = Math.max(st.stats.dealsAll ?? 0, st.stats.deals - 1) + 1;
     st.stats.coinsEarned += price;
-    st.stats.xp = Math.max(st.stats.xp ?? 0, (st.stats.deals - 1) * content.reputation.perDeal) + content.reputation.perDeal + (content.reputation.rarityBonus[rarity] ?? 0);
+    st.stats.xp = Math.max(st.stats.xp ?? 0, (st.stats.deals - 1 - (st.stats.awayDeals ?? 0)) * content.reputation.perDeal) + content.reputation.perDeal + (content.reputation.rarityBonus[rarity] ?? 0);
     const levelAfter = sellerLevel();
     st.creatures = st.creatures.filter((x) => x.uid !== cr.uid);
     st.showcase = st.showcase.filter((u) => u !== cr.uid);
@@ -2174,17 +2178,44 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     },
     freeSlots,
     showcaseSlots,
+    awayDouble() {
+      const c = lastAway;
+      if (c <= 0) return 0;
+      lastAway = 0;
+      s().coins += c;
+      s().stats.coinsEarned += c;
+      commit({ flush: true });
+      emit({ type: 'change' });
+      return c;
+    },
     offline(awaySec) {
       const st = s();
       const away = Math.max(0, Math.min(content.upgrades.offlineMaxHours * 3600, Number.isFinite(awaySec) ? awaySec : 0));
       const worked = away * content.upgrades.offlineRate;
-      const before = { coins: st.coins, deals: st.stats.deals, hatched: st.stats.hatched, levelUps: st.stats.levelUps ?? 0 };
+      const before = { coins: st.coins, deals: st.stats.deals, hatched: st.stats.hatched, levelUps: st.stats.levelUps ?? 0, level: sellerLevel() };
       quiet = true;
       try {
         for (let t = 0; t < worked - 1e-9; t += OFFLINE_STEP_SEC) game.tick(Math.min(OFFLINE_STEP_SEC, worked - t));
       } finally {
         quiet = false;
       }
+      // FB-03 (Q-039 B): the coins away are offlineShare of the income of live play for the time away (up to offlineMaxHours) —
+      // the helpers' sales count, but never above the max share and never below the min one.
+      const live = (incomeNow() * away) / 60;
+      const got = st.coins - before.coins;
+      const want = Math.min(Math.max(got, live * content.upgrades.offlineShare.min), live * content.upgrades.offlineShare.max);
+      if (worked > 0 && want !== got) {
+        const add = Math.max(-st.coins, want - got);
+        st.coins += add;
+        st.stats.coinsEarned = Math.max(0, st.stats.coinsEarned + add);
+      }
+      // The seller level grows at most offlineMaxLevels away: the points above it are not counted, the deals away not either.
+      const top = content.reputation.levels[Math.min(content.reputation.levels.length - 1, before.level + content.upgrades.offlineMaxLevels)];
+      if (top !== undefined && before.level + content.upgrades.offlineMaxLevels < content.reputation.levels.length && sellerLevel() > before.level + content.upgrades.offlineMaxLevels) {
+        st.stats.xp = Math.min(st.stats.xp ?? 0, top - 1e-6);
+        st.stats.awayDeals = (st.stats.awayDeals ?? 0) + (st.stats.deals - before.deals);
+      }
+      lastAway = Math.max(0, st.coins - before.coins);
       const report: OfflineReport = {
         awaySec: away,
         workedSec: worked,

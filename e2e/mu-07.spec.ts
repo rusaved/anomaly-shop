@@ -536,11 +536,12 @@ test.describe('the round of fixes, item 8: a toast moves nothing, a hint lies on
     const errors = collectErrors(page);
     await seedSave(page, SEED);
     await open(page);
-    // The game stands still: the market never refreshes under the check (it measures the toast, not the market's timer).
-    await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
     await page.locator('[data-tab=market]').click();
     await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 });
     const card = page.locator('[data-sheet=market] .mu-card').first();
+    // The game stands still once the lots are in: the market never refreshes under the check (it measures the toast, not the market's timer).
+    await card.waitFor();
+    await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
     const before = (await card.boundingBox())!;
     await page.evaluate(() => (window as unknown as { __TEST__: { toast(t: string): void } }).__TEST__.toast('Подарок: 50'));
     await expect(page.locator('.toast').first()).toBeVisible();
@@ -580,11 +581,12 @@ test.describe('the round of fixes, item 8 (the recheck): the first hint of a tab
     delete flags.tab_market;
     await seedSave(page, { ...SEED, flags });
     await open(page);
-    // The game stands still: the market never refreshes its lots under the check (it measures the hint, not the market's timer).
-    await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
     await page.locator('[data-tab=market]').click();
     await expect(page.locator('.hint:not([hidden])')).toBeVisible({ timeout: 8000 });
     const lot = page.locator('[data-sheet=market] .mu-card').first();
+    // The game stands still once the lots are in: the market never refreshes its lots under the check (it measures the hint, not the timer).
+    await lot.waitFor();
+    await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
     const before = (await lot.boundingBox())!.y;
     // The first tap on the screen (its head) hides the hint: the lot under a finger does not move.
     await page.locator('[data-sheet=market] .mu-head h3').tap();

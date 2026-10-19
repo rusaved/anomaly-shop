@@ -288,14 +288,14 @@ button.mu-card {
   font-size: 14px;
   font-weight: 700;
   line-height: 1.25;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .mu-meta {
   font-size: 12px;
   font-weight: 500;
   line-height: 1.3;
   color: var(--c-uiMuted);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .mu-meta b {
   color: var(--c-uiText);
@@ -403,7 +403,7 @@ button.mu-card {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .mu-seg > button.active {
   background: var(--c-uiAccent);
@@ -744,7 +744,7 @@ button.mu-card {
   font-size: var(--mu-fs-title);
   font-weight: 800;
   line-height: 1.2;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .mu-round {
   display: grid;
@@ -887,14 +887,14 @@ button.mu-card {
   font-size: 15px;
   font-weight: 700;
   line-height: 1.2;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .chat-last {
   font-size: 13px;
   font-weight: 400;
   line-height: 1.3;
   color: var(--c-uiMuted);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .chat-row.unread .chat-last {
   color: var(--c-uiText);
@@ -1912,7 +1912,7 @@ button.mu-card {
 .nav-label {
   max-width: 100%;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   text-align: center;
   line-height: 1.05;
 }
@@ -2634,18 +2634,24 @@ button.mu-card {
   .landscape .overlay[data-overlay='reputation'] > .card > * {
     grid-column: 1;
   }
-  .landscape .overlay[data-overlay='reputation'] > .card > .mu-head {
+  /* Круг правок FB п. 6: «Переезд» right at the top (in sight at 130 %), what the next levels open under it. */
+  .landscape .overlay[data-overlay='reputation'] > .card > .rep-city {
     grid-column: 2;
     grid-row: 1;
+    margin-right: 52px;
+  }
+  .landscape .overlay[data-overlay='reputation'] > .card > .mu-head {
+    grid-column: 2;
+    grid-row: 2;
     margin: 4px 0 0;
   }
   .landscape .overlay[data-overlay='reputation'] > .card > .rep-list {
     grid-column: 2;
-    grid-row: 2 / span 5;
+    grid-row: 3 / span 5;
     margin: 0;
   }
   .landscape .overlay[data-overlay='reputation'] > .card > .mu-head h3 {
-    margin-right: 44px;
+    margin-right: 0;
   }
   /* «Вылупился!» sideways: the pet left; its rarity, the whole name and the price line right; the three ways out in one row under them. */
   .landscape .overlay > .card.card-hatch {
@@ -2879,17 +2885,6 @@ button.mu-card {
 .lot-buttons {
   grid-template-columns: repeat(2, auto);
 }
-/* «Продажи» at 12 px needs 55 px of a 53 px tab: a label may take 4 px of the air beside it (the neighbours' labels are short); the edges stay inside. */
-.portrait .nav-label {
-  margin: 0 -4px;
-  max-width: calc(100% + 8px);
-}
-.portrait .nav-tab:first-child .nav-label {
-  margin-left: 0;
-}
-.portrait .nav-tab:last-child .nav-label {
-  margin-right: 0;
-}
 /* «Цена» sideways at 330: «Выставить на продажу» under the pet (left), the price and the slider right — the button whole above the tab bar. */
 @media (max-height: 520px) {
   .landscape [data-detail='sale'] .detail-page:has(.price-slider) {
@@ -3110,7 +3105,7 @@ button.mu-card {
   }
 }
 
-/* ---- FB-14 (07 rule 6, the reviewers of MU): a tab label or a segment never breaks inside a word — it gets smaller (≥ 12 px, src/ui/fit.ts) ---- */
+/* ---- FB-14 (07 rule 6, the reviewers of MU): a tab label or a segment never breaks inside a word; круг правок FB п. 6: no shrinking — whole words go to the next line ---- */
 #ui .nav-label,
 #ui .mu-seg > button,
 #ui .day > b,
@@ -3179,15 +3174,14 @@ button.mu-card {
     max-height: 40px;
   }
 }
-/* s5: «Аномалия дня» in three lines — the name on one (smaller when it must, ≥ 12 px), «цена ×N первые M минут» on two, a narrower button. */
+/* s5: «Аномалия дня» in three lines — the name on one (a narrower button leaves it the room; at 130 % it wraps whole), «цена ×N первые M минут» on two. */
 .overlay .card .day-anomaly {
   column-gap: 10px;
   padding: 10px;
 }
-.overlay .card .day-anomaly .day-text .mu-name {
-  white-space: nowrap;
-}
 .overlay .card .day-anomaly > .mu-btn {
+  width: auto;
+  max-width: 104px;
   padding-left: 12px;
   padding-right: 12px;
 }
@@ -3202,7 +3196,7 @@ button.mu-card {
 .nw {
   white-space: nowrap;
 }
-/* The gift days: a label never runs out of its cell (fit.ts makes it smaller, ≥ 12 px). */
+/* The gift days: a label never runs out of its cell (sideways 4 + 3 tiles leave each word its room). */
 #ui .day > b,
 #ui .day > span {
   display: block;
@@ -3213,10 +3207,7 @@ button.mu-card {
   border-top: 10px solid var(--c-counter);
   box-shadow: inset 0 6px 8px -4px color-mix(in srgb, var(--c-outline) 60%, transparent);
 }
-/* FB-15 (verify): sideways a list row is 44–52 px — its name stays on one line (fit.ts makes a long one smaller, ≥ 12 px), never two lines of whole words. */
-.landscape #ui .sheet .mu-card > .mu-name {
-  white-space: nowrap;
-}
+/* Круг правок FB п. 6: sideways a long name takes a second line of whole words (no shrinking); the row grows with it. */
 
 /* ---- Круг правок FB п. 2 (просьба продюсера: «Лавка» без стены из закрашенных форм): one look of the upgrades in «Лавка» and in «Магазин» —
    rows without a fill, a 1 px line under each, the icon 40 without a tile; only a price the coins cover is filled. ---- */
@@ -3390,4 +3381,132 @@ button.mu-card {
 .landscape #ui [data-overlay='settings'] .row:not(.row-switch) > span {
   flex: 0 0 auto;
   min-width: 56px;
+}
+
+/* ---- Круг правок FB п. 6: the system font at 130 % — whole words wrap, nothing shrinks; the tab bar keeps its tokens (07: 56 px, labels 12 px)
+   and its labels stand apart: a tab is as wide as its word needs, «Лавка» stays in the middle (the halves are equal). ---- */
+@media not all and (min-width: 1000px) and (min-height: 560px) {
+  #ui .nav-label,
+  .landscape #ui .nav-label {
+    font-size: 12px !important;
+  }
+}
+#ui .nav-label {
+  white-space: nowrap;
+}
+#app #nav {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+#app.portrait #nav {
+  grid-template-columns: 1fr 1fr 1.35fr 1.1fr 0.95fr 0.95fr 1.45fr;
+}
+#app #nav > .nav-tab {
+  min-width: 0;
+}
+/* Круг правок FB п. 7: every tab stands on its own place from the first minute — a tab still closed leaves its place empty. */
+#app #nav > [data-tab='market'] {
+  grid-column: 1;
+}
+#app #nav > [data-tab='inventory'] {
+  grid-column: 2;
+}
+#app #nav > [data-tab='sales'] {
+  grid-column: 3;
+}
+#app #nav > [data-tab='home'] {
+  grid-column: 4;
+}
+#app #nav > [data-tab='eggs'] {
+  grid-column: 5;
+}
+#app #nav > [data-tab='chats'] {
+  grid-column: 6;
+}
+#app #nav > [data-tab='shop'] {
+  grid-column: 7;
+}
+/* Круг правок FB п. 6: «Подарки» sideways at 130 % — the seven days 4 + 3 (the 7th on two cells, like s5), every word inside its tile;
+   the tiles say «День N», so sideways the days need no section head — «Забрать подарок дня» stays in sight without a scroll;
+   п. 7: the button is never wider than 360 px. */
+.landscape #ui .overlay[data-overlay='gifts'] .days {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.landscape #ui .overlay[data-overlay='gifts'] .day[data-day='7'] {
+  grid-column: span 2;
+}
+.landscape #ui .overlay[data-overlay='gifts'] > .card > .mu-head:has(+ .days) {
+  display: none;
+}
+.landscape #ui .overlay[data-overlay='gifts'] > .card > .gift-top {
+  grid-row: 2 / span 2;
+}
+#ui .overlay[data-overlay='gifts'] .gift-take.mu-btn {
+  justify-self: center;
+  width: 100%;
+  max-width: 360px;
+}
+/* Круг правок FB п. 6: the lot's answers — every label on one line («Скидка? Возьму за…» too), the buttons wrap whole into the next row. */
+#ui .lot-buttons {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#ui .lot-buttons > .mu-btn {
+  flex: 1 1 auto;
+  width: auto;
+  white-space: nowrap;
+}
+#ui .lot-buttons > .main,
+#ui .lot-buttons > .bargain,
+#ui .lot-buttons > :only-child {
+  flex-basis: 100%;
+}
+/* The lot sideways (and at 130 %): two columns — the pet in one row (picture, name, rarity) with «рынок N · ниже рынка» under it
+   and the seller's lines below (the newest, with its price, in sight); the answers right. */
+.landscape #ui [data-detail='lot'] .detail-page {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas: 'back back' 'pet buttons' 'lines buttons';
+  row-gap: 6px;
+}
+.landscape #ui [data-detail='lot'] .lot-pet {
+  display: grid;
+  grid-template-columns: 48px auto minmax(0, 1fr);
+  grid-template-areas: 'pic name name' 'pic badge meta';
+  align-content: start;
+  align-items: center;
+  align-self: start;
+  column-gap: 10px;
+  row-gap: 2px;
+  min-height: 0;
+  overflow: visible;
+}
+.landscape #ui [data-detail='lot'] .lot-pet > .price-pet-text {
+  display: contents;
+}
+.landscape #ui [data-detail='lot'] .lot-pet > .mu-pic {
+  grid-area: pic;
+}
+.landscape #ui [data-detail='lot'] .lot-pet .mu-name {
+  grid-area: name;
+}
+.landscape #ui [data-detail='lot'] .lot-pet .price-pet-text > span:not(.mu-meta) {
+  grid-area: badge;
+}
+.landscape #ui [data-detail='lot'] .lot-pet .price-pet-text > .mu-meta {
+  grid-area: meta;
+}
+.landscape #ui [data-detail='lot'] .lot-buttons {
+  grid-row: 2 / span 2;
+  justify-content: center;
+}
+/* 07: sideways the main button is never wider than 360 px; the answers use the column's 400 (two to a row at 130 %). */
+.landscape #ui [data-detail='lot'] .lot-buttons > .mu-btn.main {
+  max-width: 360px;
+}
+/* «Лидеры» sideways at 130 %: a wider window — the words in one line, «Таблица пока пустая» in sight. */
+.landscape #ui .overlay[data-overlay='leaders'] > .card {
+  width: min(100%, 520px);
 }

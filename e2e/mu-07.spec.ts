@@ -371,7 +371,7 @@ test.describe('the round of fixes, item 2: sideways 812×330 is «list + detail�
   const widestMain = (page: Page) =>
     page.evaluate(() => Math.max(0, ...[...document.querySelectorAll<HTMLElement>('#ui .mu-btn.main, #ui .btn-primary')].filter((b) => b.offsetParent).map((b) => b.getBoundingClientRect().width)));
 
-  test('rows 44–52 px; the lot, the egg card, the collection, the gifts and «Вылупился!» whole', async ({ page }) => {
+  test('rows 44–52 px (a second line of whole words up to 72); the lot, the egg card, the collection, the gifts and «Вылупился!» whole', async ({ page }) => {
     const errors = collectErrors(page);
     await seedSave(page, SEED);
     await open(page);
@@ -380,14 +380,23 @@ test.describe('the round of fixes, item 2: sideways 812×330 is «list + detail�
       await tab(id);
       const rows = await heights(page, `[data-sheet=${id}] .sheet-body .mu-card`);
       expect(rows.length, id).toBeGreaterThan(0);
-      expect(rows.every((h) => h >= 44 && h <= 52), `${id} rows ${rows}`).toBe(true);
+      // Круг правок FB п. 6: a row of whole words may take a second line (no shrinking) — most rows stay 44–52 (l1, l3).
+      expect(rows.every((h) => h >= 44 && h <= 72), `${id} rows ${rows}`).toBe(true);
+      expect([...rows].sort((a, b) => a - b)[Math.floor(rows.length / 2)]!, `${id} rows ${rows}`).toBeLessThanOrEqual(52);
       expect(await widestMain(page), id).toBeLessThanOrEqual(360);
     }
     await tab('market');
     await page.locator('[data-sheet=market] [data-action^="lot-open-"]').first().click();
-    // The pet, the lines and the answers in one row: every answer whole, the lines with room.
+    // The pet, the lines and the answers: every answer whole, the lines with room (круг правок FB п. 6: two columns — the pet over the lines,
+    // the newest line with its price whole in sight).
     const lines = await inSight(page, '[data-detail=lot] .chat-lines');
-    expect(lines.h, 'the seller lines').toBeGreaterThanOrEqual(120);
+    expect(lines.h, 'the seller lines').toBeGreaterThanOrEqual(96);
+    const last = await page.evaluate(() => {
+      const box = document.querySelector('[data-detail=lot] .chat-lines')!.getBoundingClientRect();
+      const b = document.querySelector('[data-detail=lot] .chat-lines > .bubble:last-child')!.getBoundingClientRect();
+      return b.top >= box.top - 1 && b.bottom <= box.bottom + 1;
+    });
+    expect(last, 'the newest seller line whole').toBe(true);
     for (const sel of ['[data-detail=lot] .lot-pet', '[data-detail=lot] .lot-buttons']) expect((await inSight(page, sel)).bottom, sel).toBeGreaterThanOrEqual(0);
     expect(await widestMain(page)).toBeLessThanOrEqual(360);
     await tab('eggs');

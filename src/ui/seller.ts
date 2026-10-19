@@ -47,7 +47,16 @@ export function renderLot(body: HTMLElement, first: LotView, game: Game, look: S
     const scroller = body.closest<HTMLElement>('.sheet-detail') ?? body;
     scroller.scrollTop = scroller.scrollHeight;
     const linesEl = body.querySelector<HTMLElement>('.chat-lines');
-    if (linesEl) linesEl.scrollTop = linesEl.scrollHeight;
+    if (!linesEl) return;
+    linesEl.scrollTop = linesEl.scrollHeight;
+    // Круг правок FB п. 6: a font that grows (130 %) keeps the newest line, with its price, in sight.
+    if (typeof ResizeObserver !== 'undefined') {
+      const keep = new ResizeObserver(() => {
+        if (!linesEl.isConnected) keep.disconnect();
+        else linesEl.scrollTop = linesEl.scrollHeight;
+      });
+      for (const p of linesEl.children) keep.observe(p);
+    }
   }
   function drawPage(): void {
     const l = lot() ?? first;

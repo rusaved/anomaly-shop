@@ -32,7 +32,6 @@ import { createLeadersWindow } from './ui/leaders.ts';
 import { createBurst } from './ui/burst.ts';
 import { createFinger } from './ui/finger.ts';
 import { installPress } from './ui/press.ts';
-import { installFit } from './ui/fit.ts';
 import { installPeek } from './ui/peek.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
@@ -850,8 +849,6 @@ async function boot(): Promise<void> {
     window: () => topWindow()?.card ?? null,
   });
   const finger = createFinger(uiRoot);
-  // FB-14: tab labels and segments keep whole words at a large system font (smaller, ≥ 12 px).
-  const fitter = installFit(uiRoot);
   // FB-14: the bottom of a list — a card cut by the edge shows only its picture.
   installPeek(uiRoot);
   // UB-07: the milestone label is a dev trace — only with ?debug=1 (the producer link keeps it there).
@@ -864,7 +861,6 @@ async function boot(): Promise<void> {
     i18n.apply(uiRoot);
     shop.relabel();
     newsTicker.refresh();
-    requestAnimationFrame(() => fitter.run());
     store.state.settings.lang = next;
     store.commit({ flush: true });
   });
@@ -881,7 +877,6 @@ async function boot(): Promise<void> {
       shelfKey = '';
       renderShelf();
       renderTabs();
-      requestAnimationFrame(() => fitter.run());
     },
     navData.homeShop,
   );

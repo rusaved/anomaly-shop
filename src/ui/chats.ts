@@ -50,8 +50,8 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     const p = look.person(c.person);
     const ch = look.character(c.character);
     const type = ch ? (p.f && ch.nameF ? ch.nameF : ch.name)[look.lang()] : '';
-    // FB-14: the dot never hangs at a line end — the name, the dot and the type stay together.
-    return `${p.name}\u00a0·\u00a0${type}`;
+    // FB-14, круг правок п. 6: the dot stays with the name; at a large font the type goes to the next line whole (never a word cut in two).
+    return `${p.name}\u00a0· ${type}`;
   };
   /** A line with the coin picture before every sum (07 «Знаки»: the coin icon in chat lines too). */
   const text = (c: Chat, l: ChatLine): string => {

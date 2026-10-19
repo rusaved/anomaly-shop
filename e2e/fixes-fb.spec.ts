@@ -280,3 +280,82 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
         expect(errors).toEqual([]);
       });
     });
+
+/** п. 6: the system font at 130 % — nothing shrinks, whole words wrap: the gift days keep their words inside, the lot sideways shows
+ * «рынок N · ниже рынка» and the newest line with its price, «Скидка? Возьму за…» on one line, «Переезд» in sight, the tab labels apart. */
+const insideBox = (page: Page, sel: string) =>
+  page.locator(sel).evaluateAll((els) =>
+    els
+      .filter((e) => (e as HTMLElement).offsetParent)
+      .map((e) => {
+        const r = e.getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(e);
+        const t = range.getBoundingClientRect();
+        return t.left >= r.left - 1 && t.right <= r.right + 1 ? '' : `«${e.textContent}» ${Math.round(t.width)}/${Math.round(r.width)}`;
+      })
+      .filter(Boolean),
+  );
+test.describe('Круг правок FB п. 6 sideways 812×330 at 130 %', () => {
+  test.use({ viewport: { width: 812, height: 330 }, hasTouch: true, isMobile: true });
+  test('the gift days, the lot, «Уровень продавца» — whole words in sight', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 120, creatures: pets, showcase: [] });
+    await open(page);
+    await scale130(page);
+    await page.locator('[data-action=gifts]').click();
+    await scale130(page);
+    await page.waitForTimeout(300);
+    expect(await insideBox(page, '[data-overlay=gifts] .day > b, [data-overlay=gifts] .day > span')).toEqual([]);
+    await page.locator('[data-action=gifts-close]').click();
+    await page.locator('[data-tab=market]').click();
+    await page.locator('[data-sheet=market] [data-action^="lot-open-"]').first().click();
+    await scale130(page);
+    await page.waitForTimeout(400);
+    const lot = await page.evaluate(() => {
+      const r = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      const bar = document.getElementById('nav')!.getBoundingClientRect().top;
+      const lines = r('[data-detail=lot] .chat-lines');
+      const last = r('[data-detail=lot] .chat-lines > .bubble:last-child');
+      const meta = r('[data-detail=lot] .lot-pet .mu-meta');
+      const bargain = document.querySelector<HTMLElement>('[data-action=lot-bargain]')!;
+      const main = r('[data-action=lot-buy]');
+      return {
+        meta: meta.top >= 0 && meta.bottom <= lines.top + 1,
+        last: last.top >= lines.top - 1 && last.bottom <= Math.min(lines.bottom, bar) + 1,
+        bargainOneLine: bargain.scrollWidth <= bargain.clientWidth + 1 && bargain.getBoundingClientRect().height < 56,
+        main: main.top >= r('.hud').bottom && main.bottom <= bar,
+      };
+    });
+    expect(lot).toEqual({ meta: true, last: true, bargainOneLine: true, main: true });
+    await page.locator('[data-tab=home]').click();
+    await page.locator('[data-action=reputation]').click();
+    await scale130(page);
+    await page.waitForTimeout(300);
+    const move = (await page.locator('[data-action=rep-city]').boundingBox())!;
+    const card = (await page.locator('[data-overlay=reputation] .card').boundingBox())!;
+    expect(move.y).toBeGreaterThanOrEqual(card.y);
+    expect(move.y + move.height).toBeLessThanOrEqual(card.y + card.height);
+    expect(errors).toEqual([]);
+  });
+});
+test.describe('Круг правок FB п. 6 portrait 375×650 at 130 %', () => {
+  test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
+  test('the tab labels stand 8 px apart, «Лавка» in the middle; a chat name never cut inside a word', async ({ page }) => {
+    await seedSave(page, { coins: 120 });
+    await open(page);
+    await scale130(page);
+    await page.waitForTimeout(300);
+    const labels = await page.locator('.nav-label').evaluateAll((els) =>
+      els.map((e) => {
+        const range = document.createRange();
+        range.selectNodeContents(e);
+        const t = range.getBoundingClientRect();
+        return { l: t.left, r: t.right };
+      }),
+    );
+    for (let i = 1; i < labels.length; i++) expect(labels[i]!.l - labels[i - 1]!.r).toBeGreaterThanOrEqual(7.9);
+    const home = (await page.locator('[data-tab=home] .nav-icon').boundingBox())!;
+    expect(Math.abs(home.x + home.width / 2 - 375 / 2)).toBeLessThanOrEqual(2);
+  });
+});

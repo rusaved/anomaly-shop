@@ -53,6 +53,8 @@ export const Egg = v.object({
   /** FB-02: what a creature of each rarity is worth at hatching, in prices of this egg (valuePrice or the egg's price); species of a
    * rarity keep their spread around it. Replaces valueMult when set. */
   value: v.optional(v.object(Object.fromEntries(RARITIES.map((r) => [r, Times])) as Record<(typeof RARITIES)[number], typeof Times>)),
+  /** FB-15: this egg's share of the care bonus into VIP and exclusive (care.topShare when missing): full care about doubles them. */
+  careTop: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(1))),
   /** FB-02: the price the value table counts from for a free or reward egg (no coin price of its own). */
   valuePrice: v.optional(v.pipe(v.number(), v.minValue(1))),
   /** FB-02: the price the value table counts from is this many minutes of the player's income (reward eggs grow with the shop). */
@@ -78,10 +80,10 @@ export const Care = v.object({
   shell: v.pipe(v.array(Color), v.minLength(2)),
 });
 /**
- * FB-02: the player's income — coins a minute of live play (sales and the pickup point), a moving average over tauSec; floorPerMin
+ * FB-02: the player's income — coins a minute of live play (sales and the pickup point) over the last windowMin whole minutes, a spike at most spikeMedians median minutes; floorPerMin
  * at the start. A free reward (a gift egg, the anomaly of the day, a gift, a find) is worth at most rewardCapMin minutes of it.
  */
-export const Income = v.object({ tauSec: v.pipe(v.number(), v.minValue(1)), floorPerMin: v.pipe(v.number(), v.minValue(1)), rewardCapMin: v.pipe(v.number(), v.minValue(0)) });
+export const Income = v.object({ windowMin: v.pipe(v.number(), v.minValue(1)), spikeMedians: v.pipe(v.number(), v.minValue(1)), floorPerMin: v.pipe(v.number(), v.minValue(1)), rewardCapMin: v.pipe(v.number(), v.minValue(0)) });
 export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, rescueEgg: Id, care: Care, income: Income, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
 
 export const Species = v.object({

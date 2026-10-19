@@ -51,7 +51,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
   let slider: ReturnType<typeof createPriceSlider> | null = null;
 
   const meta = (c: CreatureView, fmt: Intl.NumberFormat, price: number): string =>
-    `<span class="mu-meta mu-rar-line">${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}<span>·</span>${money(price, fmt)}</span>`;
+    `<span class="mu-meta mu-rar-line">${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}<span class="nw">· ${money(price, fmt)}</span></span>`;
   const pic = (c: CreatureView): string => `<span class="mu-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"></span>`;
 
   function renderList(): void {

@@ -97,6 +97,8 @@ export const LIMITS = {
   F17decorMin: 1,
   /** M4-08: F18 — days from the first move to the second. */
   F18gapDays: [1, 3] as const,
+  /** FB-03 (Q-039 B): an hour away against an hour of play. */
+  F19share: [0.3, 0.5] as const,
   /** F11 is the criterion of M2-12 (the ladder of 8 things): reported from M2-09, failing the run from M2-12. */
   F11enforced: true,
 };
@@ -560,9 +562,11 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     const offHour = quantile(runs.map((r) => r.offlineHour), 0.5);
     const share = onHour > 0 ? offHour / onHour : 0;
     const lvl = Math.max(...runs.map((r) => r.awayLevels));
-    const f19 = share >= content.upgrades.offlineShare.min - 0.05 && share <= content.upgrades.offlineShare.max + 0.05 && lvl <= content.upgrades.offlineMaxLevels;
+    // The brief's band (30–50 % of the income of play) measured against the coins actually earned an hour (the data floor sits higher: the income
+    // a reward or the time away reads leaves big spikes out, FB-15).
+    const f19 = share >= LIMITS.F19share[0] && share <= LIMITS.F19share[1] && lvl <= content.upgrades.offlineMaxLevels;
     if (!f19) failures.push(`${bot.name} F19 an hour away = ${Math.round(share * 100)} % of an hour of play, seller levels +${lvl} away`);
-    lines.push(`${bot.name.padEnd(7)} F19 income an hour of play / away: ${fmt(onHour)} / ${fmt(offHour)} (${Math.round(share * 100)} %, want ${content.upgrades.offlineShare.min * 100}–${content.upgrades.offlineShare.max * 100} %), seller levels away +${lvl} (≤ ${content.upgrades.offlineMaxLevels}) ${f19 ? 'ok' : 'FAIL'}`);
+    lines.push(`${bot.name.padEnd(7)} F19 income an hour of play / away: ${fmt(onHour)} / ${fmt(offHour)} (${Math.round(share * 100)} %, want ${LIMITS.F19share[0] * 100}–${LIMITS.F19share[1] * 100} %), seller levels away +${lvl} (≤ ${content.upgrades.offlineMaxLevels}) ${f19 ? 'ok' : 'FAIL'}`);
     lines.push(
       `${bot.name.padEnd(7)} F6 8 h away = ${fmt(away)} min of play (${LIMITS.F6minutes.join('–')}) ${typical ? (f6 ? 'ok' : 'FAIL') : 'info'}` +
         ` · F7 rebirth threshold on day ${fmt(rebirth, 1)} (${LIMITS.F7days.join('–')}) ${f7 ? 'ok' : 'FAIL'}` +
@@ -626,7 +630,7 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     const cells: string[] = [];
     let f20 = true;
     for (const e of content.eggs.eggs.filter((x) => x.section === 'ladder' && x.value)) {
-      const up = careChances(e.chances, c.maxBonus, c.topShare);
+      const up = careChances(e.chances, c.maxBonus, e.careTop ?? c.topShare);
       const top = (x: typeof e.chances): number => x.vip + x.exclusive;
       const ev = (x: typeof e.chances): number => RARITIES.reduce((n, r) => n + (x[r] / 100) * e.value![r], 0);
       const gain = ev(up) - food - ev(e.chances);

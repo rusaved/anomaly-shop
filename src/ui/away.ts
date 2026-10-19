@@ -36,6 +36,8 @@ export function createAwayWindow(parent: HTMLElement, look: AwayLookups): AwayWi
   list.className = 'away-list';
   const ok = button('away-ok', 'away.ok', 'btn-primary');
   const ad = button('away-ad', 'away.ad', 'btn-ad');
+  // Its text carries the number (set in show): no data-i18n to overwrite it (FB-15, the usability review).
+  delete ad.dataset.i18n;
   ad.hidden = true;
   overlay.card.append(title, time, coins, list, ad, ok);
   ok.addEventListener('click', () => win.close());
@@ -61,6 +63,13 @@ export function createAwayWindow(parent: HTMLElement, look: AwayLookups): AwayWi
       const m = h > 0 ? Math.floor((r.awaySec % 3600) / 60) : Math.max(1, Math.round(r.awaySec / 60));
       const parts = [h > 0 ? look.t('away.hours', { n: h }) : '', m > 0 ? look.t('away.minutes', { n: m }) : ''].filter(Boolean);
       time.textContent = look.t('away.time', { time: parts.join(' ') });
+      // FB-15: away longer than the shop works (offlineMaxHours) — the real time and the worked hours, both true.
+      if (r.realSec !== undefined && r.realSec > r.awaySec + 60) {
+        const rh = Math.floor(r.realSec / 3600);
+        const rm = rh > 0 ? Math.floor((r.realSec % 3600) / 60) : Math.max(1, Math.round(r.realSec / 60));
+        const real = [rh > 0 ? look.t('away.hours', { n: rh }) : '', rm > 0 ? look.t('away.minutes', { n: rm }) : ''].filter(Boolean).join(' ');
+        time.textContent = look.t('away.capped', { time: real, worked: parts.join(' ') });
+      }
       (coins.querySelector('[data-away-coins]') as HTMLElement).textContent = `+${fmt.format(Math.round(r.coins))}`;
       coins.hidden = r.coins <= 0;
       shown = r.coins;

@@ -8,7 +8,7 @@ import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
 import { emptyIncubator, type Chat, type Creature, type Incubator, type Lot, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, cityMult, coins, dayHash, marketMood, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchMult, hatchNeedSec, hatchShare, incomeStep, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, cityMult, coins, dayHash, marketMood, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchMult, hatchNeedSec, hatchShare, incomeOf, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -67,6 +67,8 @@ export type FeedBy = 'tap' | 'helper' | 'cuckoo';
 export interface OfflineReport {
   /** Real seconds away (clamped) and the game seconds the shop worked for them. */
   awaySec: number;
+  /** FB-15: the real time away (awaySec is it clamped to offlineMaxHours). */
+  realSec?: number;
   workedSec: number;
   coins: number;
   sold: number;
@@ -448,6 +450,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const { eggs, species, customers } = content;
   /** FB-02: coins earned by live play since the last tick (sales and the pickup point; not gifts, not away). */
   let liveEarned = 0;
+  /** FB-15: the coins and the seconds of the minute of live play going on now. */
+  let minuteCoins = 0;
+  let minuteSec = 0;
   /** FB-03: the coins of the last time away, for «×2» once (not saved: the return window is shown once). */
   let lastAway = 0;
   /** FB-02: the player's income, coins a minute (never below the floor of the first minute). */
@@ -1198,7 +1203,12 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const r = rewardFor(reward);
     if (r.coins) st.coins += r.coins;
     if (r.crystals) st.crystals += r.crystals;
-    if (r.egg && eggData(r.egg)) st.myEggs[r.egg] = (st.myEggs[r.egg] ?? 0) + 1;
+    if (r.egg && eggData(r.egg)) {
+      st.myEggs[r.egg] = (st.myEggs[r.egg] ?? 0) + 1;
+      // FB-15: a gift egg hatches as a free reward (capped), even a ladder one.
+      const gifts = (st.giftEggs ??= {});
+      gifts[r.egg] = (gifts[r.egg] ?? 0) + 1;
+    }
     commit({ flush: true });
     emit({ type: 'gift', from, reward: r });
     if (r.egg) placeMine();
@@ -1308,6 +1318,12 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       mine[id] = (mine[id] ?? 0) - 1;
       if ((mine[id] ?? 0) <= 0) delete mine[id];
       placeEgg(spot, id, false);
+      const gifts = s().giftEggs ?? {};
+      if ((gifts[id] ?? 0) > 0) {
+        gifts[id] = (gifts[id] ?? 0) - 1;
+        if ((gifts[id] ?? 0) <= 0) delete gifts[id];
+        s().incubators[spot]!.free = true;
+      }
       commit({ flush: true });
       emit({ type: 'eggBought', incubator: spot, egg: id, price: 0, by: 'gift' });
       emit({ type: 'change' });
@@ -1330,7 +1346,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     // The first egg of a dearer kind gives at least its firstRarity (once per kind, flag first_<egg>).
     const firstOf = egg.firstRarity && !st.flags[`first_${egg.id}`] ? egg.firstRarity : null;
     if (egg.firstRarity) st.flags[`first_${egg.id}`] = true;
-    let rarity = forced ?? pickRarity(careChances(egg.chances, careOf(inc), eggs.care.topShare), rng.next());
+    let rarity = forced ?? pickRarity(careChances(egg.chances, careOf(inc), egg.careTop ?? eggs.care.topShare), rng.next());
     if (!forced && firstOf && RARITY_RANK[rarity] < RARITY_RANK[firstOf]) rarity = firstOf;
     // M4-07: the egg of the day hatches the species of the day, dearer and settling in for a while.
     const dayKind = egg.special === 'daily' ? daySpecies(st.daily.day) : undefined;
@@ -1341,7 +1357,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     const mark = forced || dayKind ? undefined : markFor(uid);
     // FB-02: the value table of the egg; a free egg (no coin price: a gift, a reward, the egg of the day) is worth at most rewardCap.
     let mult = dayKind ? dayMult(kind, egg) : hatchMult(egg, kind.rarity, species, incomeNow());
-    if (egg.price.coins <= 0) mult = Math.min(mult, rewardCap() / kind.basePrice);
+    if (egg.price.coins <= 0 || inc.free) mult = Math.min(mult, rewardCap() / kind.basePrice);
     st.creatures.push({ uid, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult, ...(dayKind ? { hold: content.calendar.daily.holdMinutes * 60 } : {}), ...(mark ? { mark } : {}) });
     // M4-21: twins — the egg of the event gives two of a kind (the second waits in the inventory).
     if (activeOf('twins')) {
@@ -1772,8 +1788,17 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       idleSec += dt;
       const st = s();
       if (!quiet && dt > 0) {
-        st.stats.income = incomeStep(st.stats.income ?? 0, liveEarned, dt, eggs.income.tauSec);
+        // FB-15: whole minutes of live play; the income is their mean without the best one.
+        minuteCoins += liveEarned;
         liveEarned = 0;
+        minuteSec += dt;
+        if (minuteSec >= 60) {
+          minuteSec -= 60;
+          const mins = [...(st.incomeMinutes ?? []), minuteCoins].slice(-eggs.income.windowMin);
+          minuteCoins = 0;
+          st.incomeMinutes = mins;
+          st.stats.income = incomeOf(mins, eggs.income.spikeMedians);
+        }
       }
       runPoint(dt);
       // M4-20: the finds look at the save once a second (cheap: 30 conditions).
@@ -2242,6 +2267,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       lastAway = Math.max(0, st.coins - before.coins);
       const report: OfflineReport = {
         awaySec: away,
+        realSec: Math.max(0, Number.isFinite(awaySec) ? awaySec : 0),
         workedSec: worked,
         coins: st.coins - before.coins,
         sold: st.stats.deals - before.deals,

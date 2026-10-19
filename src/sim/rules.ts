@@ -135,10 +135,16 @@ export function hatchMult(egg: EggData, rarity: RarityName, data: SpeciesData, i
   return (eggValuePrice(egg, incomePerMin) * egg.value[rarity]) / rarityMean(data, rarity);
 }
 
-/** FB-02: the moving average of income — coins earned in dt seconds into coins a minute, over tau seconds. */
-export function incomeStep(rate: number, earned: number, dt: number, tauSec: number): number {
-  const k = Math.min(1, dt / tauSec);
-  return Math.max(0, rate + ((earned * 60) / Math.max(dt, 1e-9) - rate) * k);
+/**
+ * FB-02, FB-15 (the game design review): the player's income from the coins of the last whole minutes of live play — their mean,
+ * each minute at most `spike` times the median minute: one big sale right before leaving never makes the player «rich» for rewards and away.
+ */
+export function incomeOf(minutes: readonly number[], spike = 3): number {
+  if (!minutes.length) return 0;
+  const sorted = [...minutes].sort((a, b) => a - b);
+  const mid = sorted.length % 2 ? sorted[(sorted.length - 1) / 2]! : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
+  const cap = sorted.length >= 3 ? Math.max(mid * spike, 1) : Infinity;
+  return sorted.reduce((n, x) => n + Math.min(x, cap), 0) / sorted.length;
 }
 
 /** Appraisal of a creature: basePrice × growth^(level − 1) (docs/01a, section 3); the customer offers a share of it. */

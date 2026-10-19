@@ -78,13 +78,16 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     close();
     if (listed) look.onListed?.(uid);
   });
+  // FB-15 (the usability review): «Продать сразу» is irreversible — a second tap right after the skip (the result shows under the finger)
+  // never sells; the strip is skipped by a tap anywhere on the card, not only on the strip.
   sell.addEventListener('click', () => {
+    if (performance.now() - resultAt < 600) return;
     game.sellNow(uid);
     close();
   });
   // UB-10: the tap that cracked the egg is not a skip (touch: its click lands on the strip that just opened under the finger).
-  q('[data-action="hatch-skip"]').addEventListener('click', () => {
-    if (performance.now() - start >= 400) skip();
+  overlay.card.addEventListener('click', () => {
+    if (!done && performance.now() - start >= 400) skip();
   });
 
   function showResult(): void {

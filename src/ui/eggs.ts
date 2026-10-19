@@ -156,8 +156,10 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
     cardKey = next;
     const odds = eggOdds(egg.chances, look.species);
     // FB-05: the odds before and after full care — care moves a share of every rarity one step up.
-    const cared = careChances(egg.chances, look.careMax, look.careTop);
+    const cared = careChances(egg.chances, look.careMax, egg.careTop ?? look.careTop);
     const top = (c: EggData['chances']): number => c.vip + c.exclusive;
+    // FB-15 (the game design review): every pet's chance without care and with full care.
+    const caredOdds = new Map(eggOdds(cared, look.species).map((o) => [o.species, o.chance]));
     let buttons: string;
     if (v.freeIn !== null)
       buttons = v.freeIn > 0 ? `<p class="mu-meta">${esc(look.t('eggs.in', { t: fmtTime(v.freeIn) }))}</p>` : `<button type="button" class="mu-btn main" data-action="egg-take">${esc(look.t('eggs.take'))}</button>`;
@@ -177,7 +179,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
         .map(
           (o) =>
             `<div class="mu-card rar card-odds" data-rarity="${o.rarity}" data-species="${o.species}" data-chance="${o.chance}"><span class="mu-pic"><img alt="" src="${look.portrait(o.species, o.rarity)}"></span>` +
-            `<span class="mu-name">${esc(look.speciesName(o.species))}</span><span class="mu-line"><span>${rarityBadge(o.rarity, look.t(`rarity.${o.rarity}`))}</span><span class="mu-meta">${pct(o.chance)}</span></span></div>`,
+            `<span class="mu-name">${esc(look.speciesName(o.species))}</span><span class="mu-line"><span>${rarityBadge(o.rarity, look.t(`rarity.${o.rarity}`))}</span><span class="mu-meta">${pct(o.chance)} → ${pct(caredOdds.get(o.species) ?? o.chance)}</span></span></div>`,
         )
         .join('')}</div>`;
     panel.card.querySelector('[data-action="egg-back"]')?.addEventListener('click', () => tab.show(null));

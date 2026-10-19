@@ -61,3 +61,15 @@ describe('FB-03 away', () => {
     expect(run(up.offlineMaxLevels).gained).toBeLessThanOrEqual(up.offlineMaxLevels);
   });
 });
+
+describe('FB-15 (the game design review): one big sale right before leaving', () => {
+  it('does not make the time away richer — the income leaves its best minute out', () => {
+    const game = shop(0);
+    game.state.incomeMinutes = Array.from({ length: 9 }, () => 300);
+    game.state.stats.income = 300;
+    // The last minute: one sale of 4 800.
+    game.state.incomeMinutes = [...game.state.incomeMinutes, 5100];
+    const r = game.offline(2 * 3600);
+    expect(r.coins).toBeLessThanOrEqual(420 * 120 * up.offlineShare.max + 1);
+  });
+});

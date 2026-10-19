@@ -10,6 +10,12 @@ function fit(el: HTMLElement): boolean {
   if (el.offsetParent === null || el.clientWidth <= 0) return false;
   let size = parseFloat(getComputedStyle(el).fontSize);
   let changed = false;
+  // The tab bar does not grow with the system font (07 «Токены»): a label set bigger comes back to its own size.
+  if (el.classList.contains('nav-label')) {
+    if (!el.style.fontSize) return false;
+    el.style.fontSize = '';
+    return true;
+  }
   while (el.scrollWidth > el.clientWidth + 1 && size > MIN_PX) {
     size = Math.max(MIN_PX, size - 0.5);
     el.style.fontSize = `${size}px`;

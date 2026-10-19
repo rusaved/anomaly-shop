@@ -92,3 +92,33 @@ test.describe('FB-14 sideways 812×330', () => {
     }
   });
 });
+
+test.describe('FB-15 the round of fixes (usability review)', () => {
+  test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
+
+  test('a second tap right after skipping the strip never sells the pet', async ({ page }) => {
+    await seed(page);
+    await open(page);
+    expect(await page.evaluate(() => (window as unknown as T).__TEST__.hatch('p0'))).toBe(true);
+    await page.waitForTimeout(450);
+    const strip = (await page.locator('[data-action=hatch-skip]').boundingBox())!;
+    await page.mouse.click(strip.x + strip.width / 2, strip.y + strip.height - 4);
+    await page.waitForTimeout(150);
+    // The second tap lands where «Продать сразу» now stands.
+    const sell = (await page.locator('[data-action=hatch-sell]').boundingBox())!;
+    await page.mouse.click(sell.x + sell.width / 2, sell.y + sell.height / 2);
+    await expect(page.locator('[data-hatch-result]')).toBeVisible();
+    const st = await page.evaluate(() => (window as unknown as { __TEST__: { state(): { creatures: Array<{ uid: string }> } } }).__TEST__.state());
+    expect(st.creatures.map((c) => c.uid)).toContain('p0');
+  });
+
+  test('«Пока тебя не было»: the ad button says its coins, away longer than the shop works says both times', async ({ page }) => {
+    await seedSave(page, { coins: 0, lastSeenAt: Date.now() - 5 * 3600 * 1000, savedAt: Date.now() - 5 * 3600 * 1000, incomeMinutes: [300, 300, 300], stats: { deals: 8, coinsEarned: 300, hatched: 10, taps: 100, levelUps: 3, haggles: 1, income: 300 } });
+    await open(page);
+    await expect(page.locator('[data-overlay=away]')).toBeVisible();
+    await expect(page.locator('[data-action=away-ad]')).toHaveText(/\+\s?[\d\s ]+/);
+    await expect(page.locator('[data-action=away-ad]')).not.toContainText('{n}');
+    await expect(page.locator('[data-overlay=away] .away-time')).toContainText(/5/);
+    await expect(page.locator('[data-overlay=away] .away-time')).toContainText(/2/);
+  });
+});

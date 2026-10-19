@@ -2463,8 +2463,8 @@ button.mu-card {
 .landscape .detail-page:has(> .cards-odds) {
   display: grid;
   grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
-  grid-template-areas: 'back back' 'hero inside' 'buy odds' '. odds';
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-areas: 'back back' 'hero inside' 'hero care' 'buy odds' '. odds';
+  grid-template-rows: auto auto auto auto 1fr;
   column-gap: 20px;
   row-gap: 8px;
   align-content: start;
@@ -2978,12 +2978,13 @@ button.mu-card {
 .landscape.home-shop .sheet[data-sheet='home'] .mu-grid {
   grid-template-columns: 1fr;
 }
-/* An upgrade the coins already cover: a green edge and its price in green (the one main fill stays the screen's main action). */
+/* An upgrade the coins already cover: a light edge and a light price (green stays for «good» and «Забрать»; the rest are dimmed). */
 .shop-item.can {
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c-uiGood) 80%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c-uiText) 45%, transparent);
 }
 .shop-item.can .mu-btn:not(.off) {
-  color: var(--c-uiGood);
+  color: var(--c-uiText);
+  background: var(--c-uiPanelHi);
 }
 /* Portrait: the Store under the room in rows (as sideways l1): the picture, the name over its line, the price in the row. */
 .home-shop.portrait #ui .sheet[data-sheet='home'] .mu-grid {
@@ -3180,4 +3181,26 @@ button.mu-card {
 .overlay .card .day-anomaly > .mu-btn {
   padding-left: 12px;
   padding-right: 12px;
+}
+
+/* ---- FB-15, the art review ---- */
+/* The egg card sideways: «С уходом…» under «Что внутри», the buy buttons stay above the tab bar. */
+.landscape .detail-page:has(> .cards-odds) > .care-odds {
+  grid-area: care;
+  margin: 0;
+}
+/* A rarity badge and its price stay one piece; a dot never hangs. */
+.nw {
+  white-space: nowrap;
+}
+/* The gift days: a label never runs out of its cell (fit.ts makes it smaller, ≥ 12 px). */
+#ui .day > b,
+#ui .day > span {
+  display: block;
+  max-width: 100%;
+}
+/* One shop: the room ends on the counter's edge, the Store lies under it like the shop's floor. */
+.home-shop.portrait .sheet[data-sheet='home'] {
+  border-top: 10px solid var(--c-counter);
+  box-shadow: inset 0 6px 8px -4px color-mix(in srgb, var(--c-outline) 60%, transparent);
 }

@@ -63,7 +63,7 @@ describe('M3-02 egg care rules', () => {
 
   for (const [name, state] of Object.entries(STATES)) {
     it(`hatches with care «${name}»: ${RUNS} runs match the shifted odds within ±3 points`, () => {
-      const want = careChances(egg.chances, careBonus(state, care), care.topShare);
+      const want = careChances(egg.chances, careBonus(state, care), egg.careTop ?? care.topShare);
       const got = Object.fromEntries(RARITIES.map((r) => [r, 0])) as Record<RarityName, number>;
       const { game, seen } = setup(7);
       for (let i = 0; i < RUNS; i++) {
@@ -127,7 +127,7 @@ describe('M3-02 egg care rules', () => {
 describe('FB-05 care moves the odds', () => {
   it('full care at least doubles VIP and exclusive of every ladder egg, the rest sums to 100', () => {
     for (const e of loadGameContent().eggs.eggs.filter((x) => x.section === 'ladder')) {
-      const up = careChances(e.chances, care.maxBonus, care.topShare);
+      const up = careChances(e.chances, care.maxBonus, e.careTop ?? care.topShare);
       expect(up.vip + up.exclusive, e.id).toBeGreaterThanOrEqual((e.chances.vip + e.chances.exclusive) * 1.95);
       expect(RARITIES.reduce((s, r) => s + up[r], 0)).toBeCloseTo(100, 9);
     }

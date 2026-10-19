@@ -3,7 +3,7 @@ import { tickTapping } from './hatch-helper.ts';
 import { createRng } from '../src/core/rng.ts';
 import { RARITIES } from '../src/content/schemas.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
-import { hatchMult, incomeStep, rarityMean } from '../src/sim/rules.ts';
+import { hatchMult, incomeOf, rarityMean } from '../src/sim/rules.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent } from '../scripts/load-game-content.ts';
@@ -36,11 +36,11 @@ describe('FB-02 rewards', () => {
     for (const r of RARITIES) expect(rarityMean(species, r) * hatchMult(warm, r, species, 0)).toBeCloseTo(warm.price.coins * warm.value![r], 6);
   });
 
-  it('income: the moving average settles at the coins a minute of play', () => {
-    let rate = 0;
-    for (let t = 0; t < 900; t++) rate = incomeStep(rate, t % 10 === 0 ? 50 : 0, 1, eggs.income.tauSec);
-    expect(rate).toBeGreaterThan(250);
-    expect(rate).toBeLessThan(350);
+  it('income: the mean of the last minutes, a spike at most 3 medians — a big sale moves it little', () => {
+    expect(incomeOf([])).toBe(0);
+    expect(incomeOf([300, 300, 300, 300])).toBe(300);
+    expect(incomeOf([300, 300, 300, 300, 300, 300, 300, 300, 300, 5100])).toBe(360);
+    expect(incomeOf([200, 400])).toBe(300);
   });
 
   it('a free egg (the gift egg, gold, the egg of the day) never hatches above rewardCapMin minutes of income', () => {
@@ -65,5 +65,27 @@ describe('FB-02 rewards', () => {
       // The cap is on the level-1 price before the shop's bonuses (marks, upgrades): a little headroom.
       expect(Math.max(...values), eggId).toBeLessThanOrEqual(200 * eggs.income.rewardCapMin * 1.6);
     }
+  });
+});
+
+describe('FB-15 a gift ladder egg is a free reward too', () => {
+  it('the warm egg of a code hatches at most rewardCapMin minutes of income; a bought one is not capped', () => {
+    let gift = 0;
+    for (let i = 0; i < 200; i++) {
+      const save = newSave(0);
+      Object.assign(save.flags, { ftue_starter: true, ftue_done: true, first_egg_warm: true });
+      save.stats.hatched = 5;
+      save.stats.income = 100;
+      save.incubators = [{ egg: null, startedAt: 0, progress: 0, elapsed: 0, waiting: false }];
+      const game = createGame(createStore(save, () => 0), content, createRng(100 + i));
+      expect(game.redeemCode('SUNHEARTH')).toBe('ok');
+      expect(game.state.incubators[0]!.free).toBe(true);
+      Object.assign(game.state.incubators[0]!, { progress: 1000, elapsed: 1000 });
+      tickTapping(game, 1 / 60);
+      const c = game.state.creatures[0]!;
+      const spec = content.species.species.find((x) => x.id === c.species)!;
+      gift = Math.max(gift, spec.basePrice * (c.mult ?? 1));
+    }
+    expect(gift).toBeLessThanOrEqual(100 * eggs.income.rewardCapMin + 1e-6);
   });
 });

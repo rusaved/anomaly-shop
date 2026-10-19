@@ -95,7 +95,7 @@ describe('M3-02 egg care rules', () => {
     expect(poor.feedEgg(0)).toBe(false);
   });
 
-  it('a ready egg waits for a tap and ripens; left alone it hatches by itself after selfSec', () => {
+  it('a ready egg waits for a tap and ripens; FB-08: left alone it never hatches by itself', () => {
     const { game, seen } = setup(3);
     game.state.incubators[0] = { egg: egg.id, startedAt: 0, progress: 0, elapsed: 0, waiting: false };
     for (let t = 0; t < egg.hatchSec + 0.1; t += STEP_SEC) game.tick(STEP_SEC);
@@ -104,8 +104,11 @@ describe('M3-02 egg care rules', () => {
     for (let t = 0; t < care.ripe.afterSec + 0.1; t += STEP_SEC) game.tick(STEP_SEC);
     expect(game.view().incubators[0]!.care).toBeCloseTo(care.ripe.bonus, 9);
     expect(seen.some((e) => e.type === 'hatched')).toBe(false);
-    for (let t = 0; t < care.ripe.selfSec - care.ripe.afterSec + 0.1; t += STEP_SEC) game.tick(STEP_SEC);
-    expect(seen.some((e) => e.type === 'hatched')).toBe(true);
+    expect(care.ripe.selfOpen).toBe(false);
+    for (let t = 0; t < care.ripe.selfSec * 2; t += STEP_SEC) game.tick(STEP_SEC);
+    game.offline(3600);
+    expect(seen.some((e) => e.type === 'hatched')).toBe(false);
+    expect(game.view().incubators[0]!.ready).toBe(true);
   });
 
   it('taps before ready warm the egg; a tap on a ready egg hatches it', () => {
@@ -129,5 +132,25 @@ describe('FB-05 care moves the odds', () => {
       expect(RARITIES.reduce((s, r) => s + up[r], 0)).toBeCloseTo(100, 9);
     }
     expect(care.maxBonus).toBeGreaterThan(0.3);
+  });
+});
+
+describe('FB-08 hatch by tap', () => {
+  it('the courier opens the eggs it brought; the player egg waits; the first tapped hatches are counted for the finger', () => {
+    const { game, seen } = setup(9, 0);
+    game.state.incubators = [
+      { egg: egg.id, startedAt: 0, progress: egg.hatchSec, elapsed: egg.hatchSec, waiting: false },
+      { egg: egg.id, startedAt: 0, progress: egg.hatchSec, elapsed: egg.hatchSec, waiting: false, auto: true },
+    ];
+    for (let t = 0; t < care.ripe.selfSec + 1; t += STEP_SEC) game.tick(STEP_SEC);
+    const hatched = seen.filter((e) => e.type === 'hatched');
+    expect(hatched.map((e) => (e.type === 'hatched' ? e.incubator : -1))).toEqual([1]);
+    expect(game.view().incubators[0]!.ready).toBe(true);
+    for (let n = 1; n <= content.ftue.fingerHatches + 1; n++) {
+      game.state.incubators[0] = { egg: egg.id, startedAt: 0, progress: egg.hatchSec, elapsed: egg.hatchSec, waiting: false };
+      game.tapIncubator(0);
+      expect(Boolean(game.state.flags[`tap_hatch_${Math.min(n, content.ftue.fingerHatches)}`])).toBe(true);
+    }
+    expect(game.state.flags[`tap_hatch_${content.ftue.fingerHatches + 1}`]).toBeUndefined();
   });
 });

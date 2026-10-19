@@ -29,6 +29,7 @@ import { createShopTab } from './ui/upgrades.ts';
 import { moodChip } from './ui/mood.ts';
 import { createRebirthWindow } from './ui/rebirth.ts';
 import { createLeadersWindow } from './ui/leaders.ts';
+import { createFinger } from './ui/finger.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
 import { createNewsTicker } from './ui/news.ts';
@@ -229,6 +230,12 @@ async function boot(): Promise<void> {
     },
     true,
   );
+  /** FB-07 (Q-041 B): «Цена» (or the pick) opens in «Продажи», and its «‹» comes back to the tab it was opened from. */
+  const openPrice = (uid: string): void => {
+    const from = nav.active();
+    selectTab('sales');
+    salesTab.show(uid, from === 'sales' ? null : from);
+  };
   const selectTab = (tab: TabId): void => {
     nav.mark(tab);
     showTab(tab);
@@ -285,10 +292,7 @@ async function boot(): Promise<void> {
       return { name: f?.name[lang] ?? id, desc: f?.desc[lang] ?? '', coins: f?.reward.coins ?? 0, crystals: f?.reward.crystals ?? 0, picture: portraits.thing(f ? findSign(f) : 'star') };
     },
     // MU-06: «На продажу» opens the pet's «Цена» page; «Выставить на продажу» there puts it on the shelf.
-    list: (uid) => {
-      selectTab('sales');
-      salesTab.show(uid);
-    },
+    list: (uid) => openPrice(uid),
   });
   const eggsLook: EggsLookups = {
     t: i18n.t,
@@ -324,8 +328,7 @@ async function boot(): Promise<void> {
     onListed: (uid) => {
       if (!store.state.flags.ftue_done) return;
       // M4-00: the price card is an inner page of «My sales» — the tab opens on it.
-      selectTab('sales');
-      salesTab.show(uid);
+      openPrice(uid);
     },
   });
   // Timers on the egg screen (free egg, hatching) tick each second while it is open.
@@ -336,6 +339,7 @@ async function boot(): Promise<void> {
   }, 1000);
   const salesTab = createSalesTab(sheets.get('sales')!, play, {
     t: i18n.t,
+    goTab: (tab) => selectTab(tab as TabId),
     lang: i18n.lang,
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
     portrait: (id, r) => portraits.creature(id, r),
@@ -499,10 +503,7 @@ async function boot(): Promise<void> {
         b.setAttribute('aria-label', i18n.t('sales.add'));
         b.style.cssText = `left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px`;
         b.textContent = '+';
-        b.addEventListener('click', () => {
-          selectTab('sales');
-          salesTab.show('#pick');
-        });
+        b.addEventListener('click', () => openPrice('#pick'));
         return b;
       }),
     );
@@ -809,6 +810,7 @@ async function boot(): Promise<void> {
     topInset: () => hud.root.getBoundingClientRect().bottom,
     window: () => topWindow()?.card ?? null,
   });
+  const finger = createFinger(uiRoot);
   // UB-07: the milestone label is a dev trace — only with ?debug=1 (the producer link keeps it there).
   if (new URLSearchParams(location.search).has('debug')) renderBuildLabel(uiRoot, __BUILD_LABEL__);
   i18n.apply(uiRoot);
@@ -915,6 +917,12 @@ async function boot(): Promise<void> {
     const wanted = tabIntro ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
     const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) ? null : wanted;
     hints.update(shownHint, Boolean(toastNow));
+    // FB-08: a ready egg waits for the tap — the finger taps it for the first hatches after the first minute (not over a hint or a window).
+    const fingerOn = controllable && !shownHint && !topWindow() && store.state.flags.ftue_done && !store.state.flags[`tap_hatch_${ftue.fingerHatches}`];
+    const ready = fingerOn ? view.incubators.findIndex((i) => i.ready) : -1;
+    const spot = ready >= 0 && nav.active() === 'home' ? shop.anchors()?.incubators[ready] : undefined;
+    const openBtn = ready >= 0 && !spot ? [...uiRoot.querySelectorAll<HTMLElement>('[data-action^="egg-open-"]')].find((b) => b.offsetParent !== null) : undefined;
+    finger.point(spot ? { x: spot.x, y: spot.y } : (openBtn ?? null));
     sceneHintOn = Boolean(shownHint && (SCENE_TARGETS.has(shownHint.target.kind) || hints.outside()) && hints.text());
     shop.quiet(sceneHintOn || Boolean(toastNow));
     newsTicker.tick(runtime.pause.isPaused() ? 0 : ticker.deltaMS / 1000, controllable && Boolean(store.state.flags.ftue_done));

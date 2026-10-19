@@ -70,7 +70,8 @@ export const Care = v.object({
   warm: v.object({ tapsPerStep: Count, steps: Count, bonus: Share }),
   feed: v.object({ steps: Count, bonus: Share, priceShare: Share }),
   /** Ripening: a ready egg left afterSec gives its bonus; after selfSec it hatches by itself (an idle shop keeps going). */
-  ripe: v.object({ afterSec: Money, bonus: Share, selfSec: v.pipe(v.number(), v.minValue(1)), helperIdleSec: Money }),
+  /** FB-08: selfOpen false — a ready egg always waits for the player's tap (no self, courier or away opening). */
+  ripe: v.object({ afterSec: Money, bonus: Share, selfSec: v.pipe(v.number(), v.minValue(1)), helperIdleSec: Money, selfOpen: v.optional(v.boolean(), true) }),
   maxBonus: Share,
   /** FB-05: the share of the bonus that moves into VIP and exclusive (their price is a jump). */
   topShare: Share,
@@ -230,6 +231,8 @@ export const UpgradesFile = v.object({
 });
 
 const Positive = v.pipe(v.number(), v.minValue(0));
+/** FB-09: the burst of a rarity — sparks, salute bursts, the flash (0..1), a shake in px, the whole screen, its sound. */
+export const BurstLevel = v.object({ sparks: v.pipe(v.number(), v.minValue(0)), salutes: v.pipe(v.number(), v.minValue(0)), flash: Share, shake: v.pipe(v.number(), v.minValue(0)), full: v.boolean(), sound: v.optional(v.picklist(['vip', 'exclusive'])) });
 export const FeelFile = v.object({
   eggTapSquash: Positive,
   eggWobbleDeg: Positive,
@@ -244,11 +247,13 @@ export const FeelFile = v.object({
   coinsPerSale: Positive,
   coinFlySec: v.pipe(v.number(), v.minValue(0.1)),
   hudRollSec: Positive,
+  /** FB-09: the celebration of a hatch and of any reward from «good» up (common has none); ≤ 1.5 s, a tap skips it. */
+  burst: v.object({ sec: v.pipe(v.number(), v.minValue(0.2), v.maxValue(1.5)), good: BurstLevel, valuable: BurstLevel, premium: BurstLevel, vip: BurstLevel, exclusive: BurstLevel }),
   /** The hatch show (M3-05): seconds the portraits run before the result, 4–5. */
   hatchShowSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(8)),
 });
 
-export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail'] as const;
+export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade'] as const;
 const ZzfxParams = v.pipe(v.array(v.nullable(v.number())), v.minLength(1), v.maxLength(21));
 export const AudioFile = v.object({
   volume: Share,
@@ -266,6 +271,8 @@ export const FtueFile = v.object({
   firstOfferShare: Share,
   /** M4-09: after the first minute, an empty shelf with pets in the inventory brings back «List it» once the player is idle this long. */
   shelfHintSec: v.pipe(v.number(), v.minValue(1)),
+  /** FB-08: the finger taps a ready egg for this many hatches after the first minute. */
+  fingerHatches: v.optional(Count, 3),
   maxHintWords: Count,
 });
 
@@ -526,6 +533,7 @@ export type AchievementsData = v.InferOutput<typeof AchievementsFile>;
 export type TabUnlockData = v.InferOutput<typeof TabUnlock>;
 export type CodesData = v.InferOutput<typeof CodesFile>;
 export type SellerLinesData = v.InferOutput<typeof SellerLines>;
+export type BurstLevelData = v.InferOutput<typeof BurstLevel>;
 export type RewardData = v.InferOutput<typeof Reward>;
 export type FtueData = v.InferOutput<typeof FtueFile>;
 export type FeelData = v.InferOutput<typeof FeelFile>;

@@ -227,7 +227,8 @@ export function botPlayer(bot: Bot, game: Game, pace: Pace = loadPace()): () => 
     const zone = bot.noDecor || goal ? null : game.guestZone();
     const decoration = zone?.open ? zone.items.filter((x) => !x.owned && st.coins >= x.price * 2).sort((a, b) => a.price - b.price)[0] : undefined;
     if (decoration && game.buyGuest(decoration.id)) return go('shop') + pace.cardSec;
-    // A ready egg waits for a tap (M3-02): a player opens it at once.
+    // A ready egg waits for a tap (M3-02; FB-08: it never opens by itself): a player opens it once the shop's
+    // own errands are done (FB-08: it never opens by itself, the courier opens only the eggs it brought).
     const readyEgg = view.incubators.findIndex((i) => i.ready);
     if (readyEgg >= 0) {
       const before = st.stats.hatched;

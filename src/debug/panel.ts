@@ -12,7 +12,7 @@ export interface DebugHooks {
   store: GameStore;
   runtime: Runtime;
   /** content/feel.json, tuned live by the sliders (CLAUDE.md, «Как работать» p. 5). */
-  feel: Record<string, number>;
+  feel: Record<string, unknown>;
   fps(): number;
   fresh(): SaveData;
   /** M4-09: coins earned up to the next move, so the producer can check the move without a day of play. */
@@ -53,8 +53,9 @@ export function installDebugPanel(h: DebugHooks): GUI {
   gui.add(actions, 'reset').name('reset save');
   // Feel sliders: the producer tunes them, presses «copy feel JSON» and sends the text; it goes to content/feel.json.
   const feelFolder = gui.addFolder('feel');
-  for (const key of Object.keys(h.feel)) {
-    const v = h.feel[key] ?? 0;
+  // FB-09: only the numbers get sliders (the burst levels stay in the copied JSON as they are).
+  for (const key of Object.keys(h.feel).filter((k) => typeof h.feel[k] === 'number')) {
+    const v = (h.feel[key] as number) ?? 0;
     const max = v >= 4 ? v * 3 : v >= 1 ? 4 : 1;
     feelFolder.add(h.feel, key, 0, max, max > 4 ? 1 : 0.01).name(key);
   }

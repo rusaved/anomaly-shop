@@ -8,5 +8,6 @@
   "firstCustomerSec": 12,
   "firstOfferShare": 0.85,
   "shelfHintSec": 8,
+  "fingerHatches": 3,
   "maxHintWords": 6
 }

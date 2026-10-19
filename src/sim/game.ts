@@ -1291,6 +1291,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       delete s().flags[`egg_new_${eggId}`];
     }
     placeEgg(check.incubator, eggId, false);
+    // FB-08: the courier opens the eggs it brought; the player's own wait for the tap.
+    if (by === 'helper') s().incubators[check.incubator]!.auto = true;
     commit({ flush: true });
     emit({ type: 'eggBought', incubator: check.incubator, egg: eggId, price: check.price, by });
     emit({ type: 'change' });
@@ -1346,6 +1348,13 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       st.creatures.push({ uid: `${uid}t`, species: kind.id, level: 1, fed: 0, hatchedAt: st.savedAt, age: 0, mult });
       twinsDone = true;
     }
+    // FB-08: the first tapped hatches after the first minute are counted (marks tap_hatch_N): the finger shows until then.
+    if (by === 'tap' && st.flags[FLAGS.done])
+      for (let n = 1; n <= content.ftue.fingerHatches; n++)
+        if (!st.flags[`tap_hatch_${n}`]) {
+          st.flags[`tap_hatch_${n}`] = true;
+          break;
+        }
     // Tapped (UB-03): the player decides in the result (keep, sell now, to the shop). By itself (helpers, away) it goes on sale if there is room.
     Object.assign(inc, emptyIncubator());
     if (by === 'self') listIfRoom(uid);
@@ -1798,7 +1807,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
           // leaves the shop alone for helperIdleSec (a playing player sees the show); an idle shop without one — after selfSec.
           inc.ripeSec = (inc.ripeSec ?? 0) + dt;
           const helper = owned('autoBuyEgg') && idleSec >= eggs.care.ripe.helperIdleSec;
-          if (quiet || helper || inc.ripeSec >= eggs.care.ripe.selfSec) hatch(i);
+          // FB-08: with selfOpen off the player's egg waits for the tap — it never opens by itself, away neither; the eggs the
+          // courier brought (the shop's automation, inc.auto) open as before.
+          if ((inc.auto || eggs.care.ripe.selfOpen) && (quiet || helper || inc.ripeSec >= eggs.care.ripe.selfSec)) hatch(i);
           continue;
         }
         inc.elapsed += dt;

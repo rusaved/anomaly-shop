@@ -122,27 +122,16 @@ describe('M2-03 helpers', () => {
 });
 
 describe('M2-04 offline pace', () => {
-  it('away time works at offlineRate of the helpers pace of live play: 20 min away ≈ 20 × rate min of helpers alone', () => {
+  it('away the helpers still sell what is on the shelf; FB-03: the coins stay within offlineShare of the income for the time away', () => {
     const helpers = ['helper_feed', 'helper_sell', 'helper_courier'];
-    let live = { coins: 0, deals: 0 };
-    let away = { coins: 0, deals: 0 };
-    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
-      const a = setup({ creatures: [cr('a'), cr('b')], helpers, seed });
-      a.game.state.coins = 100;
-      const deals = a.game.state.stats.deals;
-      run(a.game, 600);
-      live = { coins: live.coins + a.game.state.coins - 100, deals: live.deals + a.game.state.stats.deals - deals };
+    for (const seed of [1, 2, 3]) {
       const b = setup({ creatures: [cr('a'), cr('b')], helpers, seed: seed + 100 });
       b.game.state.coins = 100;
       const r = b.game.offline(1200);
-      away = { coins: away.coins + r.coins, deals: away.deals + r.sold };
+      const live = (Math.max(content.eggs.income.floorPerMin, b.game.state.stats.income ?? 0) * 1200) / 60;
+      expect(r.sold).toBeGreaterThan(0);
+      expect(r.coins).toBeGreaterThanOrEqual(live * content.upgrades.offlineShare.min - 1);
+      expect(r.coins).toBeLessThanOrEqual(live * content.upgrades.offlineShare.max + 1);
     }
-    // 20 minutes away at offlineRate of the live pace ≈ 20 × rate minutes of helpers alone (rate 0.5 → 10 min).
-    // UB-05: the deals keep the pace; the coins follow them with the heavy-tailed noise of the rarities (one rare sale weighs dozens).
-    const want = 2 * content.upgrades.offlineRate;
-    expect(away.deals / live.deals).toBeGreaterThan(want * 0.85);
-    expect(away.deals / live.deals).toBeLessThan(want * 1.2);
-    expect(away.coins / live.coins).toBeGreaterThan(want * 0.4);
-    expect(away.coins / live.coins).toBeLessThan(want * 2);
   });
 });

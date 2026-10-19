@@ -10,6 +10,8 @@ import type { Sheet } from './sheet.ts';
 
 export interface SalesLookups {
   t(key: string, vars?: Record<string, string | number>): string;
+  /** FB-07: opens another tab (the one «Цена» was opened from). */
+  goTab(tab: string): void;
   lang(): string;
   speciesName(id: string): string;
   portrait(species: string, rarity: RarityName): string;
@@ -27,7 +29,8 @@ export interface SalesLookups {
 export interface SalesTab {
   render(): void;
   /** A pet's «Цена» page, the pick of a free place (#pick) or the places (null). */
-  show(uid: string | null): void;
+  /** FB-07 (Q-041 B): `from` — the tab the page was opened from; «‹» goes back there (none: within «Продажи»). */
+  show(uid: string | null, from?: string | null): void;
 }
 
 /** The «pick a pet for a free place» page. */
@@ -90,6 +93,15 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     }
   }
 
+  /** FB-07 (Q-041 B): the tab the pick or «Цена» was opened from («Склад», «Лавка»); null — the list of «Продажи». */
+  let origin: string | null = null;
+  const goBack = (within: () => void): void => {
+    if (!origin) return within();
+    const to = origin;
+    origin = null;
+    tab.show(null);
+    look.goTab(to);
+  };
   const back = (title: string): string =>
     `<div class="mu-back"><button type="button" class="mu-round" data-action="sale-back" aria-label="${esc(look.t('eggs.back'))}">‹</button><h2>${esc(title)}</h2></div>`;
 
@@ -111,7 +123,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
             )
             .join('')}</div>`
         : `<p class="empty">${esc(look.t('sales.nothing'))}</p>`);
-    panel.card.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => tab.show(null));
+    panel.card.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => goBack(() => tab.show(null)));
     for (const c of view.inventory) panel.card.querySelector(`[data-action="sale-list-${c.uid}"]`)?.addEventListener('click', () => tab.show(c.uid));
   }
 
@@ -143,7 +155,7 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
       `<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))} · ${esc(look.t('price.marketWord'))} ${money(c.price, fmt)} ${look.mood(c.species)}</span>${c.hold ? `<span class="mu-meta">${esc(look.t('day.hold', { n: c.hold }))}</span>` : ''}</div></div>` +
       '<div data-slider></div>' +
       `<div class="price-go"><button type="button" class="mu-btn main" data-action="${onShelf ? 'sale-save' : `sale-go-${uid}`}">${esc(look.t(onShelf ? 'sales.save' : 'sales.go'))}</button></div>`;
-    panel.card.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => tab.show(onShelf ? null : PICK));
+    panel.card.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => goBack(() => tab.show(onShelf ? null : PICK)));
     slider = createPriceSlider(
       panel.card.querySelector('[data-slider]') as HTMLElement,
       look.slider,
@@ -169,7 +181,9 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
       if (open === PICK) renderPick();
       else if (open) renderCard(open);
     },
-    show(uid) {
+    show(uid, from) {
+      if (from !== undefined) origin = from;
+      else if (uid === null) origin = null;
       open = uid;
       panelKey = '';
       slider = null;

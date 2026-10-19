@@ -1,6 +1,6 @@
 {
   "$schema": "feel.schema.json",
-  "note": "Ощущение игры (CLAUDE.md, «Как работать» п. 5): отклик тапа и анимации. Ползунки — в ?debug=1, продюсер присылает JSON, сборщик переносит сюда. Время в секундах, доли — от размера объекта. hatchShowSec — вылупление-зрелище (M3-05): лента портретов бежит столько секунд и замедляется.",
+  "note": "Ощущение игры (CLAUDE.md, «Как работать» п. 5): отклик тапа и анимации. Ползунки — в ?debug=1, продюсер присылает JSON, сборщик переносит сюда. Время в секундах, доли — от размера объекта. hatchShowSec — вылупление-зрелище (M3-05): лента портретов бежит столько секунд и замедляется. burst (FB-09) — салют по редкости при вылуплении: искры (sparks), залпы салюта (salutes), вспышка (flash, доля), дрожание экрана в px (shake), на весь экран (full), звук; sec ≤ 1,5, тап пропускает; при prefers-reduced-motion — только вспышка.",
   "eggTapSquash": 0.2,
   "eggWobbleDeg": 7,
   "bounceSec": 0.22,
@@ -14,5 +14,13 @@
   "coinsPerSale": 6,
   "coinFlySec": 0.6,
   "hudRollSec": 0.5,
-  "hatchShowSec": 4.5
+  "hatchShowSec": 4.5,
+  "burst": {
+    "sec": 1.4,
+    "good": {"sparks": 16, "salutes": 0, "flash": 0, "shake": 0, "full": false},
+    "valuable": {"sparks": 26, "salutes": 0, "flash": 0.3, "shake": 0, "full": false},
+    "premium": {"sparks": 30, "salutes": 2, "flash": 0.3, "shake": 0, "full": false},
+    "vip": {"sparks": 40, "salutes": 4, "flash": 0.45, "shake": 0, "full": false, "sound": "vip"},
+    "exclusive": {"sparks": 60, "salutes": 7, "flash": 0.6, "shake": 6, "full": true, "sound": "exclusive"}
+  }
 }

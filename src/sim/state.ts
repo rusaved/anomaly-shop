@@ -40,6 +40,8 @@ export interface Incubator {
   careTaps?: number;
   careFed?: number;
   ripeSec?: number;
+  /** FB-08: brought by the courier — it opens by itself; the player's eggs wait for a tap. */
+  auto?: boolean;
 }
 
 export interface CollectionEntry {
@@ -232,13 +234,14 @@ export function normalize(raw: unknown, now: number): SaveData {
             careTaps: Math.max(0, num(o.careTaps, 0)),
             careFed: Math.max(0, num(o.careFed, 0)),
             ripeSec: Math.max(0, num(o.ripeSec, 0)),
+            ...(egg !== null && o.auto === true ? { auto: true } : {}),
           };
         })
       : d.incubators,
     creatures: arr(r.creatures)
       .map((c) => rec(c))
       .filter((o) => typeof o.uid === 'string' && typeof o.species === 'string')
-      .map((o) => ({ uid: o.uid as string, species: o.species as string, level: Math.max(1, num(o.level, 1)), fed: Math.max(0, num(o.fed, 0)), hatchedAt: num(o.hatchedAt, 0), age: Math.max(0, num(o.age, 0)), mult: Math.max(1, num(o.mult, 1)), ...(typeof o.askShare === 'number' && Number.isFinite(o.askShare) ? { askShare: o.askShare } : {}), ...(num(o.hold, 0) > 0 ? { hold: num(o.hold, 0) } : {}), ...(typeof o.mark === 'string' && o.mark ? { mark: o.mark } : {}) })),
+      .map((o) => ({ uid: o.uid as string, species: o.species as string, level: Math.max(1, num(o.level, 1)), fed: Math.max(0, num(o.fed, 0)), hatchedAt: num(o.hatchedAt, 0), age: Math.max(0, num(o.age, 0)), mult: num(o.mult, 1) > 0 ? num(o.mult, 1) : 1, ...(typeof o.askShare === 'number' && Number.isFinite(o.askShare) ? { askShare: o.askShare } : {}), ...(num(o.hold, 0) > 0 ? { hold: num(o.hold, 0) } : {}), ...(typeof o.mark === 'string' && o.mark ? { mark: o.mark } : {}) })),
     showcase: arr(r.showcase).filter((x): x is string => typeof x === 'string'),
     upgrades: numberMap(r.upgrades),
     helpers: numberMap(r.helpers),

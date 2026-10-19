@@ -1,0 +1,53 @@
+
+> anomaly-shop@0.1.0 verify
+> node scripts/verify.mjs
+
+verify (milestone): 13 stages, full log /home/user/anomaly-shop/.cache/verify.log
+ok   typecheck 1.5 s
+ok   test 19.1 s
+ok   validate:content 0.3 s
+ok   sim:balance 76.2 s
+ok   build:e2e 1.5 s
+FAIL e2e [e2e: end of milestone only] after 512.2 s (exit 1)
+last 40 lines:
+    +     "cut": Array [],
+    +     "small": Array [],
+    +     "tiny": Array [
+    +       "button.hatch-sell «Продать сразу за
+    + 51» 199×40",
+    +     ],
+    +   },
+    + }
+
+       at read-shared.ts:84
+
+      82 |   await page.locator('[data-overlay=pause] [data-action=settings]').click();
+      83 |   await look('settings');
+    > 84 |   expect(found).toEqual({});
+         |                 ^
+      85 |   expect(errors).toEqual([]);
+      86 | }
+      87 |
+        at everyScreenReadable (/home/user/anomaly-shop/e2e/read-shared.ts:84:17)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/layout-usability-ub-UB-09--e6f26-4-px-and-up-on-every-screen-phone-landscape/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/layout-usability-ub-UB-09--e6f26-4-px-and-up-on-every-screen-phone-landscape/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/layout-usability-ub-UB-09--e6f26-4-px-and-up-on-every-screen-phone-landscape/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/layout-usability-ub-UB-09--e6f26-4-px-and-up-on-every-screen-phone-landscape/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [phone-landscape] › e2e/layout-usability-ub.spec.ts:12:1 › UB-09 phone: text 12 px and up (M4-00: 14 px on a PC), buttons 44 px and up on every screen 
+  1 did not run
+  148 passed (8.5m)
+
+EXIT=1

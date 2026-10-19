@@ -3809,7 +3809,7 @@ button.mu-card {
     grid-area: sell;
     justify-self: start;
     width: auto;
-    min-height: 40px;
+    min-height: 44px;
     margin: 0 0 0 -12px;
     padding: 0 12px;
   }
@@ -3818,8 +3818,8 @@ button.mu-card {
     margin-top: 24px;
   }
   .landscape #ui .overlay > .card.card-hatch {
-    padding-top: 7px;
-    padding-bottom: 4px;
+    padding-top: 3px;
+    padding-bottom: 3px;
   }
   .landscape #ui .card-hatch > h2 {
     margin-bottom: 0 !important;
@@ -3829,6 +3829,10 @@ button.mu-card {
   .landscape .card-hatch.shown .hatch-result > .hatch-window {
     display: block;
     visibility: hidden;
+  }
+  /* 07 rule 4: the sell line is a 44 px target — the strip 4 px lower keeps the card whole over the tab bar at 130 %. */
+  .landscape .card-hatch .hatch-window {
+    min-height: 68px;
   }
 }
 @media (max-height: 520px) {

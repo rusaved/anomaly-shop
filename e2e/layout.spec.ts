@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { collectErrors, expectInsideViewport, expectNoPageScroll, open, state } from './helpers.ts';
 
 /** SCR-01 on the phone projects (375×812 portrait and 812×375 landscape, touch): nothing clipped, nothing scrolls. */
-test('SCR-01 phone: the top bar, «Лавка» with its shelf row, the tab bar inside the viewport, no scroll', async ({ page }) => {
+test('SCR-01 phone: the top bar, «Лавка» with its shelf and the Store under it, the tab bar inside the viewport, no scroll', async ({ page }) => {
   const errors = collectErrors(page);
   await open(page, '?mock_device=mobile');
   expect((await state(page)).device).toBe('mobile');
@@ -12,9 +12,9 @@ test('SCR-01 phone: the top bar, «Лавка» with its shelf row, the tab bar 
   for (const tab of ['market', 'inventory', 'sales', 'chats', 'shop']) await expect(page.locator(`[data-tab=${tab}]`)).toBeHidden();
   await expect(page.locator('[data-tab=season]')).toHaveCount(0);
   const vp = page.viewportSize()!;
-  // MU-03: portrait — the «Витрина» row under the room with a «+» on the free place; sideways — the eggs right of the room (l1).
-  if (vp.height >= vp.width) await expectInsideViewport(page, ['[data-shelf-head]', '[data-action=shelf-add]']);
-  else await expectInsideViewport(page, ['[data-sheet=home] [data-action=egg-buy-egg_basic]']);
+  // FB-10 (homeShop): the room with its shelf — a «+» on the free place — and the Store's segments under it (sideways right of it).
+  void vp;
+  await expectInsideViewport(page, ['[data-action=shelf-add]', '[data-sheet=home] [data-sub=upgrades]', '[data-sheet=home] [data-upgrade]']);
   expect(errors).toEqual([]);
 });
 

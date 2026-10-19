@@ -71,6 +71,13 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
   /** MU-12 (the usability review): the order of the cards stays while the Store is on screen — a purchase never moves the next card under the finger. */
   let order: string[] = [];
   let boughtAt = 0;
+  /** FB-12: the row just bought (it flashes; a repeat flashes shorter). */
+  let flash = { id: '', at: -1e9, short: false };
+
+  /** FB-12: a row bought within its flash time keeps flashing across re-renders (the animation resumes where it was). */
+  const flashLeft = (id: string): number => (flash.id === id ? (flash.short ? 350 : 700) - (performance.now() - flash.at) : 0);
+  const flashClass = (id: string): string => (flashLeft(id) > 0 ? (flash.short ? ' bought short' : ' bought') : '');
+  const flashStyle = (id: string): string => (flashLeft(id) > 0 ? ` style="animation-delay:-${Math.round(performance.now() - flash.at)}ms"` : '');
 
   function upgradeCard(id: string, fmt: Intl.NumberFormat, coins: number, crystals: number): string {
     const u = look.upgrade(id);
@@ -91,7 +98,7 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
       ? `<button type="button" class="mu-btn off is-max" data-action="buy-upgrade" data-id="${id}" aria-disabled="true">${esc(look.t('upgrades.max'))}</button>`
       : `<button type="button" class="mu-btn${item.affordable ? '' : ' off'}" data-action="buy-upgrade" data-id="${id}" aria-disabled="${!item.affordable}">${money(item.price, fmt, gem)}</button>`;
     return (
-      `<div class="mu-card shop-item" data-upgrade="${id}"><span class="mu-pic"><img alt="" src="${look.icon(u.decor ?? u.id)}">${item.fresh ? '<i class="mu-new" data-new></i>' : ''}</span>` +
+      `<div class="mu-card shop-item${item.affordable && !item.maxed ? ' can' : ''}${flashClass(id)}" data-upgrade="${id}"${flashStyle(id)}><span class="mu-pic"><img alt="" src="${look.icon(u.decor ?? u.id)}">${item.fresh ? '<i class="mu-new" data-new></i>' : ''}</span>` +
       `<span class="mu-name">${esc(u.name[look.lang() === 'en' ? 'en' : 'ru'])}</span><span class="mu-line"><span class="mu-meta">${esc(effectText(u, look))}</span>${lvl}${short}</span>${btn}</div>`
     );
   }
@@ -154,7 +161,14 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
       sheet.body.querySelectorAll<HTMLElement>('[data-action="buy-upgrade"]').forEach((b) =>
         b.addEventListener('click', () => {
           if (performance.now() - boughtAt < 450) return;
-          if (game.buyUpgrade(b.dataset.id ?? '')) boughtAt = performance.now();
+          const id = b.dataset.id ?? '';
+          if (game.buyUpgrade(id)) {
+            // FB-12: the row flashes; the same row again within 3 s — a shorter flash.
+            flash = { id, at: performance.now(), short: flash.id === id && performance.now() - flash.at < 3000 };
+            boughtAt = performance.now();
+            built = '';
+            tab.render();
+          }
         }),
       );
       sheet.body.querySelectorAll<HTMLElement>('[data-action="guest-buy"]').forEach((b) => b.addEventListener('click', () => game.buyGuest(b.dataset.id ?? '')));

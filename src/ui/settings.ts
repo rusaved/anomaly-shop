@@ -34,6 +34,24 @@ export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n
     i18n.apply(sound.parentElement ?? sound);
   });
   soundRow.append(soundLabel, sound);
+  // FB-13: the buzz of the main buttons (Android; a phone without it never shows the row).
+  const vibRow = document.createElement('div');
+  vibRow.className = 'row';
+  vibRow.hidden = typeof navigator.vibrate !== 'function';
+  const vibLabel = document.createElement('span');
+  vibLabel.dataset.i18n = 'settings.vibrate';
+  const vibOn = (): boolean => store.state.settings.vibrate !== false;
+  const vib = button('vibrate', vibOn() ? 'settings.on' : 'settings.off', 'btn-toggle');
+  vib.setAttribute('aria-pressed', String(vibOn()));
+  vib.addEventListener('click', () => {
+    const next = !vibOn();
+    store.state.settings.vibrate = next;
+    store.commit();
+    vib.dataset.i18n = next ? 'settings.on' : 'settings.off';
+    vib.setAttribute('aria-pressed', String(next));
+    i18n.apply(vib.parentElement ?? vib);
+  });
+  vibRow.append(vibLabel, vib);
 
   const langRow = document.createElement('div');
   langRow.className = 'row';
@@ -82,7 +100,7 @@ export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n
 
   // MU-09: no second main button — «Назад» is dark, the ✕ does the same.
   const back = button('back', 'settings.back');
-  overlay.card.append(title, soundRow, langRow);
+  overlay.card.append(title, soundRow, vibRow, langRow);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
 

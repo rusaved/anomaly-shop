@@ -247,6 +247,8 @@ export const FeelFile = v.object({
   coinsPerSale: Positive,
   coinFlySec: v.pipe(v.number(), v.minValue(0.1)),
   hudRollSec: Positive,
+  /** FB-13: the buzz of a main button, ms (10–20). */
+  buzzMs: v.pipe(v.number(), v.minValue(10), v.maxValue(20)),
   /** FB-09: the celebration of a hatch and of any reward from «good» up (common has none); ≤ 1.5 s, a tap skips it. */
   burst: v.object({ sec: v.pipe(v.number(), v.minValue(0.2), v.maxValue(1.5)), good: BurstLevel, valuable: BurstLevel, premium: BurstLevel, vip: BurstLevel, exclusive: BurstLevel }),
   /** The hatch show (M3-05): seconds the portraits run before the result, 4–5. */
@@ -394,6 +396,8 @@ const TabUnlock = v.variant('type', [
 export const NavFile = v.object({
   tabs: v.object({ market: TabUnlock, inventory: TabUnlock, sales: TabUnlock, home: TabUnlock, eggs: TabUnlock, chats: TabUnlock, shop: TabUnlock, season: TabUnlock }),
   shop: v.object({ sections: v.pipe(v.array(v.object({ id: Id, enabled: v.boolean() })), v.minLength(1)) }),
+  /** FB-10: the Store's upgrades under the room of «Лавка» (false: the «Витрина» row and the scene buttons, as in MU). */
+  homeShop: v.optional(v.boolean(), false),
 });
 /** Side job (docs/01 §3 p. 15): tapping the bowl feeds the neighbours' pets for coins; the job levels up on a ×growth ladder. */
 export const WorkFile = v.object({

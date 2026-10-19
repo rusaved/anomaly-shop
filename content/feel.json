@@ -15,6 +15,7 @@
   "coinFlySec": 0.6,
   "hudRollSec": 0.5,
   "hatchShowSec": 4.5,
+  "buzzMs": 15,
   "burst": {
     "sec": 1.4,
     "good": {"sparks": 16, "salutes": 0, "flash": 0, "shake": 0, "full": false},

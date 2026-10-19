@@ -1,4 +1,4 @@
-// What: screen layout (docs/02, 4.4; docs/07; MU-02): the top bar, a full-width tab bar at the bottom; between them «Лавка» (the shop room + the shelf or eggs) or a tab screen.
+// What: screen layout (docs/02, 4.4; docs/07; MU-02, FB-10): the top bar, a full-width tab bar at the bottom; between them «Лавка» (the shop room + the shelf, the eggs or the Store) or a tab screen.
 // Called by: src/main.ts (watchLayout once), src/scene (stage rect), tests/layout.test.ts (computeLayout is pure).
 // Keep: computeLayout has no DOM; every size and ratio sits in PANEL; both orientations work at any proportion, never locked.
 
@@ -54,12 +54,16 @@ export const PANEL = {
   /** A phone sideways (the stage lower than this): the scene buttons get a band of floor under the room (44 + 12 + 12 px). */
   landscapeShort: 400,
   landscapeBand: 68,
+  /** FB-10 (homeShop): portrait — the room under the top bar takes this share of the height between the bars, the Store list the rest. */
+  homeShopShare: 0.42,
+  homeShopMin: 200,
+  homeShopMax: 320,
 };
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
-export function computeLayout(width: number, height: number, safe: Insets = NO_INSETS): Layout {
+export function computeLayout(width: number, height: number, safe: Insets = NO_INSETS, homeShop = false): Layout {
   const w = Math.max(1, Math.floor(width));
   const h = Math.max(1, Math.floor(height));
   const portrait = h >= w;
@@ -68,6 +72,23 @@ export function computeLayout(width: number, height: number, safe: Insets = NO_I
   const nav = { x: 0, y: h - navH, w, h: navH };
   const screen = { x: 0, y: hudHeight, w, h: Math.max(1, h - navH - hudHeight) };
   const above = Math.max(1, h - navH);
+  if (portrait && homeShop) {
+    // FB-10: the room with its shelf on the wall under the top bar (as sideways), the Store's list under it.
+    const body = Math.max(1, above - hudHeight);
+    const roomH = Math.max(1, Math.min(body - 1, clamp(Math.round(body * PANEL.homeShopShare), PANEL.homeShopMin, PANEL.homeShopMax)));
+    return {
+      orientation: 'portrait',
+      width: w,
+      height: h,
+      stage: { x: 0, y: hudHeight, w, h: roomH },
+      shelf: null,
+      panel: { x: 0, y: hudHeight + roomH, w, h: Math.max(1, body - roomH) },
+      nav,
+      screen,
+      hudHeight,
+      safe,
+    };
+  }
   if (portrait) {
     const roomH = Math.max(1, Math.min(above - 1, clamp(Math.round(above * PANEL.roomShare), PANEL.roomMin, PANEL.roomMax)));
     const shelfY = roomH + PANEL.shelfTop;
@@ -102,7 +123,8 @@ export function computeLayout(width: number, height: number, safe: Insets = NO_I
 
 /** Sideways on a phone: the height of the room over the band of the scene buttons (0 — the room takes the whole stage). */
 export function roomHeight(layout: Layout): number {
-  if (layout.shelf || layout.stage.h >= PANEL.landscapeShort) return 0;
+  // FB-10: with the Store under it the portrait room has no button band (the scene buttons are round, in its corner).
+  if (layout.shelf || layout.stage.h >= PANEL.landscapeShort || layout.orientation === 'portrait') return 0;
   return Math.max(1, layout.stage.h - PANEL.landscapeBand);
 }
 
@@ -138,11 +160,12 @@ export function applyLayout(appRoot: HTMLElement, layout: Layout): void {
 }
 
 /** Recomputes on every size change (resize, rotation, address bar); calls cb at once and after each change. */
-export function watchLayout(appRoot: HTMLElement, cb: (layout: Layout) => void): () => void {
+export function watchLayout(appRoot: HTMLElement, cb: (layout: Layout) => void, homeShop = false): () => void {
   let last = '';
+  appRoot.classList.toggle('home-shop', homeShop);
   const run = (): void => {
     const safe = readSafeInsets(appRoot.ownerDocument);
-    const layout = computeLayout(appRoot.clientWidth, appRoot.clientHeight, safe);
+    const layout = computeLayout(appRoot.clientWidth, appRoot.clientHeight, safe, homeShop);
     const key = `${layout.width}x${layout.height}:${layout.orientation}:${safe.top},${safe.right},${safe.bottom},${safe.left}`;
     if (key === last) return;
     last = key;

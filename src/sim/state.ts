@@ -76,7 +76,7 @@ export interface SaveData {
   guest: { items: string[]; unpaid: boolean; due: number };
   /** xp — reputation points of the seller level (UB-08); saves made before it count their deals. */
   stats: { deals: number; coinsEarned: number; hatched: number; taps: number; levelUps: number; haggles: number; xp?: number; dealsAll?: number; income?: number; awayDeals?: number };
-  settings: { sound: boolean; lang: Lang | null };
+  settings: { sound: boolean; lang: Lang | null; vibrate?: boolean };
   /** Once-per-player analytics flags and tutorial marks. */
   flags: Record<string, boolean>;
   /** Taps on shop things for the easter eggs (docs/01b, section 2): sign, door, lamp. */
@@ -177,7 +177,7 @@ export function newSave(now: number): SaveData {
     guest: { items: [], unpaid: false, due: 0 },
     daily: { day: '', base: {}, goals: [], claimed: [], egg: false },
     stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0, xp: 0, dealsAll: 0, income: 0, awayDeals: 0 },
-    settings: { sound: true, lang: null },
+    settings: { sound: true, lang: null, vibrate: true },
     flags: {},
     secrets: {},
     order: null,
@@ -278,7 +278,7 @@ export function normalize(raw: unknown, now: number): SaveData {
       // FB-03: deals made away that do not raise the seller level (the level grows at most offlineMaxLevels away).
       awayDeals: Math.max(0, num(st.awayDeals, 0)),
     },
-    settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null },
+    settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null, vibrate: bool(set.vibrate, true) },
     flags: Object.fromEntries(Object.entries(rec(r.flags)).filter(([, v]) => v === true).map(([k]) => [k, true])),
     secrets: numberMap(r.secrets),
     order: normalizeOrder(r.order),

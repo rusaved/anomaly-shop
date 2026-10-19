@@ -110,6 +110,8 @@ export interface ShopDeps {
   careShell: readonly string[];
   invalidate(): void;
   handlers: ShopHandlers;
+  /** FB-12: where a bought upgrade stands in the shop (a decor spot, «incubator», «showcase») and its «+N» (content/upgrades.json). */
+  upgradeFx?(id: string): { spot: string; plus: string };
 }
 
 export function createShopView(app: Application, deps: ShopDeps): ShopView {
@@ -260,6 +262,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let shelfRect: Rect | null = null;
   let roomHeight = 0;
   let upgradeText = '';
+  /** FB-12: the last upgrade bought and when (scene time): the same again within 3 s shines shorter. */
+  let lastBought = { id: '', at: -99 };
   let hud = 0;
   let current: ShopLayout | null = null;
   let incubatorCount = 1;
@@ -1139,14 +1143,29 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         if (spot) fx.burst(spot.x, spot.y, 8, [c.incubator, c.incubatorGlass, c.uiAccent], spot.r * 3.5, current.outline * 1.2);
       } else if (e.type === 'upgradeBought') {
         // M3-17: the shop changed — it shines where the shop is and says so in the scene (the panel stays aside).
-        // In the upper part of the shop: it stays in view above a portrait panel.
+        // FB-12: the sparks and «+N» at the thing bought (its spot in the room); the same thing again soon — a shorter shine.
         const area = stageRect ?? current.stage;
-        const x = area.x + area.w / 2;
-        const y = area.y + Math.max(hud, area.h * 0.22);
+        const info = deps.upgradeFx?.(e.id);
+        const d = info ? (current.decor as unknown as Record<string, { x: number; y: number; w?: number; h?: number } | undefined>)[info.spot] : undefined;
+        const spot =
+          info?.spot === 'incubator'
+            ? current.incubators[current.incubators.length - 1]
+            : info?.spot === 'showcase'
+              ? (() => {
+                  const r = current.slots[current.slots.length - 1];
+                  return r ? { x: r.x + r.w / 2, y: r.y + r.h / 2 } : undefined;
+                })()
+              : d
+                ? { x: d.x + (d.w ?? 0) / 2, y: d.y + (d.h ?? 0) / 2 }
+                : undefined;
+        const x = spot?.x ?? area.x + area.w / 2;
+        const y = spot?.y ?? area.y + Math.max(hud, area.h * 0.22);
+        const again = lastBought.id === e.id && time - lastBought.at < 3;
+        lastBought = { id: e.id, at: time };
         const size = Math.max(14, Math.min(26, current.unit * 0.75));
-        fx.burst(x, y, 18, [c.uiAccent, c.rarityLegendary, c.eyeWhite], current.unit * 6, current.outline * 1.4);
-        upgradeText = t('fx.upgrade', { n: e.level });
-        fx.float(x, y, upgradeText, c.uiAccent, size, current.unit * 1.4);
+        fx.burst(x, y, again ? 8 : 18, [c.uiAccent, c.rarityLegendary, c.eyeWhite], current.unit * (again ? 3.5 : 6), current.outline * 1.4);
+        upgradeText = info?.plus || t('fx.upgrade', { n: e.level });
+        fx.float(x, y - current.unit * 0.4, upgradeText, c.uiAccent, again ? size * 0.85 : size, current.unit * (again ? 0.9 : 1.4));
       }
       invalidate();
     },

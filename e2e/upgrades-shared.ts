@@ -6,8 +6,9 @@ export async function upgradesPanel(page: Page, shots?: string): Promise<void> {
   const errors = collectErrors(page);
   await seedSave(page, { coins: 5000, flags: { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true, showcase_m3: true } });
   await open(page);
-  // UB-04: a button on the home screen opens the Shop on its «Upgrades» (the Shop tab does too, Q-021 B).
-  await page.locator('[data-action=open-upgrades]').click();
+  // UB-04: a button opens the Shop on its «Upgrades» (FB-10: with the Store under «Лавка» it is the «+» of the balance; the Shop tab does too, Q-021 B).
+  const sceneButton = page.locator('[data-action=open-upgrades]');
+  await (await sceneButton.isVisible() ? sceneButton : page.locator('[data-action=balance]')).click();
   const panel = page.locator('[data-sheet=shop]');
   await expect(panel).toBeVisible();
   await expect(panel.locator('[data-section=upgrades]')).toBeVisible();
@@ -29,7 +30,9 @@ export async function upgradesPanel(page: Page, shots?: string): Promise<void> {
   await first.dblclick();
   expect(await order()).toEqual(before);
   expect(((await state(page)) as unknown as { upgrades: Record<string, number> }).upgrades[id ?? ''] ?? 0).toBe(1);
-  await expect.poll(async () => ((await state(page)) as unknown as { upgradeFx: string }).upgradeFx).toMatch(/\d/);
+  // FB-12: the row flashes, the scene says «+N» of the effect at the thing bought.
+  await expect(panel.locator(`[data-upgrade="${id}"].bought`)).toHaveCount(1);
+  await expect.poll(async () => ((await state(page)) as unknown as { upgradeFx: string }).upgradeFx).toMatch(/^\+\d+%?$/);
   // MU-10: the bought level shows on its card (dots or «куплено»), the price button stays dark.
   await expect.poll(async () => ((await state(page)) as unknown as { upgrades: Record<string, number> }).upgrades[id ?? ''] ?? 0).toBeGreaterThan(0);
   await expect(panel.locator(`[data-upgrade="${id}"] [data-action=buy-upgrade]`)).not.toHaveClass(/main/);

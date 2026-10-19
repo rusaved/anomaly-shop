@@ -31,6 +31,8 @@ import { createRebirthWindow } from './ui/rebirth.ts';
 import { createLeadersWindow } from './ui/leaders.ts';
 import { createBurst } from './ui/burst.ts';
 import { createFinger } from './ui/finger.ts';
+import { installPress } from './ui/press.ts';
+import { installFit } from './ui/fit.ts';
 import { createHints } from './ui/hints.ts';
 import { createNextCard } from './ui/next.ts';
 import { createNewsTicker } from './ui/news.ts';
@@ -148,6 +150,15 @@ async function boot(): Promise<void> {
     line: (id) => speciesById(id)?.line[i18n.lang()] ?? '',
     careShell: eggs.care.shell,
     invalidate: scene.invalidate,
+    // FB-12: where a bought upgrade stands in the shop and its «+N» (the effect of one level, from the data).
+    upgradeFx: (id) => {
+      const u = upgrades.upgrades.find((x) => x.id === id);
+      const e = u?.effect as { type: string; perLevel?: number } | undefined;
+      const spot = !u ? '' : e?.type === 'slots' || e?.type === 'hatchTime' ? 'incubator' : e?.type === 'showcaseSlots' && !u.decor ? 'showcase' : (u.decor ?? '');
+      const pct = e?.type === 'hatchTime' || e?.type === 'spawnRate' || e?.type === 'bargain' || e?.type === 'give' || e?.type === 'appraisal' || e?.type === 'shelfGrowth';
+      const n = e?.perLevel === undefined ? 1 : pct ? Math.round(Math.abs(e.perLevel) * 100) : Math.abs(e.perLevel);
+      return { spot, plus: `+${n}${pct ? '%' : ''}` };
+    },
     handlers: {
       tapIncubator: (i) => play.tapIncubator(i),
       tapCreature: (uid) => play.tapCreature(uid),
@@ -169,6 +180,14 @@ async function boot(): Promise<void> {
   // Sale coins roll the counter only as they land (M1-07, the sold handler below); everything else rolls at once.
   store.onCommit((s) => hud.update(s.coins));
   const flight = createCoinFlight(uiRoot);
+  // FB-13: where the last press was (coins fly from the button that earned them) and the flight into the counter, which rolls as they land.
+  let lastPress = { x: 0, y: 0, at: -1e9 };
+  document.addEventListener('pointerdown', (ev) => (lastPress = { x: ev.clientX, y: ev.clientY, at: performance.now() }), { capture: true, passive: true });
+  const recentPress = (): { x: number; y: number } | null => (performance.now() - lastPress.at < 1500 ? { x: lastPress.x, y: lastPress.y } : null);
+  const flyCoins = (from: { x: number; y: number }): void => {
+    const delay = flight.fly(from, hud.coinIcon, feel.coinsPerSale, feel.coinFlySec, () => hud.pulse());
+    hud.update(store.state.coins, { delaySec: Math.max(0, delay - feel.hudRollSec * 0.5) });
+  };
   const links = platform.caps.community ? communityLinks() : null;
   // The genre-standard frame (docs/01 §1а, §6): one tab bar at the bottom, «Eggs» is home (the shop scene + its panel).
   // M4-00: one panel model for every tab — the same panel by the shop (right of it on a PC and sideways, under it on a phone);
@@ -213,6 +232,7 @@ async function boot(): Promise<void> {
       play.seenShop();
       shopTab.leave();
     }
+    if (shown === 'home' && tab !== 'home') homeShopTab?.leave();
     shown = tab;
     // MU-02 (07 rule 11): a tab is a screen; the scene shows on «Лавка» only.
     uiRoot.dataset.screen = tab;
@@ -242,7 +262,7 @@ async function boot(): Promise<void> {
     showTab(tab);
   };
   // MU-03 (s1-shop-scene): «Лавка» — the «Витрина» row under the room (title, «N из M мест», «+» on free places),
-  // «Улучшения» and «Подработка» at the bottom of the scene.
+  // «Улучшения» and «Подработка» at the bottom of the scene; FB-11 (homeShop): «Подработка» — a round hammer in the scene's corner.
   const homeUi = document.createElement('div');
   homeUi.className = 'home-ui';
   homeUi.innerHTML =
@@ -250,7 +270,7 @@ async function boot(): Promise<void> {
     '<div class="shelf-plus" data-shelf-plus></div>' +
     '<div class="stage-actions">' +
     '<button type="button" class="mu-btn stage-btn" data-action="open-upgrades"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4l6 6-3 3-6-6z"/><path d="M11 7L4 14l3 3 7-7"/><path d="M6 19l-2 1 1-2"/></svg><span data-i18n="upgrades.open"></span><span class="nav-badge nav-dot" data-upgrades-dot hidden></span></button>' +
-    '<button type="button" class="mu-btn stage-btn" data-action="work"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 6 0 0 1-18 0z"/><path d="M8 8c0-2 2-2 2-4M13 8c0-2 2-2 2-4"/></svg><span data-i18n="work.title"></span></button>' +
+    '<button type="button" class="mu-btn stage-btn stage-work" data-action="work" data-i18n="work.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3l7 7-3 3-7-7z"/><path d="M12.5 8.5L3 18l3 3 9.5-9.5"/></svg><span data-i18n="work.title"></span></button>' +
     '</div>';
   uiRoot.appendChild(homeUi);
   const stageButton = homeUi.querySelector('[data-action="open-upgrades"]') as HTMLElement;
@@ -262,7 +282,7 @@ async function boot(): Promise<void> {
   const nav = createNav(uiRoot, showTab);
   // 07 rule 8: the «+» of the balance opens the Store (its deals from the ads milestone; the upgrades till then).
   hud.wallet.addEventListener('click', openUpgrades);
-  const shopTab = createShopTab(sheets.get('shop')!, play, {
+  const shopLook: Parameters<typeof createShopTab>[2] = {
     t: i18n.t,
     lang: i18n.lang,
     upgrade: (id) => upgrades.upgrades.find((u) => u.id === id),
@@ -275,8 +295,12 @@ async function boot(): Promise<void> {
       return u?.type === 'level' ? u.n : 1;
     })(),
     icon: (thing) => portraits.thing(thing),
-  });
+  };
+  const shopTab = createShopTab(sheets.get('shop')!, play, shopLook);
   shopTab.section('upgrades');
+  // FB-10 (homeShop): the same Store under the room of «Лавка» — its upgrades always in sight.
+  const homeShopTab = navData.homeShop ? createShopTab(sheets.get('home')!, play, shopLook) : null;
+  homeShopTab?.section('upgrades');
   const inventoryTab = createInventoryTab(sheets.get('inventory')!, play, {
     t: i18n.t,
     lang: i18n.lang,
@@ -341,7 +365,7 @@ async function boot(): Promise<void> {
   window.setInterval(() => {
     if (nav.active() === 'eggs') eggsTab.render();
     if (nav.active() === 'inventory') inventoryTab.render();
-    if (nav.active() === 'home' && appRoot.classList.contains('landscape')) homeEggs.render();
+    if (nav.active() === 'home' && appRoot.classList.contains('landscape') && !homeShopTab) homeEggs.render();
   }, 1000);
   const salesTab = createSalesTab(sheets.get('sales')!, play, {
     t: i18n.t,
@@ -486,7 +510,7 @@ async function boot(): Promise<void> {
       nav.setOpen(id, open, tabsKnown);
     }
     tabsKnown = true;
-    stageButton.hidden = !store.state.flags.open_shop;
+    stageButton.hidden = !store.state.flags.open_shop || Boolean(homeShopTab);
   }
   /** MU-03: the «Витрина» row — «N из M мест» and a «+» on every free place (it opens «Мои продажи» on the pick). */
   let shelfKey = '';
@@ -494,7 +518,8 @@ async function boot(): Promise<void> {
     const v = play.view();
     const anchors = shop.anchors();
     const portrait = appRoot.classList.contains('portrait');
-    const slots = portrait && anchors ? anchors.slots : [];
+    // FB-10: with the Store under the room the shelf is in the room — its free places take a «+» in both orientations.
+    const slots = (portrait || homeShopTab) && anchors ? anchors.slots : [];
     const key = `${i18n.lang()}:${v.creatures.length}:${v.slots}:${slots.map((r) => `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.w)}`).join(';')}`;
     if (key === shelfKey) return;
     shelfKey = key;
@@ -521,8 +546,9 @@ async function boot(): Promise<void> {
     const tab = nav.active();
     if (tab === 'home') renderShelf();
     // MU-02: the eggs of sideways «Лавка» (l1) exist only there; the «Яйца» tab drops its cards when out of sight.
-    if (tab === 'home' && appRoot.classList.contains('landscape')) homeEggs.render();
-    else homeEggs.clear();
+    if (tab === 'home' && homeShopTab) homeShopTab.render();
+    else if (tab === 'home' && appRoot.classList.contains('landscape')) homeEggs.render();
+    if (homeShopTab || tab !== 'home' || !appRoot.classList.contains('landscape')) homeEggs.clear();
     if (tab === 'market') marketTab.render();
     if (tab === 'chats') chatsTab.render();
     if (tab === 'inventory') inventoryTab.render();
@@ -664,6 +690,8 @@ async function boot(): Promise<void> {
   catchUp((platform.now() - lastSeen) / 1000);
   const sfx = createSfx(audio, () => store.state.settings.sound && platform.audioAllowed());
   document.addEventListener('pointerdown', () => sfx.unlock(), { capture: true });
+  // FB-13: every button clicks, the main ones buzz on Android (settings «Вибрация»).
+  const press = installPress(document, { sound: () => sfx.play('press'), vibrate: () => store.state.settings.vibrate !== false && typeof navigator.vibrate === 'function', buzzMs: feel.buzzMs });
   runtime.pause.onChange((paused) => sfx.setSuspended(paused));
   const chatter = createChatter({ lines, lang: () => i18n.lang(), speak: (who, text) => shop.speak(who, text), view: () => play.view() });
   const foundNow: string[] = [];
@@ -680,12 +708,15 @@ async function boot(): Promise<void> {
     else if (e.type === 'fed' && (e.by === 'tap' || e.levelUp)) sfx.play(e.levelUp ? 'levelUp' : 'tap');
     else if (e.type === 'sold') {
       sfx.play('coin');
+      // FB-13: from the button just pressed («Продать за N» in a chat), else from the buyer in the shop.
       const p = shop.customerPoint(e.customerId) ?? shop.anchors()?.queue[0];
       const rect = canvas.getBoundingClientRect();
-      if (p) {
-        const delay = flight.fly({ x: rect.left + p.x, y: rect.top + p.y }, hud.coinIcon, feel.coinsPerSale, feel.coinFlySec, () => hud.pulse());
-        hud.update(store.state.coins, { delaySec: Math.max(0, delay - feel.hudRollSec * 0.5) });
-      }
+      const from = recentPress() ?? (p && nav.active() === 'home' ? { x: rect.left + p.x, y: rect.top + p.y } : null);
+      if (from) flyCoins(from);
+    } else if ((e.type === 'gift' && (e.reward.coins ?? 0) > 0) || (e.type === 'findClaimed' && e.coins > 0)) {
+      // FB-13: reward coins fly into the counter too (from the «Забрать» pressed).
+      const from = recentPress();
+      if (from) flyCoins(from);
     }
     else if (e.type === 'chatReply' && (e.ctx === 'accept' || e.ctx === 'last')) sfx.play(e.ctx === 'accept' ? 'buy' : 'fail');
     else if (e.type === 'ftueDone') toasts.show(i18n.t('ftue.rich'), 'good', 3200);
@@ -770,8 +801,8 @@ async function boot(): Promise<void> {
       sfx.play('rare');
     }
     else if (e.type === 'upgradeBought') {
-      // M3-17, M3-18: the shop itself says «Upgrade: level N» (the scene); no second text in a toast.
-      sfx.play('levelUp');
+      // M3-17, M3-18: the shop itself says «+N» at the thing (the scene, FB-12); no second text in a toast.
+      sfx.play('upgrade');
     }
     else if (e.type === 'eggBought') sfx.play('buy');
     else if (e.type === 'eggsStored') toasts.show(i18n.t('eggs.stored', { n: e.count }), 'good', 1800);
@@ -817,6 +848,8 @@ async function boot(): Promise<void> {
     window: () => topWindow()?.card ?? null,
   });
   const finger = createFinger(uiRoot);
+  // FB-14: tab labels and segments keep whole words at a large system font (smaller, ≥ 12 px).
+  const fitter = installFit(uiRoot);
   // UB-07: the milestone label is a dev trace — only with ?debug=1 (the producer link keeps it there).
   if (new URLSearchParams(location.search).has('debug')) renderBuildLabel(uiRoot, __BUILD_LABEL__);
   i18n.apply(uiRoot);
@@ -827,21 +860,27 @@ async function boot(): Promise<void> {
     i18n.apply(uiRoot);
     shop.relabel();
     newsTicker.refresh();
+    requestAnimationFrame(() => fitter.run());
     store.state.settings.lang = next;
     store.commit({ flush: true });
   });
   document.addEventListener('contextmenu', (e) => e.preventDefault());
-  watchLayout(appRoot, (layout) => {
-    canvas.style.width = `${layout.width}px`;
-    canvas.style.height = `${layout.height}px`;
-    scene.resize(layout.width, layout.height);
-    // MU-03: portrait — the room under the top bar and the «Витрина» strip under it; landscape — the room left of the eggs (l1).
-    if (layout.shelf) shop.layout(layout.stage, sceneTop(layout), layout.shelf, layout.panel.y);
-    else shop.layout(layout.stage, sceneTop(layout), null, roomHeight(layout));
-    shelfKey = '';
-    renderShelf();
-    renderTabs();
-  });
+  watchLayout(
+    appRoot,
+    (layout) => {
+      canvas.style.width = `${layout.width}px`;
+      canvas.style.height = `${layout.height}px`;
+      scene.resize(layout.width, layout.height);
+      // MU-03: portrait — the room under the top bar and the «Витрина» strip under it; landscape — the room left of the eggs (l1).
+      if (layout.shelf) shop.layout(layout.stage, sceneTop(layout), layout.shelf, layout.panel.y);
+      else shop.layout(layout.stage, sceneTop(layout), null, roomHeight(layout));
+      shelfKey = '';
+      renderShelf();
+      renderTabs();
+      requestAnimationFrame(() => fitter.run());
+    },
+    navData.homeShop,
+  );
 
   if (__DEBUG_TOOLS__ && new URLSearchParams(location.search).has('debug')) {
     const { installDebugPanel } = await import('./debug/panel.ts');
@@ -873,6 +912,7 @@ async function boot(): Promise<void> {
         rarities: store.state.creatures.map((c) => speciesById(c.species)?.rarity ?? ''),
         event: play.view().event?.kind ?? null,
         tab: nav.active(),
+        presses: press.count(),
         shelf: play.view().creatures.map((c) => c.uid),
         windows: [...uiRoot.querySelectorAll<HTMLElement>('.overlay:not([hidden]):not(.under)')].map((el) => el.dataset.overlay ?? ''),
         upgradeFx: shop.lastUpgradeText(),

@@ -49,7 +49,7 @@ test('M1-08 the upgrade shop: buying the second incubator changes the shop and s
   await page.evaluate(() => (window as unknown as { __TEST__: { grant(n: number): void } }).__TEST__.grant(60));
   await page.locator('[data-tab=shop]').click();
   await expect(page.locator('[data-sheet=shop] [data-section=upgrades] .shop-item')).toHaveCount(2);
-  await page.locator('[data-upgrade=incubator] [data-action=buy-upgrade]').click();
+  await page.locator('[data-sheet=shop] [data-upgrade=incubator] [data-action=buy-upgrade]').click();
   await page.locator('[data-tab=home]').click();
   const s = await st(page);
   expect(s.incubators).toHaveLength(2);

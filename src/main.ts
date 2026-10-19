@@ -302,6 +302,8 @@ async function boot(): Promise<void> {
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     districtName: (id) => customers.districts.find((d) => d.id === id)?.name[i18n.lang()] ?? id,
     careShell: eggs.care.shell,
+    careMax: eggs.care.maxBonus,
+    careTop: eggs.care.topShare,
   };
   const eggsTab = createEggsTab(sheets.get('eggs')!, play, eggsLook);
   // MU-02 (l1-home-landscape): sideways «Лавка» keeps the eggs in rows right of the room.

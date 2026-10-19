@@ -38,12 +38,17 @@ export function careBonus(c: CareState, data: CareData): number {
   return Math.min(data.maxBonus, warm + food + ripe);
 }
 
-/** Care shifts the odds: share b of every rarity moves one step up (the top keeps its own), so they still sum to 100. */
-export function careChances(chances: EggData['chances'], b: number): EggData['chances'] {
+/**
+ * Care shifts the odds: share b of every rarity moves one step up (the top keeps its own), so they still sum to 100.
+ * FB-05: into VIP and exclusive only b × topShare moves — their price is a jump (10–15× the egg), the step below them is not.
+ */
+export function careChances(chances: EggData['chances'], b: number, topShare = 1): EggData['chances'] {
   const out = { ...chances };
+  const vip = RARITIES.indexOf('vip');
+  const share = (to: number): number => (to >= vip ? b * topShare : b);
   RARITIES.forEach((r, i) => {
-    const below = i > 0 ? chances[RARITIES[i - 1]!] * b : 0;
-    out[r] = (i === RARITIES.length - 1 ? chances[r] : chances[r] * (1 - b)) + below;
+    const below = i > 0 ? chances[RARITIES[i - 1]!] * share(i) : 0;
+    out[r] = (i === RARITIES.length - 1 ? chances[r] : chances[r] * (1 - share(i + 1))) + below;
   });
   return out;
 }

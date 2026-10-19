@@ -4,7 +4,7 @@
 
 import type { EggData, RarityName, SpeciesData, UnlockData } from '../content/schemas.ts';
 import type { EggCardView, Game } from '../sim/game.ts';
-import { eggOdds } from '../sim/rules.ts';
+import { careChances, eggOdds } from '../sim/rules.ts';
 import { esc, money, rarityBadge } from './kit.ts';
 import type { Sheet } from './sheet.ts';
 
@@ -20,6 +20,9 @@ export interface EggsLookups {
   rarityColor(r: RarityName): string;
   districtName(id: string): string;
   careShell: readonly string[];
+  /** FB-05: the most care can move the odds (eggs.json care.maxBonus). */
+  careMax: number;
+  careTop: number;
 }
 
 export interface EggsTab {
@@ -152,6 +155,9 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
     if (next === cardKey) return;
     cardKey = next;
     const odds = eggOdds(egg.chances, look.species);
+    // FB-05: the odds before and after full care — care moves a share of every rarity one step up.
+    const cared = careChances(egg.chances, look.careMax, look.careTop);
+    const top = (c: EggData['chances']): number => c.vip + c.exclusive;
     let buttons: string;
     if (v.freeIn !== null)
       buttons = v.freeIn > 0 ? `<p class="mu-meta">${esc(look.t('eggs.in', { t: fmtTime(v.freeIn) }))}</p>` : `<button type="button" class="mu-btn main" data-action="egg-take">${esc(look.t('eggs.take'))}</button>`;
@@ -166,6 +172,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
       `<div class="mu-hero"><span class="mu-pic"><img alt="" src="${look.eggPicture(id)}"></span><div><p class="mu-meta">${esc(look.t('eggs.hatchIn', { t: fmtTime(egg.hatchSec) }))}</p></div></div>` +
       `<div class="mu-buy">${buttons}</div>` +
       `<div class="mu-head"><h3>${esc(look.t('eggs.inside'))}</h3><span></span></div>` +
+      `<p class="mu-meta care-odds" data-care-before="${top(egg.chances)}" data-care-after="${top(cared)}">${esc(look.t('eggs.care', { a: pct(top(egg.chances)), b: pct(top(cared)) }))}</p>` +
       `<div class="mu-grid cards-odds">${odds
         .map(
           (o) =>

@@ -72,6 +72,8 @@ export const Care = v.object({
   /** Ripening: a ready egg left afterSec gives its bonus; after selfSec it hatches by itself (an idle shop keeps going). */
   ripe: v.object({ afterSec: Money, bonus: Share, selfSec: v.pipe(v.number(), v.minValue(1)), helperIdleSec: Money }),
   maxBonus: Share,
+  /** FB-05: the share of the bonus that moves into VIP and exclusive (their price is a jump). */
+  topShare: Share,
   shell: v.pipe(v.array(Color), v.minLength(2)),
 });
 /**

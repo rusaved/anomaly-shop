@@ -248,6 +248,7 @@
   "eggs.ladder": "Обычные",
   "eggs.incubating": "В инкубаторах",
   "eggs.inside": "Что внутри",
+  "eggs.care": "С уходом VIP и эксклюзив: {a} → {b}",
   "eggs.take": "Забрать",
   "eggs.in": "через {t}",
   "eggs.waiting": "ждут инкубатор",

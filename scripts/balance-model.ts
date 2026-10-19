@@ -11,6 +11,7 @@
 //     seconds of content/pace.json and feel.json hatchShowSec; the limits of F1–F3, F11, F16 are for that tempo.
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
 //     · F19 (FB-03, Q-039 B) an hour away pays 30–50 % of an hour of play (up to 2 hours), the seller level grows ≤ 1 away
+//   F20 (FB-05): full egg care at least doubles the VIP and exclusive share of every ladder egg and pays for its food.
 //     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
 //   Week (M4-08, casual): F17 something new opens every day of 7, the guest zone pays its upkeep (M4-05) · F18 the second city
 //     1–3 days after the first, its egg bought.
@@ -23,6 +24,8 @@ import { dirname, resolve } from 'node:path';
 import { createRng } from '../src/core/rng.ts';
 import { createGame, type Game, type GameContent, type GameEvent } from '../src/sim/game.ts';
 import { ftueHint } from '../src/sim/ftue.ts';
+import { careChances } from '../src/sim/rules.ts';
+import { RARITIES } from '../src/content/schemas.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
 import { loadGameContent, loadPace, type Pace } from './load-game-content.ts';
@@ -614,8 +617,26 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
       });
     lines.push(`rewards FB-02 best reward in 5 min of income by ladder step (exclusive when bought p50 / hatch p90): ${cells.join(' · ')}; free rewards ≤ ${content.eggs.income.rewardCapMin} min (capped)`);
   }
+  // FB-05: care moves the odds — VIP and exclusive without care and with full care, and what an egg gives back (EV in its price)
+  // without care and with full care less the food it costs; F20: full care at least doubles the top share and pays for its food.
+  {
+    const c = content.eggs.care;
+    const food = c.feed.steps * c.feed.priceShare;
+    const cells: string[] = [];
+    let f20 = true;
+    for (const e of content.eggs.eggs.filter((x) => x.section === 'ladder' && x.value)) {
+      const up = careChances(e.chances, c.maxBonus, c.topShare);
+      const top = (x: typeof e.chances): number => x.vip + x.exclusive;
+      const ev = (x: typeof e.chances): number => RARITIES.reduce((n, r) => n + (x[r] / 100) * e.value![r], 0);
+      const gain = ev(up) - food - ev(e.chances);
+      if (top(up) < top(e.chances) * 1.95 || gain <= 0) f20 = false;
+      cells.push(`${e.id.replace('egg_', '')} ${fmt(top(e.chances), 1)}→${fmt(top(up), 1)} % · ×${ev(e.chances).toFixed(2)}→×${(ev(up) - food).toFixed(2)}`);
+    }
+    if (!f20) failures.push('F20 full care does not double VIP and exclusive or does not pay for its food');
+    lines.push(`care    F20 VIP+exclusive without → with full care (b ${c.maxBonus}, top ${c.topShare}), EV in egg prices less food: ${cells.join(' · ')} ${f20 ? 'ok' : 'FAIL'}`);
+  }
   lines.push('F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)');
-  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F19: all green`);
+  lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F20: all green`);
   return { ok: failures.length === 0, lines, failures };
 }
 

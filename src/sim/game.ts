@@ -1328,7 +1328,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     // The first egg of a dearer kind gives at least its firstRarity (once per kind, flag first_<egg>).
     const firstOf = egg.firstRarity && !st.flags[`first_${egg.id}`] ? egg.firstRarity : null;
     if (egg.firstRarity) st.flags[`first_${egg.id}`] = true;
-    let rarity = forced ?? pickRarity(careChances(egg.chances, careOf(inc)), rng.next());
+    let rarity = forced ?? pickRarity(careChances(egg.chances, careOf(inc), eggs.care.topShare), rng.next());
     if (!forced && firstOf && RARITY_RANK[rarity] < RARITY_RANK[firstOf]) rarity = firstOf;
     // M4-07: the egg of the day hatches the species of the day, dearer and settling in for a while.
     const dayKind = egg.special === 'daily' ? daySpecies(st.daily.day) : undefined;

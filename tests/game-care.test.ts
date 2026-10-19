@@ -12,7 +12,7 @@ import { loadGameContent } from '../scripts/load-game-content.ts';
 const content = loadGameContent();
 const care = content.eggs.care;
 const egg = content.eggs.eggs.find((e) => e.id === 'egg_warm')!;
-const RUNS = 1000;
+const RUNS = 3000;
 
 function setup(seed = 1, coins = 0) {
   const save = newSave(0);
@@ -63,7 +63,7 @@ describe('M3-02 egg care rules', () => {
 
   for (const [name, state] of Object.entries(STATES)) {
     it(`hatches with care «${name}»: ${RUNS} runs match the shifted odds within ±3 points`, () => {
-      const want = careChances(egg.chances, careBonus(state, care));
+      const want = careChances(egg.chances, careBonus(state, care), care.topShare);
       const got = Object.fromEntries(RARITIES.map((r) => [r, 0])) as Record<RarityName, number>;
       const { game, seen } = setup(7);
       for (let i = 0; i < RUNS; i++) {
@@ -118,5 +118,16 @@ describe('M3-02 egg care rules', () => {
     game.tapIncubator(0);
     expect(seen.some((e) => e.type === 'hatched')).toBe(true);
     expect(game.state.incubators[0]!.egg).toBeNull();
+  });
+});
+
+describe('FB-05 care moves the odds', () => {
+  it('full care at least doubles VIP and exclusive of every ladder egg, the rest sums to 100', () => {
+    for (const e of loadGameContent().eggs.eggs.filter((x) => x.section === 'ladder')) {
+      const up = careChances(e.chances, care.maxBonus, care.topShare);
+      expect(up.vip + up.exclusive, e.id).toBeGreaterThanOrEqual((e.chances.vip + e.chances.exclusive) * 1.95);
+      expect(RARITIES.reduce((s, r) => s + up[r], 0)).toBeCloseTo(100, 9);
+    }
+    expect(care.maxBonus).toBeGreaterThan(0.3);
   });
 });

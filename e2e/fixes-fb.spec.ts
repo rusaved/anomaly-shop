@@ -155,3 +155,79 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       expect(errors).toEqual([]);
     });
   });
+
+/** The 130 % font the way the check of 07 emulates it: every text of the HTML layer 1.3 times larger. */
+const scale130 = (page: Page) =>
+  page.evaluate(() => {
+    const fresh = [...document.querySelectorAll<HTMLElement>('#ui *')].filter((el) => !el.dataset.mu130);
+    const sizes = fresh.map((el) => parseFloat(getComputedStyle(el).fontSize));
+    fresh.forEach((el, i) => {
+      el.dataset.mu130 = '1';
+      el.style.fontSize = `${Math.round((sizes[i] ?? 16) * 13) / 10}px`;
+    });
+  });
+const pets = ['kettle', 'cloudcat', 'lampbug', 'jellytoast', 'shroom', 'moon_donut'].map((species, i) => ({ uid: `p${i}`, species, level: 1, fed: 0, hatchedAt: 0, age: 0 }));
+
+/** п. 4: the bottom of the windows — the egg card sideways keeps «×3», «×5» above the tab bar; «Вылупился!» at 130 % keeps its buttons whole
+ * (fields ≥ 12); «Кого выставить» with an empty storage says «На складе пусто» and gives a way to a pet. */
+test.describe('Круг правок FB п. 4 sideways 812×330', () => {
+  test.use({ viewport: { width: 812, height: 330 }, hasTouch: true, isMobile: true });
+  for (const big of [false, true])
+    test(`the egg card: «×3» and «×5» whole above the tab bar${big ? ' at 130 %' : ''}`, async ({ page }) => {
+      await seedSave(page, { coins: 120 });
+      await open(page);
+      if (big) await scale130(page);
+      await page.locator('[data-tab=eggs]').click();
+      await page.locator('[data-sheet=eggs] [data-action="egg-card-egg_basic"]').click();
+      if (big) await scale130(page);
+      await page.waitForTimeout(300);
+      const nav = (await page.locator('[data-tab=eggs]').boundingBox())!;
+      const top = await page.evaluate(() => document.querySelector('[data-tab=eggs]')!.parentElement!.getBoundingClientRect().top);
+      expect(nav.y).toBeGreaterThanOrEqual(top);
+      for (const n of [1, 3, 5]) {
+        const b = (await page.locator(`[data-action=egg-buy-${n}]`).boundingBox())!;
+        expect(b.y + b.height, `egg-buy-${n}`).toBeLessThanOrEqual(top);
+      }
+    });
+});
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB п. 4 ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('«Вылупился!» at 130 %: the buttons whole, fields 12 px or more', async ({ page }) => {
+      await seedSave(page, { creatures: pets, showcase: [] });
+      await open(page);
+      await scale130(page);
+      expect(await page.evaluate(() => (window as unknown as { __TEST__: { hatch(uid: string): boolean } }).__TEST__.hatch('p4'))).toBe(true);
+      await page.waitForTimeout(450);
+      await page.locator('[data-action=hatch-skip]').dispatchEvent('click');
+      await expect(page.locator('[data-hatch-result]')).toBeVisible();
+      await scale130(page);
+      await page.waitForTimeout(700);
+      const card = await page.evaluate(() => {
+        const c = document.querySelector<HTMLElement>('[data-overlay=hatch] .card')!;
+        return { scroll: c.scrollHeight, client: c.clientHeight, bottom: c.getBoundingClientRect().bottom };
+      });
+      expect(card.scroll).toBeLessThanOrEqual(card.client);
+      for (const a of ['hatch-shop', 'hatch-keep', 'hatch-sell']) {
+        const m = await page.locator(`[data-action=${a}]`).evaluate((b) => {
+          const r = b.getBoundingClientRect();
+          const range = document.createRange();
+          range.selectNodeContents(b);
+          const t = range.getBoundingClientRect();
+          return { left: t.left - r.left, right: r.right - t.right, bottom: r.bottom, fits: b.scrollWidth <= b.clientWidth + 1 };
+        });
+        expect(m.fits, a).toBe(true);
+        expect(Math.min(m.left, m.right), a).toBeGreaterThanOrEqual(11.5);
+        expect(m.bottom, a).toBeLessThanOrEqual(card.bottom);
+      }
+    });
+    test('«Кого выставить» with an empty storage: «На складе пусто» and «Купить яйцо»', async ({ page }) => {
+      await seedSave(page, { creatures: [], showcase: [] });
+      await open(page);
+      await page.locator('[data-tab=sales]').click();
+      await page.locator('[data-sheet=sales] [data-action="sale-add"]').first().click();
+      await expect(page.locator('[data-detail=sale] .empty')).toHaveText('На складе пусто');
+      await page.locator('[data-action=pick-eggs]').click();
+      await expect(page.locator('[data-sheet=eggs]')).toBeVisible();
+    });
+  });

@@ -122,8 +122,14 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
                 `<span class="mu-line">${meta(c, fmt, c.price)}<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}</span></span></button>`,
             )
             .join('')}</div>`
-        : `<p class="empty">${esc(look.t('sales.nothing'))}</p>`);
+        : // Круг правок FB п. 4: never an empty page — «На складе пусто» and the way to a pet (the eggs).
+          `<div class="pick-empty"><p class="empty">${esc(look.t('sales.nothing'))}</p><button type="button" class="mu-btn main" data-action="pick-eggs">${esc(look.t('sales.getEgg'))}</button></div>`);
     panel.card.querySelector('[data-action="sale-back"]')?.addEventListener('click', () => goBack(() => tab.show(null)));
+    panel.card.querySelector('[data-action="pick-eggs"]')?.addEventListener('click', () => {
+      origin = null;
+      tab.show(null);
+      look.goTab('eggs');
+    });
     for (const c of view.inventory) panel.card.querySelector(`[data-action="sale-list-${c.uid}"]`)?.addEventListener('click', () => tab.show(c.uid));
   }
 

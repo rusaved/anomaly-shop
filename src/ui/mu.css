@@ -2499,7 +2499,7 @@ button.mu-card {
 .landscape .detail-page:has(> .cards-odds) {
   display: grid;
   grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
-  grid-template-areas: 'back back' 'hero inside' 'hero care' 'buy odds' '. odds';
+  grid-template-areas: 'back back' 'hero inside' 'buy care' 'buy odds' '. odds';
   grid-template-rows: auto auto auto auto 1fr;
   column-gap: 20px;
   row-gap: 8px;
@@ -2513,12 +2513,18 @@ button.mu-card {
   grid-area: hero;
 }
 .landscape .detail-page:has(> .cards-odds) > .mu-hero .mu-pic {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
 }
+.landscape .detail-page:has(> .cards-odds) > .mu-hero .mu-pic img {
+  max-width: 40px;
+  max-height: 40px;
+}
+/* Круг правок FB п. 4: «×3 · 30» and «×5 · 50» whole above the tab bar sideways, at 130 % too (the egg 48, the buttons 8 apart). */
 .landscape .detail-page:has(> .cards-odds) > .mu-buy {
   grid-area: buy;
   margin: 0;
+  gap: 8px;
   align-self: start;
 }
 .landscape .detail-page:has(> .cards-odds) > .mu-head {
@@ -2717,7 +2723,6 @@ button.mu-card {
     justify-self: end;
     width: auto;
     margin: 0;
-    padding-right: 0;
   }
   .landscape .card-hatch .hatch-buttons > .mu-btn.main {
     max-width: none;
@@ -3295,4 +3300,14 @@ button.mu-card {
 #app.landscape #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item {
   min-height: 52px;
   padding: 3px 0;
+}
+/* Круг правок FB п. 4: «Кого выставить» with an empty storage — the words and the way to a pet, not a blank page. */
+.pick-empty {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px 0;
+}
+.pick-empty > .mu-btn {
+  width: min(100%, 360px);
 }

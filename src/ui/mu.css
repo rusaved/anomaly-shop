@@ -3311,3 +3311,83 @@ button.mu-card {
 .pick-empty > .mu-btn {
   width: min(100%, 360px);
 }
+
+/* ---- Круг правок FB п. 5: «Настройки» — sound and the buzz are one kind of switch; sideways the code is right with the groups,
+   «Язык» and the code in sight at 130 %; the code's placeholder ≥ 4.5:1 ---- */
+#ui [data-overlay='settings'] .row-switch {
+  justify-content: space-between;
+  min-height: 44px;
+}
+#ui [data-overlay='settings'] .row-switch > span {
+  flex: 1 1 auto;
+}
+#ui [data-overlay='settings'] .row > .btn-switch {
+  position: relative;
+  flex: 0 0 60px;
+  width: 60px;
+  min-width: 60px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 22px;
+  background: transparent;
+}
+.btn-switch::before,
+.btn-switch::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transition: transform 0.15s ease-out, background-color 0.15s ease-out;
+}
+.btn-switch::before {
+  left: 2px;
+  right: 2px;
+  height: 32px;
+  margin-top: -16px;
+  border-radius: 16px;
+  background: var(--c-uiPanelHi);
+}
+.btn-switch::after {
+  left: 6px;
+  width: 24px;
+  height: 24px;
+  margin-top: -12px;
+  border-radius: 50%;
+  background: var(--c-uiMuted);
+}
+.btn-switch[aria-checked='true']::before {
+  background: var(--c-uiAccent);
+}
+.btn-switch[aria-checked='true']::after {
+  transform: translateX(24px);
+  background: var(--c-uiText);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-switch::before,
+  .btn-switch::after {
+    transition: none;
+  }
+}
+.code-row .code-input::placeholder {
+  color: var(--c-uiMuted);
+  opacity: 1;
+}
+.landscape #ui .overlay[data-overlay='settings'] > .card > .code-row {
+  grid-column: 2;
+  grid-row: 2;
+}
+.landscape #ui .overlay[data-overlay='settings'] > .card > .community {
+  grid-column: 2;
+  grid-row: 3 / span 2;
+  align-self: start;
+}
+.landscape #ui .overlay[data-overlay='settings'] > .card > .code-answer {
+  grid-column: 1 / -1;
+}
+/* At 130 % «Русский · English» keeps one line sideways: a wider window, the label as wide as its word. */
+.landscape #ui .overlay[data-overlay='settings'] > .card {
+  width: min(100%, 740px);
+}
+.landscape #ui [data-overlay='settings'] .row:not(.row-switch) > span {
+  flex: 0 0 auto;
+  min-width: 56px;
+}

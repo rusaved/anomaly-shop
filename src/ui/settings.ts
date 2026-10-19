@@ -1,4 +1,4 @@
-// What: the settings window: sound on/off, language (Русский / English, LOC-05), community buttons by placement, Back.
+// What: the settings window: sound and the buzz on/off (switches), language (Русский / English, LOC-05), community buttons by placement, Back.
 // Called by: src/main.ts; opened from the pause window and returns to it.
 // Keep: sound and language live in the save (settings.sound, settings.lang); the window never holds a pause reason of its own.
 
@@ -19,39 +19,34 @@ export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n
   const title = document.createElement('h2');
   title.dataset.i18n = 'settings.title';
 
-  const soundRow = document.createElement('div');
-  soundRow.className = 'row';
-  const soundLabel = document.createElement('span');
-  soundLabel.dataset.i18n = 'settings.sound';
-  const sound = button('sound', store.state.settings.sound ? 'settings.on' : 'settings.off', 'btn-toggle');
-  sound.setAttribute('aria-pressed', String(store.state.settings.sound));
-  sound.addEventListener('click', () => {
-    const next = !store.state.settings.sound;
+  // Круг правок FB п. 5: sound and the buzz are the same on/off switch (role switch), not a filled slab; the label names it.
+  const toggleRow = (action: string, labelKey: string, on: boolean, flip: (next: boolean) => void): HTMLElement => {
+    const row = document.createElement('div');
+    row.className = 'row row-switch';
+    const label = document.createElement('span');
+    label.dataset.i18n = labelKey;
+    const sw = button(action, labelKey, 'btn-switch');
+    sw.dataset.i18nAttr = 'aria-label';
+    sw.setAttribute('role', 'switch');
+    sw.setAttribute('aria-checked', String(on));
+    sw.addEventListener('click', () => {
+      const next = sw.getAttribute('aria-checked') !== 'true';
+      sw.setAttribute('aria-checked', String(next));
+      flip(next);
+    });
+    row.append(label, sw);
+    return row;
+  };
+  const soundRow = toggleRow('sound', 'settings.sound', store.state.settings.sound, (next) => {
     store.state.settings.sound = next;
     store.commit();
-    sound.dataset.i18n = next ? 'settings.on' : 'settings.off';
-    sound.setAttribute('aria-pressed', String(next));
-    i18n.apply(sound.parentElement ?? sound);
   });
-  soundRow.append(soundLabel, sound);
   // FB-13: the buzz of the main buttons (Android; a phone without it never shows the row).
-  const vibRow = document.createElement('div');
-  vibRow.className = 'row';
-  vibRow.hidden = typeof navigator.vibrate !== 'function';
-  const vibLabel = document.createElement('span');
-  vibLabel.dataset.i18n = 'settings.vibrate';
-  const vibOn = (): boolean => store.state.settings.vibrate !== false;
-  const vib = button('vibrate', vibOn() ? 'settings.on' : 'settings.off', 'btn-toggle');
-  vib.setAttribute('aria-pressed', String(vibOn()));
-  vib.addEventListener('click', () => {
-    const next = !vibOn();
+  const vibRow = toggleRow('vibrate', 'settings.vibrate', store.state.settings.vibrate !== false, (next) => {
     store.state.settings.vibrate = next;
     store.commit();
-    vib.dataset.i18n = next ? 'settings.on' : 'settings.off';
-    vib.setAttribute('aria-pressed', String(next));
-    i18n.apply(vib.parentElement ?? vib);
   });
-  vibRow.append(vibLabel, vib);
+  vibRow.hidden = typeof navigator.vibrate !== 'function';
 
   const langRow = document.createElement('div');
   langRow.className = 'row';

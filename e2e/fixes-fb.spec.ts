@@ -231,3 +231,52 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       await expect(page.locator('[data-sheet=eggs]')).toBeVisible();
     });
   });
+
+/** п. 5: «Настройки» — «Вибрация» is the same switch as «Звук»; the code and «Язык» in sight sideways and at 130 %; the placeholder ≥ 4.5:1. */
+const contrast = (page: Page, sel: string, pseudo = '') =>
+  page.locator(sel).evaluate((el, ps) => {
+    const rgb = (c: string) => (c.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+    const lum = (c: number[]) => c.map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i]!, 0);
+    let bgEl: Element | null = el;
+    let bg = 'rgba(0, 0, 0, 0)';
+    while (bgEl && (bg = getComputedStyle(bgEl).backgroundColor).endsWith(', 0)')) bgEl = bgEl.parentElement;
+    const a = lum(rgb(getComputedStyle(el, ps || null).color));
+    const b = lum(rgb(bg));
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  }, pseudo);
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  for (const big of [false, true])
+    test.describe(`Круг правок FB п. 5 ${w}×${h}${big ? ' 130 %' : ''}`, () => {
+      test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+      test('«Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable', async ({ page }) => {
+        const errors = collectErrors(page);
+        await seedSave(page, { coins: 30 });
+        await open(page);
+        await page.locator('[data-action=pause]').click();
+        await page.locator('[data-action=settings]').click();
+        const win = page.locator('[data-overlay=settings] .card');
+        await expect(win).toBeVisible();
+        if (big) await scale130(page);
+        await page.waitForTimeout(300);
+        const sound = page.locator('[data-overlay=settings] [data-action=sound]');
+        const vib = page.locator('[data-overlay=settings] [data-action=vibrate]');
+        await expect(sound).toHaveAttribute('role', 'switch');
+        await expect(vib).toHaveAttribute('role', 'switch');
+        const [sb, vb] = [(await sound.boundingBox())!, (await vib.boundingBox())!];
+        expect([vb.width, vb.height]).toEqual([sb.width, sb.height]);
+        expect(await vib.evaluate((b) => getComputedStyle(b).backgroundColor)).toBe(await sound.evaluate((b) => getComputedStyle(b).backgroundColor));
+        const was = await vib.getAttribute('aria-checked');
+        await vib.click();
+        await expect(vib).toHaveAttribute('aria-checked', was === 'true' ? 'false' : 'true');
+        // Everything in the card, the card between the bars, no scroll.
+        const card = await win.evaluate((c) => ({ scroll: c.scrollHeight, client: c.clientHeight, r: c.getBoundingClientRect().toJSON() as DOMRect }));
+        expect(card.scroll).toBeLessThanOrEqual(card.client + 1);
+        for (const sel of ['[data-action=lang-ru]', '[data-action=lang-en]', '[data-action=code-input]', '[data-action=code-apply]']) {
+          const b = (await page.locator(`[data-overlay=settings] ${sel}`).boundingBox())!;
+          expect(b.y, sel).toBeGreaterThanOrEqual(card.r.y);
+          expect(b.y + b.height, sel).toBeLessThanOrEqual(card.r.y + card.r.height);
+        }
+        expect(await contrast(page, '[data-overlay=settings] [data-action=code-input]', '::placeholder')).toBeGreaterThanOrEqual(4.5);
+        expect(errors).toEqual([]);
+      });
+    });

@@ -166,7 +166,7 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
       (chance > 0 ? ` · ${esc(look.t('hatch.chance', { n: fmt.format(Math.max(1, Math.round(100 / chance))) }))}` : '');
     // M4-07: the anomaly of the day settles in first — no «sell now».
     sell.hidden = cr.hold > 0;
-    sell.innerHTML = `${esc(look.t('hatch.sell'))} ${COIN}${fmt.format(cr.low)}`;
+    sell.innerHTML = `${esc(look.t('hatch.sell'))} <span class="nowrap">${COIN}${fmt.format(cr.low)}</span>`;
     sell.dataset.price = String(cr.low);
   }
   function skip(): void {

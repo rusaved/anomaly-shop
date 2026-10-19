@@ -176,8 +176,10 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       ]);
       if (w < h) expect(sell.y).toBeGreaterThanOrEqual(keep.y + keep.height + 7.5);
       else {
-        expect(sell.y).toBeGreaterThanOrEqual(range.y + range.height - 1);
-        expect(sell.y + sell.height).toBeLessThanOrEqual(keep.y);
+        // Круг правок FB-3 п. 3: sideways under the pet, left of the buttons (24 px off them), never in the top right corner.
+        const pic = await box('.hatch-pic');
+        expect(sell.y).toBeGreaterThanOrEqual(pic.y + pic.height - 1);
+        expect(sell.x + sell.width + 24).toBeLessThanOrEqual(Math.min(keep.x, range.x) + 0.5);
         expect(sell.y).toBeGreaterThan(card.y + 44);
       }
       for (const b of [sell, keep]) expect(b.y + b.height).toBeLessThanOrEqual(card.y + card.height);

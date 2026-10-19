@@ -3872,3 +3872,88 @@ button.mu-card {
 #ui .burst {
   z-index: 29;
 }
+/* Круг правок FB-3 п. 1, 3: «Вылупился!» sideways — fields 16 on every side; left the pet and «Продать сразу» under it, right the title, the
+   rarity, the name and the price with the two buttons under them (the main one at the left edge). The strip runs over the right column's
+   words, «тап — пропустить» in the pet's place: the sell line is a column gap (24 px) off the strip and off «На витрину». */
+@media (max-height: 520px) {
+  #app.landscape #ui .overlay > .card.card-hatch {
+    display: grid;
+    grid-template-columns: 168px minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto;
+    column-gap: 24px;
+    row-gap: 0;
+    align-content: start;
+    width: min(100%, 600px);
+    padding: 16px;
+    text-align: left;
+  }
+  #app.landscape #ui .card-hatch .hatch-result {
+    display: contents;
+  }
+  #app.landscape #ui .card-hatch > h2 {
+    grid-area: 1 / 2 / 2 / 3;
+    display: block;
+    min-height: 0;
+    margin: 0 0 4px !important;
+    text-align: left;
+  }
+  #app.landscape #ui .card-hatch .hatch-pic {
+    grid-area: 1 / 1 / 5 / 2;
+    align-self: center;
+    width: 100%;
+    margin: 0;
+  }
+  #app.landscape #ui .card-hatch .hatch-skip {
+    grid-area: 1 / 1 / 5 / 2;
+    align-self: center;
+    text-align: center;
+  }
+  #app.landscape #ui .card-hatch .hatch-window {
+    grid-area: 2 / 2 / 5 / 3;
+    align-self: stretch;
+    min-height: 68px;
+    margin: 0;
+  }
+  #app.landscape #ui .card-hatch .rar-word {
+    grid-area: 2 / 2 / 3 / 3;
+    align-self: end;
+    margin: 0;
+  }
+  #app.landscape #ui .card-hatch .hatch-result h3 {
+    grid-area: 3 / 2 / 4 / 3;
+    margin: 2px 0;
+  }
+  #app.landscape #ui .card-hatch .hatch-range {
+    grid-area: 4 / 2 / 5 / 3;
+    align-self: start;
+    margin: 0;
+  }
+  #app.landscape #ui .card-hatch .hatch-buttons {
+    grid-area: 5 / 2 / 6 / 3;
+    margin-top: 12px;
+  }
+  #app.landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+    grid-area: 5 / 1 / 6 / 2;
+    align-self: end;
+    justify-self: start;
+    width: calc(100% + 12px);
+    min-height: 44px;
+    margin: 0 0 0 -12px;
+    padding: 4px 12px;
+    display: block;
+    line-height: 1.3;
+    text-align: left;
+  }
+}
+/* Круг правок FB-3 п. 3: the price's number is the price line's size — never larger than the pet's name (130 % too). */
+.overlay .card-hatch .hatch-range b {
+  font-size: 1em;
+}
+/* Круг правок FB-3 п. 3: the coin and its number never part on a wrap («Продать сразу за» / «◉ 9»). */
+.hatch-sell .nowrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  vertical-align: bottom;
+}

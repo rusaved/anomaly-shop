@@ -78,8 +78,8 @@ const ratio = (a: string, b: string): number => {
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 };
 
-/** п. 2: the salute of VIP and exclusive — no dark box under the buttons, the screen flash under the window, the card's own flash under
- *  its words and brighter the higher the rarity, the rarity word outlined ≥ 4.5:1. */
+/** п. 2: the salute of VIP and exclusive — no dark box under the buttons, the screen flash under the window, the light in the pet's tile
+ *  (круг правок FB-3: the card itself never repainted), larger the higher the rarity, the rarity word outlined ≥ 4.5:1. */
 test.describe('Круг правок FB-2 п. 2 375×650', () => {
   test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
   test('the salute brightens the card and keeps its words readable', async ({ page }) => {
@@ -101,8 +101,10 @@ test.describe('Круг правок FB-2 п. 2 375×650', () => {
         return {
           rarity: card.dataset.rarity,
           box: getComputedStyle(card.querySelector('.hatch-buttons')!).backgroundColor,
-          blend: before.mixBlendMode,
-          peak: Number(getComputedStyle(card).getPropertyValue('--flash-peak')),
+          // Круг правок FB-3 п. 2: the card is never repainted — the light lives in the pet's tile (rays and a core, opaque).
+          veil: before.content,
+          glow: getComputedStyle(card.querySelector('.hatch-pic')!, '::before').animationName,
+          peak: parseFloat(getComputedStyle(card).getPropertyValue('--glow')),
           screenUnder: flash ? Number(getComputedStyle(flash).zIndex) < Number(getComputedStyle(card.parentElement!).zIndex) : true,
           stroke: parseFloat(ws.getPropertyValue('-webkit-text-stroke-width')),
           word: ws.color,
@@ -110,16 +112,16 @@ test.describe('Круг правок FB-2 п. 2 375×650', () => {
         };
       });
       expect(s.box).toBe('rgba(0, 0, 0, 0)');
-      expect(s.blend).toBe('screen');
+      expect(s.veil).toBe('none');
+      expect(s.glow).toBe('hatch-glow');
       expect(s.screenUnder).toBe(true);
       expect(s.stroke).toBeGreaterThanOrEqual(3);
       expect(ratio(s.word, s.strokeColor)).toBeGreaterThanOrEqual(4.5);
       peaks.push(s.peak);
-      await page.waitForTimeout(700);
       await page.locator('[data-action=hatch-keep]').click();
       await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
     }
-    // «Чем круче, тем ярче»: the exclusive flash is brighter than the VIP one.
+    // «Чем круче, тем ярче»: the exclusive light is larger than the VIP one.
     expect(peaks[1]!).toBeGreaterThan(peaks[0]!);
     expect(errors).toEqual([]);
   });

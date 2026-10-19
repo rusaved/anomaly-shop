@@ -3957,3 +3957,100 @@ button.mu-card {
   white-space: nowrap;
   vertical-align: bottom;
 }
+/* Круг правок FB-3 п. 2: the salute never repaints the card (a see-through yellow over violet reads khaki). The light lives in the pet's
+   tile behind the pet: a white-to-rarity core and solid rays of the rarity color (#ffd84d for VIP) — opaque colors only, no veil; it goes
+   out by the circle shrinking, not by fading. The higher the rarity, the larger and longer the light («чем круче, тем ярче»). Only the
+   rarity word keeps its dark outline. */
+#app #ui .overlay > .card.card-hatch.hatch-rare::before {
+  content: none;
+  animation: none;
+}
+#app #ui .card.hatch-rare > h2,
+#app #ui .card.hatch-rare .hatch-result > :is(h3, .hatch-range, .hatch-sell) {
+  text-shadow: none;
+}
+#app #ui .card.hatch-rare .rar-word {
+  text-shadow: none;
+}
+.card.card-hatch .hatch-pic img {
+  position: relative;
+  z-index: 1;
+}
+.card.hatch-rare .hatch-pic::before,
+.card.hatch-rare .hatch-pic::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  animation: hatch-glow var(--glow-sec, 0.8s) ease-out forwards;
+}
+.card.hatch-rare .hatch-pic::before {
+  width: var(--glow, 180px);
+  height: var(--glow, 180px);
+  margin: calc(var(--glow, 180px) / -2) 0 0 calc(var(--glow, 180px) / -2);
+  background: repeating-conic-gradient(var(--rc) 0deg 7deg, transparent 7deg 22.5deg);
+}
+.card.hatch-rare .hatch-pic::after {
+  width: calc(var(--glow, 180px) * 0.5);
+  height: calc(var(--glow, 180px) * 0.5);
+  margin: calc(var(--glow, 180px) / -4) 0 0 calc(var(--glow, 180px) / -4);
+  background: radial-gradient(circle closest-side, var(--c-eyeWhite) 0 35%, var(--rc) 75% 100%);
+}
+.card.hatch-rare[data-rarity='valuable'] {
+  --glow: 140px;
+  --glow-sec: 0.6s;
+}
+.card.hatch-rare[data-rarity='premium'] {
+  --glow: 170px;
+  --glow-sec: 0.8s;
+}
+.card.hatch-rare[data-rarity='vip'] {
+  --glow: 200px;
+  --glow-sec: 1.1s;
+}
+.card.hatch-rare[data-rarity='exclusive'] {
+  --glow: 230px;
+  --glow-sec: 1.3s;
+}
+@keyframes hatch-glow {
+  0% {
+    transform: scale(0.4) rotate(0deg);
+  }
+  20% {
+    transform: scale(1) rotate(8deg);
+  }
+  100% {
+    transform: scale(0) rotate(36deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card.hatch-rare .hatch-pic::before,
+  .card.hatch-rare .hatch-pic::after {
+    animation: none;
+    transform: scale(0);
+  }
+}
+/* The core lighter than the rays: white into a light tint of the rarity (opaque) — VIP and exclusive brighter than the card, never muddier. */
+.card.hatch-rare .hatch-pic::after {
+  background: radial-gradient(circle closest-side, var(--c-eyeWhite) 0 40%, color-mix(in srgb, var(--rc) 60%, var(--c-eyeWhite)) 78% 100%);
+}
+/* Круг правок FB-3 п. 2: a sleeping button is a dark one with muted words (opaque), not a see-through orange (that reads brown on
+   violet); it lights up when the buttons wake. */
+#app #ui .card-hatch.hatch-locked .hatch-buttons > .mu-btn {
+  opacity: 1;
+  filter: none;
+  background: var(--c-uiPanelHi);
+  color: var(--c-uiMuted);
+}
+#app #ui .card-hatch.hatch-locked .hatch-result > .hatch-sell {
+  opacity: 1;
+  filter: none;
+  color: color-mix(in srgb, var(--c-uiMuted) 65%, var(--c-uiPanel));
+}
+#app #ui .card-hatch .hatch-buttons > .mu-btn,
+#app #ui .card-hatch .hatch-result > .hatch-sell {
+  transition: background-color 0.3s ease-out, color 0.3s ease-out;
+}

@@ -3647,3 +3647,11 @@ button.mu-card {
     grid-area: auto;
   }
 }
+/* Круг правок FB (ревизор удобства): sideways the chat list a little wider — «Коллекционерка» whole at 130 %. */
+.landscape #ui .chat-list {
+  flex-basis: 38%;
+}
+/* 07 rule 2: «Заберу сейчас» pays — 24 px from the questions under it. */
+#ui .lot-buttons > .mu-btn.main {
+  margin-bottom: 16px;
+}

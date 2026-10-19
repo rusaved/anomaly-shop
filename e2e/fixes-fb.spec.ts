@@ -25,10 +25,15 @@ async function doubleTapSkip(page: Page): Promise<void> {
   await page.waitForTimeout(120);
   await page.touchscreen.tap(center(hint).x, center(hint).y);
   await expect(page.locator('[data-hatch-result]')).toBeVisible();
-  // Past the lock the same points hold the pet and its rarity word — still no choice.
+  // Past the lock the same points hold the pet and its rarity word — still no choice (the usability review: taps on the strip's
+  // corners too, 300 ms apart).
   await page.waitForTimeout(700);
   await page.touchscreen.tap(center(hint).x, center(hint).y);
   await page.touchscreen.tap(center(strip).x, center(strip).y);
+  for (const [fx, fy] of [[0.85, 0.85], [0.15, 0.85], [0.85, 0.15]] as const) {
+    await page.waitForTimeout(300);
+    await page.touchscreen.tap(strip.x + strip.width * fx, strip.y + strip.height * fy);
+  }
   await page.waitForTimeout(300);
   await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
   await expect(page.locator('[data-hatch-result]')).toBeVisible();
@@ -152,6 +157,10 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       const ad = (await win.locator('[data-action=away-ad]').boundingBox())!;
       const ok = (await win.locator('[data-action=away-ok]').boundingBox())!;
       expect(gap(ad, ok)).toBeGreaterThanOrEqual(23.5);
+      // Both buttons whole inside the window (sideways it is two columns, 330 px high).
+      const card = await win.locator('.card').evaluate((c) => ({ scroll: c.scrollHeight, client: c.clientHeight, r: c.getBoundingClientRect().toJSON() as DOMRect }));
+      expect(card.scroll).toBeLessThanOrEqual(card.client + 1);
+      for (const b of [ad, ok]) expect(b.y + b.height).toBeLessThanOrEqual(card.r.y + card.r.height);
       expect(errors).toEqual([]);
     });
   });

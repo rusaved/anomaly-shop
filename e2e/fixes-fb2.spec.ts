@@ -189,3 +189,63 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       expect(errors).toEqual([]);
     });
   });
+
+/** п. 5: the bottom of «Лавка» — an affordable price in the accent ≥ 3:1 to the background, the rows one height, the icons one size. */
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB-2 п. 5 ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('the upgrade rows: the accent price, one height, one icon size', async ({ page }) => {
+      const errors = collectErrors(page);
+      await seedSave(page, { coins: 120, upgrades: { showcase: 2, incubator: 1 }, showcase: ['e2e1'] });
+      await open(page);
+      const rows = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>('[data-sheet=home] [data-section=upgrades] .shop-item')]
+          .filter((r) => r.offsetParent)
+          .map((r) => {
+            const btn = r.querySelector<HTMLElement>('.mu-btn')!;
+            let bgEl: Element | null = r;
+            let bg = 'rgba(0, 0, 0, 0)';
+            while (bgEl && (bg = getComputedStyle(bgEl).backgroundColor).endsWith(', 0)')) bgEl = bgEl.parentElement;
+            const ring = getComputedStyle(btn).boxShadow.match(/rgba?\([^)]+\)/)?.[0] ?? '';
+            const img = r.querySelector<HTMLImageElement>('.mu-pic img');
+            return { can: r.classList.contains('can'), h: Math.round(r.getBoundingClientRect().height), ring, color: getComputedStyle(btn).color, bg, img: img?.src ?? '' };
+          }),
+      );
+      expect(rows.length).toBeGreaterThan(2);
+      expect(new Set(rows.map((r) => r.h)).size).toBe(1);
+      const can = rows.filter((r) => r.can);
+      expect(can.length).toBeGreaterThan(0);
+      for (const r of can) {
+        expect(ratio(r.ring, r.bg)).toBeGreaterThanOrEqual(3);
+        expect(ratio(r.color, r.bg)).toBeGreaterThanOrEqual(4.5);
+      }
+      // One icon size: the drawn part of every icon fills the same share of its square (±8 %).
+      const fills = await page.evaluate(async (srcs) => {
+        const out: number[] = [];
+        for (const src of srcs) {
+          const im = new Image();
+          im.src = src;
+          await im.decode();
+          const c = document.createElement('canvas');
+          c.width = im.naturalWidth;
+          c.height = im.naturalHeight;
+          const x = c.getContext('2d')!;
+          x.drawImage(im, 0, 0);
+          const d = x.getImageData(0, 0, c.width, c.height).data;
+          let [l, t, rr, b] = [c.width, c.height, 0, 0];
+          for (let y = 0; y < c.height; y++)
+            for (let i = 0; i < c.width; i++)
+              if (d[(y * c.width + i) * 4 + 3]! > 24) {
+                l = Math.min(l, i);
+                rr = Math.max(rr, i);
+                t = Math.min(t, y);
+                b = Math.max(b, y);
+              }
+          out.push(Math.max(rr - l, b - t) / c.width);
+        }
+        return out;
+      }, rows.map((r) => r.img).filter(Boolean));
+      expect(Math.max(...fills) - Math.min(...fills)).toBeLessThanOrEqual(0.08);
+      expect(errors).toEqual([]);
+    });
+  });

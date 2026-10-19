@@ -3836,3 +3836,16 @@ button.mu-card {
     min-height: 0;
   }
 }
+/* Круг правок FB-2 п. 5: the bottom of «Лавка» and «Магазин» — a price the coins cover in the accent (an outline and its words, ≥ 3:1 to
+   the background; the others stay quiet words), every row one height whether it has level dots or not. */
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item.can > .mu-btn:not(.off) {
+  background: none;
+  box-shadow: inset 0 0 0 2px var(--c-uiAccent);
+  color: var(--c-uiAccent);
+}
+#app #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item {
+  min-height: 68px;
+}
+#app.landscape #ui .sheet:is([data-sheet='home'], [data-sheet='shop']) .mu-card.shop-item {
+  min-height: 56px;
+}

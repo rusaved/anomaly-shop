@@ -17,6 +17,8 @@ export interface Portraits {
 }
 
 const SIZE = 96;
+/** The share of its square a thing's longest side takes. */
+const THING_FILL = 0.84;
 
 export function createPortraits(app: Application, style: StyleData): Portraits {
   const cache = new Map<string, string>();
@@ -53,7 +55,22 @@ export function createPortraits(app: Application, style: StyleData): Portraits {
       return render(`e:${id}:${tint ?? ''}`, (g) => drawEgg(g, SIZE * 0.5, c, outline, 0, tint ? { shell: tint, spots: look?.spots ?? c.eggSpots } : look));
     },
     thing(name, size = SIZE) {
-      return render(`t:${name}:${size}`, (_g, box) => drawUpgradeIcon(box, name, size * 0.44, c, outline * (size / SIZE)), size);
+      // Круг правок FB-2 п. 5: every thing fills the same share of its square (its drawn outline, not its frame) — one icon size in a list.
+      return render(
+        `t:${name}:${size}`,
+        (_g, box) => {
+          const inner = new Container();
+          box.addChild(inner);
+          drawUpgradeIcon(inner, name, size * 0.44, c, outline * (size / SIZE));
+          const b = inner.getLocalBounds();
+          const side = Math.max(b.width, b.height);
+          if (side <= 0) return;
+          const k = (size * THING_FILL) / side;
+          inner.scale.set(k);
+          inner.position.set(-(b.x + b.width / 2) * k, -(b.y + b.height / 2) * k);
+        },
+        size,
+      );
     },
   };
 }

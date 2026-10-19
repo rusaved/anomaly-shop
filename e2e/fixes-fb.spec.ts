@@ -94,7 +94,8 @@ async function rowsLook(page: Page, sheet: 'home' | 'shop') {
         line: cs(r).borderBottomWidth,
         pic: pic ? `${Math.round(pic.getBoundingClientRect().width)}:${cs(pic).backgroundColor}` : 'none',
         can: r.classList.contains('can'),
-        price: cs(btn).backgroundColor,
+        // Круг правок FB-2 п. 5: an affordable price is the accent (an outline and its words), the others are quiet words.
+        price: cs(btn).boxShadow !== 'none' || cs(btn).backgroundColor !== 'rgba(0, 0, 0, 0)',
       };
     });
   }, sheet);
@@ -116,7 +117,7 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
           expect(r.bg).toBe(NONE);
           expect(r.line).toBe('1px');
           expect(r.pic).toBe(`40:${NONE}`);
-          expect(r.price === NONE).toBe(!r.can);
+          expect(r.price).toBe(r.can);
         }
         expect(rows.some((r) => r.can) && rows.some((r) => !r.can)).toBe(true);
       }

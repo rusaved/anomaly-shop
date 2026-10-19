@@ -35,7 +35,7 @@
   "action.buyEgg": "Яйцо",
   "deny.coins": "Не хватает монет",
   "deny.busy": "Инкубатор занят",
-  "deny.full": "Витрина полна",
+  "deny.full": "Витрина полна, питомец на складе",
   "deny.locked": "Пока закрыто",
   "fx.levelUp": "Ур. {n}!",
   "fx.max": "MAX",

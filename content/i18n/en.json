@@ -35,7 +35,7 @@
   "action.buyEgg": "Egg",
   "deny.coins": "Not enough coins",
   "deny.busy": "Incubator is busy",
-  "deny.full": "Showcase is full",
+  "deny.full": "The shelf is full, the pet is in storage",
   "deny.locked": "Locked for now",
   "fx.levelUp": "Lv {n}!",
   "fx.max": "MAX",

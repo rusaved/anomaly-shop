@@ -3133,7 +3133,14 @@ button.mu-card {
 .landscape .card-away {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 12px;
+  column-gap: 24px;
+}
+/* Круг правок FB п. 3: «▶ Реклама» 24 px from «Отлично» (07 rule 2: what pays — not next to the control). */
+.card-away > .btn-ad {
+  margin-bottom: 12px;
+}
+.landscape .card-away > .btn-ad {
+  margin-bottom: 0;
 }
 .landscape .card-away > :not(.btn) {
   grid-column: 1 / -1;

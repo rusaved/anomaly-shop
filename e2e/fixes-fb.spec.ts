@@ -134,3 +134,24 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       expect(errors).toEqual([]);
     });
   });
+
+/** п. 3: «Пока тебя не было» — «▶ Реклама» 24 px from «Отлично», the number on it, «Тебя не было 5 ч · лавка работала 2 ч». */
+for (const [w, h] of [[375, 650], [812, 330]] as const)
+  test.describe(`Круг правок FB п. 3 ${w}×${h}`, () => {
+    test.use({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+    test('«Пока тебя не было»: the ad button says its number and stands 24 px from «Отлично»', async ({ page }) => {
+      const errors = collectErrors(page);
+      const ago = Date.now() - 5 * 3600 * 1000;
+      await seedSave(page, { coins: 0, lastSeenAt: ago, savedAt: ago, incomeMinutes: [300, 300, 300], stats: { deals: 8, coinsEarned: 300, hatched: 10, taps: 100, levelUps: 3, haggles: 1, income: 300 } });
+      await open(page);
+      const win = page.locator('[data-overlay=away]');
+      await expect(win).toBeVisible();
+      await expect(win.locator('.away-time')).toHaveText(/^Тебя не было 5 ч · лавка работала 2 ч$/);
+      const got = (await win.locator('[data-away-coins]').innerText()).replace(/\D/g, '');
+      await expect(win.locator('[data-action=away-ad]')).toHaveText(new RegExp(`^▶ Реклама: \\+${got.replace(/\B(?=(\d{3})+$)/g, '\\s?')}$`));
+      const ad = (await win.locator('[data-action=away-ad]').boundingBox())!;
+      const ok = (await win.locator('[data-action=away-ok]').boundingBox())!;
+      expect(gap(ad, ok)).toBeGreaterThanOrEqual(23.5);
+      expect(errors).toEqual([]);
+    });
+  });

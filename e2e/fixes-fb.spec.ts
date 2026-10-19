@@ -59,7 +59,7 @@ test.describe('Круг правок FB п. 1 portrait 375×650', () => {
   test.use({ viewport: { width: 375, height: 650 }, hasTouch: true, isMobile: true });
   test('an egg → two quick taps on the strip → the pet is not sold, «Вылупился!» stays', ({ page }) => doubleTapSkip(page));
 
-  test('the buttons of the result take no press for 0.5 s after it shows', async ({ page }) => {
+  test('the buttons of the result take no press for 0.8 s after it shows', async ({ page }) => {
     await open(page);
     const t = await incubator(page);
     await page.touchscreen.tap(t.x, t.y);

@@ -15,7 +15,7 @@
   "coinFlySec": 0.6,
   "hudRollSec": 0.5,
   "hatchShowSec": 4.5,
-  "hatchLockSec": 0.5,
+  "hatchLockSec": 0.8,
   "buzzMs": 15,
   "burst": {
     "sec": 1.4,

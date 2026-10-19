@@ -102,8 +102,8 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     game.sellNow(uid);
     close();
   });
-  // Круг правок FB-2 (ревизор удобства): the buttons wake up after lockSec with no taps — every tap while they wait starts the wait again,
-  // so a run of skip taps (300 ms apart) never sells, wherever the result's buttons land under the finger.
+  // Круг правок FB-2 (ревизор удобства), FB-3 п. 1: the buttons wake up after lockSec (0.8 s) with no taps — every tap while they wait starts
+  // the wait again, so a run of skip taps (up to 0.5 s apart) never sells or closes the window, wherever its buttons land under the finger.
   overlay.root.addEventListener(
     'pointerdown',
     () => {

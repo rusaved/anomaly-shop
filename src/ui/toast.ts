@@ -1,7 +1,6 @@
 // What: short toasts over the shop ("Not enough coins", "Rare!"): one line at a time (M3-18: a queue, at least 2 s each), fade in and out.
 // Called by: src/main.ts (game events → text through t()), src/ui/* when an action is refused; hold() keeps the queue during «Lv N!» in the scene.
-// Keep: a tap on a toast stays on it and closes it (круг правок FB-3 п. 5: nothing under it gets the tap; its column lets taps through);
-// texts come translated from the caller; a text already shown or waiting is not repeated. Portrait: over the tab bar; sideways: under the top bar.
+// Keep: a tap on a toast is its own and closes it (круг правок FB-3 п. 5); portrait over the tab bar, sideways under the top bar; texts come translated; a text shown or waiting is not repeated.
 
 import { iconize } from './kit.ts';
 

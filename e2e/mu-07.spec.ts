@@ -542,11 +542,13 @@ test.describe('the round of fixes, item 8: a toast moves nothing, a hint lies on
     // The game stands still once the lots are in: the market never refreshes under the check (it measures the toast, not the market's timer).
     await card.waitFor();
     await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
-    const before = (await card.boundingBox())!;
+    // One synchronous read each time: a list drawn anew between finding the card and measuring it never reads as «gone».
+    const top = () => page.evaluate(() => document.querySelector('[data-sheet=market] .mu-card')!.getBoundingClientRect().y);
+    const before = await top();
     await page.evaluate(() => (window as unknown as { __TEST__: { toast(t: string): void } }).__TEST__.toast('Подарок: 50'));
     await expect(page.locator('.toast').first()).toBeVisible();
     await page.waitForTimeout(500);
-    expect((await card.boundingBox())!.y).toBe(before.y);
+    expect(await top()).toBe(before);
     expect(errors).toEqual([]);
   });
 
@@ -587,11 +589,12 @@ test.describe('the round of fixes, item 8 (the recheck): the first hint of a tab
     // The game stands still once the lots are in: the market never refreshes its lots under the check (it measures the hint, not the timer).
     await lot.waitFor();
     await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
-    const before = (await lot.boundingBox())!.y;
+    const top = () => page.evaluate(() => document.querySelector('[data-sheet=market] .mu-card')!.getBoundingClientRect().y);
+    const before = await top();
     // The first tap on the screen (its head) hides the hint: the lot under a finger does not move.
     await page.locator('[data-sheet=market] .mu-head h3').tap();
     await page.waitForTimeout(400);
-    expect((await lot.boundingBox())!.y).toBe(before);
+    expect(await top()).toBe(before);
     expect(errors).toEqual([]);
   });
 });

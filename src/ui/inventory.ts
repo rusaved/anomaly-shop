@@ -75,8 +75,9 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
             : `<span class="mu-meta inv-where">${esc(look.t('sales.talkingSub'))}</span>`;
       return (
         `<div class="mu-card rar tile" data-rarity="${c.rarity}" data-uid="${c.uid}" data-on="${where !== 'store'}"><button type="button" class="mu-pic-btn" data-action="inv-pic-${c.uid}"><span class="mu-pic"><img alt="" src="${look.portrait(c.species, c.rarity)}"></span></button>` +
-        `<span class="mu-name">${esc(look.speciesName(c.species))}</span><span class="mu-line inv-line"><span>${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}</span>` +
-        `<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}${c.mark ? ` · ${esc(look.t(`mark.${c.mark}`))}` : ''} · ${money(c.price, fmt)} ${look.mood(c.species)}</span></span>${btn}</div>`
+        // Круг правок FB-3: the mood chip on the name's line — on the meta line it took a third line sideways (a row of 69 px, not 52).
+        `<span class="mu-name">${esc(look.speciesName(c.species))} ${look.mood(c.species)}</span><span class="mu-line inv-line"><span>${rarityBadge(c.rarity, look.t(`rarity.${c.rarity}`))}</span>` +
+        `<span class="mu-meta">${esc(look.t('card.level', { n: c.level }))}${c.mark ? ` · ${esc(look.t(`mark.${c.mark}`))}` : ''} · ${money(c.price, fmt)}</span></span>${btn}</div>`
       );
     });
     for (const { inc, i } of hatching)

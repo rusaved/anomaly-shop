@@ -38,11 +38,12 @@ test('UB-06 first minute by taps only: egg → To the shop → a letter → Sell
   await check();
   await page.locator('[data-action=chat-sell]').click();
   await expect.poll(async () => ((await state(page)) as S).stats.deals).toBe(1);
-  // A new egg at home: the hint at the basic egg, then «Buy».
+  // A new egg: the hint at the free gift egg, then «Забрать».
   await page.locator('[data-tab=eggs]').click();
   await expect.poll(async () => ((await state(page)) as S).ftue).toBe('buyEgg');
   await check();
-  await page.locator('[data-sheet=eggs] [data-action=egg-buy-egg_basic]').click();
+  // Круг правок FB-3 п. 6: the hint leads to the free gift egg (the first deal may pay less than an egg costs) — take it.
+  await page.locator('[data-sheet=eggs] [data-action=egg-free-egg_gift]').click();
   await expect.poll(async () => ((await state(page)) as S).ftue).toBe('hatchRare');
   expect(Date.now() - start).toBeLessThan(60_000);
   expect(errors).toEqual([]);

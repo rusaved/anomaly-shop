@@ -403,6 +403,42 @@ export const NavFile = v.object({
   /** FB-10: the Store's upgrades under the room of «Лавка» (false: the «Витрина» row and the scene buttons, as in MU). */
   homeShop: v.optional(v.boolean(), false),
 });
+/** M5-02, M5-03: rewarded ads (one module, a common gap, egg ads per day) and the interstitial gate (content/ads.json). */
+export const AdsFile = v.object({
+  rewarded: v.object({
+    gapSec: v.pipe(v.number(), v.minValue(0)),
+    lateMs: v.pipe(v.number(), v.minValue(0)),
+    /** A longer gap for one place (×2 deal: no farming deals with videos). */
+    placementGapSec: v.optional(v.record(Id, v.pipe(v.number(), v.minValue(0)))),
+  }),
+  eggs: v.object({
+    perDay: Count,
+    gapSec: v.pipe(v.number(), v.minValue(0)),
+    cards: v.pipe(v.array(v.object({ id: Id, egg: Id })), v.minLength(1)),
+  }),
+  hatch: v.object({ minLeftSec: v.pipe(v.number(), v.minValue(0)) }),
+  boost: v.object({ mult: v.pipe(v.number(), v.minValue(1), v.maxValue(2)), sec: v.pipe(v.number(), v.minValue(1)) }),
+  interstitial: v.object({
+    firstSec: v.pipe(v.number(), v.minValue(0)),
+    gapSec: v.pipe(v.number(), v.minValue(0)),
+    afterRewardedSec: v.pipe(v.number(), v.minValue(0)),
+    seriesTaps: Count,
+    seriesSec: v.pipe(v.number(), v.minValue(0)),
+  }),
+});
+const ShopGive = v.object({
+  coinsMin: v.optional(v.pipe(v.number(), v.minValue(0))),
+  eggs: v.optional(v.record(Id, Count)),
+  crystals: v.optional(v.pipe(v.number(), v.minValue(0))),
+});
+const ShopItem = v.object({ id: Id, product: Id, price: v.pipe(v.number(), v.minValue(1)), hours: v.optional(v.pipe(v.number(), v.minValue(1))), give: ShopGive });
+/** M5-04, M5-05: the Store deals, coin packs and «no ads» (content/shop.json), behind the payments flag of the profile. */
+export const ShopFile = v.object({
+  firstSec: v.pipe(v.number(), v.minValue(0)),
+  deals: v.pipe(v.array(ShopItem), v.minLength(1)),
+  coins: v.pipe(v.array(ShopItem), v.minLength(1)),
+  noAds: v.object({ product: Id, price: v.pipe(v.number(), v.minValue(1)) }),
+});
 /** Side job (docs/01 §3 p. 15): tapping the bowl feeds the neighbours' pets for coins; the job levels up on a ×growth ladder. */
 export const WorkFile = v.object({
   coinsPerTap: v.pipe(v.number(), v.minValue(1)),
@@ -533,6 +569,8 @@ export type HobbyData = v.InferOutput<typeof Hobby>;
 export type MarketData = v.InferOutput<typeof MarketFile>;
 export type GiftsData = v.InferOutput<typeof GiftsFile>;
 export type WorkData = v.InferOutput<typeof WorkFile>;
+export type AdsData = v.InferOutput<typeof AdsFile>;
+export type ShopData = v.InferOutput<typeof ShopFile>;
 export type NavData = v.InferOutput<typeof NavFile>;
 export type PaceData = v.InferOutput<typeof PaceFile>;
 export type CollectionData = v.InferOutput<typeof CollectionFile>;

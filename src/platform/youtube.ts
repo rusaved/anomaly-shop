@@ -3,7 +3,7 @@
 // Keep: the SDK tag in index.html is the only external address; no ads, no community, no analytics, errors to health.logError.
 
 import type { DeviceType, Platform, PlatformCaps, PlatformTrack } from './types.ts';
-import { createLocalLeaders, gameLanguage, guessDevice, profileCaps } from './shared.ts';
+import { createLocalLeaders, gameLanguage, guessDevice, noPayments, profileCaps } from './shared.ts';
 import { CLOUD_QUEUE, createSaveQueue } from './save-queue.ts';
 
 /** The part of the YouTube Playables SDK this game uses (the global is created by the SDK tag). */
@@ -125,7 +125,11 @@ export function createYoutubePlatform(deps: YoutubeDeps): Platform {
       audioCbs.push(cb);
     },
     showInterstitial: () => Promise.resolve({ shown: false }),
-    showRewarded: () => Promise.resolve({ rewarded: false }),
+    showRewarded: () => Promise.resolve({ rewarded: false, outcome: 'unavailable' as const }),
+    setBanner() {
+      /* no banner here */
+    },
+    payments: noPayments(),
     requestReview: () => Promise.resolve({ available: false, sent: false }),
     // M4-04: no sign-in and no servers on YouTube — the leaderboard stays on the device.
     leaders: createLocalLeaders(),

@@ -26,6 +26,8 @@ export interface GiftsLookups {
   portrait(species: string, rarity: RarityName): string;
   goalName(id: string): string;
   review(): Promise<{ available: boolean; sent: boolean }>;
+  /** M5-02: the time boost tile (sales ×mult for a video); missing — no ad tile. */
+  boost?: { busy(): boolean; left(): number; watch(): void; thing: string };
 }
 
 export interface GiftsWindow {
@@ -128,6 +130,17 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
           ? `<button type="button" class="mu-btn good gift-take" data-action="gift-daily">${esc(look.t('gifts.take'))}</button>`
           : `<p class="mu-meta gift-take gift-tomorrow">${esc(look.t('gifts.tomorrow'))}</p>`,
       );
+      // M5-02 (brief: boosts by time are tiles in «Gifts»): the sales boost for a video; while it runs — the time left.
+      if (look.boost) {
+        const left = Math.ceil(look.boost.left());
+        parts.push(
+          head('ad.boosts'),
+          `<div class="mu-card gift-boost" data-gift="boost"><span class="mu-pic"><img alt="" src="${look.thing(look.boost.thing)}"></span><span class="day-text"><b class="mu-name">${esc(look.t('ad.boostName'))}</b>` +
+            `<span class="mu-meta">${esc(left > 0 ? look.t('ad.boostOn', { t: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` }) : look.t('ad.boostText'))}</span></span>` +
+            (left > 0 ? '' : `<button type="button" class="mu-btn btn-ad" data-action="ad-boost" aria-disabled="${look.boost.busy()}">${esc(look.t('ad.boost'))}</button>`) +
+            '</div>',
+        );
+      }
       // 4. The anomaly of the day: its pet in the rarity frame, an egg once a day.
       if (d.species)
         parts.push(
@@ -175,6 +188,9 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
           openCommunity(look.links, s.id);
         });
       body.querySelector('[data-action="gift-review"]')?.addEventListener('click', openRate);
+      body.querySelector('[data-action="ad-boost"]')?.addEventListener('click', (e) => {
+        if ((e.currentTarget as HTMLElement).getAttribute('aria-disabled') !== 'true') look.boost?.watch();
+      });
     },
   };
   return win;

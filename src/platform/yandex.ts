@@ -3,14 +3,16 @@
 // Keep: sdk.js is loaded by index.html before this code; init() retries once and then works like the null profile; ready() once.
 
 import type { Player, SDK, SafeStorage } from 'ysdk';
-import type { DeviceType, LeaderEntry, Leaders, Platform, PlatformCaps, PlatformTrack } from './types.ts';
+import type { DeviceType, LeaderEntry, Leaders, Payments, Platform, PlatformCaps, PlatformTrack, RewardedOutcome } from './types.ts';
 import { browserStorage, createMirror, type KeyValue, type Mirror } from './storage.ts';
-import { createLocalLeaders, gameLanguage, guessDevice, pickNewestSave, profileCaps } from './shared.ts';
+import { createLocalLeaders, gameLanguage, guessDevice, noPayments, pickNewestSave, profileCaps } from './shared.ts';
 import { CLOUD_QUEUE, createSaveQueue } from './save-queue.ts';
 
 export const SAVE_KEY = 'save';
 export const SLOW_INIT_MS = 8000;
 export const AD_WATCHDOG_MS = 10000;
+/** M5-02: onRewarded may come a little after onClose (a slow network): the result waits this long for it. */
+export const LATE_REWARD_MS = 1500;
 
 export interface YandexDeps {
   /** null when sdk.js did not load (no YaGames global). */
@@ -56,6 +58,13 @@ interface YaBoards {
   setScore(name: string, score: number): Promise<void>;
   getEntries(name: string, opts: { quantityTop: number; includeUser: boolean; quantityAround: number }): Promise<{ entries: YaEntry[] }>;
   getPlayerEntry(name: string): Promise<YaEntry>;
+}
+
+interface YaPayments {
+  getCatalog(): Promise<Array<{ id: string; price: string }>>;
+  purchase(o: { id: string }): Promise<{ productID: string; purchaseToken: string }>;
+  getPurchases(): Promise<Array<{ productID: string; purchaseToken: string }>>;
+  consumePurchase(token: string): Promise<void>;
 }
 
 export function createYandexPlatform(deps: YandexDeps): Platform {
@@ -140,6 +149,44 @@ export function createYandexPlatform(deps: YandexDeps): Platform {
       }
     },
   };
+  // M5-05: purchases through ysdk.payments (IAP-01); without the SDK or with caps.payments off — the stand-in that never sells.
+  let pay: YaPayments | null = null;
+  const off = noPayments();
+  const payments: Payments = {
+    async catalog() {
+      if (!pay) return off.catalog();
+      try {
+        return (await pay.getCatalog()).map((p) => ({ id: p.id, price: p.price }));
+      } catch {
+        deps.track('payments_failed', { step: 'catalog' });
+        return [];
+      }
+    },
+    async buy(id) {
+      if (!pay) return off.buy(id);
+      try {
+        const r = await pay.purchase({ id });
+        return { result: 'ok', token: r.purchaseToken };
+      } catch (e) {
+        // The SDK rejects a closed window and a failure alike; a closed window says so in the message on the platform.
+        const text = String((e as { message?: unknown } | null)?.message ?? e);
+        return { result: /cancel|close/i.test(text) ? 'cancel' : 'error', token: '' };
+      }
+    },
+    async owned() {
+      if (!pay) return off.owned();
+      try {
+        return (await pay.getPurchases()).map((p) => ({ id: p.productID, token: p.purchaseToken }));
+      } catch {
+        deps.track('payments_failed', { step: 'purchases' });
+        return [];
+      }
+    },
+    async consume(token) {
+      if (!pay || !token) return;
+      await pay.consumePurchase(token).catch(() => deps.track('payments_failed', { step: 'consume' }));
+    },
+  };
   return {
     name: 'yandex',
     leaders,
@@ -158,6 +205,14 @@ export function createYandexPlatform(deps: YandexDeps): Platform {
       } catch {
         player = null;
         deps.track('player_unavailable');
+      }
+      if (deps.caps.payments) {
+        try {
+          pay = await (sdk as unknown as { getPayments(o: { signed: boolean }): Promise<YaPayments> }).getPayments({ signed: false });
+        } catch {
+          pay = null;
+          deps.track('payments_unavailable');
+        }
       }
       if (!deps.storage) {
         try {
@@ -234,31 +289,56 @@ export function createYandexPlatform(deps: YandexDeps): Platform {
       }
     },
     showRewarded(placement) {
-      if (!sdk || !deps.caps.ads) return Promise.resolve({ rewarded: false });
+      if (!sdk || !deps.caps.ads) return Promise.resolve({ rewarded: false, outcome: 'unavailable' as const });
       const adv = sdk.adv;
       return new Promise((resolve) => {
         let done = false;
+        let opened = false;
         let rewarded = false;
-        const finish = (): void => {
+        let late: ReturnType<typeof setTimeout> | undefined;
+        const finish = (outcome: RewardedOutcome): void => {
           if (done) return;
           done = true;
           clearTimeout(guard);
-          resolve({ rewarded });
+          clearTimeout(late);
+          resolve({ rewarded: outcome === 'rewarded', outcome });
         };
+        // The watchdog covers a video that never opens; an open one runs as long as it runs (a rewarded video is 15–30 s).
         const guard = setTimeout(() => {
+          if (opened) return;
           deps.track('ad_watchdog', { placement });
-          finish();
+          finish('unavailable');
         }, AD_WATCHDOG_MS);
         adv.showRewardedVideo({
           callbacks: {
+            onOpen: () => {
+              opened = true;
+            },
             onRewarded: () => {
               rewarded = true;
+              if (late !== undefined) finish('rewarded');
             },
-            onClose: finish,
-            onError: finish,
+            onClose: () => {
+              if (rewarded || !opened) {
+                finish(rewarded ? 'rewarded' : 'unavailable');
+                return;
+              }
+              late = setTimeout(() => finish(rewarded ? 'rewarded' : 'closed'), LATE_REWARD_MS);
+            },
+            onError: () => {
+              if (!opened) finish('unavailable');
+            },
           },
         });
       });
+    },
+    setBanner(on) {
+      if (!sdk) return;
+      const adv = sdk.adv as unknown as { showBannerAdv?(): Promise<unknown>; hideBannerAdv?(): Promise<unknown> };
+      (on ? adv.showBannerAdv?.() : adv.hideBannerAdv?.())?.catch(() => undefined);
+    },
+    get payments() {
+      return payments;
     },
     async load() {
       const local = mirror.get(SAVE_KEY);

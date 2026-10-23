@@ -1,0 +1,15 @@
+{
+  "note": "M5-02, M5-03 (бриф docs/briefs/resale-9.md, docs/03 §2). Все ролики через один модуль src/ui/ads.ts. rewarded.gapSec — общий перерыв между роликами за награду (любые места); placementGapSec — свой перерыв места (×2 за сделку не чаще раза в минуту: роликами не фармят сделки); lateMs — сколько ждать позднего onRewarded после onClose (в src/platform/yandex.ts LATE_REWARD_MS). eggs — яйцо за ролик: 2 карточки в «Моих яйцах» (ladder — лучшее открытое яйцо лестницы, иначе id яйца), вместе не больше perDay в день по дате устройства и не чаще раза в gapSec игровых секунд. hatch — «Вылупить сразу» только когда до конца больше minLeftSec. boost — плитка в «Подарках»: продажи ×mult на sec секунд живой игры (вдали не идёт). interstitial — полноэкранная: не раньше firstSec игры, не чаще раза в gapSec, не раньше afterRewardedSec после ролика; только по нажатию между экранами (закрыл окно, сменил вкладку), не после вылупления и торга и не в серии тапов (seriesTaps за seriesSec). Щедрость: точки рекламы дают +30–100 % (01a F10).",
+  "rewarded": {"gapSec": 15, "lateMs": 1500, "placementGapSec": {"deal_x2": 60}},
+  "eggs": {
+    "perDay": 5,
+    "gapSec": 120,
+    "cards": [
+      {"id": "ad_ladder", "egg": "ladder"},
+      {"id": "ad_gold", "egg": "egg_gold"}
+    ]
+  },
+  "hatch": {"minLeftSec": 10},
+  "boost": {"mult": 1.5, "sec": 600},
+  "interstitial": {"firstSec": 180, "gapSec": 180, "afterRewardedSec": 60, "seriesTaps": 3, "seriesSec": 2}
+}

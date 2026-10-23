@@ -3,7 +3,7 @@
 // Keep: commands only through the game (buyEggs, claimFree, feedEgg, tapIncubator); odds come from rules.eggOdds over eggs.json; the action is orange, a price button dark.
 
 import type { EggData, RarityName, SpeciesData, UnlockData } from '../content/schemas.ts';
-import type { EggCardView, Game } from '../sim/game.ts';
+import type { AdEggView, EggCardView, Game } from '../sim/game.ts';
 import { careChances, eggOdds } from '../sim/rules.ts';
 import { esc, money, rarityBadge } from './kit.ts';
 import type { Sheet } from './sheet.ts';
@@ -23,6 +23,17 @@ export interface EggsLookups {
   /** FB-05: the most care can move the odds (eggs.json care.maxBonus). */
   careMax: number;
   careTop: number;
+  /** M5-02: rewarded ads (the yandex profile): the egg-ad cards and «hatch now»; missing — no ad buttons. */
+  ad?: EggAds;
+}
+
+export interface EggAds {
+  cards(): AdEggView[];
+  busy(): boolean;
+  /** Plays the video of an egg card; the egg comes only on the reward. */
+  egg(id: string): void;
+  hatch(index: number): void;
+  minLeftSec: number;
 }
 
 export interface EggsTab {
@@ -83,7 +94,8 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
     const view = game.view();
     const fmt = new Intl.NumberFormat(look.lang());
     const coins = game.state.coins;
-    const next = `l:${look.lang()}:${JSON.stringify(shop, (k, x: unknown) => (k === 'freeIn' && typeof x === 'number' ? Math.ceil(x) : x))}:${view.incubators.map((i) => `${i.egg}.${i.ready}.${i.careLevel}.${i.feedPrice}.${Math.round(i.share * 100)}`).join(',')}:${Math.floor(coins)}`;
+    const adKey = look.ad ? `${look.ad.busy()}:${JSON.stringify(look.ad.cards().map((c) => [c.egg, c.left, Math.ceil(c.waitSec)]))}:${view.incubators.map((i) => i.leftSec > look.ad!.minLeftSec).join('')}` : '';
+    const next = `l:${look.lang()}:${adKey}:${JSON.stringify(shop, (k, x: unknown) => (k === 'freeIn' && typeof x === 'number' ? Math.ceil(x) : x))}:${view.incubators.map((i) => `${i.egg}.${i.ready}.${i.careLevel}.${i.feedPrice}.${Math.round(i.share * 100)}`).join(',')}:${Math.floor(coins)}`;
     if (next === key) return;
     key = next;
     const mine: string[] = [];
@@ -104,6 +116,10 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
       if (inc.ready) {
         meta = esc(look.t('eggs.ready'));
         btn = `<button type="button" class="mu-btn${mainOf('open')}" data-action="egg-open-${i}">${esc(look.t('eggs.open'))}</button>`;
+      } else if (look.ad && inc.leftSec > look.ad.minLeftSec && (inc.feedPrice === null || coins + 1e-9 < inc.feedPrice)) {
+        // M5-02: fed in full (or no coins for food) and still warming — «hatch now» for a video (the reward is on the button).
+        meta = `${Math.round(inc.share * 100)} % · ${esc(look.t(inc.feedPrice === null ? 'eggs.fed' : 'eggs.warming'))}`;
+        btn = `<button type="button" class="mu-btn btn-ad" data-action="ad-hatch-${i}" aria-disabled="${look.ad.busy()}">${esc(look.t('ad.hatch'))}</button>`;
       } else if (inc.feedPrice !== null) {
         meta = `${Math.round(inc.share * 100)} % · ${esc(look.t('eggs.food'))} ${money(inc.feedPrice, fmt)}`;
         btn = `<button type="button" class="mu-btn${mainOf('feed')}" data-action="egg-feed-${i}" aria-disabled="${coins + 1e-9 < inc.feedPrice}">${esc(look.t('eggs.feed'))}</button>`;
@@ -125,6 +141,15 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
           `<button type="button" class="mu-btn${ready ? ' good-text' : ' off'}" data-action="egg-free-${v.id}" aria-disabled="${!ready}">${esc(look.t('eggs.take'))}</button></div>`,
       );
     }
+    // M5-02: two egg-ad cards after the free egg (brief: «яйцо за ролик — 2 карточки»), the reward on the button.
+    for (const c of look.ad?.cards() ?? []) {
+      const can = c.left > 0 && c.waitSec <= 0;
+      const meta = c.left <= 0 ? look.t('ad.tomorrow') : c.waitSec > 0 ? look.t('eggs.in', { t: fmtTime(c.waitSec) }) : look.t('ad.left', { n: c.left });
+      mine.push(
+        `<div class="mu-card card-egg card-ad" data-ad-egg="${c.id}">${pic(look.eggPicture(c.egg))}<span class="mu-name">${esc(look.eggName(c.egg))}</span><span class="mu-meta">${esc(meta)}</span>` +
+          `<button type="button" class="mu-btn btn-ad${can ? '' : ' off'}" data-action="ad-egg-${c.id}" aria-disabled="${!can || look.ad!.busy()}">${esc(look.t('ad.egg'))}</button></div>`,
+      );
+    }
     const busy = view.incubators.filter((i) => i.egg).length;
     let html = '';
     if (mine.length) html += head(look.t('eggs.my'), look.t('eggs.slots', { n: busy, all: view.incubators.length })) + `<div class="mu-grid" data-section="my">${mine.join('')}</div>`;
@@ -137,6 +162,16 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
     root.querySelectorAll<HTMLElement>('[data-action^="egg-buy-"]').forEach((b) => b.addEventListener('click', () => game.buyEggs(b.dataset.action!.slice('egg-buy-'.length), 1)));
     root.querySelectorAll<HTMLElement>('[data-action^="egg-free-"]').forEach((b) => b.addEventListener('click', () => game.claimFree(b.dataset.action!.slice('egg-free-'.length))));
     root.querySelectorAll<HTMLElement>('[data-action^="egg-feed-"]').forEach((b) => b.addEventListener('click', () => game.feedEgg(Number(b.dataset.action!.slice('egg-feed-'.length)))));
+    root.querySelectorAll<HTMLElement>('[data-action^="ad-egg-"]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (b.getAttribute('aria-disabled') !== 'true') look.ad?.egg(b.dataset.action!.slice('ad-egg-'.length));
+      }),
+    );
+    root.querySelectorAll<HTMLElement>('[data-action^="ad-hatch-"]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (b.getAttribute('aria-disabled') !== 'true') look.ad?.hatch(Number(b.dataset.action!.slice('ad-hatch-'.length)));
+      }),
+    );
     root.querySelectorAll<HTMLElement>('[data-action^="egg-open-"]').forEach((b) => b.addEventListener('click', () => game.tapIncubator(Number(b.dataset.action!.slice('egg-open-'.length)))));
   }
 

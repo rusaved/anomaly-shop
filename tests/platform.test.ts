@@ -109,7 +109,7 @@ describe('null profile', () => {
     expect(await p.load()).toBe('{"v":1,"rev":1,"savedAt":42}');
     expect(storage.getItem('anomaly-shop:save')).not.toBeNull();
     expect(await p.showInterstitial('shop')).toEqual({ shown: false });
-    expect(await p.showRewarded('deal_x2')).toEqual({ rewarded: false });
+    expect(await p.showRewarded('deal_x2')).toEqual({ rewarded: false, outcome: 'unavailable' });
     expect(p.now()).toBe(42);
     p.ready();
     p.ready();
@@ -202,11 +202,11 @@ describe('yandex profile on the SDK mock', () => {
     const win = loadMock('?mock_ad=closenoreward');
     const p = createYandexPlatform(yandexDeps(win));
     await p.init();
-    expect(await p.showRewarded('deal_x2')).toEqual({ rewarded: false });
+    expect(await p.showRewarded('deal_x2')).toEqual({ rewarded: false, outcome: 'closed' });
     const ok = loadMock('');
     const q = createYandexPlatform(yandexDeps(ok));
     await q.init();
-    expect(await q.showRewarded('deal_x2')).toEqual({ rewarded: true });
+    expect(await q.showRewarded('deal_x2')).toEqual({ rewarded: true, outcome: 'rewarded' });
     expect(await q.showInterstitial('shop')).toEqual({ shown: true });
     const err = loadMock('?mock_ad=error');
     const r = createYandexPlatform(yandexDeps(err));
@@ -216,6 +216,62 @@ describe('yandex profile on the SDK mock', () => {
     await off.init();
     expect(await off.showInterstitial('shop')).toEqual({ shown: false });
   }, 20000);
+
+  it('M5-02 rewarded outcomes: late onRewarded still rewards, an error or no video is «unavailable», a long video outlives the watchdog', async () => {
+    const late = loadMock('?mock_ad=late');
+    const a = createYandexPlatform(yandexDeps(late));
+    await a.init();
+    expect(await a.showRewarded('egg')).toEqual({ rewarded: true, outcome: 'rewarded' });
+    const err = loadMock('?mock_ad=error');
+    const b = createYandexPlatform(yandexDeps(err));
+    await b.init();
+    expect(await b.showRewarded('egg')).toEqual({ rewarded: false, outcome: 'unavailable' });
+    const none = loadMock('?mock_ad=noshow');
+    const c = createYandexPlatform(yandexDeps(none));
+    await c.init();
+    expect(await c.showRewarded('egg')).toEqual({ rewarded: false, outcome: 'unavailable' });
+    const long = loadMock('?mock_ad_ms=11000');
+    const track = vi.fn();
+    const d = createYandexPlatform(yandexDeps(long, { track }));
+    await d.init();
+    expect(await d.showRewarded('egg')).toEqual({ rewarded: true, outcome: 'rewarded' });
+    expect(track).not.toHaveBeenCalledWith('ad_watchdog', expect.anything());
+  }, 30000);
+
+  it('M5-05 payments on the mock: buy, cancel, restore the unconsumed, consume; off without caps.payments', async () => {
+    const win = loadMock('?mock_catalog=no_ads:99,coins_s:19');
+    const p = createYandexPlatform(yandexDeps(win, { caps: { ...CAPS, payments: true } }));
+    await p.init();
+    expect(await p.payments.catalog()).toEqual([{ id: 'no_ads', price: '99 YAN' }, { id: 'coins_s', price: '19 YAN' }]);
+    const bought = await p.payments.buy('no_ads');
+    expect(bought.result).toBe('ok');
+    const coins = await p.payments.buy('coins_s');
+    expect((await p.payments.owned()).map((x) => x.id)).toEqual(['no_ads', 'coins_s']);
+    await p.payments.consume(coins.token);
+    expect((await p.payments.owned()).map((x) => x.id)).toEqual(['no_ads']);
+    const cancel = loadMock('?mock_pay=cancel');
+    const q = createYandexPlatform(yandexDeps(cancel, { caps: { ...CAPS, payments: true } }));
+    await q.init();
+    expect((await q.payments.buy('no_ads')).result).toBe('cancel');
+    const failed = loadMock('?mock_pay=error');
+    const r = createYandexPlatform(yandexDeps(failed, { caps: { ...CAPS, payments: true } }));
+    await r.init();
+    expect((await r.payments.buy('no_ads')).result).toBe('error');
+    const off = createYandexPlatform(yandexDeps(loadMock(''), { caps: { ...CAPS, payments: false } }));
+    await off.init();
+    expect((await off.payments.buy('no_ads')).result).toBe('error');
+  });
+
+  it('M5-00 banner: setBanner reaches adv.showBannerAdv / hideBannerAdv', async () => {
+    const win = loadMock('');
+    const p = createYandexPlatform(yandexDeps(win));
+    await p.init();
+    p.setBanner(false);
+    p.setBanner(true);
+    const names = win.__YA_MOCK__!.calls.map((c) => c.name);
+    expect(names).toContain('adv.hideBannerAdv');
+    expect(names).toContain('adv.showBannerAdv');
+  });
 
   it('without sdk.js or with a broken init() the profile keeps working like null', async () => {
     const track = vi.fn();
@@ -227,7 +283,9 @@ describe('yandex profile on the SDK mock', () => {
     missing.gameplayStart();
     missing.save('{"v":1,"rev":1,"savedAt":1}');
     expect(await missing.load()).toBe('{"v":1,"rev":1,"savedAt":1}');
-    expect(await missing.showRewarded('x')).toEqual({ rewarded: false });
+    expect(await missing.showRewarded('x')).toEqual({ rewarded: false, outcome: 'unavailable' });
+    expect(await missing.payments.catalog()).toEqual([]);
+    expect((await missing.payments.buy('no_ads')).result).toBe('error');
 
     let calls = 0;
     const flaky = createYandexPlatform(yandexDeps({ location: { search: '' } } as MockWindow, { track, sdkInit: () => { calls++; return Promise.reject(new Error('boom')); } }));

@@ -4163,3 +4163,43 @@ button.mu-card {
 .portrait #ui .card.card-hatch.hatch-tight .hatch-result > .hatch-sell {
   margin-top: 16px;
 }
+
+/* M5-02: a wide ad button under a section head («▶ Реклама: новые лоты сейчас» on the market). */
+.mu-btn.btn-wide {
+  display: flex;
+  width: 100%;
+  margin: 0 0 8px;
+}
+/* M5-02: the boost tile of «Подарки» — a picture, the text, the ad button on the right (like a goal row). */
+.gift-boost {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.gift-boost .mu-pic {
+  width: 52px;
+  height: 52px;
+}
+/* M5-04: «Акции» — one row per pack: picture, name and contents, the price button on the right; the note on game money below. */
+.store-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.store-item[data-store='no_ads'] {
+  grid-template-columns: 1fr auto;
+}
+.store-item .mu-pic {
+  width: 52px;
+  height: 52px;
+}
+.store-timer {
+  color: var(--accent, #ffb340);
+}
+.store-note,
+.store-soon {
+  margin: 12px 4px;
+}

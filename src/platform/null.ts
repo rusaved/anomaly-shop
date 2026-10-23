@@ -4,7 +4,7 @@
 
 import type { DeviceType, Platform, PlatformCaps } from './types.ts';
 import { browserStorage, createMirror, type KeyValue } from './storage.ts';
-import { createLocalLeaders, gameLanguage, guessDevice, once, profileCaps } from './shared.ts';
+import { createLocalLeaders, gameLanguage, guessDevice, noPayments, once, profileCaps } from './shared.ts';
 
 export const SAVE_KEY = 'save';
 
@@ -61,7 +61,11 @@ export function createNullPlatform(deps: NullDeps = browserDeps()): Platform {
       /* always allowed */
     },
     showInterstitial: () => Promise.resolve({ shown: false }),
-    showRewarded: () => Promise.resolve({ rewarded: false }),
+    showRewarded: () => Promise.resolve({ rewarded: false, outcome: 'unavailable' as const }),
+    setBanner() {
+      /* no banner here */
+    },
+    payments: noPayments(),
     // No platform here: the review is a stand-in (docs/01 §3 p. 15), so the gift can be tried in the null profile.
     requestReview: () => Promise.resolve({ available: true, sent: true }),
     leaders: createLocalLeaders(),

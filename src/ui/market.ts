@@ -1,6 +1,6 @@
 // What: the «Рынок» tab (docs/01 §3 p. 14; M3-09, M3-10; MU-10 by s8-market): lots of seller-characters 2 in a row, «price · verdict», the refresh timer.
 // Called by: src/main.ts (create once into its sheet; render on every commit and each second while open).
-// Keep: commands only through the game (buyLot); the lot page hosts the seller chat (src/ui/seller.ts); «Не ждать» comes back with the ads milestone (docs/допущения.md).
+// Keep: commands only through the game (buyLot); the lot page hosts the seller chat (src/ui/seller.ts); M5-02: «▶ Ad: skip the wait» by the timer refreshes the lots for a video.
 
 import type { RarityName } from '../content/schemas.ts';
 import type { Game, LotView } from '../sim/game.ts';
@@ -17,6 +17,8 @@ export interface MarketLookups {
   range: { min: number; max: number };
   /** Opens the seller chat for a lot (M3-10) inside the body (UB-02: the lot panel). */
   openLot(body: HTMLElement, lot: LotView, back: () => void): void;
+  /** M5-02: «Не ждать» for a video (new lots at once); missing — no ad button. */
+  skip?: { busy(): boolean; watch(): void };
 }
 
 export interface MarketTab {
@@ -47,12 +49,13 @@ export function createMarketTab(sheet: Sheet, game: Game, look: MarketLookups): 
     const coins = game.state.coins;
     const s = Math.ceil(mk.refreshIn);
     const timer = look.t('market.refresh', { t: `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` });
-    const next = `${look.lang()}:${timer}:${mk.lots.map((l) => `${l.id}.${l.sold}.${l.price}`).join(',')}:${Math.floor(coins)}`;
+    const next = `${look.lang()}:${timer}:${look.skip?.busy() ?? ''}:${mk.lots.map((l) => `${l.id}.${l.sold}.${l.price}`).join(',')}:${Math.floor(coins)}`;
     if (next === key) return;
     key = next;
     // MU-10 (s8-market): lots 2 in a row in their rarity frames; «price · verdict» one plain line; «Купить» below or at the market, «Торг» above it.
     root.innerHTML =
       `<div class="mu-head"><h3>${esc(look.t('nav.market'))}</h3><span data-market-timer>${esc(timer)}</span></div>` +
+      (look.skip ? `<button type="button" class="mu-btn btn-ad btn-wide" data-action="ad-skip" aria-disabled="${look.skip.busy()}">${esc(look.t('ad.skip'))}</button>` : '') +
       `<div class="mu-grid">${mk.lots
         .map((l) => {
           const haggle = l.verdict === 'above';
@@ -66,6 +69,9 @@ export function createMarketTab(sheet: Sheet, game: Game, look: MarketLookups): 
           );
         })
         .join('')}</div>`;
+    root.querySelector('[data-action="ad-skip"]')?.addEventListener('click', (e) => {
+      if ((e.currentTarget as HTMLElement).getAttribute('aria-disabled') !== 'true') look.skip?.watch();
+    });
     for (const l of mk.lots) {
       if (l.sold) continue;
       root.querySelector(`[data-action="lot-open-${l.id}"]`)?.addEventListener('click', () => openLot(l));

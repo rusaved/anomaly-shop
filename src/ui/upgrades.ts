@@ -24,6 +24,8 @@ export interface UpgradeLookups {
   pointSteps: ReadonlyArray<UpgradeData>;
   /** The picture of a thing to buy: its decor or its id (the scene art). */
   icon(thing: string): string;
+  /** M5-04: «Акции» (deals, coin packs, «no ads») drawn into its box; missing — the section stays off (payments off). */
+  deals?: (box: HTMLElement) => void;
 }
 
 export interface ShopTab {
@@ -69,6 +71,12 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
   pointBox.dataset.section = 'point';
   pointBox.hidden = true;
   sheet.body.appendChild(pointBox);
+  // M5-04: «Акции» — the store of real purchases (only with payments on).
+  const dealsBox = document.createElement('div');
+  dealsBox.className = 'card-shop card-store';
+  dealsBox.dataset.section = 'deals';
+  dealsBox.hidden = true;
+  sheet.body.appendChild(dealsBox);
   let built = '';
   /** MU-12 (the usability review): the order of the cards stays while the Store is on screen — a purchase never moves the next card under the finger. */
   let order: string[] = [];
@@ -143,10 +151,13 @@ export function createShopTab(sheet: Sheet, game: Game, look: UpgradeLookups): S
       sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) => b.classList.toggle('active', b.dataset.sub === current));
       box.hidden = current !== 'upgrades';
       pointBox.hidden = current !== 'point';
+      dealsBox.hidden = current !== 'deals';
+      if (current === 'deals') look.deals?.(dealsBox);
     },
     render() {
       sheet.setTitle(look.t('nav.shop'));
       if (!sheet.shown() && built) return;
+      if (current === 'deals') look.deals?.(dealsBox);
       const coins = game.state.coins;
       const crystals = game.state.crystals;
       const list = game.upgradeList();

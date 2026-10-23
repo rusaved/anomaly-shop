@@ -2,7 +2,7 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { AchievementsData, CalendarData, CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { AdsData, AchievementsData, CalendarData, CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
@@ -27,6 +27,8 @@ export interface GameContent {
   decor: DecorData;
   achievements: AchievementsData;
   calendar: CalendarData;
+  /** M5-02: rewarded ads (content/ads.json); missing — no ad rewards (tests built before M5). */
+  ads?: AdsData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -169,6 +171,23 @@ export interface IncubatorView {
   careLevel: number;
   /** The next portion of food: its price, or null when the egg has had all its food. */
   feedPrice: number | null;
+  /** M5-02: game seconds of hatching left (0 — ready). */
+  leftSec: number;
+}
+
+/** M5-02: an egg-ad card of «Мои яйца»: the egg it gives, ads left today (both cards together), game seconds to wait. */
+export interface AdEggView {
+  id: string;
+  egg: string;
+  left: number;
+  waitSec: number;
+}
+
+/** M5-05: what a purchase gives (shop.json give): coins in minutes of income, eggs, crystals. */
+export interface PackGive {
+  coinsMin?: number | undefined;
+  eggs?: Record<string, number> | undefined;
+  crystals?: number | undefined;
 }
 
 export interface CreatureView {
@@ -432,6 +451,23 @@ export interface Game {
   offline(awaySec: number): OfflineReport;
   /** FB-03: the coins of the last time away once more (the ad «×2» in the return window); 0 when already taken. */
   awayDouble(): number;
+  /** M5-02: the egg-ad cards for the device day (empty without ads data). */
+  adEggs(day: string): AdEggView[];
+  /** M5-02: the reward of an egg ad: the egg into «my eggs»; false when none is left today or the gap is not over. */
+  claimAdEgg(day: string, id: string): boolean;
+  /** M5-02: «hatch now» of an egg ad — the egg in the incubator is ready at once. */
+  hatchNow(index: number): boolean;
+  /** M5-02: «×2 deal» — the coins of the player's last deal once more; 0 when there is none to double. */
+  adDouble(): number;
+  /** M5-02: the player's last deal still to double (the creature sold and its coins), or null. */
+  dealToDouble(): { uid: string; coins: number } | null;
+  /** M5-02: the sales boost of the «Gifts» tile — sales ×mult for its seconds of live play. */
+  startBoost(): void;
+  boostLeft(): number;
+  /** M5-05: a purchase's goods into the shop (coins by income, eggs into «my eggs», crystals); the coins given. */
+  grantPack(give: PackGive): number;
+  /** M5-04, M5-05: a store mark — a pack bought (count by id), «no ads» owned, the end of the starter deal (platform time). */
+  shopMark(mark: { bought?: string; noAds?: boolean; starterEnds?: number }): void;
 }
 
 /** Tutorial marks in save.flags (docs/01, section 4). */
@@ -455,6 +491,13 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   let minuteSec = 0;
   /** FB-03: the coins of the last time away, for «×2» once (not saved: the return window is shown once). */
   let lastAway = 0;
+  /** M5-02: the coins of the player's last deal, for «×2» once (not saved: the button lives in the deal's own chat). */
+  let lastDeal: { uid: string; coins: number } | null = null;
+  const adsOf = (): NonNullable<SaveData['ads']> => {
+    const st = s();
+    st.ads ??= { day: '', eggs: 0, eggIn: 0, boostLeft: 0 };
+    return st.ads;
+  };
   /** FB-02: the player's income, coins a minute (never below the floor of the first minute). */
   const incomeNow = (): number => Math.max(eggs.income.floorPerMin, s().stats.income ?? 0);
   /** FB-02: the most a free reward is worth: rewardCapMin minutes of income. */
@@ -989,6 +1032,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (firstCrystal) st.flags[FLAGS.crystal] = true;
     // UB-08: reputation — every deal, more for a rare one (the level before counts the deals before this one).
     const levelBefore = sellerLevel();
+    // M5-02: the sales boost of the «Gifts» tile works in live play only (never away).
+    if (!quiet && content.ads && (st.ads?.boostLeft ?? 0) > 0) price = coins(price * content.ads.boost.mult);
+    if (by !== 'helper' && !quiet) lastDeal = { uid: cr.uid, coins: price };
     st.coins += price;
     if (!quiet) liveEarned += price;
     st.stats.deals += 1;
@@ -1849,6 +1895,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       }
       // Free egg timers (M3-04) and «my eggs» into free incubators.
       for (const id of Object.keys(st.freeIn)) st.freeIn[id] = Math.max(0, (st.freeIn[id] ?? 0) - dt);
+      if (st.ads) {
+        st.ads.eggIn = Math.max(0, st.ads.eggIn - dt);
+        if (!quiet) st.ads.boostLeft = Math.max(0, st.ads.boostLeft - dt);
+      }
       if (Object.keys(st.myEggs).length) placeMine();
       // Buyers write while the player is away too: the seller helper answers them (offline income).
       runChats(dt);
@@ -1875,6 +1925,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
             care,
             careLevel: careLevel(care, eggs.care),
             feedPrice: feedPrice(inc),
+            leftSec: inc.egg && !eggReady(inc) ? Math.max(0, needFor(inc.egg) - inc.progress, Math.min(needFor(inc.egg), eggs.minHatchSec) - inc.elapsed) : 0,
           };
         }),
         inventory: s()
@@ -2229,6 +2280,80 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     },
     freeSlots,
     showcaseSlots,
+    adEggs(day) {
+      const a = content.ads;
+      if (!a) return [];
+      const st = adsOf();
+      const left = st.day === day ? Math.max(0, a.eggs.perDay - st.eggs) : a.eggs.perDay;
+      const ladder = eggs.eggs.filter((e) => e.section === 'ladder' && eggOpen(e)).at(-1)?.id ?? basicEgg;
+      return a.eggs.cards.map((c) => ({ id: c.id, egg: c.egg === 'ladder' ? ladder : c.egg, left, waitSec: st.eggIn }));
+    },
+    claimAdEgg(day, id) {
+      const card = game.adEggs(day).find((c) => c.id === id);
+      const a = content.ads;
+      if (!card || !a || card.left <= 0 || card.waitSec > 0) return false;
+      const st = adsOf();
+      if (st.day !== day) {
+        st.day = day;
+        st.eggs = 0;
+      }
+      st.eggs += 1;
+      st.eggIn = a.eggs.gapSec;
+      // An ad egg is a free reward: it hatches in the gift prices (FB-15), like the egg of the gifts.
+      s().giftEggs = { ...(s().giftEggs ?? {}), [card.egg]: (s().giftEggs?.[card.egg] ?? 0) + 1 };
+      game.giveEggs(card.egg, 1);
+      return true;
+    },
+    hatchNow(index) {
+      const inc = s().incubators[index];
+      if (!inc?.egg || eggReady(inc)) return false;
+      const need = needFor(inc.egg);
+      inc.waiting = false;
+      inc.progress = Math.max(inc.progress, need);
+      inc.elapsed = Math.max(inc.elapsed, Math.min(need, eggs.minHatchSec));
+      inc.ripeSec = 0;
+      commit({ flush: true });
+      emit({ type: 'eggReady', incubator: index });
+      emit({ type: 'change' });
+      return true;
+    },
+    dealToDouble: () => (lastDeal ? { ...lastDeal } : null),
+    adDouble() {
+      const c = lastDeal?.coins ?? 0;
+      if (c <= 0) return 0;
+      lastDeal = null;
+      s().coins += c;
+      s().stats.coinsEarned += c;
+      commit({ flush: true });
+      emit({ type: 'change' });
+      return c;
+    },
+    startBoost() {
+      if (!content.ads) return;
+      adsOf().boostLeft = content.ads.boost.sec;
+      commit({ flush: true });
+      emit({ type: 'change' });
+    },
+    boostLeft: () => s().ads?.boostLeft ?? 0,
+    grantPack(give) {
+      const st = s();
+      const c = give.coinsMin ? coins(give.coinsMin * incomeNow()) : 0;
+      st.coins += c;
+      st.crystals += give.crystals ?? 0;
+      commit({ flush: true });
+      for (const [id, n] of Object.entries(give.eggs ?? {})) game.giveEggs(id, n);
+      emit({ type: 'change' });
+      return c;
+    },
+    shopMark(mark) {
+      const st = s();
+      st.shop ??= { noAds: false, bought: {}, starterEnds: 0 };
+      if (mark.bought) st.shop.bought[mark.bought] = (st.shop.bought[mark.bought] ?? 0) + 1;
+      if (mark.noAds) st.shop.noAds = true;
+      if (mark.starterEnds !== undefined) st.shop.starterEnds = mark.starterEnds;
+      commit({ flush: true });
+      emit({ type: 'change' });
+    },
     awayDouble() {
       const c = lastAway;
       if (c <= 0) return 0;

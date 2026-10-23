@@ -77,7 +77,7 @@ export interface SaveData {
   /** M4-05: the guest zone of the pickup point — decorations standing; unpaid: the upkeep failed (the bonus waits); due: upkeep owed (< 1 coin). */
   guest: { items: string[]; unpaid: boolean; due: number };
   /** xp — reputation points of the seller level (UB-08); saves made before it count their deals. */
-  stats: { deals: number; coinsEarned: number; hatched: number; taps: number; levelUps: number; haggles: number; xp?: number; dealsAll?: number; income?: number; awayDeals?: number };
+  stats: { deals: number; coinsEarned: number; hatched: number; taps: number; levelUps: number; haggles: number; xp?: number; dealsAll?: number; income?: number; awayDeals?: number; sessions?: number };
   /** FB-15: the coins of the last whole minutes of live play (stats.income is read from them). */
   incomeMinutes?: number[];
   /** FB-15: eggs of «my eggs» that came as gifts (they hatch as free rewards), by kind. */
@@ -104,6 +104,10 @@ export interface SaveData {
   work: number;
   /** Promo codes already used (M3-13). */
   codes: string[];
+  /** M5-02: rewarded ads — the device day and egg ads taken that day, game seconds to the next egg ad, seconds of the sales boost left. */
+  ads?: { day: string; eggs: number; eggIn: number; boostLeft: number };
+  /** M5-04, M5-05: purchases — «no ads» owned, packs bought by id, platform time the starter deal ends (0 — not shown yet). */
+  shop?: { noAds: boolean; bought: Record<string, number>; starterEnds: number };
 }
 
 export interface Order {
@@ -182,7 +186,7 @@ export function newSave(now: number): SaveData {
     cityEarnedAt: 0,
     guest: { items: [], unpaid: false, due: 0 },
     daily: { day: '', base: {}, goals: [], claimed: [], egg: false },
-    stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0, xp: 0, dealsAll: 0, income: 0, awayDeals: 0 },
+    stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0, xp: 0, dealsAll: 0, income: 0, awayDeals: 0, sessions: 0 },
     incomeMinutes: [],
     giftEggs: {},
     settings: { sound: true, lang: null, vibrate: true },
@@ -197,6 +201,8 @@ export function newSave(now: number): SaveData {
     gifts: { subscribed: {}, reviewed: false, days: 0, lastDay: '' },
     work: 1,
     codes: [],
+    ads: { day: '', eggs: 0, eggIn: 0, boostLeft: 0 },
+    shop: { noAds: false, bought: {}, starterEnds: 0 },
   };
 }
 
@@ -286,6 +292,8 @@ export function normalize(raw: unknown, now: number): SaveData {
       income: Math.max(0, num(st.income, 0)),
       // FB-03: deals made away that do not raise the seller level (the level grows at most offlineMaxLevels away).
       awayDeals: Math.max(0, num(st.awayDeals, 0)),
+      // M5-06: game starts so far (the review asks from the 3rd).
+      sessions: Math.max(0, Math.floor(num(st.sessions, 0))),
     },
     giftEggs: numberMap(r.giftEggs),
     incomeMinutes: arr(r.incomeMinutes).filter((x): x is number => typeof x === 'number' && Number.isFinite(x) && x >= 0).slice(-30),
@@ -300,6 +308,14 @@ export function normalize(raw: unknown, now: number): SaveData {
     market: normalizeMarket(r.market),
     work: Math.max(1, Math.floor(num(r.work, 1))),
     codes: arr(r.codes).filter((x): x is string => typeof x === 'string'),
+    ads: (() => {
+      const a = rec(r.ads);
+      return { day: str(a.day, ''), eggs: Math.max(0, Math.floor(num(a.eggs, 0))), eggIn: Math.max(0, num(a.eggIn, 0)), boostLeft: Math.max(0, num(a.boostLeft, 0)) };
+    })(),
+    shop: (() => {
+      const o = rec(r.shop);
+      return { noAds: bool(o.noAds, false), bought: numberMap(o.bought), starterEnds: Math.max(0, num(o.starterEnds, 0)) };
+    })(),
     gifts: (() => {
       const g = rec(r.gifts);
       return {

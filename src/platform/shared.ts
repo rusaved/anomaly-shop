@@ -2,7 +2,7 @@
 // Called by: src/platform/yandex.ts, youtube.ts, null.ts; tests/platform.test.ts.
 // Keep: no DOM and no SDK here; every function takes its inputs as arguments.
 
-import type { Leaders, DeviceType, Lang, PlatformCaps } from './types.ts';
+import type { Leaders, DeviceType, Lang, Payments, PlatformCaps } from './types.ts';
 
 /** Maps a platform or browser language code to one of the game languages. */
 export function pickLanguage(
@@ -36,7 +36,9 @@ export function guessDevice(h: DeviceHints): DeviceType {
 
 export function profileCaps(): PlatformCaps {
   const p = __GAME__.profile;
-  return { ads: p.ads, payments: p.payments, community: p.community, analytics: p.analytics };
+  // M5-04: ?payments=1 turns the store on in test and debug builds only (the producer link, the shots); a release follows game.json.
+  const force = (__TEST_API__ || __DEBUG_TOOLS__) && typeof location !== 'undefined' && new URLSearchParams(location.search).get('payments') === '1';
+  return { ads: p.ads, payments: p.payments || force, community: p.community, analytics: p.analytics };
 }
 
 export function gameLanguage(code: string | null | undefined): Lang {
@@ -103,5 +105,15 @@ export function createLocalLeaders(): Leaders {
       const all = [...rivals.map((score) => ({ name: '', score, me: false })), { name: '', score: mine, me: true }].sort((a, b) => b.score - a.score).map((e, i) => ({ ...e, rank: i + 1 }));
       return Promise.resolve({ entries: all.slice(0, n), me: all.find((e) => e.me) ?? null });
     },
+  };
+}
+
+/** M5-05: no payments here (null, youtube, Yandex without the SDK): an empty catalog, every purchase fails. */
+export function noPayments(): Payments {
+  return {
+    catalog: () => Promise.resolve([]),
+    buy: () => Promise.resolve({ result: 'error', token: '' }),
+    owned: () => Promise.resolve([]),
+    consume: () => Promise.resolve(),
   };
 }

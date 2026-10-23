@@ -38,6 +38,8 @@ import { createNewsTicker } from './ui/news.ts';
 import { createMerchantWindow } from './ui/merchant.ts';
 import { createChatter } from './ui/chatter.ts';
 import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
+import { createAds } from './ui/ads.ts';
+import { createShopStore } from './ui/store.ts';
 import { bindFunnel } from './analytics/funnel.ts';
 import { ftueHint, shelfHint, tabHint, tabUnlocked } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
@@ -58,7 +60,7 @@ import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
-import { achievements, audio, calendar, codes, collection, decor as decorData, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { ads as adsData, shopData, achievements, audio, calendar, codes, collection, decor as decorData, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
@@ -128,7 +130,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection, decor: decorData, achievements, calendar }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection, decor: decorData, achievements, calendar, ads: adsData }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -291,7 +293,9 @@ async function boot(): Promise<void> {
     lang: i18n.lang,
     upgrade: (id) => upgrades.upgrades.find((u) => u.id === id),
     tierColors: Object.values(styleData.rarity),
-    sections: navData.shop.sections,
+    // M5-04: «Акции» is on with the payments of the platform (game.json: off till the «Сборка» milestone).
+    sections: navData.shop.sections.map((x) => (x.id === 'deals' ? { ...x, enabled: x.enabled || platform.caps.payments } : x)),
+    ...(platform.caps.payments ? { deals: (box: HTMLElement) => storeMod.render(box) } : {}),
     guestName: (id) => decorData.items.find((x) => x.id === id)?.name[i18n.lang()] ?? id,
     themeName: (theme) => decorData.sets.find((x) => x.theme === theme)?.name[i18n.lang()] ?? theme,
     pointLevel: (() => {
@@ -301,6 +305,22 @@ async function boot(): Promise<void> {
     pointSteps: upgrades.upgrades.filter((u) => u.group === 'point'),
     icon: (thing) => portraits.thing(thing),
   };
+  // M5-04, M5-05: the store of real purchases (deals, coins, «no ads»), restored at start (IAP-01).
+  const storeMod = createShopStore(play, {
+    t: i18n.t,
+    lang: i18n.lang,
+    shop: shopData,
+    payments: platform.payments,
+    now: () => platform.now(),
+    playSec: () => runtime.elapsed(),
+    eggName: (id) => eggs.eggs.find((e) => e.id === id)?.name[i18n.lang()] ?? id,
+    icon: (thing) => portraits.thing(thing),
+    eggPicture: (id) => portraits.egg(id),
+    track,
+    note: (text, good) => toasts.show(text, good ? 'good' : 'info', 2400),
+    noAdsChanged: () => adsMod.syncBanner(),
+  });
+  if (platform.caps.payments) void storeMod.restore();
   const shopTab = createShopTab(sheets.get('shop')!, play, shopLook);
   shopTab.section('upgrades');
   // FB-10 (homeShop): the same Store under the room of «Лавка» — its upgrades always in sight.
@@ -324,6 +344,22 @@ async function boot(): Promise<void> {
     // MU-06: «На продажу» opens the pet's «Цена» page; «Выставить на продажу» there puts it on the shelf.
     list: (uid) => openPrice(uid),
   });
+  // M5-02, M5-03: the one ads module — every video and interstitial of the game goes through it (docs/03 §2).
+  let noteAd: (kind: 'closed' | 'unavailable' | 'wait' | 'got') => void = () => undefined;
+  const adsMod = createAds({
+    platform,
+    pause: runtime.pause,
+    track,
+    rules: adsData,
+    playSec: () => runtime.elapsed(),
+    noAds: () => Boolean(store.state.shop?.noAds),
+    busyNow: () => hatchShow.isOpen(),
+    note: (kind) => noteAd(kind),
+    changed: () => {
+      renderUi();
+      if (topWindow()?.root.dataset.overlay === 'gifts') giftsWindow.render();
+    },
+  });
   const eggsLook: EggsLookups = {
     t: i18n.t,
     lang: i18n.lang,
@@ -338,6 +374,17 @@ async function boot(): Promise<void> {
     careShell: eggs.care.shell,
     careMax: eggs.care.maxBonus,
     careTop: eggs.care.topShare,
+    ...(adsMod.on
+      ? {
+          ad: {
+            cards: () => play.adEggs(today()),
+            busy: () => adsMod.busy(),
+            egg: (id: string) => void adsMod.rewarded('rare_egg', () => void play.claimAdEgg(today(), id)),
+            hatch: (i: number) => void adsMod.rewarded('instant_hatch', () => void play.hatchNow(i)),
+            minLeftSec: adsData.hatch.minLeftSec,
+          },
+        }
+      : {}),
   };
   const eggsTab = createEggsTab(sheets.get('eggs')!, play, eggsLook);
   // MU-02 (l1-home-landscape): sideways «Лавка» keeps the eggs in rows right of the room.
@@ -407,6 +454,18 @@ async function boot(): Promise<void> {
     avatarColor: (i) => customers.people.outfits[i % customers.people.outfits.length] ?? styleData.colors.uiAccent,
     mood: moodOf,
     wide: () => appRoot.classList.contains('landscape'),
+    ...(adsMod.on
+      ? {
+          double: {
+            busy: () => adsMod.busy(),
+            watch: () =>
+              void adsMod.rewarded('deal_x2', () => {
+                const got = play.adDouble();
+                if (got > 0) hud.update(store.state.coins);
+              }),
+          },
+        }
+      : {}),
   });
   const sellerLook = {
     t: i18n.t,
@@ -432,6 +491,7 @@ async function boot(): Promise<void> {
     rarityColor: sellerLook.rarityColor,
     range: market.price,
     openLot: (body, lot, back) => renderLot(body, lot, play, sellerLook, back),
+    ...(adsMod.on ? { skip: { busy: () => adsMod.busy(), watch: () => void adsMod.rewarded('market_skip', () => play.refreshMarket()) } } : {}),
   });
   window.setInterval(() => {
     if (nav.active() === 'market') marketTab.render();
@@ -465,6 +525,7 @@ async function boot(): Promise<void> {
     portrait: (sp, r) => portraits.creature(sp, r),
     goalName: (id) => calendar.tasks.pool.find((g) => g.id === id)?.name[i18n.lang()] ?? id,
     review: () => platform.requestReview(),
+    ...(adsMod.on ? { boost: { busy: () => adsMod.busy(), left: () => play.boostLeft(), watch: () => void adsMod.rewarded('sales_boost', () => play.startBoost()), thing: 'tags' } } : {}),
   });
   hud.side.insertAdjacentHTML(
     'beforeend',
@@ -664,6 +725,23 @@ async function boot(): Promise<void> {
     const y = Math.min(...slots.map((r) => r.y)) - 12 + c.top;
     return [new DOMRect(x, y, Math.max(...slots.map((r) => r.x + r.w)) + 12 + c.left - x, Math.max(...slots.map((r) => r.y + r.h)) + 12 + c.top - y)];
   });
+  noteAd = (kind) => toasts.show(i18n.t(`ad.${kind}`), kind === 'got' ? 'good' : 'info', 2400);
+  // M5-03: the interstitial only between screens by the player's tap — a window closed (not the hatch) or a tab changed.
+  document.addEventListener(
+    'click',
+    () => {
+      if (!controllable || !adsMod.on) return;
+      const win = topWindow()?.root.dataset.overlay ?? null;
+      const tab = nav.active();
+      window.setTimeout(() => {
+        const now = topWindow()?.root.dataset.overlay ?? null;
+        const closed = win !== null && now === null && win !== 'hatch';
+        const moved = tab !== nav.active() && now === null && win !== 'hatch';
+        if (closed || moved) void adsMod.betweenScreens(closed ? `close_${win}` : `tab_${nav.active()}`);
+      }, 0);
+    },
+    { capture: true },
+  );
   const merchantWindow = createMerchantWindow(uiRoot, play, {
     t: i18n.t,
     lang: i18n.lang,
@@ -681,20 +759,18 @@ async function boot(): Promise<void> {
   renderUi();
   store.onCommit(renderUi);
   // FB-03: «▶ Ad: ×2» in the return window where the platform has ads; the game waits while the ad runs (docs/03, section 2).
-  const adDouble = platform.caps.ads
+  // M5-02: through the one ads module (common gap, late reward); the button stays when the video is closed early or missing.
+  const adDouble = adsMod.on
     ? async (): Promise<number> => {
-        runtime.pause.pause('ad');
-        try {
-          const r = await platform.showRewarded('offline_x2');
-          const got = r.rewarded ? play.awayDouble() : 0;
+        let got = 0;
+        await adsMod.rewarded('offline_x2', () => {
+          got = play.awayDouble();
           if (got > 0) {
             hud.update(store.state.coins);
             track('offline_claim', { x2: 1 });
           }
-          return got;
-        } finally {
-          runtime.pause.resume('ad');
-        }
+        });
+        return got;
       }
     : undefined;
   const awayWindow = createAwayWindow(uiRoot, { t: i18n.t, lang: i18n.lang, ...(adDouble ? { adDouble } : {}) });
@@ -932,6 +1008,7 @@ async function boot(): Promise<void> {
         shelf: play.view().creatures.map((c) => c.uid),
         windows: [...uiRoot.querySelectorAll<HTMLElement>('.overlay:not([hidden]):not(.under)')].map((el) => el.dataset.overlay ?? ''),
         upgradeFx: shop.lastUpgradeText(),
+        adBlock: adsMod.interstitialBlock(),
         city: play.rebirthView().city,
         captions: [...shop.captions(), ...(sceneHintOn ? [hints.text()] : []), ...(toasts.showing() ? [toasts.showing()] : [])],
         hatchTiming: hatchShow.timing(),
@@ -999,6 +1076,8 @@ async function boot(): Promise<void> {
     document.getElementById('preloader')?.classList.add('hidden');
     controllable = true;
     platform.ready();
+    // M5-00, IAP-03: the sticky banner follows «no ads».
+    adsMod.syncBanner();
     if (!runtime.pause.isPaused()) platform.gameplayStart();
     track('gameReady');
   });

@@ -12,7 +12,7 @@
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
 //     · F19 (FB-03, Q-039 B) an hour away pays 30–50 % of an hour of play (up to 2 hours), the seller level grows ≤ 1 away
 //   F20 (FB-05): full egg care at least doubles the VIP and exclusive share of every ladder egg and pays for its food.
-//     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads) waits for M4.
+//     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads, M5-02): the share of eggs for videos and what the ad points add at most in a day of 30 minutes (info).
 //   Week (M4-08, casual): F17 something new opens every day of 7, the guest zone pays its upkeep (M4-05) · F18 the second city
 //     1–3 days after the first, its egg bought.
 //   Keeper (feeds every creature to the top before selling): F12 earns at most ×2 of the casual player in 10 min and
@@ -364,6 +364,9 @@ export interface DaysResult {
   offlineHour: number;
   /** FB-03: seller levels gained in the night of day 1. */
   awayLevels: number;
+  /** M5-02: eggs hatched and deals made in the 30 active minutes of day 1 (the share of eggs for videos is measured against them). */
+  hatchedDay1: number;
+  dealsDay1: number;
 }
 
 /** Three days of a player: 30 active minutes, then 8 hours away (the shop works on), twice, then a third active half hour. */
@@ -379,6 +382,8 @@ export function playDays(bot: Bot, seed: number, content: GameContent = loadGame
   let onlineHour = 0;
   let offlineHour = 0;
   let awayLevels = 0;
+  let hatchedDay1 = 0;
+  let dealsDay1 = 0;
   game.events.on((e: GameEvent) => {
     if (e.type === 'districtOpened' && e.district === 'street') street = Math.min(street, active);
     if (e.type === 'districtOpened' && e.district === 'square') square = Math.min(square, active);
@@ -400,6 +405,8 @@ export function playDays(bot: Bot, seed: number, content: GameContent = loadGame
     const level = game.reputation().level;
     const away = game.offline(AWAY_SEC);
     if (day === 1) {
+      hatchedDay1 = game.state.stats.hatched;
+      dealsDay1 = game.state.stats.deals;
       awayMinutes = perMin > 0 ? away.coins / perMin : 0;
       onlineHour = perMin * 60;
       offlineHour = away.coins / (Math.min(AWAY_SEC, content.upgrades.offlineMaxHours * 3600) / 3600);
@@ -407,7 +414,7 @@ export function playDays(bot: Bot, seed: number, content: GameContent = loadGame
     }
     if (rebirthDay === Infinity && game.state.stats.coinsEarned >= threshold && before < threshold) rebirthDay = day + 0.0;
   }
-  return { street, square, awayMinutes, rebirthDay, onlineHour, offlineHour, awayLevels };
+  return { street, square, awayMinutes, rebirthDay, onlineHour, offlineHour, awayLevels, hatchedDay1, dealsDay1 };
 }
 
 export interface WeekResult {
@@ -543,8 +550,10 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     );
   }
   lines.push(`long run — casual and slow × ${longSeeds} seeds: 3 days of 30 active minutes + 8 h away`);
+  const casualDays: DaysResult[] = [];
   for (const bot of BOTS.filter((b) => b.name === 'casual' || b.name === 'slow')) {
     const runs = Array.from({ length: longSeeds }, (_, i) => playDays(bot, 2000 + i * 104729, content));
+    if (bot.name === 'casual') casualDays.push(...runs);
     const street = quantile(runs.map((r) => r.street), 0.9);
     const square = quantile(runs.map((r) => r.square), 0.9);
     const away = quantile(runs.map((r) => r.awayMinutes), 0.5);
@@ -640,7 +649,33 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     if (!f20) failures.push('F20 full care does not double VIP and exclusive or does not pay for its food');
     lines.push(`care    F20 VIP+exclusive without → with full care (b ${c.maxBonus}, top ${c.topShare}), EV in egg prices less food: ${cells.join(' · ')} ${f20 ? 'ok' : 'FAIL'}`);
   }
-  lines.push('F9 rewarded ads +30–100%: not checked until M4 (no ad rewards in the data yet)');
+  // M5-02 (brief «Ресейл 9»): the share of eggs for videos in a day of 30 active minutes (casual p50) and F9 — what the ad points add
+  // at most in that day: the sales boost for its seconds, «×2 deal» once per its gap (never more deals than were made), the egg ads
+  // at the gift price (FB-15: their expected value in minutes of income). Info: the player chooses the videos.
+  if (content.ads && casualDays.length) {
+    const a = content.ads;
+    const day = 1800;
+    const hatched = quantile(casualDays.map((r) => r.hatchedDay1), 0.5);
+    const deals = quantile(casualDays.map((r) => r.dealsDay1), 0.5);
+    const adEggs = Math.min(a.eggs.perDay, Math.floor(day / Math.max(1, a.eggs.gapSec)) + 1);
+    const share = adEggs / Math.max(1, hatched + adEggs);
+    const boost = ((a.boost.mult - 1) * Math.min(a.boost.sec, day)) / day;
+    const dealGap = a.rewarded.placementGapSec?.deal_x2 ?? a.rewarded.gapSec;
+    const doubled = Math.min(deals, Math.floor(day / Math.max(1, dealGap)));
+    const double = doubled / Math.max(1, deals);
+    // An egg for a video hatches at the gift price: its expected value in minutes of income (the ladder card counts as the gift egg).
+    const evMin = a.eggs.cards.map((c) => {
+      const e = content.eggs.eggs.find((x) => x.id === (c.egg === 'ladder' ? 'egg_gift' : c.egg));
+      const ev = e?.value ? RARITIES.reduce((n, r) => n + (e.chances[r] / 100) * e.value![r], 0) : 1;
+      return Math.min(content.eggs.income.rewardCapMin, (e?.valueIncomeMin ?? 1) * ev);
+    });
+    const eggs = (adEggs * (evMin.reduce((x, y) => x + y, 0) / evMin.length)) / (day / 60);
+    const total = boost + double + eggs;
+    lines.push(
+      `ads     M5-02 casual day of 30 min (p50): eggs for videos ${adEggs} of ${fmt(hatched + adEggs, 0)} (${fmt(share * 100, 0)} %) · boost +${fmt(boost * 100, 0)} %` +
+        ` · ×2 deal ${doubled} of ${fmt(deals, 0)} deals (+${fmt(double * 100, 0)} %) · egg ads ≈ +${fmt(eggs * 100, 0)} % · F9 at most +${fmt(total * 100, 0)} % (want 30–100 %) ${total >= 0.3 && total <= 1 ? 'ok' : 'info'}`,
+    );
+  } else lines.push('F9 rewarded ads: no ads data');
   lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F20: all green`);
   return { ok: failures.length === 0, lines, failures };
 }

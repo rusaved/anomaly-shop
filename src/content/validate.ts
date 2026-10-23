@@ -19,6 +19,8 @@ import {
   MarketFile,
   GiftsFile,
   WorkFile,
+  AdsFile,
+  ShopFile,
   NavFile,
   PaceFile,
   CollectionFile,
@@ -48,7 +50,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json', 'nav.json', 'pace.json', 'collection.json', 'decor.json', 'achievements.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json', 'nav.json', 'pace.json', 'collection.json', 'decor.json', 'achievements.json', 'ads.json', 'shop.json'] as const;
 /** The egg price ladder (docs/01 §3 p. 12): eight steps, each ×10 the one before; M4-08 (Q-029): the top that opens city by city goes ×3. */
 const LADDER_STEPS = 8;
 const LADDER_STEP = 10;
@@ -306,6 +308,8 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   const market = parseFile('market.json', MarketFile, data(files['market.json']), errors);
   const gifts = parseFile('gifts.json', GiftsFile, data(files['gifts.json']), errors);
   parseFile('work.json', WorkFile, data(files['work.json']), errors);
+  const ads = parseFile('ads.json', AdsFile, data(files['ads.json']), errors);
+  const shopFile = parseFile('shop.json', ShopFile, data(files['shop.json']), errors);
   parseFile('pace.json', PaceFile, data(files['pace.json']), errors);
   parseFile('collection.json', CollectionFile, data(files['collection.json']), errors);
   const decor = parseFile('decor.json', DecorFile, data(files['decor.json']), errors);
@@ -381,6 +385,15 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   }
 
   if (eggs) checkEggs(eggs, customers, errors);
+  // M5-02, M5-04: ad eggs and store gifts name real eggs (ladder — the best open ladder egg).
+  if (eggs && ads)
+    ads.eggs.cards.forEach((c, i) => {
+      if (c.egg !== 'ladder' && !eggs.eggs.some((e) => e.id === c.egg)) errors.push(`ads.json: eggs.cards.${i}.egg — unknown egg "${c.egg}"`);
+    });
+  if (eggs && shopFile)
+    [...shopFile.deals, ...shopFile.coins].forEach((x) => {
+      for (const id of Object.keys(x.give.eggs ?? {})) if (!eggs.eggs.some((e) => e.id === id)) errors.push(`shop.json: ${x.id}.give.eggs — unknown egg "${id}"`);
+    });
   if (species) checkSpecies(species, eggs, errors);
   if (customers) checkCustomers(customers, errors);
   if (upgrades) checkUpgrades(upgrades, eggs, errors);

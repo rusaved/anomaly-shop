@@ -31,6 +31,22 @@ export interface Leaders {
   top(n: number): Promise<{ entries: LeaderEntry[]; me: LeaderEntry | null }>;
 }
 
+export type RewardedOutcome = 'rewarded' | 'closed' | 'unavailable';
+
+/** M5-05: one product of the platform catalog: id as in the console, the price text in the platform currency. */
+export interface Product {
+  id: string;
+  price: string;
+}
+export interface Payments {
+  catalog(): Promise<Product[]>;
+  /** ok — paid (the caller grants, then consume() for a consumable); cancel — the player closed the window; error — failed. */
+  buy(id: string): Promise<{ result: 'ok' | 'cancel' | 'error'; token: string }>;
+  /** Purchases not consumed yet (restore at start: «no ads» stays, a crash between pay and grant is granted now). */
+  owned(): Promise<Array<{ id: string; token: string }>>;
+  consume(token: string): Promise<void>;
+}
+
 export interface Platform {
   readonly name: PlatformName;
   readonly device: DeviceType;
@@ -49,7 +65,12 @@ export interface Platform {
   audioAllowed(): boolean;
   onAudioChange(cb: (on: boolean) => void): void;
   showInterstitial(placement: string): Promise<{ shown: boolean }>;
-  showRewarded(placement: string): Promise<{ rewarded: boolean }>;
+  /** M5-02: rewarded — the reward is due (onRewarded, even a late one); closed — closed early; unavailable — no video (error, offline, no ads). */
+  showRewarded(placement: string): Promise<{ rewarded: boolean; outcome: RewardedOutcome }>;
+  /** M5-00: the sticky banner of the platform console; «no ads» hides it (IAP-03). */
+  setBanner(on: boolean): void;
+  /** M5-05: purchases through the platform (caps.payments); a stand-in that never sells where there are none. */
+  readonly payments: Payments;
   /** The platform review window (M3-11 «Gifts»): available — the platform can ask now; sent — the player left a review. */
   requestReview(): Promise<{ available: boolean; sent: boolean }>;
   /** M4-04: the general leaderboard. */

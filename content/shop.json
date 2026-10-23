@@ -1,0 +1,15 @@
+{
+  "note": "M5-04, M5-05: «Магазин → Акции» по стандарту жанра — акции (набор новичка с таймером hours от первого показа, сезонный, мега), «Валюта» — пакеты монет, «Без рекламы» (гасит полноэкранную и баннер, ролики за награду остаются). Всё за флагом payments профиля (game.json: выключен до вехи «Сборка»). price — цена в ян (Q-006, предложение; ниже стандарта жанра, решение продюсера 14.10), в игре показывается цена из каталога платформы, без него — эта. product — id товара в консоли Яндекса (создаёт продюсер). give: coinsMin — монеты в минутах дохода игрока (растут с лавкой, как награды), eggs — яйца в «Мои яйца», crystals — кристаллы. firstSec — первые 3 минуты окон с покупками нет (docs/03 §2). Монеты и кристаллы — игровая валюта, без обмена на деньги (дисклеймер в окне).",
+  "firstSec": 180,
+  "deals": [
+    {"id": "starter", "product": "pack_starter", "price": 49, "hours": 48, "give": {"coinsMin": 30, "eggs": {"egg_gold": 2}, "crystals": 20}},
+    {"id": "season", "product": "pack_season", "price": 79, "give": {"eggs": {"egg_autumn": 5, "egg_gold": 2}}},
+    {"id": "mega", "product": "pack_mega", "price": 149, "give": {"coinsMin": 120, "eggs": {"egg_gold": 6}, "crystals": 100}}
+  ],
+  "coins": [
+    {"id": "coins_s", "product": "coins_s", "price": 19, "give": {"coinsMin": 20}},
+    {"id": "coins_m", "product": "coins_m", "price": 59, "give": {"coinsMin": 75}},
+    {"id": "coins_l", "product": "coins_l", "price": 129, "give": {"coinsMin": 200}}
+  ],
+  "noAds": {"product": "no_ads", "price": 99}
+}

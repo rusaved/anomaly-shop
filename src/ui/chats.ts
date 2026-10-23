@@ -23,6 +23,8 @@ export interface ChatsLookups {
   mood(species: string): string;
   /** l2: sideways the list and the dialog stand side by side. */
   wide(): boolean;
+  /** M5-02: «×2 deal» for a video after a sale in the chat; missing — no ad button. */
+  double?: { busy(): boolean; watch(): void };
 }
 
 export interface ChatsTab {
@@ -110,13 +112,18 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     // Q-025: the creature of an open chat is off the shelf («talking»); a closed one may be back on the shelf or in the inventory.
     const view = game.view();
     const cr = [...view.talking, ...view.creatures, ...view.inventory].find((x) => x.uid === c.uid);
-    const next = `d:${id}:${look.lang()}:${c.state}:${c.lines.length}:${c.offer}:${cr?.ask ?? ''}`;
+    const next = `d:${id}:${look.lang()}:${c.state}:${c.lines.length}:${c.offer}:${cr?.ask ?? ''}:${game.dealToDouble()?.uid ?? ''}:${look.double?.busy() ?? ''}`;
     if (next === dialogKey) return;
     dialogKey = next;
     const f = fmt();
     const rarity = look.rarity(c.species);
     let buttons: string;
-    if (c.state !== 'open') buttons = `<p class="mu-meta chat-end">${esc(look.t(c.state === 'sold' ? 'chats.sold' : 'chats.gone'))}</p>`;
+    const dbl = look.double && c.state === 'sold' && game.dealToDouble()?.uid === c.uid ? game.dealToDouble() : null;
+    if (c.state !== 'open')
+      buttons =
+        `<p class="mu-meta chat-end">${esc(look.t(c.state === 'sold' ? 'chats.sold' : 'chats.gone'))}</p>` +
+        // M5-02: «▶ Ad: ×2 deal» right in the chat of the deal just made, the coins on the button.
+        (dbl ? `<button type="button" class="mu-btn btn-ad" data-action="ad-double" aria-disabled="${look.double!.busy()}">${iconize(look.t('ad.double', { n: `◉ ${f.format(dbl.coins)}` }))}</button>` : '');
     else
       buttons =
         `<button type="button" class="mu-btn main" data-action="chat-sell">${iconize(look.t('chats.sell', { n: `◉ ${f.format(c.offer)}` }))}</button>` +
@@ -131,6 +138,9 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     dialogEl.querySelector('[data-action="chat-back"]')?.addEventListener('click', () => tab.show(null));
     dialogEl.querySelector('[data-action="chat-sell"]')?.addEventListener('click', () => game.chatSell(c.id));
     dialogEl.querySelector('[data-action="chat-decline"]')?.addEventListener('click', () => game.chatDecline(c.id));
+    dialogEl.querySelector('[data-action="ad-double"]')?.addEventListener('click', (e) => {
+      if ((e.currentTarget as HTMLElement).getAttribute('aria-disabled') !== 'true') look.double?.watch();
+    });
     // UB-10: a chat opens on its latest lines.
     const lines = dialogEl.querySelector('.chat-lines') as HTMLElement;
     lines.scrollTop = lines.scrollHeight;

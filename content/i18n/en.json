@@ -426,7 +426,7 @@
   "rate.text": "Enjoying the shop? Leave a rating and the review chest is yours",
   "gifts.reviewBtnSend": "Rate",
   "ad.egg": "▶ Ad: egg",
-  "ad.left": "{n} more today",
+  "ad.left": "Videos left today: {n}",
   "ad.tomorrow": "Back tomorrow",
   "ad.hatch": "▶ Ad: hatch now",
   "ad.skip": "▶ Ad: new lots now",
@@ -443,7 +443,7 @@
   "store.deals": "Deals",
   "store.coins": "Coins",
   "store.noAds": "No ads",
-  "store.noAdsText": "No full-screen ads and no banner. Videos for rewards stay, if you like",
+  "store.noAdsText": "No full-screen ads and no banner. Reward videos stay, whenever you want one",
   "store.owned": "Owned",
   "store.note": "Coins, crystals and eggs work only inside the game and cannot be exchanged for money",
   "store.soon": "Deals open after a couple of minutes of play",
@@ -457,5 +457,7 @@
   "store.mega": "Mega pack",
   "store.coins_s": "Handful of coins",
   "store.coins_m": "Bag of coins",
-  "store.coins_l": "Chest of coins"
+  "store.coins_l": "Chest of coins",
+  "ad.eggsHead": "For a video",
+  "ad.oneVideo": "For one video"
 }

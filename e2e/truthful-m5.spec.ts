@@ -49,7 +49,9 @@ test.describe('M5-00 truthful stand', () => {
     await open(page, `?${TRUTHFUL}`);
     await eggsTab(page);
     const before = await myEggs(page);
-    await expect(page.locator('[data-ad-egg=ad_gold] .mu-meta')).toHaveText(/5/);
+    await expect(page.locator('[data-sheet=eggs] [data-section=ad]')).toBeVisible();
+    const head = page.locator('[data-sheet=eggs] .mu-head:has(+ [data-section=ad]) span');
+    await expect(head).toHaveText(/5/);
     const t0 = Date.now();
     await page.locator('[data-action=ad-egg-ad_gold]').click();
     const ad = page.locator('#__ya_mock_ad__');
@@ -60,7 +62,7 @@ test.describe('M5-00 truthful stand', () => {
     expect(Date.now() - t0).toBeGreaterThan(2500);
     await expect.poll(() => myEggs(page)).toBe(before + 1);
     await expect(page.locator('[data-ad-egg=ad_gold]')).toBeVisible();
-    await expect(page.locator('[data-ad-egg=ad_gold] .mu-meta')).not.toHaveText(/5/);
+    await expect(head).toHaveText(/4/);
     expect((await state(page)).pause).not.toContain('ad');
     // M5-07: the standard Yandex names with the place.
     const names = (await events(page)).filter((e) => e.params?.placement === 'rare_egg').map((e) => e.name);

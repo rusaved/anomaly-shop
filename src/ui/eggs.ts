@@ -141,18 +141,21 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
           `<button type="button" class="mu-btn${ready ? ' good-text' : ' off'}" data-action="egg-free-${v.id}" aria-disabled="${!ready}">${esc(look.t('eggs.take'))}</button></div>`,
       );
     }
-    // M5-02: two egg-ad cards after the free egg (brief: «яйцо за ролик — 2 карточки»), the reward on the button.
-    for (const c of look.ad?.cards() ?? []) {
+    // M5-02: two egg-ad cards in their own row «За видео» (the usability review: not mixed with the player's eggs); the head
+    // counts the videos left today for both, the reward is on the button.
+    const adCards = look.ad?.cards() ?? [];
+    const ads = adCards.map((c) => {
       const can = c.left > 0 && c.waitSec <= 0;
-      const meta = c.left <= 0 ? look.t('ad.tomorrow') : c.waitSec > 0 ? look.t('eggs.in', { t: fmtTime(c.waitSec) }) : look.t('ad.left', { n: c.left });
-      mine.push(
+      const meta = c.left <= 0 ? look.t('ad.tomorrow') : c.waitSec > 0 ? look.t('eggs.in', { t: fmtTime(c.waitSec) }) : look.t('ad.oneVideo');
+      return (
         `<div class="mu-card card-egg card-ad" data-ad-egg="${c.id}">${pic(look.eggPicture(c.egg))}<span class="mu-name">${esc(look.eggName(c.egg))}</span><span class="mu-meta">${esc(meta)}</span>` +
-          `<button type="button" class="mu-btn btn-ad${can ? '' : ' off'}" data-action="ad-egg-${c.id}" aria-disabled="${!can || look.ad!.busy()}">${esc(look.t('ad.egg'))}</button></div>`,
+        `<button type="button" class="mu-btn btn-ad${can ? '' : ' off'}" data-action="ad-egg-${c.id}" aria-disabled="${!can || look.ad!.busy()}">${esc(look.t('ad.egg'))}</button></div>`
       );
-    }
+    });
     const busy = view.incubators.filter((i) => i.egg).length;
     let html = '';
     if (mine.length) html += head(look.t('eggs.my'), look.t('eggs.slots', { n: busy, all: view.incubators.length })) + `<div class="mu-grid" data-section="my">${mine.join('')}</div>`;
+    if (ads.length) html += head(look.t('ad.eggsHead'), look.t('ad.left', { n: adCards[0]?.left ?? 0 })) + `<div class="mu-grid" data-section="ad">${ads.join('')}</div>`;
     for (const s of SECTIONS) {
       const list = shop.eggs.filter((e) => e.section === s && (s !== 'seasonal' || e.open));
       if (list.length) html += head(look.t(`eggs.${s}`), look.t('eggs.perEgg')) + `<div class="mu-grid" data-section="${s}">${list.map((e) => shopCard(e, fmt)).join('')}</div>`;

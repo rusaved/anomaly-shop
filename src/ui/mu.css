@@ -4209,3 +4209,12 @@ button.mu-card {
 .store-item .day-text {
   text-align: left;
 }
+/* M5 ревизор удобства: on a narrow phone the boost button goes under the text (the text kept ~30 px and broke by letters). */
+@media (max-width: 520px) {
+  .gift-boost {
+    grid-template-columns: auto 1fr;
+  }
+  .gift-boost .btn-ad {
+    grid-column: 1 / -1;
+  }
+}

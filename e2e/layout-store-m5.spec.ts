@@ -47,6 +47,8 @@ test('M5-02 ad buttons on the phone: the egg cards, the market and the gifts til
   await boost.scrollIntoViewIfNeeded();
   const box = (await boost.boundingBox())!;
   expect(box.height).toBeGreaterThanOrEqual(44);
+  // M5 usability review: the tile's text has room to read (it broke by letters on 375 px).
+  expect((await page.locator('.gift-boost .mu-meta').boundingBox())!.width).toBeGreaterThanOrEqual(120);
   // Scrolled to it: the button itself is on top at its centre (the rows above may slide under the title — that is scrolling).
   const top = await page.evaluate(({ x, y }) => (document.elementFromPoint(x, y) as HTMLElement | null)?.closest('[data-action]')?.getAttribute('data-action'), { x: box.x + box.width / 2, y: box.y + box.height / 2 });
   expect(top).toBe('ad-boost');

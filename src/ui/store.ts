@@ -48,7 +48,8 @@ export function createShopStore(game: Game, look: StoreLookups): ShopStore {
   /** What a pack gives, short: «◉ 1 200 · 2 × Золотое яйцо · ◆ 20». */
   const contents = (give: PackGive): string => {
     const parts: string[] = [];
-    if (give.coinsMin) parts.push(`◉ ${fmt().format(Math.max(1, Math.round(give.coinsMin * Math.max(game.state.stats.income ?? 0, 1))))}`);
+    // The coins as the game will give them: minutes of the player's income (the same rule as the gifts).
+    if (give.coinsMin) parts.push(`◉ ${fmt().format(game.rewardFor({ incomeMin: give.coinsMin }).coins ?? 0)}`);
     for (const [id, n] of Object.entries(give.eggs ?? {})) parts.push(`${n} × ${look.eggName(id)}`);
     if (give.crystals) parts.push(`◆ ${fmt().format(give.crystals)}`);
     return parts.join(' · ');

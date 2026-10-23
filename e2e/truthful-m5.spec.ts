@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { collectErrors, mockCalls, mockViolations, open, seedSave, state } from './helpers.ts';
+import { collectErrors, events, mockCalls, mockViolations, open, seedSave, state } from './helpers.ts';
 
 // M5-00 truthful stand (the producer link behaves like Yandex) and M5-02, M5-03 ads on it: the banner stand-in narrows the game,
 // full screen on the first tap, the dark «Реклама» screen for 3 s with the game paused; every outcome of a rewarded video
@@ -62,6 +62,9 @@ test.describe('M5-00 truthful stand', () => {
     await expect(page.locator('[data-ad-egg=ad_gold]')).toBeVisible();
     await expect(page.locator('[data-ad-egg=ad_gold] .mu-meta')).not.toHaveText(/5/);
     expect((await state(page)).pause).not.toContain('ad');
+    // M5-07: the standard Yandex names with the place.
+    const names = (await events(page)).filter((e) => e.params?.placement === 'rare_egg').map((e) => e.name);
+    expect(names).toEqual(['gameRewardedRequest', 'gameRewardedEarned']);
     expect(await mockViolations(page)).toEqual([]);
     expect(errors).toEqual([]);
   });

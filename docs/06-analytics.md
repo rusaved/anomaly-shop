@@ -21,7 +21,7 @@
 `upgrade_buy` (`id`, `level`) · `rare_hatch` (`rarity`) · `haggle` (`result`: `up`, `left`) · `helper_1` · `offline_claim` (`hours`, `x2`) · `collection_row` · `daily_anomaly` · `rebirth_1` · `community_open` (`network`: `telegram`, `vk`).
 
 ## 3. Реклама и покупки
-Стандартные имена Яндекса: `gameRewardedRequest|Open|Earned|Close|Error`, `gameFullscreenRequest|Open|Close|Error`, покупки — `gameOfferView`, `gamePurchaseStart|Success|Error`. Свои: `rewarded_shown` (первая кнопка на экране), `ad_resume_ok` (после рекламы игра идёт). `placement`: `deal_x2`, `instant_hatch`, `rare_egg`, `offline_x2`, `helper_hour`, `shop`.
+Стандартные имена Яндекса: `gameRewardedRequest|Earned|Close|Error` (Close — закрыл раньше, Error — видео нет), `gameFullscreenRequest|Close|Error` (Close — показана, Error — не показана, перерыв не начат), покупки — `gameOfferView` (открыл «Акции»), `gamePurchaseStart|Success|Error` (`product`, у Error — `result`: `cancel`, `error`). Свои: `ad_resume_ok` (после рекламы игра идёт), `review_ask` (игра сама открыла «Оцени игру», `session`); `rewarded_shown` — в каталоге, пока не шлётся. `placement` роликов: `rare_egg` (яйцо за ролик), `instant_hatch`, `deal_x2`, `offline_x2`, `market_skip`, `sales_boost`; полноэкранной — `close_<окно>`, `tab_<вкладка>` (M5-03). Технические: `payments_failed` (`step`), `payments_unavailable`. Шлёт один модуль `src/ui/ads.ts` (реклама) и `src/ui/store.ts` (покупки).
 
 ## 4. Устройство
 `track(name, params?)` — только имена из `src/analytics/events.ts`; отправка в `try/catch`, при `metrikaCounterId > 0`. Параметры: `event`, `player`, `device`, `session`, `t`. Цели в Метрике заводит продюсер.

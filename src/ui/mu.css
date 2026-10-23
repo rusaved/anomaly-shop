@@ -4203,3 +4203,9 @@ button.mu-card {
 .store-soon {
   margin: 12px 4px;
 }
+.gift-boost .day-text {
+  text-align: left;
+}
+.store-item .day-text {
+  text-align: left;
+}

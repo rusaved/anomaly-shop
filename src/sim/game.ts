@@ -2337,7 +2337,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     boostLeft: () => s().ads?.boostLeft ?? 0,
     grantPack(give) {
       const st = s();
-      const c = give.coinsMin ? coins(give.coinsMin * incomeNow()) : 0;
+      const c = give.coinsMin ? (rewardFor({ incomeMin: give.coinsMin }).coins ?? 0) : 0;
       st.coins += c;
       st.crystals += give.crystals ?? 0;
       commit({ flush: true });

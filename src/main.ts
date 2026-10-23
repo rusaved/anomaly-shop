@@ -74,6 +74,10 @@ import { createRng } from './core/rng.ts';
 import { newSave } from './sim/state.ts';
 import { track } from './analytics/track.ts';
 
+/** M5-06: the review window waits this long into a visit (docs/03 SDK-07: not in the first 5 minutes) and asks from this session on. */
+const REVIEW_AFTER_SEC = 300;
+const REVIEW_SESSION = 3;
+
 async function boot(): Promise<void> {
   applyTheme(style.colors);
   // MU-01: one rarity scale everywhere (docs/07 «Редкость»): frames, badges and rings read --r-<rarity>.
@@ -532,6 +536,22 @@ async function boot(): Promise<void> {
     '<button type="button" class="hud-btn" data-action="gifts" data-i18n="gifts.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16v9H4z"/><path d="M3 7h18v4H3z"/><path d="M12 7v13"/><path d="M12 7c-2-4-6-3-5 0M12 7c2-4 6-3 5 0"/></svg><span class="nav-badge nav-dot" data-gifts-dot hidden></span></button>',
   );
   (hud.side.querySelector('[data-action="gifts"]') as HTMLElement).addEventListener('click', () => giftsWindow.open());
+  // M5-06: the game asks for a review once — after the first purchase or from the 3rd session, never in the first 5 minutes
+  // of a visit (docs/03 SDK-07), never over a window or an ad; the chest comes after the platform's window (Q-047 A).
+  store.state.stats.sessions = (store.state.stats.sessions ?? 0) + 1;
+  store.commit();
+  let reviewAsked = false;
+  window.setInterval(() => {
+    const st = store.state;
+    if (reviewAsked || !controllable || runtime.pause.isPaused() || topWindow() || adsMod.busy() || st.gifts.reviewed || st.flags.review_asked) return;
+    if (runtime.elapsed() < REVIEW_AFTER_SEC) return;
+    if (!Object.values(st.shop?.bought ?? {}).some((n) => n > 0) && (st.stats.sessions ?? 0) < REVIEW_SESSION) return;
+    reviewAsked = true;
+    if (!giftsWindow.askReview()) return;
+    st.flags.review_asked = true;
+    store.commit({ flush: true });
+    track('review_ask', { session: st.stats.sessions ?? 0 });
+  }, 5000);
   const workWindow = createWorkWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, bowl: () => portraits.thing('workBowl', 192) });
   // M4-06: the move to a new city — asked in a popup (the Next card when ready, the city line of the seller level panel).
   const rebirthWindow = createRebirthWindow(uiRoot, play, { t: i18n.t, lang: i18n.lang, eggName: (id) => eggs.eggs.find((g) => g.id === id)?.name[i18n.lang()] ?? id });

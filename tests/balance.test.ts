@@ -8,7 +8,8 @@ describe('balance model', () => {
     const text = report.lines.join('\n');
     for (const id of ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11']) expect(text).toContain(id);
     for (const bot of BOTS) expect(text).toContain(bot.name);
-    expect(report.lines.some((l) => l.includes('F9') && l.includes('M4'))).toBe(true);
+    // M5-02: F9 is measured now — the share of eggs for videos and what the ad points add at most (the «ads» line).
+    expect(report.lines.some((l) => l.includes('F9') && l.includes('eggs for videos'))).toBe(true);
     expect(report.ok).toBe(report.failures.length === 0);
     // The long runs (three days with nights away) take most of it.
   }, 60_000);

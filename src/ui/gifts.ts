@@ -35,6 +35,8 @@ export interface GiftsWindow {
   render(): void;
   /** Something to take: today's gift or a group not visited yet. */
   hasNew(): boolean;
+  /** M5-06: the «Оцени игру» window on its own (after the first purchase or from the 3rd session); false when reviewed. */
+  askReview(): boolean;
 }
 
 /** A visit to the community page shorter than this does not count as coming back from it. */
@@ -84,6 +86,11 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
   const head = (key: string): string => `<div class="mu-head"><h3>${esc(look.t(key))}</h3><span></span></div>`;
 
   const win: GiftsWindow = {
+    askReview() {
+      if (game.giftsView(look.today()).reviewed) return false;
+      openRate();
+      return true;
+    },
     open() {
       win.render();
       overlay.show();

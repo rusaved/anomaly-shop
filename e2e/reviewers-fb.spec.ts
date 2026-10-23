@@ -46,6 +46,8 @@ test.describe('FB-14 portrait 375×650', () => {
     await seed(page);
     await open(page);
     await page.locator('[data-action=gifts]').click();
+    // The anomaly of the day follows the date: measure the longest species name (a bug of 23.10 — «Зеркальная лягушка» took two lines).
+    await page.locator('.day-anomaly .mu-name').evaluate((el) => (el.textContent = 'Зеркальная лягушка'));
     const lines = await page.locator('.day-anomaly .day-text').evaluate((el) => {
       const lh = parseFloat(getComputedStyle(el.querySelector('.mu-meta')!).lineHeight) || 16;
       return Math.round(el.getBoundingClientRect().height / lh);

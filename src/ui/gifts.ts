@@ -156,7 +156,7 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
       if (d.species)
         parts.push(
           head('day.title'),
-          `<div class="mu-card rar day-anomaly" data-rarity="${d.rarity}">${ringPic(look.portrait(d.species, d.rarity), d.rarity, 52)}<span class="day-text"><b class="mu-name">${esc(look.speciesName(d.species))}</b>` +
+          `<div class="mu-card rar day-anomaly" data-rarity="${d.rarity}">${ringPic(look.portrait(d.species, d.rarity), d.rarity, 48)}<span class="day-text"><b class="mu-name">${esc(look.speciesName(d.species))}</b>` +
             `<span class="mu-meta">${esc(look.t('day.short', { n: new Intl.NumberFormat(look.lang(), { maximumFractionDigits: 2 }).format(d.mult).replace(/[.,]/, (x) => `${x}\u2060`), m: d.holdMin }))}</span></span>` +
             (d.eggTaken ? `<span class="mu-meta day-got">${esc(look.t('gifts.got'))}</span>` : `<button type="button" class="mu-btn" data-action="day-egg">${esc(look.t('day.take'))}</button>`) +
             '</div>',

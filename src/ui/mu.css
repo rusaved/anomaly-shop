@@ -3181,6 +3181,14 @@ button.mu-card {
   padding-left: 12px;
   padding-right: 12px;
 }
+/* M5 итог: the longest species name («Зеркальная лягушка», 149 px at 14 px) wrapped at 375 px — the name a step smaller, the picture and gaps tighter, one line. */
+.overlay .card .day-anomaly {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  column-gap: 8px;
+}
+.overlay .card .day-anomaly .day-text .mu-name {
+  font-size: 14px;
+}
 
 /* ---- FB-15, the art review ---- */
 /* The egg card sideways: «С уходом…» under «Что внутри», the buy buttons stay above the tab bar. */

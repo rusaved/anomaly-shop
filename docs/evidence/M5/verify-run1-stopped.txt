@@ -1,0 +1,9 @@
+verify (milestone): 13 stages, full log /home/user/anomaly-shop/docs/evidence/M5/verify.txt
+
+== verify: typecheck
+ok   typecheck 1.4 s
+
+== verify: test
+
+ RUN  v5.0.3 /home/user/anomaly-shop
+

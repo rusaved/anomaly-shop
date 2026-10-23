@@ -24,7 +24,7 @@ export interface ChatsLookups {
   /** l2: sideways the list and the dialog stand side by side. */
   wide(): boolean;
   /** M5-02: «×2 deal» for a video after a sale in the chat; missing — no ad button. */
-  double?: { busy(): boolean; watch(): void };
+  double?: { busy(): boolean; wait(): number; watch(): void };
 }
 
 export interface ChatsTab {
@@ -112,18 +112,24 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     // Q-025: the creature of an open chat is off the shelf («talking»); a closed one may be back on the shelf or in the inventory.
     const view = game.view();
     const cr = [...view.talking, ...view.creatures, ...view.inventory].find((x) => x.uid === c.uid);
-    const next = `d:${id}:${look.lang()}:${c.state}:${c.lines.length}:${c.offer}:${cr?.ask ?? ''}:${game.dealToDouble()?.uid ?? ''}:${look.double?.busy() ?? ''}`;
+    const next = `d:${id}:${look.lang()}:${c.state}:${c.lines.length}:${c.offer}:${cr?.ask ?? ''}:${game.dealToDouble()?.uid ?? ''}:${look.double?.busy() ?? ''}:${look.double ? Math.ceil(look.double.wait()) : ''}`;
     if (next === dialogKey) return;
     dialogKey = next;
     const f = fmt();
     const rarity = look.rarity(c.species);
     let buttons: string;
     const dbl = look.double && c.state === 'sold' && game.dealToDouble()?.uid === c.uid ? game.dealToDouble() : null;
+    // M5-02 (ad review): within its gap «×2 deal» shows the seconds left instead of a «wait» note on a tap.
+    const wait = dbl ? Math.min(59, Math.ceil(look.double!.wait())) : 0;
     if (c.state !== 'open')
       buttons =
         `<p class="mu-meta chat-end">${esc(look.t(c.state === 'sold' ? 'chats.sold' : 'chats.gone'))}</p>` +
         // M5-02: «▶ Ad: ×2 deal» right in the chat of the deal just made, the coins on the button.
-        (dbl ? `<button type="button" class="mu-btn btn-ad" data-action="ad-double" aria-disabled="${look.double!.busy()}">${iconize(look.t('ad.double', { n: `◉ ${f.format(dbl.coins)}` }))}</button>` : '');
+        (dbl
+          ? wait > 0
+            ? `<button type="button" class="mu-btn btn-ad off" data-action="ad-double" aria-disabled="true">${esc(look.t('ad.doubleIn', { t: `0:${String(wait).padStart(2, '0')}` }))}</button>`
+            : `<button type="button" class="mu-btn btn-ad" data-action="ad-double" aria-disabled="${look.double!.busy()}">${iconize(look.t('ad.double', { n: `◉ ${f.format(dbl.coins)}` }))}</button>`
+          : '');
     else
       buttons =
         `<button type="button" class="mu-btn main" data-action="chat-sell">${iconize(look.t('chats.sell', { n: `◉ ${f.format(c.offer)}` }))}</button>` +

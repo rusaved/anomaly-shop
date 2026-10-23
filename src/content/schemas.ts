@@ -417,7 +417,7 @@ export const AdsFile = v.object({
     cards: v.pipe(v.array(v.object({ id: Id, egg: Id })), v.minLength(1)),
   }),
   hatch: v.object({ minLeftSec: v.pipe(v.number(), v.minValue(0)) }),
-  boost: v.object({ mult: v.pipe(v.number(), v.minValue(1), v.maxValue(2)), sec: v.pipe(v.number(), v.minValue(1)) }),
+  boost: v.object({ mult: v.pipe(v.number(), v.minValue(1), v.maxValue(2)), sec: v.pipe(v.number(), v.minValue(1)), perDay: Count }),
   interstitial: v.object({
     firstSec: v.pipe(v.number(), v.minValue(0)),
     gapSec: v.pipe(v.number(), v.minValue(0)),

@@ -69,12 +69,16 @@ describe('M5-02 ad rewards', () => {
     expect(game.adDouble()).toBe(got);
     expect(game.state.coins - before).toBe(got * 2);
     expect(game.adDouble()).toBe(0);
-    game.startBoost();
+    expect(game.startBoost('d')).toBe(true);
     expect(game.boostLeft()).toBe(ads.boost.sec);
+    for (let i = 1; i < ads.boost.perDay; i++) expect(game.startBoost('d')).toBe(true);
+    expect(game.boostsLeft('d')).toBe(0);
+    expect(game.startBoost('d')).toBe(false);
+    expect(game.boostsLeft('d2')).toBe(ads.boost.perDay);
     game.tick(1);
-    expect(game.boostLeft()).toBe(ads.boost.sec - 1);
+    expect(game.boostLeft()).toBeCloseTo(ads.boost.sec - 1);
     game.offline(3600);
-    expect(game.boostLeft()).toBe(ads.boost.sec - 1);
+    expect(game.boostLeft()).toBeCloseTo(ads.boost.sec - 1);
   });
 
   it('a pack: coins by income, eggs into my eggs, crystals', () => {

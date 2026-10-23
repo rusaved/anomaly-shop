@@ -105,7 +105,7 @@ export interface SaveData {
   /** Promo codes already used (M3-13). */
   codes: string[];
   /** M5-02: rewarded ads — the device day and egg ads taken that day, game seconds to the next egg ad, seconds of the sales boost left. */
-  ads?: { day: string; eggs: number; eggIn: number; boostLeft: number };
+  ads?: { day: string; eggs: number; eggIn: number; boostLeft: number; boosts?: number };
   /** M5-04, M5-05: purchases — «no ads» owned, packs bought by id, platform time the starter deal ends (0 — not shown yet). */
   shop?: { noAds: boolean; bought: Record<string, number>; starterEnds: number };
 }
@@ -201,7 +201,7 @@ export function newSave(now: number): SaveData {
     gifts: { subscribed: {}, reviewed: false, days: 0, lastDay: '' },
     work: 1,
     codes: [],
-    ads: { day: '', eggs: 0, eggIn: 0, boostLeft: 0 },
+    ads: { day: '', eggs: 0, eggIn: 0, boostLeft: 0, boosts: 0 },
     shop: { noAds: false, bought: {}, starterEnds: 0 },
   };
 }
@@ -310,7 +310,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     codes: arr(r.codes).filter((x): x is string => typeof x === 'string'),
     ads: (() => {
       const a = rec(r.ads);
-      return { day: str(a.day, ''), eggs: Math.max(0, Math.floor(num(a.eggs, 0))), eggIn: Math.max(0, num(a.eggIn, 0)), boostLeft: Math.max(0, num(a.boostLeft, 0)) };
+      return { day: str(a.day, ''), eggs: Math.max(0, Math.floor(num(a.eggs, 0))), eggIn: Math.max(0, num(a.eggIn, 0)), boostLeft: Math.max(0, num(a.boostLeft, 0)), boosts: Math.max(0, Math.floor(num(a.boosts, 0))) };
     })(),
     shop: (() => {
       const o = rec(r.shop);

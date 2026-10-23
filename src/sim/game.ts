@@ -462,8 +462,10 @@ export interface Game {
   /** M5-02: the player's last deal still to double (the creature sold and its coins), or null. */
   dealToDouble(): { uid: string; coins: number } | null;
   /** M5-02: the sales boost of the «Gifts» tile — sales ×mult for its seconds of live play. */
-  startBoost(): void;
+  startBoost(day: string): boolean;
   boostLeft(): number;
+  /** M5-02: sales boosts still to take today (boost.perDay a device day). */
+  boostsLeft(day: string): number;
   /** M5-05: a purchase's goods into the shop (coins by income, eggs into «my eggs», crystals); the coins given. */
   grantPack(give: PackGive): number;
   /** M5-04, M5-05: a store mark — a pack bought (count by id), «no ads» owned, the end of the starter deal (platform time). */
@@ -493,9 +495,17 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   let lastAway = 0;
   /** M5-02: the coins of the player's last deal, for «×2» once (not saved: the button lives in the deal's own chat). */
   let lastDeal: { uid: string; coins: number } | null = null;
+  /** M5-02: a new device day starts the ad counts over (eggs, boosts). */
+  const newDay = (day: string): void => {
+    const a = adsOf();
+    if (a.day === day) return;
+    a.day = day;
+    a.eggs = 0;
+    a.boosts = 0;
+  };
   const adsOf = (): NonNullable<SaveData['ads']> => {
     const st = s();
-    st.ads ??= { day: '', eggs: 0, eggIn: 0, boostLeft: 0 };
+    st.ads ??= { day: '', eggs: 0, eggIn: 0, boostLeft: 0, boosts: 0 };
     return st.ads;
   };
   /** FB-02: the player's income, coins a minute (never below the floor of the first minute). */
@@ -2293,10 +2303,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const a = content.ads;
       if (!card || !a || card.left <= 0 || card.waitSec > 0) return false;
       const st = adsOf();
-      if (st.day !== day) {
-        st.day = day;
-        st.eggs = 0;
-      }
+      newDay(day);
       st.eggs += 1;
       st.eggIn = a.eggs.gapSec;
       // An ad egg is a free reward: it hatches in the gift prices (FB-15), like the egg of the gifts.
@@ -2328,11 +2335,20 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       emit({ type: 'change' });
       return c;
     },
-    startBoost() {
-      if (!content.ads) return;
-      adsOf().boostLeft = content.ads.boost.sec;
+    startBoost(day) {
+      if (!content.ads || game.boostsLeft(day) <= 0) return false;
+      newDay(day);
+      const a = adsOf();
+      a.boosts = (a.boosts ?? 0) + 1;
+      a.boostLeft = content.ads.boost.sec;
       commit({ flush: true });
       emit({ type: 'change' });
+      return true;
+    },
+    boostsLeft(day) {
+      if (!content.ads) return 0;
+      const a = s().ads;
+      return a?.day === day ? Math.max(0, content.ads.boost.perDay - (a.boosts ?? 0)) : content.ads.boost.perDay;
     },
     boostLeft: () => s().ads?.boostLeft ?? 0,
     grantPack(give) {

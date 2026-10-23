@@ -459,5 +459,6 @@
   "store.coins_m": "Bag of coins",
   "store.coins_l": "Chest of coins",
   "ad.eggsHead": "For a video",
-  "ad.oneVideo": "For one video"
+  "ad.oneVideo": "For one video",
+  "ad.doubleIn": "▶ Ad: ×2 in {t}"
 }

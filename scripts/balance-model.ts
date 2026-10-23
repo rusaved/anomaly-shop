@@ -12,7 +12,7 @@
 //   Long run (3 days of 30 active minutes and 8 hours away, casual and slow bots): F6 8 h away pays 30–60 min of play (casual)
 //     · F19 (FB-03, Q-039 B) an hour away pays 30–50 % of an hour of play (up to 2 hours), the seller level grows ≤ 1 away
 //   F20 (FB-05): full egg care at least doubles the VIP and exclusive share of every ladder egg and pays for its food.
-//     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads, M5-02): the share of eggs for videos and what the ad points add at most in a day of 30 minutes (info).
+//     · F7 the rebirth threshold on day 2–3 · F8 district 2 by 10 min, district 3 by 40 min of play. F9 (ads, M5-02): the share of eggs for videos and what the ad points add at most in a day of 30 minutes (≤ 100 %).
 //   Week (M4-08, casual): F17 something new opens every day of 7, the guest zone pays its upkeep (M4-05) · F18 the second city
 //     1–3 days after the first, its egg bought.
 //   Keeper (feeds every creature to the top before selling): F12 earns at most ×2 of the casual player in 10 min and
@@ -659,22 +659,25 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     const deals = quantile(casualDays.map((r) => r.dealsDay1), 0.5);
     const adEggs = Math.min(a.eggs.perDay, Math.floor(day / Math.max(1, a.eggs.gapSec)) + 1);
     const share = adEggs / Math.max(1, hatched + adEggs);
-    const boost = ((a.boost.mult - 1) * Math.min(a.boost.sec, day)) / day;
+    const boost = ((a.boost.mult - 1) * Math.min(a.boost.sec * a.boost.perDay, day)) / day;
     const dealGap = a.rewarded.placementGapSec?.deal_x2 ?? a.rewarded.gapSec;
     const doubled = Math.min(deals, Math.floor(day / Math.max(1, dealGap)));
     const double = doubled / Math.max(1, deals);
-    // An egg for a video hatches at the gift price: its expected value in minutes of income (the ladder card counts as the gift egg).
+    // An egg for a video hatches at the gift price, capped at rewardCapMin minutes of income. The worst case (the ad review of M5):
+    // the ladder card — the best open ladder egg — at the cap, every video of the day on it; the golden card at its expected value.
     const evMin = a.eggs.cards.map((c) => {
-      const e = content.eggs.eggs.find((x) => x.id === (c.egg === 'ladder' ? 'egg_gift' : c.egg));
+      if (c.egg === 'ladder') return content.eggs.income.rewardCapMin;
+      const e = content.eggs.eggs.find((x) => x.id === c.egg);
       const ev = e?.value ? RARITIES.reduce((n, r) => n + (e.chances[r] / 100) * e.value![r], 0) : 1;
       return Math.min(content.eggs.income.rewardCapMin, (e?.valueIncomeMin ?? 1) * ev);
     });
-    const eggs = (adEggs * (evMin.reduce((x, y) => x + y, 0) / evMin.length)) / (day / 60);
+    const eggs = (adEggs * Math.max(...evMin)) / (day / 60);
     const total = boost + double + eggs;
     lines.push(
       `ads     M5-02 casual day of 30 min (p50): eggs for videos ${adEggs} of ${fmt(hatched + adEggs, 0)} (${fmt(share * 100, 0)} %) · boost +${fmt(boost * 100, 0)} %` +
-        ` · ×2 deal ${doubled} of ${fmt(deals, 0)} deals (+${fmt(double * 100, 0)} %) · egg ads ≈ +${fmt(eggs * 100, 0)} % · F9 at most +${fmt(total * 100, 0)} % (want 30–100 %) ${total >= 0.3 && total <= 1 ? 'ok' : 'info'}`,
+        ` · ×2 deal ${doubled} of ${fmt(deals, 0)} deals (+${fmt(double * 100, 0)} %) · egg ads ≤ +${fmt(eggs * 100, 0)} % · F9 at most +${fmt(total * 100, 0)} % (want 30–100 %) ${total >= 0.3 && total <= 1 ? 'ok' : 'FAIL'}`,
     );
+    if (total > 1) failures.push(`F9 the ad points add up to +${fmt(total * 100, 0)} % in a day (want ≤ 100 %)`);
   } else lines.push('F9 rewarded ads: no ads data');
   lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F20: all green`);
   return { ok: failures.length === 0, lines, failures };

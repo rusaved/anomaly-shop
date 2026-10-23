@@ -27,7 +27,7 @@ export interface GiftsLookups {
   goalName(id: string): string;
   review(): Promise<{ available: boolean; sent: boolean }>;
   /** M5-02: the time boost tile (sales ×mult for a video); missing — no ad tile. */
-  boost?: { busy(): boolean; left(): number; watch(): void; thing: string };
+  boost?: { busy(): boolean; left(): number; more(): number; watch(): void; thing: string };
 }
 
 export interface GiftsWindow {
@@ -144,7 +144,11 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
           head('ad.boosts'),
           `<div class="mu-card gift-boost" data-gift="boost"><span class="mu-pic"><img alt="" src="${look.thing(look.boost.thing)}"></span><span class="day-text"><b class="mu-name">${esc(look.t('ad.boostName'))}</b>` +
             `<span class="mu-meta">${esc(left > 0 ? look.t('ad.boostOn', { t: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` }) : look.t('ad.boostText'))}</span></span>` +
-            (left > 0 ? '' : `<button type="button" class="mu-btn btn-ad" data-action="ad-boost" aria-disabled="${look.boost.busy()}">${esc(look.t('ad.boost'))}</button>`) +
+            (left > 0
+              ? ''
+              : look.boost.more() <= 0
+                ? `<span class="mu-meta day-got">${esc(look.t('ad.tomorrow'))}</span>`
+                : `<button type="button" class="mu-btn btn-ad" data-action="ad-boost" aria-disabled="${look.boost.busy()}">${esc(look.t('ad.boost'))}</button>`) +
             '</div>',
         );
       }

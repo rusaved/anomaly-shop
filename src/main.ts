@@ -462,6 +462,7 @@ async function boot(): Promise<void> {
       ? {
           double: {
             busy: () => adsMod.busy(),
+            wait: () => adsMod.waitSec('deal_x2'),
             watch: () =>
               void adsMod.rewarded('deal_x2', () => {
                 const got = play.adDouble();
@@ -499,6 +500,8 @@ async function boot(): Promise<void> {
   });
   window.setInterval(() => {
     if (nav.active() === 'market') marketTab.render();
+    // M5-02: the «×2 deal» button counts down its gap.
+    if (nav.active() === 'chats' && adsMod.on) chatsTab.render();
   }, 1000);
   /** The player's local date (platform time) for the 7 days of gifts. */
   const today = (): string => {
@@ -529,7 +532,9 @@ async function boot(): Promise<void> {
     portrait: (sp, r) => portraits.creature(sp, r),
     goalName: (id) => calendar.tasks.pool.find((g) => g.id === id)?.name[i18n.lang()] ?? id,
     review: () => platform.requestReview(),
-    ...(adsMod.on ? { boost: { busy: () => adsMod.busy(), left: () => play.boostLeft(), watch: () => void adsMod.rewarded('sales_boost', () => play.startBoost()), thing: 'tags' } } : {}),
+    ...(adsMod.on
+      ? { boost: { busy: () => adsMod.busy(), left: () => play.boostLeft(), more: () => play.boostsLeft(today()), watch: () => void adsMod.rewarded('sales_boost', () => void play.startBoost(today())), thing: 'tags' } }
+      : {}),
   });
   hud.side.insertAdjacentHTML(
     'beforeend',

@@ -35,6 +35,8 @@ export interface Ads {
   rewarded(placement: string, give: () => void): Promise<RewardedOutcome | 'wait' | 'busy'>;
   /** A step between screens by the player's tap (a window closed, a tab changed): maybe an interstitial. */
   betweenScreens(placement: string): Promise<boolean>;
+  /** Seconds until a rewarded video of this place may play (its own gap and the common one); 0 — now. */
+  waitSec(placement: string): number;
   /** Why an interstitial would not show now (test API and the debug panel). */
   interstitialBlock(): InterstitialBlock | 'noads' | 'off' | 'busy';
   /** «No ads» changed: the banner follows it. */
@@ -90,6 +92,11 @@ export function createAds(deps: AdsDeps): Ads {
         deps.note('unavailable');
       }
       return r.outcome;
+    },
+    waitSec(placement) {
+      const t = deps.playSec();
+      const own = (placeAt.get(placement) ?? -Infinity) + (deps.rules.rewarded.placementGapSec?.[placement] ?? 0) - t;
+      return Math.max(0, own, gate.rewardedReady(t) ? 0 : 1);
     },
     interstitialBlock() {
       if (!on) return 'off';

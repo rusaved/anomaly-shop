@@ -459,5 +459,6 @@
   "store.coins_m": "Мешок монет",
   "store.coins_l": "Сундук монет",
   "ad.eggsHead": "За видео",
-  "ad.oneVideo": "За один ролик"
+  "ad.oneVideo": "За один ролик",
+  "ad.doubleIn": "▶ Реклама: ×2 через {t}"
 }

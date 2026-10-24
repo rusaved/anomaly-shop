@@ -17,6 +17,8 @@
 //     1–3 days after the first, its egg bought.
 //   Keeper (feeds every creature to the top before selling): F12 earns at most ×2 of the casual player in 10 min and
 //     crosses the rebirth threshold no earlier than the first night (feeding pays, never breaks the economy).
+//   RD-03 table (info, p50 / p90 of the bots): the first purchase (an egg for coins / anything), the wall (the longest wait between
+//     two purchases: in 10 minutes and on each of 3 days), an hour away against an hour of play.
 // Usage: node scripts/balance-model.ts [--seeds 24] [--out docs/evidence/M2/balance.txt]
 // Erasable TypeScript only: Node runs this file without a bundler (relative .ts imports).
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -120,6 +122,10 @@ export interface RunResult {
   goalMisses: number;
   /** A whole minute without a deal after the first minute. */
   stalled: boolean;
+  /** RD-03: game seconds of every purchase of the player (an egg for coins, an upgrade, a market lot). */
+  buys: number[];
+  /** RD-03: the first egg the player bought for coins (Infinity: none in 10 minutes). */
+  firstEgg: number;
 }
 
 /** One bot plays a game: returns the act function that makes one decision and says how long it took (Q-027 B: with the interface). */
@@ -316,7 +322,11 @@ export function playOnce(bot: Bot, seed: number, content: GameContent = loadGame
     if (e.type === 'upgradeBought' && times.F3 === undefined) times.F3 = t;
     if (e.type === 'repUp' && e.level >= 2 && e.level <= 5) for (let l = 2; l <= e.level; l++) times[`F16.${l}`] ??= t;
     if (e.type === 'hatched' && e.rarity !== 'common' && times.F4 === undefined) times.F4 = t;
+    if ((e.type === 'eggBought' && e.by === 'player' && e.price > 0) || e.type === 'upgradeBought' || e.type === 'lotBought') buys.push(t);
+    if (e.type === 'eggBought' && e.by === 'player' && e.price > 0 && firstEgg === Infinity) firstEgg = t;
   });
+  const buys: number[] = [];
+  let firstEgg = Infinity;
   const act = botPlayer(bot, game);
   let deals5min = 0;
   let coins5min = 0;
@@ -348,7 +358,7 @@ export function playOnce(bot: Bot, seed: number, content: GameContent = loadGame
     }
   }
   const stalled = dealsAt.some((d, i) => i >= 1 && d === dealsAt[i - 1]);
-  return { times, deals5min, coins5min, earned, goalMisses, stalled };
+  return { times, deals5min, coins5min, earned, goalMisses, stalled, buys, firstEgg };
 }
 
 export interface DaysResult {
@@ -367,6 +377,8 @@ export interface DaysResult {
   /** M5-02: eggs hatched and deals made in the 30 active minutes of day 1 (the share of eggs for videos is measured against them). */
   hatchedDay1: number;
   dealsDay1: number;
+  /** RD-03: the wall of each active day — the longest wait (s) between two purchases (from the day's start, to its end). */
+  walls: number[];
 }
 
 /** Three days of a player: 30 active minutes, then 8 hours away (the shop works on), twice, then a third active half hour. */
@@ -384,13 +396,22 @@ export function playDays(bot: Bot, seed: number, content: GameContent = loadGame
   let awayLevels = 0;
   let hatchedDay1 = 0;
   let dealsDay1 = 0;
+  const walls: number[] = [];
+  let lastBuy = 0;
+  let wall = 0;
   game.events.on((e: GameEvent) => {
+    if ((e.type === 'eggBought' && e.by === 'player' && e.price > 0) || e.type === 'upgradeBought' || e.type === 'lotBought') {
+      wall = Math.max(wall, active - lastBuy);
+      lastBuy = active;
+    }
     if (e.type === 'districtOpened' && e.district === 'street') street = Math.min(street, active);
     if (e.type === 'districtOpened' && e.district === 'square') square = Math.min(square, active);
   });
   for (let day = 1; day <= 3; day++) {
     let busyUntil = active + 1.5;
     const dayEnd = active + DAY_ACTIVE_SEC;
+    lastBuy = active;
+    wall = 0;
     let tenMinBefore = 0;
     while (active < dayEnd) {
       if (active >= busyUntil) busyUntil = active + act();
@@ -399,6 +420,7 @@ export function playDays(bot: Bot, seed: number, content: GameContent = loadGame
       if (rebirthDay === Infinity && game.state.stats.coinsEarned >= threshold) rebirthDay = day - 1 + (active - (dayEnd - DAY_ACTIVE_SEC)) / DAY_ACTIVE_SEC;
       if (tenMinBefore === 0 && active >= dayEnd - 600) tenMinBefore = game.state.stats.coinsEarned;
     }
+    walls.push(Math.max(wall, active - lastBuy));
     if (day === 3) break;
     const perMin = (game.state.stats.coinsEarned - tenMinBefore) / 10;
     const before = game.state.stats.coinsEarned;
@@ -414,7 +436,7 @@ export function playDays(bot: Bot, seed: number, content: GameContent = loadGame
     }
     if (rebirthDay === Infinity && game.state.stats.coinsEarned >= threshold && before < threshold) rebirthDay = day + 0.0;
   }
-  return { street, square, awayMinutes, rebirthDay, onlineHour, offlineHour, awayLevels, hatchedDay1, dealsDay1 };
+  return { street, square, awayMinutes, rebirthDay, onlineHour, offlineHour, awayLevels, hatchedDay1, dealsDay1, walls };
 }
 
 export interface WeekResult {
@@ -517,8 +539,12 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
   const lines: string[] = [];
   const failures: string[] = [];
   lines.push(`sim:balance — ${BOTS.length} bots × ${seeds} seeds × 10 min; p50 / p90 of game seconds (limit in brackets)`);
+  const rd: string[] = [`RD-03 table (info, p50 / p90): short run — first buy (egg for coins / anything), wall = the longest wait between purchases in 10 min, s`];
   for (const bot of BOTS) {
     const runs = Array.from({ length: seeds }, (_, i) => playOnce(bot, 1000 + i * 7919, content));
+    const q = (xs: number[]) => `${fmt(quantile(xs, 0.5))} / ${fmt(quantile(xs, 0.9))}`;
+    const wallOf = (r: RunResult) => Math.max(0, ...[0, ...r.buys, SHORT_SEC].map((b, i, a) => (i ? b - a[i - 1]! : 0)));
+    rd.push(`  ${bot.name.padEnd(7)} first egg ${q(runs.map((r) => r.firstEgg))} · first buy ${q(runs.map((r) => r.buys[0] ?? Infinity))} · wall ${q(runs.map(wallOf))} · buys in 10 min ${fmt(quantile(runs.map((r) => r.buys.length), 0.5))} / ${fmt(quantile(runs.map((r) => r.buys.length), 0.1))} (p50 / p10)`);
     const cells = CHECKS.map((c) => {
       const xs = runs.map((r) => r.times[c.id] ?? Infinity);
       const p50 = quantile(xs, 0.5);
@@ -571,6 +597,9 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     const offHour = quantile(runs.map((r) => r.offlineHour), 0.5);
     const share = onHour > 0 ? offHour / onHour : 0;
     const lvl = Math.max(...runs.map((r) => r.awayLevels));
+    const shares = runs.map((r) => (r.onlineHour > 0 ? r.offlineHour / r.onlineHour : 0));
+    const wq = (d: number) => `${fmt(quantile(runs.map((r) => r.walls[d] ?? Infinity), 0.5) / 60, 1)} / ${fmt(quantile(runs.map((r) => r.walls[d] ?? Infinity), 0.9) / 60, 1)}`;
+    rd.push(`  ${bot.name.padEnd(7)} long run: wall day 1 / 2 / 3 ${wq(0)} · ${wq(1)} · ${wq(2)} min · an hour away against an hour of play ${fmt(quantile(shares, 0.5) * 100)} / ${fmt(quantile(shares, 0.9) * 100)} %`);
     // The brief's band (30–50 % of the income of play) measured against the coins actually earned an hour (the data floor sits higher: the income
     // a reward or the time away reads leaves big spikes out, FB-15).
     const f19 = share >= LIMITS.F19share[0] && share <= LIMITS.F19share[1] && lvl <= content.upgrades.offlineMaxLevels;
@@ -679,6 +708,7 @@ export function runBalance(seeds = 24, longSeeds = Math.max(3, Math.round(seeds 
     );
     if (total > 1) failures.push(`F9 the ad points add up to +${fmt(total * 100, 0)} % in a day (want ≤ 100 %)`);
   } else lines.push('F9 rewarded ads: no ads data');
+  lines.push(...rd);
   lines.push(failures.length ? `FAIL: ${failures.join('; ')}` : `F1–F8, F10${LIMITS.F11enforced ? ', F11' : ''}, F12–F20: all green`);
   return { ok: failures.length === 0, lines, failures };
 }

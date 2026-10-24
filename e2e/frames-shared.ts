@@ -174,6 +174,25 @@ function checkButtons(page: Page): Promise<string[]> {
     const bars = [document.getElementById('hud') ?? document.querySelector<HTMLElement>('.hud'), document.getElementById('nav')];
     const roots = (top ? [top, bars[1]] : [...screen, ...bars]).filter((e): e is HTMLElement => Boolean(e));
     const buttons = roots.flatMap((root) => [...root.querySelectorAll<HTMLElement>('button, [role=button], a[href]')]).filter(visible);
+    // RD-02 after the review: in a popup the main action is seen whole before any scrolling (the move window hid its buttons
+    // below the fold sideways); and a button of a window stays inside its card (the merchant's price buttons ran over the names).
+    if (top && top.dataset.kind === 'popup') {
+      const card = top.querySelector<HTMLElement>(':scope > .card');
+      const all = [...(card?.querySelectorAll<HTMLElement>('button') ?? [])].filter((b) => visible(b) && !b.classList.contains('win-x'));
+      const main = all.filter((b) => b.classList.contains('btn-primary'));
+      const want = main.length ? main : all;
+      const seen = (b: HTMLElement) => {
+        const r = b.getBoundingClientRect();
+        const c = card!.getBoundingClientRect();
+        return r.top >= Math.max(0, c.top) - 0.5 && r.bottom <= Math.min(innerHeight, c.bottom) + 0.5;
+      };
+      if (want.length && !want.some(seen)) bad.push(`${top.dataset.overlay} window: the main action «${(want[0]!.innerText ?? '').trim().slice(0, 24)}» needs scrolling to be seen`);
+    }
+    for (const b of top ? [...top.querySelectorAll<HTMLElement>(':scope > .card button')].filter(visible) : []) {
+      const card = top!.querySelector<HTMLElement>(':scope > .card')!.getBoundingClientRect();
+      const r = b.getBoundingClientRect();
+      if (r.left < card.left - 0.5 || r.right > card.right + 0.5) bad.push(`${b.dataset.action ?? b.className} «${(b.innerText ?? '').trim().slice(0, 24)}»: out of its window's card`);
+    }
     const retries = new Map<HTMLElement, number>();
     const key = (b: HTMLElement) => `${b.dataset.action ?? ''}|${b.dataset.chat ?? ''}|${b.dataset.sub ?? ''}|${b.dataset.chat ? '' : b.innerText}`;
     for (let i = 0; i < buttons.length; i++) {

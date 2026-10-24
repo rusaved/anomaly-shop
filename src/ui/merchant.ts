@@ -3,7 +3,7 @@
 // Keep: offers and checks come from game.merchantOffer(); buying goes through game.merchantBuy; «Not now» loses nothing.
 
 import type { Game } from '../sim/game.ts';
-import { button, createOverlay, type Overlay } from './overlay.ts';
+import { button, closeX, createOverlay, type Overlay } from './overlay.ts';
 
 export interface MerchantLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -28,6 +28,8 @@ export function createMerchantWindow(parent: HTMLElement, game: Game, look: Merc
   const back = button('merchant-close', 'merchant.close');
   overlay.card.append(title, list, back);
   back.addEventListener('click', () => win.close());
+  // RD-02: the ✕ in the corner like every other window (07 rule 13).
+  closeX(overlay.card, '✕', () => win.close(), 'merchant-x');
   const rows = (['discount', 'mystery'] as const).map((choice) => {
     const row = document.createElement('div');
     row.className = 'shop-item';

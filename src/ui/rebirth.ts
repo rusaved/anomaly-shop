@@ -3,7 +3,7 @@
 // Keep: the numbers come from game.rebirthView(); the move itself is game.rebirth() — the window only asks and confirms.
 
 import type { Game } from '../sim/game.ts';
-import { button, createOverlay, type Overlay } from './overlay.ts';
+import { button, closeX, createOverlay, type Overlay } from './overlay.ts';
 
 export interface RebirthLookups {
   t(key: string, vars?: Record<string, string | number>): string;
@@ -29,6 +29,8 @@ export function createRebirthWindow(parent: HTMLElement, game: Game, look: Rebir
   const later = button('rebirth-later', 'rebirth.later');
   (overlay.card.querySelector('.rebirth-buttons') as HTMLElement).append(move, later);
   later.addEventListener('click', () => overlay.hide());
+  // RD-02: the ✕ in the corner like every other window (07 rule 13).
+  closeX(overlay.card, '✕', () => overlay.hide(), 'rebirth-x');
   move.addEventListener('click', () => {
     if (game.rebirth()) overlay.hide();
   });

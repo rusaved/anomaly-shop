@@ -2804,6 +2804,46 @@ button.mu-card {
     grid-area: go;
   }
 }
+/* RD-02 (usability review on the producer's phone sideways): the review window on a very low screen (815×290) — the button
+   moves to the right of the text, so «Оценить» stays above the tab bar. */
+@media (max-height: 340px) {
+  .landscape .overlay > .card.card-rate {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-areas: 'title title title' 'pic text go';
+  }
+  .landscape .card-rate > .rate-pic {
+    width: 64px;
+    height: 56px;
+  }
+  .landscape .card-rate > .mu-btn {
+    width: auto;
+    padding: 0 20px;
+  }
+}
+/* RD-02: the move to a new city sideways — what it gives left, «Переехать» and «Позже» right, both seen without scrolling. */
+.landscape .overlay > .card.card-rebirth {
+  width: min(100%, 680px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  column-gap: 20px;
+  row-gap: 4px;
+  align-content: start;
+}
+.landscape .card-rebirth > * {
+  grid-column: 1;
+}
+.landscape .card-rebirth > h2 {
+  grid-column: 1 / -1;
+}
+.landscape .card-rebirth > .rebirth-buttons {
+  grid-column: 2;
+  grid-row: 2 / span 6;
+  align-self: start;
+}
+/* RD-02: the merchant's price buttons keep their own width in the window (not the window buttons' full width). */
+.overlay > .card .shop-item .btn-buy {
+  width: auto;
+}
 /* A window title stands level with its ✕ (44 px), so the ✕ never reaches the first button under it. */
 #ui .overlay > .card:has(> .win-x) {
   padding-top: 22px;

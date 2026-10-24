@@ -5,9 +5,11 @@
 //   --full     the whole chain + e2e:full (M6 and submission).
 //   --no-e2e   the whole chain without e2e stages (a build check in the middle of a milestone).
 //   --log <f>  full output of every stage and the stage lines go to this file (default .cache/verify.log).
+// RD-01: the result also goes to .cache/verify-summary.json (stages, seconds, the failed stage's tail) — CI and
+// `npm run ci:status` read that, not the log.
 // The console gets only stage lines and, on failure, the last 40 lines of the failed stage: the context stays small.
 import { spawn } from 'node:child_process';
-import { createWriteStream, mkdirSync } from 'node:fs';
+import { createWriteStream, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -17,6 +19,7 @@ const full = args.includes('--full');
 const noE2e = args.includes('--no-e2e');
 const logIndex = args.indexOf('--log');
 const logFile = resolve(root, logIndex >= 0 ? args[logIndex + 1] : '.cache/verify.log');
+const summaryFile = resolve(root, '.cache/verify-summary.json');
 const FAST_BUDGET_SEC = 600;
 const TAIL_LINES = 40;
 
@@ -71,13 +74,22 @@ function run(stage) {
 const mode = fast ? 'fast' : full ? 'full' : noE2e ? 'no-e2e' : 'milestone';
 say(`verify (${mode}): ${stages.length} stages, full log ${logFile}`);
 const started = Date.now();
+const summary = { mode, started: new Date(started).toISOString(), ok: false, seconds: 0, stages: [], failedTail: [] };
+const writeSummary = () => {
+  summary.seconds = Math.round((Date.now() - started) / 1000);
+  mkdirSync(dirname(summaryFile), { recursive: true });
+  writeFileSync(summaryFile, JSON.stringify(summary, null, 1) + '\n');
+};
 for (const stage of stages) {
   const mark = stage.e2e ? ' [e2e: end of milestone only]' : '';
   log.write(`\n== verify: ${stage.name}${mark}\n`);
   const t0 = Date.now();
   const { code, tail } = await run(stage.name);
   const sec = ((Date.now() - t0) / 1000).toFixed(1);
+  summary.stages.push({ name: stage.name, ok: code === 0, seconds: Number(sec) });
   if (code !== 0) {
+    summary.failedTail = tail;
+    writeSummary();
     say(`FAIL ${stage.name}${mark} after ${sec} s (exit ${code})`, true);
     console.error(`last ${TAIL_LINES} lines:\n${tail.join('\n')}`);
     log.end(() => process.exit(code));
@@ -87,5 +99,7 @@ for (const stage of stages) {
 }
 const total = Math.round((Date.now() - started) / 1000);
 say(`verify (${mode}): all ${stages.length} stages green in ${total} s`);
+summary.ok = true;
+writeSummary();
 if (fast && total > FAST_BUDGET_SEC) say(`verify:fast took ${total} s, budget ${FAST_BUDGET_SEC} s: write it to progress.md`, true);
 log.end();

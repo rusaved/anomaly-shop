@@ -30,7 +30,8 @@
     "check:youtube": "node scripts/check-bundle-urls.mjs dist-youtube --profile youtube",
     "verify": "node scripts/verify.mjs",
     "verify:fast": "node scripts/verify.mjs --fast",
-    "verify:full": "node scripts/verify.mjs --full"
+    "verify:full": "node scripts/verify.mjs --full",
+    "ci:status": "node scripts/ci-status.mjs"
   },
   "dependencies": {
     "@fontsource/rubik": "5.3.0",

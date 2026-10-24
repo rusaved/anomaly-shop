@@ -1,0 +1,51 @@
+# RD-01: full verify in GitHub Actions on every push to main (docs/05, section 2).
+# Lives here, not in .github/workflows/: a cloud session cannot push workflow files (CLAUDE.md, rule 10).
+# The producer copies it once to .github/workflows/verify.yml (QUESTIONS.md, Q-049); after that each push to main runs it.
+# The session reads only the result: `npm run ci:status` (scripts/ci-status.mjs) — the run, its stages and the failed
+# stage's tail from the summary artifact, never the whole log.
+
+name: verify
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: verify
+        run: npm run verify -- --log verify-log.txt
+
+      - name: summary
+        if: always()
+        run: node scripts/ci-status.mjs --step-summary
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verify-summary
+          path: |
+            .cache/verify-summary.json
+            verify-log.txt
+          retention-days: 14

@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices, webkit } from '@playwright/test';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -11,6 +11,16 @@ const PHONE_SPECS = /(touch|layout|ftue)[^/]*\.spec\.ts$/;
 const PERF_SPECS = /perf\.spec\.ts$/;
 // M5-00: the truthful stand (banner, full screen, 3 s ads) — its own project on a computer screen.
 const TRUTHFUL_SPECS = /truthful[^/]*\.spec\.ts$/;
+// RD-06: the device profiles of qa/device-matrix.md run the device spec; webkit only where its engine is installed (CI installs it,
+// the cloud session cannot download it — qa/device-matrix.md, «не проверено»).
+const DEVICE_SPECS = /devices-rd\.spec\.ts$/;
+const hasWebkit = (() => {
+  try {
+    return existsSync(webkit.executablePath());
+  } catch {
+    return false;
+  }
+})();
 const port = Number(process.env.E2E_PORT || 4173);
 const markerFile = resolve(import.meta.dirname, '.cache/chromium-path');
 const executablePath =
@@ -51,7 +61,13 @@ export default defineConfig({
       testMatch: PHONE_SPECS,
       use: { viewport: { width: 812, height: 375 }, hasTouch: true, isMobile: true },
     },
-    { name: 'perf', testMatch: PERF_SPECS, dependencies: ['desktop', 'phone', 'phone-landscape'] },
+    {
+      name: 'mobile',
+      testMatch: DEVICE_SPECS,
+      use: { ...devices['Pixel 7'], deviceScaleFactor: 1, launchOptions: executablePath ? { executablePath, args: launchArgs } : { args: launchArgs } },
+    },
+    ...(hasWebkit ? [{ name: 'webkit', testMatch: DEVICE_SPECS, use: { ...devices['iPhone 15'], deviceScaleFactor: 1, launchOptions: {} } }] : []),
+    { name: 'perf', testMatch: PERF_SPECS, dependencies: ['desktop', 'phone', 'phone-landscape', 'mobile', ...(hasWebkit ? ['webkit'] : [])] },
   ],
   webServer: {
     command: `npx vite preview --outDir ${dist} --port ${port} --strictPort --host 127.0.0.1`,

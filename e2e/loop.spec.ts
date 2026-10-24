@@ -1,27 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import { closeHatch, collectErrors, listFromInventory, mockViolations, open, sellInChat, state } from './helpers.ts';
+import { collectErrors, mockViolations, open, playToFirstDeal, state } from './helpers.ts';
 
 /** M1 loop on the desktop project: F5 after a deal (SAV), an upgrade survives a reload (M1-08), English texts in the panel. */
 type S = Awaited<ReturnType<typeof state>> & { ftue: string | null; stats: { deals: number }; upgrades: Record<string, number>; incubators: unknown[] };
 const st = (page: Page) => state(page) as Promise<S>;
-const targets = (page: Page) =>
-  page.evaluate(() => (window as unknown as { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }>; slots: Array<{ x: number; y: number }> } } }).__TEST__.targets());
-
-async function playToFirstDeal(page: Page): Promise<void> {
-  for (let i = 0; i < 300; i++) {
-    if (await closeHatch(page)) continue;
-    const s = await st(page);
-    if (s.stats.deals >= 1) return;
-    const t = await targets(page);
-    if (s.ftue === 'tapEgg') await page.mouse.click(t.incubators[0]!.x, t.incubators[0]!.y);
-    else if (s.ftue === 'feed') await page.mouse.click(t.slots[0]!.x, t.slots[0]!.y);
-    else if (s.ftue === 'list') await listFromInventory(page);
-    else if (s.ftue === 'sell') await sellInChat(page);
-    if (s.ftue === 'list' || s.ftue === 'sell') await page.locator('[data-tab=home]').click();
-    await page.waitForTimeout(200);
-  }
-  throw new Error('no deal within the time');
-}
 
 test('SAV-01 F5 after a deal: coins, the deal count and the creatures come back', async ({ page }) => {
   const errors = collectErrors(page);

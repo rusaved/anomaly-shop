@@ -214,3 +214,23 @@ export async function readability(page: Page): Promise<{ small: string[]; tiny: 
     return { small: [...new Set(small)], tiny: [...new Set(tiny)], covered: [...new Set(covered)], cut: [...new Set(cut)] };
   });
 }
+
+const targets = (page: Page) =>
+  page.evaluate(() => (window as unknown as { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }>; slots: Array<{ x: number; y: number }> } } }).__TEST__.targets());
+
+/** M1 loop (RD-06: shared with the device profiles): the first minute by its hints up to the first deal. */
+export async function playToFirstDeal(page: Page): Promise<void> {
+  for (let i = 0; i < 300; i++) {
+    if (await closeHatch(page)) continue;
+    const s = (await state(page)) as TestState & { ftue: string | null; stats: { deals: number } };
+    if (s.stats.deals >= 1) return;
+    const t = await targets(page);
+    if (s.ftue === 'tapEgg') await page.mouse.click(t.incubators[0]!.x, t.incubators[0]!.y);
+    else if (s.ftue === 'feed') await page.mouse.click(t.slots[0]!.x, t.slots[0]!.y);
+    else if (s.ftue === 'list') await listFromInventory(page);
+    else if (s.ftue === 'sell') await sellInChat(page);
+    if (s.ftue === 'list' || s.ftue === 'sell') await page.locator('[data-tab=home]').click();
+    await page.waitForTimeout(200);
+  }
+  throw new Error('no deal within the time');
+}

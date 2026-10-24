@@ -32,7 +32,8 @@ jobs:
 
       - run: npm ci
 
-      - run: npx playwright install --with-deps chromium
+      # RD-06: WebKit for the iPhone profile (qa/device-matrix.md); the cloud session cannot download it.
+      - run: npx playwright install --with-deps chromium webkit
 
       - name: verify
         run: npm run verify -- --log verify-log.txt

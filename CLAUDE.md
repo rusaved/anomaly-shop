@@ -61,7 +61,7 @@
 | `npm run build` / `build:youtube` | релиз Яндекса в `dist/` / YouTube в `dist-youtube/` |
 | `npm run check:youtube` | в youtube-сборке нет внешних адресов, размеры в лимитах |
 | `npm run build:pages` | ссылка продюсера на моке SDK |
-| `npm run pack`, `check-release` | ZIP Яндекса и его 7 проверок |
+| `npm run pack`, `check-release` | ZIP Яндекса и его 8 проверок |
 
 ## Жёсткие правила
 1. Числа, тексты, цвета — в `content/` и `game.json`; кириллица в `src/**/*.ts` вне комментариев — тест красный.

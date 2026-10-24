@@ -1,5 +1,8 @@
-// `npm run check-release` (docs/02-tech.md, section 9): seven checks of the Yandex release archive; report in
-// docs/evidence/release-check.txt. Green on the archive of `build`, red on the archive of `build:playtest`.
+// `npm run check-release` (docs/02-tech.md, section 9): eight checks of the Yandex release archive by docs/03 (BLD, SDK, SND, LOC);
+// report in docs/evidence/release-check.txt. Green on the archive of `build`, red on the archive of `build:playtest`.
+// RD-05: the archive ≤ 30 MB, not one external address (only /sdk.js, Metrica and the two community links the player opens),
+// /sdk.js before the game's code, sound only through Web Audio, the language keys of ru and en the same and filled.
+//   node scripts/check-release.mjs [archive.zip] [--report <file>] [--content <dir with i18n/ and *.json>]  (tests/check-release.test.ts)
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve, extname } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -26,6 +29,7 @@ if (!zipPath || !existsSync(zipPath)) {
   process.exit(1);
 }
 const reportPath = resolve(root, opt('report', 'docs/evidence/release-check.txt'));
+const contentDir = resolve(root, opt('content', 'content'));
 const stop = JSON.parse(readFileSync(resolve(root, 'scripts/stopwords.json'), 'utf8'));
 
 const zipBytes = readFileSync(zipPath);
@@ -79,7 +83,8 @@ const ALLOWED_URL = (u) => u === '/sdk.js' || /^(https?:)?\/\/mc\.yandex\.ru(\/|
   // Budgets: docs/02-tech.md, section 8 (2D game with sprite atlases).
   if (zipBytes.length > 15 * 1024 * 1024) warnings.push('zip above the 15 MB target');
   if (jsGzip > 400 * 1024) warnings.push('js gzip above the 400 KB target');
-  check(2, 'unpacked ≤ 30 MB and JS gzip ≤ 600 KB', unpacked <= 30 * 1024 * 1024 && jsGzip <= 600 * 1024, details);
+  const MB30 = 30 * 1024 * 1024;
+  check(2, 'zip and unpacked ≤ 30 MB, JS gzip ≤ 600 KB', zipBytes.length <= MB30 && unpacked <= MB30 && jsGzip <= 600 * 1024, details);
 }
 // 3. External addresses where the browser loads from or sends to.
 {
@@ -113,26 +118,36 @@ const ALLOWED_URL = (u) => u === '/sdk.js' || /^(https?:)?\/\/mc\.yandex\.ru(\/|
     }
     for (const host of FORBIDDEN_HOSTS) if (src.includes(host)) problems.push(`${name}: forbidden host ${host}`);
   }
-  if (otherUrls.size) warnings.push(`other absolute addresses in strings (not loaded): ${Array.from(otherUrls).slice(0, 20).join(', ')}`);
-  check(3, 'no external addresses except /sdk.js and mc.yandex.ru (namespaces allowed)', problems.length === 0, problems);
+  // RD-05: not one external address, even in a string the code never loads (a link the player could be sent to is a link).
+  for (const u of otherUrls) problems.push(`address in a string: ${u}`);
+  check(3, 'no external addresses except /sdk.js, mc.yandex.ru and the community links (namespaces allowed)', problems.length === 0, problems.slice(0, 30));
 }
 // 4. <script src="/sdk.js"> exactly once.
 {
   const html = entries['index.html'] ? text(entries['index.html']) : '';
   const count = (html.match(/<script[^>]+src\s*=\s*["']\/sdk\.js["'][^>]*>/g) || []).length;
-  check(4, '<script src="/sdk.js"> exactly once', count === 1, [`found ${count}`]);
+  // SDK-01: the SDK comes before the game's code (the first other script file; the inline load-time mark may stand earlier).
+  const sdkAt = html.search(/<script[^>]+src\s*=\s*["']\/sdk\.js["']/);
+  const gameAt = html.search(/<script(?![^>]+src\s*=\s*["']\/sdk\.js["'])[^>]+src\s*=[^>]*>/);
+  const first = sdkAt >= 0 && (gameAt < 0 || sdkAt < gameAt);
+  check(4, '<script src="/sdk.js"> exactly once, before the game code', count === 1 && first, [`found ${count}${count && !first ? ', after the game code' : ''}`]);
 }
-// 5. No <audio>, <video>, new Audio(.
+// 5. Sound only through Web Audio.
 {
   const problems = [];
+  let webAudio = false;
   for (const [name, data] of files) {
     if (!['.html', '.js'].includes(extname(name))) continue;
     const src = text(data);
     if (/<audio\b/i.test(src)) problems.push(`${name}: <audio`);
     if (/<video\b/i.test(src)) problems.push(`${name}: <video`);
     if (/new\s+Audio\s*\(/.test(src)) problems.push(`${name}: new Audio(`);
+    if (/createElement\(\s*["'](audio|video)["']/.test(src)) problems.push(`${name}: createElement(audio/video)`);
+    if (/HTMLAudioElement|HTMLMediaElement/.test(src)) problems.push(`${name}: HTMLAudioElement`);
+    if (/AudioContext/.test(src)) webAudio = true;
   }
-  check(5, 'no <audio>, <video>, new Audio(', problems.length === 0, problems);
+  // SND-01: sound only through Web Audio.
+  check(5, 'sound only through Web Audio: no <audio>, <video>, new Audio(, media elements', problems.length === 0, [...problems, `Web Audio (AudioContext) in the code: ${webAudio ? 'yes' : 'no'}`]);
 }
 // 6. No development leftovers.
 {
@@ -154,7 +169,7 @@ const ALLOWED_URL = (u) => u === '/sdk.js' || /^(https?:)?\/\/mc\.yandex\.ru(\/|
   const problems = [];
   const esc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const jsonFiles = files.filter(([n]) => extname(n) === '.json');
-  const i18nDir = resolve(root, 'content/i18n');
+  const i18nDir = resolve(contentDir, 'i18n');
   if (existsSync(i18nDir)) {
     for (const f of readdirSync(i18nDir).filter((n) => n.endsWith('.json'))) jsonFiles.push([`content/i18n/${f}`, readFileSync(join(i18nDir, f))]);
   }
@@ -184,6 +199,52 @@ const ALLOWED_URL = (u) => u === '/sdk.js' || /^(https?:)?\/\/mc\.yandex\.ru(\/|
     }
   }
   check(7, 'no development or stop-list words in shipped texts', problems.length === 0, problems.slice(0, 50));
+}
+
+// 8. LOC-01, LOC-02: ru and en have the same keys, none empty, no Cyrillic in en; every {ru, en} text of the data has both.
+{
+  const problems = [];
+  const read = (f) => JSON.parse(readFileSync(f, 'utf8'));
+  const flat = (o, p = '', out = {}) => {
+    for (const [k, v] of Object.entries(o)) {
+      if (v && typeof v === 'object' && !Array.isArray(v)) flat(v, `${p}${k}.`, out);
+      else out[`${p}${k}`] = v;
+    }
+    return out;
+  };
+  const ruFile = resolve(contentDir, 'i18n/ru.json');
+  const enFile = resolve(contentDir, 'i18n/en.json');
+  if (!existsSync(ruFile) || !existsSync(enFile)) problems.push('content/i18n/ru.json or en.json missing');
+  else {
+    const ru = flat(read(ruFile));
+    const en = flat(read(enFile));
+    for (const k of Object.keys(ru)) if (!(k in en)) problems.push(`en misses ${k}`);
+    for (const k of Object.keys(en)) if (!(k in ru)) problems.push(`ru misses ${k}`);
+    const empty = (v) => v === '' || (Array.isArray(v) && v.length === 0);
+    for (const [k, v] of Object.entries(ru)) if (empty(v)) problems.push(`ru empty ${k}`);
+    for (const [k, v] of Object.entries(en)) {
+      if (empty(v)) problems.push(`en empty ${k}`);
+      // The language names (lang.*) are written in their own language: «Русский» in the en list too.
+      if (!k.startsWith('lang.') && /\p{Script=Cyrillic}/u.test(JSON.stringify(v))) problems.push(`en has Cyrillic: ${k}`);
+    }
+  }
+  let pairs = 0;
+  const walk = (v, where) => {
+    if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${where}[${i}]`));
+    else if (v && typeof v === 'object') {
+      if ('ru' in v || 'en' in v) {
+        pairs++;
+        const bad = ['ru', 'en'].filter((l) => typeof v[l] !== 'string' || v[l].trim() === '');
+        if (bad.length) problems.push(`${where}: no ${bad.join(', ')}`);
+        else if (/\p{Script=Cyrillic}/u.test(v.en)) problems.push(`${where}: Cyrillic in en`);
+      } else for (const [k, x] of Object.entries(v)) walk(x, `${where}.${k}`);
+    }
+  };
+  for (const f of existsSync(contentDir) ? readdirSync(contentDir).filter((n) => n.endsWith('.json')) : []) walk(read(join(contentDir, f)), f);
+  check(8, 'language keys: ru and en the same, none empty, no Cyrillic in en (i18n and the {ru, en} texts of content/)', problems.length === 0, [
+    ...problems.slice(0, 30),
+    `{ru, en} texts in content/*.json: ${pairs}`,
+  ]);
 }
 
 const header = [

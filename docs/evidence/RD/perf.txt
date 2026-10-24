@@ -1,0 +1,3 @@
+2026-10-24T19:26 RD-04 first screen on 4G (10 Mbit/s, RTT 100 ms) + CPU ×4: gameReady 3102 ms, downloaded 1185 KB (limits 5000 ms, 5120 KB)
+2026-10-24T19:26 RD-04 CPU ×4: main thread a frame — shop 2.2 ms, hatch show 6.4 ms (limit ≤ 33 ms = 30 FPS); drawn in the cloud (software WebGL) 58 / 24 FPS — info
+2026-10-24T20:02 RD-04 memory after GC, minute 1 → 10: heap 9.6 → 8.4 MB, DOM nodes 3447 → 3447, listeners 194 → 194 (limit: heap +20 % and +10 MB, nodes +20 %)

@@ -1,0 +1,30 @@
+
+Running 1 test using 1 worker
+
+RD-04 memory after GC, minute 1 → 10: heap 9.6 → 8.4 MB, DOM nodes 3447 → 3447, listeners 194 → 194 (limit: heap +20 % and +10 MB, nodes +20 %)
+  ✘  1 [perf] › e2e/perf.spec.ts:97:1 › perf: the memory does not grow in 10 minutes of play @full (10.1m)
+
+
+  1) [perf] › e2e/perf.spec.ts:97:1 › perf: the memory does not grow in 10 minutes of play @full ───
+
+    Error: browserContext.close: ENOENT: no such file or directory, open '/home/user/anomaly-shop/test-results/.playwright-artifacts-0/traces/73ed389be8d3d6a89cdb-5196007f1c9b3643088c.trace'
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/perf-perf-the-memory-does--5af58--in-10-minutes-of-play-full-perf/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/perf-perf-the-memory-does--5af58--in-10-minutes-of-play-full-perf/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/perf-perf-the-memory-does--5af58--in-10-minutes-of-play-full-perf/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/perf-perf-the-memory-does--5af58--in-10-minutes-of-play-full-perf/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Slow test file: [perf] › e2e/perf.spec.ts (10.1m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 failed
+    [perf] › e2e/perf.spec.ts:97:1 › perf: the memory does not grow in 10 minutes of play @full ────
+EXIT=1

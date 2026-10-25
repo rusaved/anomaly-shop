@@ -156,6 +156,8 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       await expect(win.locator('.away-time')).toHaveText(/^Тебя не было 5 ч · лавка работала 2 ч$/);
       const got = (await win.locator('[data-away-coins]').innerText()).replace(/\D/g, '');
       await expect(win.locator('[data-action=away-ad]')).toHaveText(new RegExp(`^▶ Реклама: \\+${got.replace(/\B(?=(\d{3})+$)/g, '\\s?')}$`));
+      // M7: measured once the window's opening (win-in: scale 0.94 → 1) is over — the retry verify of M7 caught its tail (23.49 px).
+      await win.locator('.card').evaluate((c) => Promise.all(c.getAnimations({ subtree: true }).filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished)));
       const ad = (await win.locator('[data-action=away-ad]').boundingBox())!;
       const ok = (await win.locator('[data-action=away-ok]').boundingBox())!;
       expect(gap(ad, ok)).toBeGreaterThanOrEqual(23.5);

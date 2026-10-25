@@ -1,7 +1,7 @@
-M7-04 · архивы в downloads/ (сессия по расписанию 25.10), пересобраны после M7-01 и M7-05 с кода коммита fcf8659 + рабочие правки тестов (код игры тот же)
-4521549b441b63b1e781f5b8e9447f8a9ce93eef3e1affd4b1c1c6faef9a8892  downloads/anomaly-shop-0.1.0-playtest.zip
-3c5c8461a7436c5da2f8dffb47233ca90a5840dbae8ba683fbfe700fe91c80ed  downloads/anomaly-shop-0.1.0.zip
-663095 downloads/anomaly-shop-0.1.0-playtest.zip
-653959 downloads/anomaly-shop-0.1.0.zip
+M7 · архивы в downloads/ (сессия по расписанию 25.10), финальная сборка кода коммита fa8161d (+ правка одного e2e, код игры тот же)
+78587a78e66c65120970970989feffe64c50b666b6b2cdf6a220840efe25e73c  downloads/anomaly-shop-0.1.0-playtest.zip
+3f9f2e99614a0bbc2cb5e3211243072476df298bd9a00d3c8b967e7632a7259b  downloads/anomaly-shop-0.1.0.zip
+663207 downloads/anomaly-shop-0.1.0-playtest.zip
+654067 downloads/anomaly-shop-0.1.0.zip
 check-release релиза: RESULT: PASS (8/8) — docs/evidence/M7/check-release.txt
 check-release playtest: FAIL п. 6 (мок и отладка) — так и задумано

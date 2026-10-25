@@ -1,0 +1,225 @@
+
+> anomaly-shop@0.1.0 build
+> vite build
+
+vite v8.3.2 building client environment for production...
+transforming...
+✓ 829 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                         2.30 kB │ gzip:   1.12 kB
+dist/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist/assets/index-BNd5IYtz.css                        100.33 kB │ gzip:  18.74 kB
+dist/assets/webworkerAll-CGHcVCNT.js                    0.05 kB │ gzip:   0.06 kB
+dist/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist/assets/yandex-5XAtHXzI.js                         10.05 kB │ gzip:   3.43 kB
+dist/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist/assets/init-DYCTNTwu.js                           15.31 kB │ gzip:   4.79 kB
+dist/assets/browserAll-DXkUugVF.js                     42.64 kB │ gzip:  11.19 kB
+dist/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist/assets/index-JWSX9inC.js                         760.32 kB │ gzip: 236.50 kB
+
+✓ built in 864ms
+STAGE build EXIT=0
+
+> anomaly-shop@0.1.0 size
+> node scripts/size.mjs dist
+
+size: dist
+  assets/browserAll-DXkUugVF.js                       41.6 KB gzip 10.8 KB
+  assets/BufferResource-7657QUKQ.js                   10.8 KB gzip 2.7 KB
+  assets/CanvasPool-BZOfdiYK.js                      107.7 KB gzip 32.5 KB
+  assets/canvasUtils-_2Xt0X_j.js                       5.9 KB gzip 2.0 KB
+  assets/getTextureBatchBindGroup-Bz0KTaOB.js          0.3 KB gzip 0.3 KB
+  assets/index-BNd5IYtz.css                           98.0 KB 
+  assets/index-JWSX9inC.js                           742.5 KB gzip 229.1 KB
+  assets/init-DYCTNTwu.js                             15.0 KB gzip 4.7 KB
+  assets/RenderTargetSystem-k-tnMFYl.js               76.2 KB gzip 21.4 KB
+  assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2      7.7 KB 
+  assets/rubik-cyrillic-400-normal-D5R8xuhl.woff       9.6 KB 
+  assets/rubik-cyrillic-500-normal-BH_pkKR0.woff       9.7 KB 
+  assets/rubik-cyrillic-500-normal-Didq2w9O.woff2      7.7 KB 
+  assets/rubik-cyrillic-600-normal-AdySaCq0.woff2      7.7 KB 
+  assets/rubik-cyrillic-600-normal-CtS_KWzi.woff       9.7 KB 
+  assets/rubik-cyrillic-700-normal-C_jxLOfU.woff       9.6 KB 
+  assets/rubik-cyrillic-700-normal-DFnztZBh.woff2      7.7 KB 
+  assets/rubik-cyrillic-800-normal-DocVmW4N.woff       9.6 KB 
+  assets/rubik-cyrillic-800-normal-wonQiwhm.woff2      7.7 KB 
+  assets/rubik-latin-400-normal-BV1Ho3GG.woff         23.4 KB 
+  assets/rubik-latin-400-normal-j0pmKyiQ.woff2        18.5 KB 
+  assets/rubik-latin-500-normal-1os41rQk.woff2        18.6 KB 
+  assets/rubik-latin-500-normal-LZYVHeqz.woff         23.6 KB 
+  assets/rubik-latin-600-normal-7iWW07_k.woff2        18.6 KB 
+  assets/rubik-latin-600-normal-Bd1rsTk4.woff         23.6 KB 
+  assets/rubik-latin-700-normal-D-tMm-eS.woff2        18.7 KB 
+  assets/rubik-latin-700-normal-KHOtubUA.woff         23.7 KB 
+  assets/rubik-latin-800-normal-BtaGuVpR.woff2        18.6 KB 
+  assets/rubik-latin-800-normal-Dq1miTTj.woff         23.6 KB 
+  assets/webworkerAll-CGHcVCNT.js                      0.1 KB gzip 0.1 KB
+  assets/yandex-5XAtHXzI.js                            9.8 KB gzip 3.3 KB
+  assets/ZzFX-C1HKDoVW.js                              2.0 KB gzip 1.1 KB
+  index.html                                           2.3 KB 
+  total 1409.8 KB (target 15360.0 KB, limit 30720.0 KB)
+  js 1011.8 KB → gzip 308.0 KB (target 400.0 KB, limit 600.0 KB)
+STAGE size EXIT=0
+
+> anomaly-shop@0.1.0 pack
+> node scripts/pack.mjs
+
+pack: 33 files, 1409.8 KB → release/anomaly-shop-0.1.0.zip 638.7 KB
+STAGE pack EXIT=0
+
+> anomaly-shop@0.1.0 check-release
+> node scripts/check-release.mjs
+
+check-release: release/anomaly-shop-0.1.0.zip
+date: 2026-10-25T14:43:03.677Z
+files: 33
+  assets/BufferResource-7657QUKQ.js  10.8 KB
+  assets/CanvasPool-BZOfdiYK.js  107.7 KB
+  assets/RenderTargetSystem-k-tnMFYl.js  76.2 KB
+  assets/ZzFX-C1HKDoVW.js  2.0 KB
+  assets/browserAll-DXkUugVF.js  41.6 KB
+  assets/canvasUtils-_2Xt0X_j.js  5.9 KB
+  assets/getTextureBatchBindGroup-Bz0KTaOB.js  0.3 KB
+  assets/index-BNd5IYtz.css  98.0 KB
+  assets/index-JWSX9inC.js  742.5 KB
+  assets/init-DYCTNTwu.js  15.0 KB
+  assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2  7.7 KB
+  assets/rubik-cyrillic-400-normal-D5R8xuhl.woff  9.6 KB
+  assets/rubik-cyrillic-500-normal-BH_pkKR0.woff  9.7 KB
+  assets/rubik-cyrillic-500-normal-Didq2w9O.woff2  7.7 KB
+  assets/rubik-cyrillic-600-normal-AdySaCq0.woff2  7.7 KB
+  assets/rubik-cyrillic-600-normal-CtS_KWzi.woff  9.7 KB
+  assets/rubik-cyrillic-700-normal-C_jxLOfU.woff  9.6 KB
+  assets/rubik-cyrillic-700-normal-DFnztZBh.woff2  7.7 KB
+  assets/rubik-cyrillic-800-normal-DocVmW4N.woff  9.6 KB
+  assets/rubik-cyrillic-800-normal-wonQiwhm.woff2  7.7 KB
+  assets/rubik-latin-400-normal-BV1Ho3GG.woff  23.4 KB
+  assets/rubik-latin-400-normal-j0pmKyiQ.woff2  18.5 KB
+  assets/rubik-latin-500-normal-1os41rQk.woff2  18.6 KB
+  assets/rubik-latin-500-normal-LZYVHeqz.woff  23.6 KB
+  assets/rubik-latin-600-normal-7iWW07_k.woff2  18.6 KB
+  assets/rubik-latin-600-normal-Bd1rsTk4.woff  23.6 KB
+  assets/rubik-latin-700-normal-D-tMm-eS.woff2  18.7 KB
+  assets/rubik-latin-700-normal-KHOtubUA.woff  23.7 KB
+  assets/rubik-latin-800-normal-BtaGuVpR.woff2  18.6 KB
+  assets/rubik-latin-800-normal-Dq1miTTj.woff  23.6 KB
+  assets/webworkerAll-CGHcVCNT.js  0.1 KB
+  assets/yandex-5XAtHXzI.js  9.8 KB
+  index.html  2.3 KB
+
+PASS  1. index.html at the root, paths only [A-Za-z0-9._/-]
+PASS  2. zip and unpacked ≤ 30 MB, JS gzip ≤ 600 KB
+        zip 638.7 KB, unpacked 1409.8 KB, js gzip 308.0 KB
+PASS  3. no external addresses except /sdk.js, mc.yandex.ru and the community links (namespaces allowed)
+PASS  4. <script src="/sdk.js"> exactly once, before the game code
+        found 1
+PASS  5. sound only through Web Audio: no <audio>, <video>, new Audio(, media elements
+        Web Audio (AudioContext) in the code: yes
+PASS  6. no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, youtube.com/game_api
+PASS  7. no development or stop-list words in shipped texts
+PASS  8. language keys: ru and en the same, none empty, no Cyrillic in en (i18n and the {ru, en} texts of content/)
+        {ru, en} texts in content/*.json: 946
+
+RESULT: PASS
+
+STAGE check-release EXIT=0
+
+> anomaly-shop@0.1.0 e2e:release
+> node scripts/e2e-static.mjs release
+
+e2e:release: unpacked /home/user/anomaly-shop/release/anomaly-shop-0.1.0.zip (33 entries) to /home/user/anomaly-shop/.cache/release-unpacked
+
+Running 1 test using 1 worker
+
+  ✓  1 e2e/smoke-release.spec.ts:4:1 › BLD-04 release boots on the mock, ready once, no console errors, no debug or test API (3.1s)
+
+  1 passed (4.4s)
+STAGE e2e:release EXIT=0
+
+> anomaly-shop@0.1.0 build:youtube
+> vite build --mode youtube --outDir dist-youtube
+
+vite v8.3.2 building client environment for youtube...
+transforming...
+✓ 828 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-youtube/index.html                                         2.29 kB │ gzip:   1.08 kB
+dist-youtube/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-youtube/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-youtube/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-youtube/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-youtube/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-youtube/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-youtube/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-youtube/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-youtube/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-youtube/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-youtube/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-youtube/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-youtube/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-youtube/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-youtube/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-youtube/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-youtube/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-youtube/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-youtube/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-youtube/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-youtube/assets/index-BNd5IYtz.css                        100.33 kB │ gzip:  18.74 kB
+dist-youtube/assets/webworkerAll-CPkJ4L1m.js                    0.05 kB │ gzip:   0.06 kB
+dist-youtube/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-youtube/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-youtube/assets/youtube-BDIEW9lR.js                         4.58 kB │ gzip:   1.76 kB
+dist-youtube/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-youtube/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-youtube/assets/init-CT5H_Eig.js                           15.31 kB │ gzip:   4.79 kB
+dist-youtube/assets/browserAll-COl_9W5w.js                     42.64 kB │ gzip:  11.19 kB
+dist-youtube/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-youtube/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-youtube/assets/index-CFLI1em7.js                         759.79 kB │ gzip: 236.40 kB
+
+✓ built in 957ms
+STAGE build:youtube EXIT=0
+
+> anomaly-shop@0.1.0 check:youtube
+> node scripts/check-bundle-urls.mjs dist-youtube --profile youtube
+
+check-bundle-urls: bundle 1.37 MiB, first load 1.37 MiB
+check-bundle-urls (youtube): 33 files, no external addresses — ok
+STAGE check:youtube EXIT=0
+
+> anomaly-shop@0.1.0 e2e:youtube
+> node scripts/e2e-static.mjs youtube
+
+
+Running 2 tests using 1 worker
+
+  ✓  1 e2e/youtube-m6.spec.ts:16:1 › M6-04 youtube build: fake ytgame, ready once, no outside requests, no community or follow gift (3.3s)
+  ✓  2 e2e/youtube-m6.spec.ts:52:1 › M6-04 youtube build: the Gifts window has no «visit the group» card (2.2s)
+
+  2 passed (7.1s)
+STAGE e2e:youtube EXIT=0

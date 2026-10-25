@@ -1,7 +1,9 @@
-M7 · архивы в downloads/ (сессия по расписанию 25.10), финальная сборка кода коммита fa8161d (+ правка одного e2e, код игры тот же)
-78587a78e66c65120970970989feffe64c50b666b6b2cdf6a220840efe25e73c  downloads/anomaly-shop-0.1.0-playtest.zip
-3f9f2e99614a0bbc2cb5e3211243072476df298bd9a00d3c8b967e7632a7259b  downloads/anomaly-shop-0.1.0.zip
-663207 downloads/anomaly-shop-0.1.0-playtest.zip
-654067 downloads/anomaly-shop-0.1.0.zip
-check-release релиза: RESULT: PASS (8/8) — docs/evidence/M7/check-release.txt
+M7 · архивы в downloads/ — пересобраны в доводке M7 (сессия по расписанию 25.10): код игры коммита 3c801fb (фикс счётчика «Склада», Q-050)
+333492130eb8c5d0056f95ae24676c86300a1e4d92f8cc476e42a3aec3ad2424  downloads/anomaly-shop-0.1.0-playtest.zip
+ba46df14451edc4d6fb7bf2531ac1d2c96f5e326a4e6bd90c795c90d32ca1a1e  downloads/anomaly-shop-0.1.0.zip
+663197 downloads/anomaly-shop-0.1.0-playtest.zip
+654065 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8); e2e:release зелёный
 check-release playtest: FAIL п. 6 (мок и отладка) — так и задумано
+
+До доводки (итог M7): коммит fa8161d, 654067 и 663207 байт

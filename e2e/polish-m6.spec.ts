@@ -39,8 +39,8 @@ test('M6-20 window, clock and flower answer a tap; 15 on the window — the wing
   await expect(page.locator('.toast', { hasText: tTeapot })).toBeVisible();
   await page.mouse.click(t.things.clock.x, t.things.clock.y);
   await page.mouse.click(t.things.flower.x, t.things.flower.y);
-  const before = (await sounds(page)).tap ?? 0;
-  expect(before).toBeGreaterThanOrEqual(17);
+  // M7: the counter is read once the last tap is handled (a busy machine handles it a frame later — verify:full of M7 read 16).
+  await expect.poll(async () => (await sounds(page)).tap ?? 0).toBeGreaterThanOrEqual(17);
   // The tickle: ten quick taps on the pet on the shelf.
   const slot = t.slots[0]!;
   for (let i = 0; i < 10; i++) await page.mouse.click(slot.x, slot.y);

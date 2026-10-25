@@ -1,0 +1,43 @@
+Доводка M7, verify:full в чистом клоне (git clone ветки claude/resale-12-polish, npm ci), прогон 2 из 2 (коммит 893dec9), 25.10 (сессия по расписанию)
+
+verify (full): 15 stages, full log <журнал>
+ok   typecheck 1.5 s
+ok   test 28.0 s
+ok   validate:content 0.2 s
+ok   sim:balance 60.4 s
+ok   build:e2e 1.4 s
+ok   e2e [e2e: end of milestone only] 910.4 s
+ok   build 1.6 s
+ok   size 0.2 s
+ok   pack 0.3 s
+ok   check-release 0.6 s
+ok   e2e:release [e2e: end of milestone only] 5.8 s
+ok   build:youtube 1.5 s
+ok   check:youtube 0.2 s
+ok   e2e:youtube [e2e: end of milestone only] 8.6 s
+FAIL e2e:full [e2e: end of milestone only] after 615.2 s (exit 1)
+last 40 lines:
+    - Expected  - 1
+    + Received  + 4
+    - Array []
+    + Array [
+    +   "market: lot-quick-5 «Купить»: covered by toast toast-rare",
+    +   "market: lot-quick-6 «Купить»: covered by toast toast-rare",
+    + ]
+      52 |         await expectNoPageScroll(page);
+      53 |       }
+    > 54 |       expect(problems).toEqual([]);
+         |                        ^
+      55 |       expect(errors).toEqual([]);
+      56 |     });
+      57 |   });
+        at <клон>/e2e/matrix-m7.spec.ts:54:24
+    test-results/matrix-m7-360x640-M7-05-SC-f06d0-roll-no-console-errors-full-desktop/test-failed-1.png
+    Error Context: test-results/matrix-m7-360x640-M7-05-SC-f06d0-roll-no-console-errors-full-desktop/error-context.md
+    test-results/matrix-m7-360x640-M7-05-SC-f06d0-roll-no-console-errors-full-desktop/trace.zip
+  Slow test file: [desktop] › e2e/bot-m7.spec.ts (10.2m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 failed
+    [desktop] › e2e/matrix-m7.spec.ts:35:5 › 360x640 › M7-05 SCR-01 360x640: every tab, its buttons seen whole, no page scroll, no console errors @full 
+  14 passed (10.2m)
+exit 1 wall 1636 s

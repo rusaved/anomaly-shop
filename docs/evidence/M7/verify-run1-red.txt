@@ -1,11 +1,11 @@
-verify (full): 15 stages, full log /tmp/claude-0/-home-user-anomaly-shop/dd082b17-b2ab-58b8-93a4-acc6b4667df2/scratchpad/verify-full.txt
+verify (full): 15 stages, full log <журнал>
 
 == verify: typecheck
 ok   typecheck 2.6 s
 
 == verify: test
 
- RUN  v5.0.3 /tmp/claude-0/-home-user-anomaly-shop/dd082b17-b2ab-58b8-93a4-acc6b4667df2/scratchpad/clean
+ RUN  v5.0.3 <чистый клон>
 
 
  Test Files  72 passed (72)

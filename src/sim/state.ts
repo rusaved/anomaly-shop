@@ -87,6 +87,8 @@ export interface SaveData {
   flags: Record<string, boolean>;
   /** Taps on shop things for the easter eggs (docs/01b, section 2): sign, door, lamp. */
   secrets: Record<string, number>;
+  /** M6-23: the shop's name the player gave ('' — none). */
+  shopName?: string;
   /** The collector's order on the board (docs/01b, section 5.3): species, level at least, reward, game seconds left, who asks. */
   order: Order | null;
   /** «My eggs» (docs/01 §3 p. 12; M3-04): bought or given eggs waiting for an incubator, by egg id. */
@@ -300,6 +302,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null, vibrate: bool(set.vibrate, true) },
     flags: Object.fromEntries(Object.entries(rec(r.flags)).filter(([, v]) => v === true).map(([k]) => [k, true])),
     secrets: numberMap(r.secrets),
+    ...(typeof r.shopName === 'string' && r.shopName ? { shopName: r.shopName.slice(0, 40) } : {}),
     order: normalizeOrder(r.order),
     myEggs: Object.fromEntries(Object.entries(numberMap(r.myEggs)).filter(([, n]) => n >= 1).map(([k, n]) => [k, Math.floor(n)])),
     freeIn: Object.fromEntries(Object.entries(numberMap(r.freeIn)).map(([k, n]) => [k, Math.max(0, n)])),

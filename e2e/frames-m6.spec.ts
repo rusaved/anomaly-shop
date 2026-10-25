@@ -2,8 +2,9 @@ import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { collectErrors, open, seedSave } from './helpers.ts';
-import { buttonsSeenWhole, FRAMES_SAVE } from './frames-shared.ts';
+import { buttonsSeenWhole, FRAMES_SAVE, OPENERS, closeAll } from './frames-shared.ts';
 import species from '../content/species.json' with { type: 'json' };
+import stop from '../scripts/stopwords.json' with { type: 'json' };
 
 /**
  * M6 frames on the producer's phone sizes (880×405 and 815×290, landscape): the 30 species in the collection and on the shelf,
@@ -69,4 +70,34 @@ for (const size of SIZES) {
       expect(errors).toEqual([]);
     });
   });
+
+  test.describe(`${size.width}x${size.height} shop name`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+
+    test(`M6-23 the shop name in the settings: a stop-word is not taken, the name is kept after F5 @ ${size.width}x${size.height}`, async ({ page }) => {
+      const errors = collectErrors(page);
+      const tag = `${size.width}x${size.height}`;
+      const problems: string[] = [];
+      await seedSave(page, FRAMES_SAVE);
+      await open(page);
+      await OPENERS['overlay:settings']!(page);
+      const input = page.locator('[data-action=shopname-input]');
+      await input.scrollIntoViewIfNeeded();
+      // A word of the stop-list (scripts/stopwords.json, never written in the game), upper case, inside a name.
+      await input.fill(`Лавка ${stop.gambling[0]!.toUpperCase()}`);
+      await page.locator('[data-action=shopname-save]').click();
+      await expect(page.locator('[data-name-answer]')).toHaveAttribute('data-name-answer', 'blocked');
+      await input.fill('Чайная');
+      await page.locator('[data-action=shopname-save]').click();
+      await expect(page.locator('[data-name-answer]')).toHaveAttribute('data-name-answer', 'ok');
+      await frame(page, problems, 'settings-shop-name', tag);
+      await closeAll(page);
+      await page.reload();
+      await OPENERS['overlay:settings']!(page);
+      await expect(page.locator('[data-action=shopname-input]')).toHaveValue('Чайная');
+      expect(problems).toEqual([]);
+      expect(errors).toEqual([]);
+    });
+  });
 }
+

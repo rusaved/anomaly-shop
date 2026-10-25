@@ -10,6 +10,8 @@ export interface ChatterDeps {
   lines: LinesData;
   lang(): 'ru' | 'en';
   speak(who: { uid: string } | { customerId: number }, line: string): void;
+  /** M6-23: a buyer's arrival line about the shop's name ('' when the shop has none). */
+  namedLine?(): string;
   view(): GameView;
 }
 
@@ -64,7 +66,12 @@ export function createChatter(deps: ChatterDeps): Chatter {
         creature(e.uid, e.species, 'sold');
         if (!e.liked) customer(e.customerId, e.customer, 'notTheirs');
         else if (e.rarity !== 'common') customer(e.customerId, e.customer, 'rare');
-      } else if (e.type === 'customerArrived') customer(e.id, e.customer, 'arrive');
+      } else if (e.type === 'customerArrived') {
+        // M6-23: with a name, every other buyer comes in saying it.
+        const named = Math.random() < 0.5 ? (deps.namedLine?.() ?? '') : '';
+        if (named) deps.speak({ customerId: e.id }, named);
+        else customer(e.id, e.customer, 'arrive');
+      }
       else if (e.type === 'chatReply') {
         // UB-05: the buyer answered in the chat — the same person says it at the door.
         const type = deps.view().queue.find((q) => q.id === e.id)?.customer;

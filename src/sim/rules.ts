@@ -281,3 +281,31 @@ export function pickWeighted<T extends { weight: number }>(items: readonly T[], 
   for (const x of items) if ((r -= Math.max(0, x.weight)) < 0) return x;
   return items[items.length - 1];
 }
+
+/** M6-23: a word for the stop-list check — lower case, letters and digits only (Cyrillic yo as ye). */
+export function normalWord(text: string): string {
+  return text.toLowerCase().replace(/\u0451/g, '\u0435').replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+/** M6-23: FNV-1a 32 of a normalized word, 8 hex digits — the stop-list ships as these, never as words. */
+export function wordHash(word: string): string {
+  let h = 0x811c9dc5;
+  for (const ch of normalWord(word)) {
+    const code = ch.codePointAt(0)!;
+    h ^= code & 0xff;
+    h = Math.imul(h, 0x01000193) >>> 0;
+    h ^= code >>> 8;
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, '0');
+}
+
+/** M6-23: is a shop name held back — the whole name or a run of its words is on the stop-list (hashes). */
+export function nameBlocked(name: string, blocked: readonly string[]): boolean {
+  const set = new Set(blocked);
+  const words = name.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  // Every run of one to three words in a row (a stop-word of several words is hashed joined, without spaces).
+  const runs = [name];
+  for (let i = 0; i < words.length; i++) for (let n = 1; n <= 3 && i + n <= words.length; n++) runs.push(words.slice(i, i + n).join(''));
+  return runs.some((w) => normalWord(w) !== '' && set.has(wordHash(w)));
+}

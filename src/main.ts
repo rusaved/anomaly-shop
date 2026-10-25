@@ -725,6 +725,7 @@ async function boot(): Promise<void> {
         hour: new Date().getHours(),
         idleSec: now - lastTouch,
         events: recentEvents.map((e) => e.id),
+        shop: st.shopName ?? '',
       };
     },
     () => i18n.lang(),
@@ -825,7 +826,13 @@ async function boot(): Promise<void> {
   // FB-13: every button clicks, the main ones buzz on Android (settings «Вибрация»).
   const press = installPress(document, { sound: () => sfx.play('press'), vibrate: () => store.state.settings.vibrate !== false && typeof navigator.vibrate === 'function', buzzMs: feel.buzzMs });
   runtime.pause.onChange((paused) => sfx.setSuspended(paused));
-  const chatter = createChatter({ lines, lang: () => i18n.lang(), speak: (who, text) => shop.speak(who, text), view: () => play.view() });
+  const chatter = createChatter({
+    lines,
+    lang: () => i18n.lang(),
+    speak: (who, text) => shop.speak(who, text),
+    view: () => play.view(),
+    namedLine: () => (store.state.shopName ? i18n.t(`shopname.arrive${1 + Math.floor(Math.random() * 3)}`, { shop: store.state.shopName }) : ''),
+  });
   const foundNow: string[] = [];
   play.events.on((e) => {
     shop.onEvent(e);
@@ -914,7 +921,10 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t('order.done', { n: e.reward }), 'rare', 2600);
       sfx.play('rare');
     }
-    else if (e.type === 'secret') {
+    else if (e.type === 'shopNamed' && e.secret) {
+      toasts.show(i18n.t('shopname.secret'), 'rare', 2400);
+      sfx.play('rare');
+    } else if (e.type === 'secret') {
       toasts.show(i18n.t(`secret.${e.id}.${e.show}`), 'rare', 2400);
       sfx.play('rare');
     }
@@ -964,7 +974,11 @@ async function boot(): Promise<void> {
 
   });
   const pauseWindow = createPauseWindow(uiRoot, runtime.pause, links, () => settingsWindow.open());
-  const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.root.classList.remove('under'), (code) => play.redeemCode(code));
+  const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.root.classList.remove('under'), (code) => play.redeemCode(code), {
+    name: () => store.state.shopName ?? '',
+    save: (text) => play.setShopName(text),
+    maxLength: secrets.shopName.maxLength,
+  });
   hud.pauseButton.addEventListener('click', () => pauseWindow.open());
   document.addEventListener('keydown', (e) => {
     if (e.code !== 'Escape' || !controllable) return;

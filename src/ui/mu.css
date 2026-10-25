@@ -3418,6 +3418,16 @@ button.mu-card {
 .landscape #ui .overlay[data-overlay='settings'] > .card > .code-answer {
   grid-column: 1 / -1;
 }
+/* M6-23: the shop name sideways — its label, field and answer in the left column, under the language (the promo code keeps the right one). */
+.landscape #ui .overlay[data-overlay='settings'] > .card > .name-label,
+.landscape #ui .overlay[data-overlay='settings'] > .card > .name-row,
+.landscape #ui .overlay[data-overlay='settings'] > .card > [data-name-answer] {
+  grid-column: 1;
+  grid-row: auto;
+}
+.overlay[data-overlay='settings'] > .card > [data-name-answer]:empty {
+  display: none;
+}
 /* At 130 % «Русский · English» keeps one line sideways: a wider window, the label as wide as its word. */
 .landscape #ui .overlay[data-overlay='settings'] > .card {
   width: min(100%, 740px);

@@ -494,6 +494,9 @@ export const SecretsFile = v.object({
   /** M6-20: taps taps on one creature within sec seconds — a tickle: a laugh, a higher jump, coins. */
   tickle: v.object({ taps: Count, sec: v.pipe(v.number(), v.minValue(0.5)), coins: Money }),
   /** M6-20: the clock chimes at these hours of the device (0–23, on the hour): every creature gets fed taps of food. */
+  /** M6-23 (01b §5.8): the player names the shop — up to maxLength letters; secret names give the find; blocked — FNV hashes of the
+   * stop-list words (scripts/stopwords.json via scripts/stopword-hashes.mjs), so the words never ship. */
+  shopName: v.object({ maxLength: Count, secret: v.pipe(v.array(v.object({ ru: NonEmpty, en: NonEmpty })), v.minLength(1)), blocked: v.array(v.pipe(v.string(), v.regex(/^[0-9a-f]{8}$/))) }),
   chime: v.object({ hours: v.pipe(v.array(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(23))), v.minLength(1)), fed: Count }),
 });
 
@@ -520,6 +523,8 @@ export const NewsWhen = v.variant('type', [
   v.object({ type: v.literal('coins'), min: Count }),
   v.object({ type: v.literal('district'), id: Id }),
   v.object({ type: v.literal('idle'), sec: Count }),
+  // M6-23: the shop has a name ({shop} in the line).
+  v.object({ type: v.literal('named') }),
   v.object({ type: v.literal('event'), id: Id }),
 ]);
 export const NewsFile = v.object({

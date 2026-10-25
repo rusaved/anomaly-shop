@@ -1,4 +1,4 @@
-// What: the settings window: sound and the buzz on/off (switches), language (Русский / English, LOC-05), community buttons by placement, Back.
+// What: the settings window: sound and the buzz on/off (switches), language (Русский / English, LOC-05), the shop name (M6-23), promo code, community, Back.
 // Called by: src/main.ts; opened from the pause window and returns to it.
 // Keep: sound and language live in the save (settings.sound, settings.lang); the window never holds a pause reason of its own.
 
@@ -14,7 +14,22 @@ export interface SettingsWindow {
   close(): void;
 }
 
-export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n: I18n, links: CommunityLinks | null, onBack: () => void, redeem?: (code: string) => 'ok' | 'used' | 'unknown'): SettingsWindow {
+/** M6-23: the shop's name field. */
+export interface ShopNameField {
+  name(): string;
+  save(text: string): 'ok' | 'empty' | 'long' | 'blocked';
+  maxLength: number;
+}
+
+export function createSettingsWindow(
+  parent: HTMLElement,
+  store: GameStore,
+  i18n: I18n,
+  links: CommunityLinks | null,
+  onBack: () => void,
+  redeem?: (code: string) => 'ok' | 'used' | 'unknown',
+  shopName?: ShopNameField,
+): SettingsWindow {
   const overlay = createOverlay(parent, 'settings', () => win.close(), { over: ['pause'], dismiss: () => overlay.hide() });
   const title = document.createElement('h2');
   title.dataset.i18n = 'settings.title';
@@ -93,15 +108,50 @@ export function createSettingsWindow(parent: HTMLElement, store: GameStore, i18n
   });
   codeRow.append(codeInput, codeApply);
 
+  // M6-23 (01b §5.8): the shop's name — a field, «Save» and a soft answer; the name lives in the save.
+  const nameLabel = document.createElement('div');
+  nameLabel.className = 'row name-label';
+  const nameText = document.createElement('span');
+  nameText.dataset.i18n = 'shopname.label';
+  nameLabel.append(nameText);
+  const nameRow = document.createElement('div');
+  nameRow.className = 'row code-row name-row';
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'code-input';
+  nameInput.dataset.action = 'shopname-input';
+  nameInput.maxLength = (shopName?.maxLength ?? 20) + 10;
+  nameInput.autocomplete = 'off';
+  nameInput.spellcheck = false;
+  nameInput.dataset.i18n = 'shopname.placeholder';
+  nameInput.dataset.i18nAttr = 'placeholder';
+  const nameSave = button('shopname-save', 'shopname.save');
+  const nameAnswer = document.createElement('p');
+  nameAnswer.className = 'code-answer';
+  nameAnswer.dataset.nameAnswer = '';
+  nameSave.addEventListener('click', () => {
+    if (!shopName) return;
+    const r = shopName.save(nameInput.value);
+    nameAnswer.textContent = i18n.t(`shopname.${r}`, { n: shopName.maxLength });
+    nameAnswer.dataset.nameAnswer = r;
+  });
+  nameRow.append(nameInput, nameSave);
+
   // MU-09: no second main button — «Назад» is dark, the ✕ does the same.
   const back = button('back', 'settings.back');
   overlay.card.append(title, soundRow, vibRow, langRow);
+  if (shopName) overlay.card.append(nameLabel, nameRow, nameAnswer);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
 
   const win: SettingsWindow = {
     overlay,
     open() {
+      if (shopName) {
+        nameInput.value = shopName.name();
+        nameAnswer.textContent = '';
+        nameAnswer.dataset.nameAnswer = '';
+      }
       overlay.show();
     },
     close() {

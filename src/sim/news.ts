@@ -18,6 +18,8 @@ export interface NewsContext {
   idleSec: number;
   /** Events seen within the last minute. */
   events: string[];
+  /** M6-23: the shop's name ('' — none). */
+  shop?: string;
 }
 
 export function newsFits(w: NewsWhenData, c: NewsContext): boolean {
@@ -40,6 +42,8 @@ export function newsFits(w: NewsWhenData, c: NewsContext): boolean {
       return c.idleSec >= w.sec;
     case 'event':
       return c.events.includes(w.id);
+    case 'named':
+      return Boolean(c.shop);
   }
 }
 

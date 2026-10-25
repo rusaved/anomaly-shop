@@ -34,7 +34,11 @@ export function createNewsTicker(titleRow: HTMLElement, data: NewsData, context:
   let custom: (() => string) | null = null;
   const ANNOUNCE = -2;
   // What has already been news: the events, the round numbers of deals, the species seen on the showcase.
-  const known = { events: new Set<string>(), round: 0, species: new Set<string>(), primed: false };
+  const known = { events: new Set<string>(), round: 0, species: new Set<string>(), shop: '', primed: false };
+  /** M6-23: the shop's name for {shop} in a line. */
+  let shopName = '';
+  /** M6-23: the shop was just named — the next line is about the name. */
+  let renamed = false;
   const ROUND = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
   /** A reason to speak (M3-18): something new since the last look; the first look only learns what is there. */
   function reason(c: NewsContext): boolean {
@@ -51,6 +55,13 @@ export function createNewsTicker(titleRow: HTMLElement, data: NewsData, context:
         known.species.add(s);
         news = true;
       }
+    // M6-23: a new name of the shop is news too.
+    shopName = c.shop ?? '';
+    if (shopName !== known.shop) {
+      known.shop = shopName;
+      renamed = Boolean(shopName) && known.primed;
+      news = true;
+    }
     if (!known.primed) {
       known.primed = true;
       return false;
@@ -58,7 +69,9 @@ export function createNewsTicker(titleRow: HTMLElement, data: NewsData, context:
     return news;
   }
   function show(c: NewsContext): void {
-    const i = pickNews(data, c, recent, Math.random(), true);
+    const named = renamed ? data.lines.flatMap((l, k) => (l.when.type === 'named' ? [k] : [])) : [];
+    renamed = false;
+    const i = named.length ? named[Math.floor(Math.random() * named.length)]! : pickNews(data, c, recent, Math.random(), true);
     if (i < 0) return;
     current = i;
     recent.push(current);
@@ -69,7 +82,7 @@ export function createNewsTicker(titleRow: HTMLElement, data: NewsData, context:
   }
 
   function paint(): void {
-    const line = current === ANNOUNCE ? custom?.() : data.lines[current]?.[lang()];
+    const line = current === ANNOUNCE ? custom?.() : data.lines[current]?.[lang()].replace('{shop}', shopName);
     if (!line) return;
     text.textContent = line;
     text.classList.remove('news-in', 'news-scroll');

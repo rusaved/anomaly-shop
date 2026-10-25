@@ -470,5 +470,16 @@
   "toast.chime": "The clock struck! A treat for every pet",
   "event.weather": "Anomalous weather! The shelf shines, prices up",
   "event.mouse": "A mouse! Tap it before it runs",
-  "event.parade": "An egg parade at the door! Catch one"
+  "event.parade": "An egg parade at the door! Catch one",
+  "shopname.label": "Shop name",
+  "shopname.placeholder": "For example, «Tea Corner»",
+  "shopname.save": "Save",
+  "shopname.ok": "Done! The town already knows",
+  "shopname.empty": "Type at least one letter",
+  "shopname.long": "A bit shorter, up to {n} characters",
+  "shopname.blocked": "That name won’t do, try another",
+  "shopname.secret": "A secret name! The shop shines",
+  "shopname.arrive1": "They say «{shop}» has the best pets",
+  "shopname.arrive2": "So this is the famous «{shop}»!",
+  "shopname.arrive3": "My neighbour told me about «{shop}»"
 }

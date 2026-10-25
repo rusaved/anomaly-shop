@@ -8,7 +8,7 @@ import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
 import { emptyIncubator, type Chat, type Creature, type Incubator, type Lot, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, cityMult, coins, dayHash, marketMood, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchMult, hatchNeedSec, hatchShare, incomeOf, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, cityMult, coins, dayHash, marketMood, nameBlocked, normalWord, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchMult, hatchNeedSec, hatchShare, incomeOf, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -145,6 +145,8 @@ export type GameEvent =
   | { type: 'tickle'; uid: string; coins: number }
   /** M6-20: the clock struck noon or midnight (the device's time): every creature got fed. */
   | { type: 'chime'; hour: number; fed: number }
+  /** M6-23: the shop got its name (secret — one of the secret names). */
+  | { type: 'shopNamed'; name: string; secret: boolean }
   | { type: 'eventStarted'; id: string; kind: EventKind; uid?: string | undefined }
   | { type: 'eventEnded'; id: string; kind: EventKind; outcome: 'done' | 'missed' }
   | { type: 'eventCoin'; id: number; value: number }
@@ -414,6 +416,8 @@ export interface Game {
   merchantBuy(choice: 'discount' | 'mystery'): boolean;
   /** A tap on a shop thing (sign, door, lamp): a reply always, a secret on the counter (docs/01b, section 2). */
   tapThing(target: SecretTarget): void;
+  /** M6-23: the player names the shop: ok, or why not (empty, too long, a stop-word); a secret name marks its find. */
+  setShopName(raw: string): 'ok' | 'empty' | 'long' | 'blocked';
   /** M6-20: the clock strikes (the ui calls it on the hour of secrets.json chime, once a strike): food for every creature. */
   chime(hour: number): boolean;
   /** The nearest goal not reached yet: the one with the largest share done (shop positions, the next seller level, deal goals; rebirth when all is bought). */
@@ -2102,6 +2106,22 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         });
       }
       commit();
+    },
+    setShopName(raw) {
+      const rule = content.secrets.shopName;
+      const name = raw.replace(/\s+/g, ' ').trim();
+      if (!name) return 'empty';
+      if ([...name].length > rule.maxLength) return 'long';
+      if (nameBlocked(name, rule.blocked)) return 'blocked';
+      const st = s();
+      st.shopName = name;
+      const key = normalWord(name);
+      const secret = rule.secret.some((x) => normalWord(x.ru) === key || normalWord(x.en) === key);
+      if (secret) st.flags.seen_secret_name = true;
+      commit({ flush: true });
+      emit({ type: 'shopNamed', name, secret });
+      emit({ type: 'change' });
+      return 'ok';
     },
     chime(hour) {
       const ch = content.secrets.chime;

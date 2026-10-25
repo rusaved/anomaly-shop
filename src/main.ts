@@ -1139,6 +1139,8 @@ async function boot(): Promise<void> {
     adsMod.syncBanner();
     if (!runtime.pause.isPaused()) platform.gameplayStart();
     track('gameReady');
+    // M7-00: the pictures of hidden screens, right after the first frame.
+    setTimeout(() => portraits.release(document), 0);
   });
 }
 

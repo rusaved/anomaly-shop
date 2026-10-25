@@ -21,7 +21,9 @@ describe('balance model', () => {
 
   it('feeding pays (Q-027 B, live tempo): the bot that taps its creatures between deals earns more than the one that never feeds', () => {
     const rusher = BOTS.find((b) => b.name === 'rusher')!;
-    const sum = (bot: typeof rusher) => [1, 2, 3, 4, 5, 6].reduce((s, seed) => s + playOnce(bot, seed).coins5min, 0);
+    // M6-02: 24 seeds like sim:balance — with 30 species six runs are a coin toss (the gap is 10–25 % on 24–40 seeds).
+    const seeds = Array.from({ length: 24 }, (_, i) => i + 1);
+    const sum = (bot: typeof rusher) => seeds.reduce((s, seed) => s + playOnce(bot, seed).coins5min, 0);
     expect(sum(rusher)).toBeGreaterThan(sum({ ...rusher, name: 'nofeed', noFeed: true }));
-  });
+  }, 60_000);
 });

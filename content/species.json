@@ -1,6 +1,6 @@
 {
   "$schema": "species.schema.json",
-  "note": "Виды из docs/01a-content.md §3, шесть редкостей по Q-022 (по два вида). Цена за уровень: price × growth^(level-1) × valueMult яйца. Сытость: max(tapsPerLevelBase + floor(level/2), ceil(base × tapGrowth^(level-1))). shelf — рост цены на витрине (docs/01 §3.5): +growthPerMin за минуту, не больше maxBonus. crystalsPerSale — кристаллы за продажу по редкости.",
+  "note": "Виды из docs/01a-content.md §3, шесть редкостей по Q-022 (по два вида; M6-02 — по пять, 30 видов, средняя цена редкости прежняя). Цена за уровень: price × growth^(level-1) × valueMult яйца. Сытость: max(tapsPerLevelBase + floor(level/2), ceil(base × tapGrowth^(level-1))). shelf — рост цены на витрине (docs/01 §3.5): +growthPerMin за минуту, не больше maxBonus. crystalsPerSale — кристаллы за продажу по редкости.",
   "tapsPerLevelBase": 5,
   "tapGrowth": 1.3,
   "shelf": {"growthPerMin": 0.05, "maxBonus": 0.5},
@@ -17,15 +17,33 @@
   "species": [
     {"id": "kettle", "name": {"ru": "Живой чайник", "en": "Living Kettle"}, "rarity": "common", "basePrice": 12, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Пш-ш, налей воды!", "en": "Psss, pour me some water!"}},
     {"id": "sockfish", "name": {"ru": "Носок-хищник", "en": "Sock Shark"}, "rarity": "common", "basePrice": 14, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Ням, пятка", "en": "Yum, a heel"}},
+    {"id": "mitten_seal", "name": {"ru": "Варежка-тюлень", "en": "Mitten Seal"}, "rarity": "common", "basePrice": 13, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Тёплый, как зимой у печки", "en": "Warm as a winter stove"}},
+    {"id": "button_bug", "name": {"ru": "Пуговица-жучок", "en": "Button Bug"}, "rarity": "common", "basePrice": 11, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Застегну любую скуку", "en": "I button up boredom"}},
+    {"id": "clip_snake", "name": {"ru": "Скрепка-змейка", "en": "Paperclip Snake"}, "rarity": "common", "basePrice": 15, "growth": 1.25, "maxLevel": 10, "line": {"ru": "Скреплю что угодно", "en": "I hold anything together"}},
     {"id": "pillow", "name": {"ru": "Подушка-сплюшка", "en": "Sleepy Pillow"}, "rarity": "good", "basePrice": 30, "growth": 1.28, "maxLevel": 11, "line": {"ru": "Ещё пять минуточек", "en": "Five more minutes"}},
     {"id": "cloudcat", "name": {"ru": "Кот-облако", "en": "Cloud Cat"}, "rarity": "good", "basePrice": 40, "growth": 1.28, "maxLevel": 11, "line": {"ru": "Мяу-дождик", "en": "Meow-drizzle"}},
+    {"id": "slipper_pup", "name": {"ru": "Тапок-щенок", "en": "Slipper Pup"}, "rarity": "good", "basePrice": 33, "growth": 1.28, "maxLevel": 11, "line": {"ru": "Принесу сам себя", "en": "I fetch myself"}},
+    {"id": "yarn_lamb", "name": {"ru": "Клубок-барашек", "en": "Yarn Lamb"}, "rarity": "good", "basePrice": 35, "growth": 1.28, "maxLevel": 11, "line": {"ru": "Распутаю любое утро", "en": "I untangle mornings"}},
+    {"id": "eraser_hamster", "name": {"ru": "Ластик-хомяк", "en": "Eraser Hamster"}, "rarity": "good", "basePrice": 37, "growth": 1.28, "maxLevel": 11, "line": {"ru": "Сотру любую ошибку", "en": "I erase any mistake"}},
     {"id": "lampbug", "name": {"ru": "Лампа-светляк", "en": "Lamp Bug"}, "rarity": "valuable", "basePrice": 70, "growth": 1.3, "maxLevel": 12, "line": {"ru": "Щёлк", "en": "Click"}},
     {"id": "cactus", "name": {"ru": "Кактус-обнимашка", "en": "Hug Cactus"}, "rarity": "valuable", "basePrice": 80, "growth": 1.3, "maxLevel": 12, "line": {"ru": "Обниму, но аккуратно", "en": "Hugs, but gently"}},
+    {"id": "alarm_owl", "name": {"ru": "Будильник-сова", "en": "Alarm Owl"}, "rarity": "valuable", "basePrice": 75, "growth": 1.3, "maxLevel": 12, "line": {"ru": "Бужу только по-доброму", "en": "I wake you kindly"}},
+    {"id": "bubble_fish", "name": {"ru": "Пузырь-рыбка", "en": "Bubble Fish"}, "rarity": "valuable", "basePrice": 72, "growth": 1.3, "maxLevel": 12, "line": {"ru": "Плаваю прямо в воздухе", "en": "I swim in the air"}},
+    {"id": "mug_cub", "name": {"ru": "Кружка-медвежонок", "en": "Mug Cub"}, "rarity": "valuable", "basePrice": 78, "growth": 1.3, "maxLevel": 12, "line": {"ru": "Налей какао, обниму", "en": "Pour cocoa, get a hug"}},
     {"id": "jellytoast", "name": {"ru": "Желе-тост", "en": "Jelly Toast"}, "rarity": "premium", "basePrice": 300, "growth": 1.35, "maxLevel": 15, "line": {"ru": "Хрум по-мягкому", "en": "Soft crunch"}},
     {"id": "mirrorfrog", "name": {"ru": "Зеркальная лягушка", "en": "Mirror Frog"}, "rarity": "premium", "basePrice": 350, "growth": 1.35, "maxLevel": 15, "line": {"ru": "Ква. И ква в ответ", "en": "Ribbit. And ribbit back"}},
+    {"id": "rainbow_snail", "name": {"ru": "Радуга-улитка", "en": "Rainbow Snail"}, "rarity": "premium", "basePrice": 310, "growth": 1.35, "maxLevel": 15, "line": {"ru": "Медленно, зато красиво", "en": "Slow, but so pretty"}},
+    {"id": "piano_dog", "name": {"ru": "Пианино-такса", "en": "Piano Dachshund"}, "rarity": "premium", "basePrice": 340, "growth": 1.35, "maxLevel": 15, "line": {"ru": "Гав в до мажоре", "en": "Woof in C major"}},
+    {"id": "book_moth", "name": {"ru": "Книга-бабочка", "en": "Book Butterfly"}, "rarity": "premium", "basePrice": 325, "growth": 1.35, "maxLevel": 15, "line": {"ru": "Порхаю по страницам", "en": "I flutter through pages"}},
     {"id": "shroom", "name": {"ru": "Грибочек-зонтик", "en": "Umbrella Shroom"}, "rarity": "vip", "basePrice": 700, "growth": 1.38, "maxLevel": 18, "line": {"ru": "Дождик? Я готов", "en": "Rain? I am ready"}},
     {"id": "teacup_dragon", "name": {"ru": "Чашка-дракон", "en": "Teacup Dragon"}, "rarity": "vip", "basePrice": 900, "growth": 1.38, "maxLevel": 18, "line": {"ru": "Чай горячий. Очень", "en": "The tea is hot. Very"}},
+    {"id": "comet_fox", "name": {"ru": "Комета-лисёнок", "en": "Comet Fox"}, "rarity": "vip", "basePrice": 800, "growth": 1.38, "maxLevel": 18, "line": {"ru": "Хвост светится до утра", "en": "My tail glows till dawn"}},
+    {"id": "lantern_jelly", "name": {"ru": "Фонарь-медуза", "en": "Lantern Jelly"}, "rarity": "vip", "basePrice": 750, "growth": 1.38, "maxLevel": 18, "line": {"ru": "Свечу и плаваю", "en": "I glow and float"}},
+    {"id": "globe_turtle", "name": {"ru": "Глобус-черепаха", "en": "Globe Turtle"}, "rarity": "vip", "basePrice": 850, "growth": 1.38, "maxLevel": 18, "line": {"ru": "Весь мир на спине", "en": "The world on my back"}},
     {"id": "sockfish_gold", "name": {"ru": "Золотой носок", "en": "Golden Sock"}, "rarity": "exclusive", "basePrice": 1800, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Блеск", "en": "Shine"}},
-    {"id": "moon_donut", "name": {"ru": "Луна-пончик", "en": "Moon Donut"}, "rarity": "exclusive", "basePrice": 2000, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Сладко свечусь", "en": "Sweetly glowing"}}
+    {"id": "moon_donut", "name": {"ru": "Луна-пончик", "en": "Moon Donut"}, "rarity": "exclusive", "basePrice": 2000, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Сладко свечусь", "en": "Sweetly glowing"}},
+    {"id": "sun_bun", "name": {"ru": "Солнце-булочка", "en": "Sun Bun"}, "rarity": "exclusive", "basePrice": 1850, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Тёплая, как утро", "en": "Warm as morning"}},
+    {"id": "crystal_deer", "name": {"ru": "Хрустальный олень", "en": "Crystal Deer"}, "rarity": "exclusive", "basePrice": 1950, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Звеню рогами тихо", "en": "My antlers chime softly"}},
+    {"id": "clock_phoenix", "name": {"ru": "Часы-феникс", "en": "Clock Phoenix"}, "rarity": "exclusive", "basePrice": 1900, "growth": 1.4, "maxLevel": 20, "line": {"ru": "Каждый час как новый", "en": "Every hour feels new"}}
   ]
 }

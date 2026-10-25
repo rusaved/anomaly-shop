@@ -11,8 +11,8 @@ const content = loadGameContent();
 const style = v.parse(StyleFile, JSON.parse(readFileSync(resolve(__dirname, '../content/style.json'), 'utf8')));
 
 describe('M1-03 creatures', () => {
-  it('12 species (8 of M1, 4 of M2-06), each with a look the scene can draw; no two look alike (shape + body color)', () => {
-    expect(content.species.species).toHaveLength(12);
+  it('30 species (8 of M1, 4 of M2-06, 18 of M6-02), each with a look the scene can draw; no two look alike (shape + body color)', () => {
+    expect(content.species.species).toHaveLength(30);
     const keys = content.species.species.map((s) => {
       const look = style.creatures[s.id];
       expect(look, s.id).toBeDefined();
@@ -22,7 +22,7 @@ describe('M1-03 creatures', () => {
     expect(new Set(keys).size).toBe(keys.length);
     // Shapes differ within a rarity, so neighbours on the showcase never read as one creature.
     const shapes = content.species.species.map((s) => style.creatures[s.id]!.shape);
-    expect(new Set(shapes).size).toBe(12);
+    expect(new Set(shapes).size).toBe(30);
   });
 
   it('price = basePrice × growth^(level − 1), whole coins, capped at maxLevel', () => {

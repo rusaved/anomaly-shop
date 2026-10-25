@@ -301,7 +301,7 @@ export const STYLE_COLORS = [
   'rarityCommon', 'rarityRare', 'rarityEpic', 'rarityLegendary', 'blush', 'eyeWhite',
 ] as const;
 /** Creature shapes the scene can draw (src/scene/art.ts); species pick one with two colors in style.json. */
-export const CREATURE_SHAPES = ['kettle', 'sock', 'cloudcat', 'lampbug', 'toast', 'frog', 'teacup', 'goldsock', 'pillow', 'cactus', 'shroom', 'donut'] as const;
+export const CREATURE_SHAPES = ['kettle', 'sock', 'cloudcat', 'lampbug', 'toast', 'frog', 'teacup', 'goldsock', 'pillow', 'cactus', 'shroom', 'donut', 'mitten', 'button', 'clip', 'slipper', 'yarn', 'eraser', 'owl', 'bubblefish', 'mug', 'snail', 'piano', 'book', 'fox', 'jelly', 'turtle', 'bun', 'deer', 'phoenix'] as const;
 export const CreatureLook = v.object({ shape: v.picklist(CREATURE_SHAPES), body: Color, accent: Color });
 export const StyleFile = v.object({
   art: Id,

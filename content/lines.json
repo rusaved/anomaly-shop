@@ -329,6 +329,492 @@
         {"ru": "Пока! Сладкой ночи всем!", "en": "Bye! Sweet night, everyone!"},
         {"ru": "Улетаю на новое небо!", "en": "Off to a new sky!"}
       ]
+    },
+    "mitten_seal": {
+      "tap": [
+        {"ru": "Хлоп-хлоп ластами!", "en": "Flap flap, thank you!"},
+        {"ru": "Вкусно и уютно!", "en": "Tasty and cozy!"},
+        {"ru": "Шерстинки встали дыбом от радости", "en": "My wool is happy!"}
+      ],
+      "hungry": [
+        {"ru": "Ластики зовут обед", "en": "My flippers want lunch"},
+        {"ru": "Тюлень скучает по рыбке", "en": "This seal misses fish"},
+        {"ru": "Эй, тут варежка голодная", "en": "Hey, a hungry mitten here"}
+      ],
+      "levelUp": [
+        {"ru": "Стал пушистее!", "en": "Fluffier now!"},
+        {"ru": "Петельки крепнут!", "en": "My stitches got stronger!"},
+        {"ru": "Хлоп! Я подрос", "en": "Flap! I grew"}
+      ],
+      "max": [
+        {"ru": "Самая тёплая варежка района", "en": "Warmest mitten in town"},
+        {"ru": "Связан на совесть!", "en": "Knitted to perfection!"},
+        {"ru": "Пушистее не бывает", "en": "Peak fluff reached"}
+      ],
+      "sold": [
+        {"ru": "Поеду греть ладошки!", "en": "Off to warm some hands!"},
+        {"ru": "Пока-пока, хлоп-хлоп!", "en": "Bye bye, flap flap!"},
+        {"ru": "Новый дом, новая зима", "en": "New home, new winter"}
+      ]
+    },
+    "button_bug": {
+      "tap": [
+        {"ru": "Щёлк-щёлк, спасибо!", "en": "Click click, thanks!"},
+        {"ru": "Ножки пляшут!", "en": "My legs are dancing!"},
+        {"ru": "Ещё крошечку!", "en": "One more crumb!"}
+      ],
+      "hungry": [
+        {"ru": "Дырочки урчат", "en": "My holes are rumbling"},
+        {"ru": "Жучок ждёт перекус", "en": "Bug wants a snack"},
+        {"ru": "Пс, я тут, на прилавке", "en": "Psst, down here!"}
+      ],
+      "levelUp": [
+        {"ru": "Блестящая пуговка!", "en": "Shiny button now!"},
+        {"ru": "Стал на дырочку круче!", "en": "One hole cooler!"},
+        {"ru": "Застёгиваюсь крепче!", "en": "Buttoned up tighter!"}
+      ],
+      "max": [
+        {"ru": "Пуговица высшей пробы", "en": "Top quality button"},
+        {"ru": "На мне держится всё", "en": "I hold it all together"},
+        {"ru": "Самый круглый жучок", "en": "The roundest bug ever"}
+      ],
+      "sold": [
+        {"ru": "Пришьюсь к новому дому", "en": "Sewing into a new home"},
+        {"ru": "Щёлк, и я в пути!", "en": "Click, and off I go!"},
+        {"ru": "Застегну новую курточку", "en": "Off to a new jacket"}
+      ]
+    },
+    "clip_snake": {
+      "tap": [
+        {"ru": "Ш-ш-шикарно!", "en": "Sss-super!"},
+        {"ru": "Изгибаюсь от радости!", "en": "Bending with joy!"},
+        {"ru": "Ещё виточек, пожалуйста", "en": "One more loop, please"}
+      ],
+      "hungry": [
+        {"ru": "Ш-ш, бумажек нет?", "en": "Sss, any paper?"},
+        {"ru": "Змейка ждёт обед", "en": "Snake waits for lunch"},
+        {"ru": "Скрепочка заскучала", "en": "This clip is bored"}
+      ],
+      "levelUp": [
+        {"ru": "Ещё один виток!", "en": "One more loop!"},
+        {"ru": "Стала гибче!", "en": "More bendy now!"},
+        {"ru": "Ш-ш, я выросла", "en": "Sss, I grew"}
+      ],
+      "max": [
+        {"ru": "Скрепляю целые папки!", "en": "I hold whole folders!"},
+        {"ru": "Самая длинная змейка", "en": "Longest snake around"},
+        {"ru": "Блеск и порядок", "en": "Shiny and tidy"}
+      ],
+      "sold": [
+        {"ru": "Скреплю новую дружбу!", "en": "Off to hold a new friendship"},
+        {"ru": "Ш-ш, до встречи!", "en": "Sss, see you!"},
+        {"ru": "В новую папочку!", "en": "Into a new folder!"}
+      ]
+    },
+    "slipper_pup": {
+      "tap": [
+        {"ru": "Гав! Вкусняшка!", "en": "Woof! A treat!"},
+        {"ru": "Виляю подошвой!", "en": "Wagging my sole!"},
+        {"ru": "Ещё, ещё, ещё!", "en": "More, more, more!"}
+      ],
+      "hungry": [
+        {"ru": "Скуль-скуль, где обед?", "en": "Whine whine, lunch?"},
+        {"ru": "Тапочек ждёт у двери", "en": "Waiting by the door"},
+        {"ru": "Гав? Миска пустая", "en": "Woof? Empty bowl"}
+      ],
+      "levelUp": [
+        {"ru": "Стал мягче!", "en": "Softer now!"},
+        {"ru": "Ушки подросли!", "en": "My ears grew!"},
+        {"ru": "Гав! Новый размер", "en": "Woof! New size"}
+      ],
+      "max": [
+        {"ru": "Самый уютный тапок!", "en": "Coziest slipper ever!"},
+        {"ru": "Лучший друг ноги", "en": "A foot best friend"},
+        {"ru": "Пушистый чемпион!", "en": "Fluffy champion!"}
+      ],
+      "sold": [
+        {"ru": "Бегу к новым пяткам!", "en": "Off to new feet!"},
+        {"ru": "Гав-гав, спасибо!", "en": "Woof woof, thank you!"},
+        {"ru": "Буду ждать у кровати", "en": "I will wait by the bed"}
+      ]
+    },
+    "yarn_lamb": {
+      "tap": [
+        {"ru": "Бе-е, как приятно!", "en": "Baa, how nice!"},
+        {"ru": "Кручусь от счастья!", "en": "Spinning with joy!"},
+        {"ru": "Ниточка звенит!", "en": "My thread sings!"}
+      ],
+      "hungry": [
+        {"ru": "Бе-е? А травка?", "en": "Baa? Any grass?"},
+        {"ru": "Клубочек просит перекус", "en": "Yarn ball wants a snack"},
+        {"ru": "Ниточка поникла", "en": "My thread droops"}
+      ],
+      "levelUp": [
+        {"ru": "Стал круглее!", "en": "Rounder now!"},
+        {"ru": "Бе-е! Больше шерсти!", "en": "Baa! More wool!"},
+        {"ru": "Завитки подросли", "en": "Curls got bigger"}
+      ],
+      "max": [
+        {"ru": "Шарф на весь город!", "en": "A scarf for the whole town!"},
+        {"ru": "Самый пушистый клубок", "en": "Fluffiest yarn ball"},
+        {"ru": "Бе-е-есподобно!", "en": "Baa-rilliant!"}
+      ],
+      "sold": [
+        {"ru": "Свяжу вам уют!", "en": "I will knit you cozy!"},
+        {"ru": "Бе-е, пока!", "en": "Baa, bye!"},
+        {"ru": "Покатился в новый дом", "en": "Rolling to a new home"}
+      ]
+    },
+    "eraser_hamster": {
+      "tap": [
+        {"ru": "Щёчки полные!", "en": "Cheeks are full!"},
+        {"ru": "Хрум-хрум, спасибо!", "en": "Crunch crunch, thanks!"},
+        {"ru": "Пи! Вкусно!", "en": "Squeak! Yummy!"}
+      ],
+      "hungry": [
+        {"ru": "Щёчки пустые, ой", "en": "Empty cheeks, oops"},
+        {"ru": "Пи-пи, где зёрнышки?", "en": "Squeak, any seeds?"},
+        {"ru": "Хомяк смотрит выразительно", "en": "Hamster stares politely"}
+      ],
+      "levelUp": [
+        {"ru": "Стал мягче стирать!", "en": "Erasing softer now!"},
+        {"ru": "Щёчки шире!", "en": "Bigger cheeks!"},
+        {"ru": "Пи! Подрос", "en": "Squeak! I grew"}
+      ],
+      "max": [
+        {"ru": "Стираю даже грусть", "en": "I erase even sadness"},
+        {"ru": "Ластик мечты!", "en": "Dream eraser!"},
+        {"ru": "Самые круглые щёки", "en": "Roundest cheeks ever"}
+      ],
+      "sold": [
+        {"ru": "В новый пенал!", "en": "Off to a new pencil case!"},
+        {"ru": "Пи-пи, пока!", "en": "Squeak, bye!"},
+        {"ru": "Сотру скуку у вас дома", "en": "I will erase your boredom"}
+      ]
+    },
+    "alarm_owl": {
+      "tap": [
+        {"ru": "Ух-ух, спасибо!", "en": "Hoo hoo, thanks!"},
+        {"ru": "Динь! Вкусно!", "en": "Ding! Tasty!"},
+        {"ru": "Звеню от радости!", "en": "Ringing with joy!"}
+      ],
+      "hungry": [
+        {"ru": "Ух? Время обеда", "en": "Hoo? Lunch time"},
+        {"ru": "Тик-так, я голодная", "en": "Tick tock, hungry"},
+        {"ru": "Звоночек просит перекус", "en": "My bell wants a snack"}
+      ],
+      "levelUp": [
+        {"ru": "Звеню громче!", "en": "Ringing louder!"},
+        {"ru": "Ух! Стрелки подросли", "en": "Hoo! Bigger hands"},
+        {"ru": "Точная как никогда", "en": "More precise than ever"}
+      ],
+      "max": [
+        {"ru": "Самая мудрая минута", "en": "The wisest minute"},
+        {"ru": "Бужу целый район!", "en": "I wake the whole town!"},
+        {"ru": "Ух-ух, я идеальна", "en": "Hoo hoo, perfect"}
+      ],
+      "sold": [
+        {"ru": "Буду будить вас ласково", "en": "I will wake you gently"},
+        {"ru": "Ух, до встречи!", "en": "Hoo, see you!"},
+        {"ru": "Динь-динь, в путь!", "en": "Ding ding, off I go!"}
+      ]
+    },
+    "bubble_fish": {
+      "tap": [
+        {"ru": "Буль! Спасибо!", "en": "Blub! Thanks!"},
+        {"ru": "Пузырики радуются!", "en": "Bubbles are happy!"},
+        {"ru": "Ещё крошечку корма", "en": "One more flake"}
+      ],
+      "hungry": [
+        {"ru": "Буль-буль, корм?", "en": "Blub blub, food?"},
+        {"ru": "Рыбка ждёт у стекла", "en": "Fish waits at the glass"},
+        {"ru": "Пузырь сдувается от голода", "en": "Bubble sags, hungry"}
+      ],
+      "levelUp": [
+        {"ru": "Пузырь больше!", "en": "Bigger bubble!"},
+        {"ru": "Плавники звенят!", "en": "Fins are tingling!"},
+        {"ru": "Буль! Подросла", "en": "Blub! I grew"}
+      ],
+      "max": [
+        {"ru": "Самый круглый пузырь!", "en": "The roundest bubble!"},
+        {"ru": "Рыбка-чемпион!", "en": "Champion fish!"},
+        {"ru": "Сияю как жемчуг", "en": "Shining like a pearl"}
+      ],
+      "sold": [
+        {"ru": "Поплыву в новый дом", "en": "Swimming to a new home"},
+        {"ru": "Буль-буль, пока!", "en": "Blub blub, bye!"},
+        {"ru": "Лопну от счастья? Нет!", "en": "Pop with joy? Nope!"}
+      ]
+    },
+    "mug_cub": {
+      "tap": [
+        {"ru": "Ур-р, вкусно!", "en": "Grr, yummy!"},
+        {"ru": "Какао греет!", "en": "Cocoa warms me!"},
+        {"ru": "Медвежья благодарность!", "en": "A bear-sized thank you!"}
+      ],
+      "hungry": [
+        {"ru": "Кружка пустая, ой", "en": "Empty mug, oops"},
+        {"ru": "Мишка ждёт какао", "en": "Cub waits for cocoa"},
+        {"ru": "Ур-р? Перекус?", "en": "Grr? Snack?"}
+      ],
+      "levelUp": [
+        {"ru": "Вмещаю больше какао!", "en": "More cocoa fits now!"},
+        {"ru": "Ушки теплее!", "en": "Warmer ears!"},
+        {"ru": "Ур-р! Подрос", "en": "Grr! I grew"}
+      ],
+      "max": [
+        {"ru": "Самая уютная кружка", "en": "Coziest mug ever"},
+        {"ru": "Медведь всех кружек", "en": "King of all mugs"},
+        {"ru": "Тёплый до донышка", "en": "Warm to the bottom"}
+      ],
+      "sold": [
+        {"ru": "Буду греть вам руки", "en": "I will warm your hands"},
+        {"ru": "Ур-р, пока!", "en": "Grr, bye!"},
+        {"ru": "Поехал пить какао", "en": "Off for cocoa"}
+      ]
+    },
+    "rainbow_snail": {
+      "tap": [
+        {"ru": "Ой, приятно!", "en": "Oh, how nice!"},
+        {"ru": "Раковина засияла!", "en": "My shell glows!"},
+        {"ru": "Спасибо, не спешу", "en": "Thanks, no rush"}
+      ],
+      "hungry": [
+        {"ru": "Листочек бы, а?", "en": "A leaf, maybe?"},
+        {"ru": "Улитка ждёт, терпеливо", "en": "Snail waits patiently"},
+        {"ru": "Радуга бледнеет", "en": "My rainbow fades"}
+      ],
+      "levelUp": [
+        {"ru": "Ещё одна полоска!", "en": "One more stripe!"},
+        {"ru": "Раковина ярче!", "en": "Brighter shell!"},
+        {"ru": "Подросла, не спеша", "en": "Grew, slowly"}
+      ],
+      "max": [
+        {"ru": "Целая радуга на спине", "en": "A full rainbow on my back"},
+        {"ru": "Самая яркая улитка", "en": "Brightest snail ever"},
+        {"ru": "Красота без спешки", "en": "Beauty takes time"}
+      ],
+      "sold": [
+        {"ru": "Ползу в новый дом", "en": "Crawling to a new home"},
+        {"ru": "Пока, до радуги!", "en": "Bye, see you at the rainbow!"},
+        {"ru": "Доберусь к вечеру", "en": "I will be there by evening"}
+      ]
+    },
+    "piano_dog": {
+      "tap": [
+        {"ru": "Тинь-гав!", "en": "Ting-woof!"},
+        {"ru": "Клавиши поют!", "en": "My keys sing!"},
+        {"ru": "Ещё нотку!", "en": "One more note!"}
+      ],
+      "hungry": [
+        {"ru": "Гав в миноре", "en": "Woof in minor"},
+        {"ru": "Такса ждёт перекус", "en": "Dachshund wants a snack"},
+        {"ru": "Клавиши тихие, голодные", "en": "Keys are quiet, hungry"}
+      ],
+      "levelUp": [
+        {"ru": "Новая октава!", "en": "A new octave!"},
+        {"ru": "Гав! Звучу длиннее", "en": "Woof! Longer tune"},
+        {"ru": "Ещё клавиша!", "en": "One more key!"}
+      ],
+      "max": [
+        {"ru": "Концерт для всего района", "en": "A concert for the town"},
+        {"ru": "Самая музыкальная такса", "en": "Most musical dog"},
+        {"ru": "Гав-аплодисменты!", "en": "Woof, applause!"}
+      ],
+      "sold": [
+        {"ru": "Сыграю вам на ужин", "en": "I will play at dinner"},
+        {"ru": "Тинь-гав, пока!", "en": "Ting-woof, bye!"},
+        {"ru": "Еду на гастроли!", "en": "Off on tour!"}
+      ]
+    },
+    "book_moth": {
+      "tap": [
+        {"ru": "Шурх! Спасибо!", "en": "Swish! Thanks!"},
+        {"ru": "Страницы трепещут!", "en": "Pages flutter!"},
+        {"ru": "Новая глава вкусная", "en": "A tasty new chapter"}
+      ],
+      "hungry": [
+        {"ru": "Буквы проголодались", "en": "Letters are hungry"},
+        {"ru": "Бабочка ждёт сказку", "en": "Butterfly wants a tale"},
+        {"ru": "Шурх? Перекус?", "en": "Swish? Snack?"}
+      ],
+      "levelUp": [
+        {"ru": "Новая страница!", "en": "A new page!"},
+        {"ru": "Крылья толще!", "en": "Thicker wings!"},
+        {"ru": "Сюжет растёт!", "en": "The plot grows!"}
+      ],
+      "max": [
+        {"ru": "Целый том чудес", "en": "A whole book of wonders"},
+        {"ru": "Бестселлер витрины!", "en": "Shop bestseller!"},
+        {"ru": "Читаюсь на одном дыхании", "en": "A real page-turner"}
+      ],
+      "sold": [
+        {"ru": "Улетаю на новую полку", "en": "Flying to a new shelf"},
+        {"ru": "Шурх, до встречи!", "en": "Swish, see you!"},
+        {"ru": "Продолжение следует!", "en": "To be continued!"}
+      ]
+    },
+    "comet_fox": {
+      "tap": [
+        {"ru": "Фыр! Вкусно!", "en": "Yip! Yummy!"},
+        {"ru": "Хвост засиял!", "en": "My tail sparkles!"},
+        {"ru": "Спасибо, мчусь дальше!", "en": "Thanks, zooming on!"}
+      ],
+      "hungry": [
+        {"ru": "Фыр? Где ужин?", "en": "Yip? Where is dinner?"},
+        {"ru": "Комета гаснет без еды", "en": "Comet dims when hungry"},
+        {"ru": "Лисёнок смотрит хитро", "en": "Fox looks sly"}
+      ],
+      "levelUp": [
+        {"ru": "Хвост длиннее!", "en": "Longer tail!"},
+        {"ru": "Лечу быстрее!", "en": "Flying faster!"},
+        {"ru": "Фыр! Ярче звёзд", "en": "Yip! Brighter than stars"}
+      ],
+      "max": [
+        {"ru": "Самая яркая комета", "en": "The brightest comet"},
+        {"ru": "Лисёнок с неба!", "en": "A fox from the sky!"},
+        {"ru": "Сияю на весь район", "en": "Shining over town"}
+      ],
+      "sold": [
+        {"ru": "Улетаю к новым звёздам", "en": "Off to new stars"},
+        {"ru": "Фыр-фыр, пока!", "en": "Yip yip, bye!"},
+        {"ru": "Загадайте желание!", "en": "Make a wish!"}
+      ]
+    },
+    "lantern_jelly": {
+      "tap": [
+        {"ru": "Блуп! Светлее!", "en": "Bloop! Brighter!"},
+        {"ru": "Щупальца машут!", "en": "Tentacles wave!"},
+        {"ru": "Спасибо, сияю!", "en": "Thanks, glowing!"}
+      ],
+      "hungry": [
+        {"ru": "Фонарик тускнеет", "en": "My light dims"},
+        {"ru": "Блуп? Перекус?", "en": "Bloop? Snack?"},
+        {"ru": "Медуза ждёт ужин", "en": "Jelly waits for dinner"}
+      ],
+      "levelUp": [
+        {"ru": "Свечу ярче!", "en": "Glowing brighter!"},
+        {"ru": "Блуп! Подросла", "en": "Bloop! I grew"},
+        {"ru": "Щупальца длиннее!", "en": "Longer tentacles!"}
+      ],
+      "max": [
+        {"ru": "Маяк всей лавки", "en": "The shop lighthouse"},
+        {"ru": "Ярче ночника!", "en": "Brighter than a nightlight!"},
+        {"ru": "Самая светлая медуза", "en": "Brightest jelly ever"}
+      ],
+      "sold": [
+        {"ru": "Освещу ваш вечер", "en": "I will light your evening"},
+        {"ru": "Блуп, пока!", "en": "Bloop, bye!"},
+        {"ru": "Плыву светить дальше", "en": "Floating on to glow"}
+      ]
+    },
+    "globe_turtle": {
+      "tap": [
+        {"ru": "Ох, приятно!", "en": "Oh, lovely!"},
+        {"ru": "Материки улыбаются!", "en": "Continents smile!"},
+        {"ru": "Спасибо, не тороплюсь", "en": "Thanks, taking my time"}
+      ],
+      "hungry": [
+        {"ru": "Мир хочет перекус", "en": "The world wants a snack"},
+        {"ru": "Черепаха ждёт листик", "en": "Turtle waits for a leaf"},
+        {"ru": "Океаны урчат", "en": "Oceans rumble"}
+      ],
+      "levelUp": [
+        {"ru": "Новый остров!", "en": "A new island!"},
+        {"ru": "Панцирь крепче!", "en": "Stronger shell!"},
+        {"ru": "Мир стал больше", "en": "The world grew"}
+      ],
+      "max": [
+        {"ru": "Целая планета мудрости", "en": "A planet of wisdom"},
+        {"ru": "Самая кругосветная", "en": "Most well traveled"},
+        {"ru": "Мир в полном порядке", "en": "The world is just fine"}
+      ],
+      "sold": [
+        {"ru": "Отправляюсь в кругосветку", "en": "Off around the world"},
+        {"ru": "До встречи на экваторе!", "en": "See you at the equator!"},
+        {"ru": "Медленно, но в путь", "en": "Slow, but on my way"}
+      ]
+    },
+    "sun_bun": {
+      "tap": [
+        {"ru": "Ах, как тепло!", "en": "Ah, so warm!"},
+        {"ru": "Лучики пляшут!", "en": "My rays dance!"},
+        {"ru": "Спасибо, румянюсь!", "en": "Thanks, I am toasting!"}
+      ],
+      "hungry": [
+        {"ru": "Солнышко за тучкой", "en": "Sun behind a cloud"},
+        {"ru": "Булочка ждёт джем", "en": "Bun waits for jam"},
+        {"ru": "Лучики поникли", "en": "My rays droop"}
+      ],
+      "levelUp": [
+        {"ru": "Свечу ярче!", "en": "Shining brighter!"},
+        {"ru": "Румяная корочка!", "en": "Golden crust!"},
+        {"ru": "Лучик подрос!", "en": "A ray grew!"}
+      ],
+      "max": [
+        {"ru": "Полдень на прилавке", "en": "Noon on the counter"},
+        {"ru": "Самая солнечная булочка", "en": "Sunniest bun ever"},
+        {"ru": "Тепло на весь район", "en": "Warmth for the whole town"}
+      ],
+      "sold": [
+        {"ru": "Взойду у вас дома", "en": "I will rise at your home"},
+        {"ru": "Тёплого дня!", "en": "Have a warm day!"},
+        {"ru": "Посвечу вам утром", "en": "I will shine your morning"}
+      ]
+    },
+    "crystal_deer": {
+      "tap": [
+        {"ru": "Дзинь, спасибо!", "en": "Chime, thank you!"},
+        {"ru": "Рожки сияют!", "en": "Antlers sparkle!"},
+        {"ru": "Как вкусно и звонко", "en": "So tasty, so bright"}
+      ],
+      "hungry": [
+        {"ru": "Олень ждёт мох", "en": "Deer waits for moss"},
+        {"ru": "Хрусталь тускнеет", "en": "Crystal grows dull"},
+        {"ru": "Дзинь? Перекус?", "en": "Chime? Snack?"}
+      ],
+      "levelUp": [
+        {"ru": "Новый кристаллик!", "en": "A new crystal!"},
+        {"ru": "Звеню чище!", "en": "A clearer chime!"},
+        {"ru": "Рожки выросли!", "en": "Antlers grew!"}
+      ],
+      "max": [
+        {"ru": "Чистый хрусталь мечты", "en": "Pure dream crystal"},
+        {"ru": "Самый звонкий олень", "en": "Most chiming deer"},
+        {"ru": "Сияю до радуги", "en": "Glowing into rainbows"}
+      ],
+      "sold": [
+        {"ru": "Звонкого вам вечера!", "en": "A chiming evening to you!"},
+        {"ru": "Дзинь-дзинь, пока!", "en": "Chime chime, bye!"},
+        {"ru": "Ускачу в новый лес", "en": "Off to a new forest"}
+      ]
+    },
+    "clock_phoenix": {
+      "tap": [
+        {"ru": "Тик-фью! Спасибо!", "en": "Tick-fwoo! Thanks!"},
+        {"ru": "Крылья теплеют!", "en": "Wings warm up!"},
+        {"ru": "Стрелки танцуют!", "en": "Hands are dancing!"}
+      ],
+      "hungry": [
+        {"ru": "Время перекуса", "en": "Snack time"},
+        {"ru": "Тик-так, голодно", "en": "Tick tock, hungry"},
+        {"ru": "Перышки ждут ужин", "en": "Feathers want dinner"}
+      ],
+      "levelUp": [
+        {"ru": "Новый час!", "en": "A new hour!"},
+        {"ru": "Перья ярче!", "en": "Brighter feathers!"},
+        {"ru": "Тик! Подрос", "en": "Tick! I grew"}
+      ],
+      "max": [
+        {"ru": "Лучшее время дня", "en": "Best time of day"},
+        {"ru": "Самые яркие часы", "en": "The brightest clock"},
+        {"ru": "Тик-фью, совершенство!", "en": "Tick-fwoo, perfect!"}
+      ],
+      "sold": [
+        {"ru": "Отмерю вам радость", "en": "I will tick joy for you"},
+        {"ru": "Тик-фью, до встречи!", "en": "Tick-fwoo, see you!"},
+        {"ru": "Лечу в новый день", "en": "Flying into a new day"}
+      ]
     }
   },
   "customers": {

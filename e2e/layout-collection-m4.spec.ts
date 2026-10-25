@@ -19,7 +19,7 @@ test('M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold', 
   await expect(page.locator('[data-species=kettle]')).toHaveAttribute('data-status', 'shop');
   await expect(page.locator('[data-species=cloudcat]')).toHaveAttribute('data-status', 'sold');
   await expect(page.locator('[data-species=kettle] .mu-meta')).toHaveText(await translated(page, 'collection.status.shop'));
-  await expect(page.locator('[data-row=exclusive] [data-status=none]')).toHaveCount(2);
+  await expect(page.locator('[data-row=exclusive] [data-status=none]')).toHaveCount(species.species.filter((s) => s.rarity === 'exclusive').length);
   expect(await page.locator('[data-row=common] [data-row-bonus]').innerText()).toMatch(/\d/);
   // The section stays when the tab is left and opened again (M4-00).
   await page.locator('[data-tab=eggs]').tap();

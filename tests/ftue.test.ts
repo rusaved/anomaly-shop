@@ -62,6 +62,31 @@ describe('M1-09 first minute', () => {
     }
   });
 
+  it('M6-02 a first deal below the egg price never dead-ends: the egg already in the incubator is tapped, a pet waiting is listed, a buyer is answered', () => {
+    // sim:balance F10 found it: the cheapest common sold to a thrifty buyer for 9 < 10 coins; the rescue egg sat in the incubator
+    // while the hint kept pointing at an egg the player could not pay for.
+    const game = createGame(createStore(newSave(0), () => 0), content, createRng(5));
+    const st = game.state;
+    st.stats.hatched = 1;
+    st.stats.deals = 1;
+    st.coins = 9;
+    st.incubators[0] = { ...st.incubators[0]!, egg: content.eggs.eggs[0]!.id, progress: 99, elapsed: 99, waiting: false };
+    expect(ftueHint(st, game.view())).toMatchObject({ step: 'tapEgg', target: { kind: 'incubator', index: 0 } });
+    // A gift egg ready to take still comes first (круг правок FB-3 п. 6).
+    expect(ftueHint(st, game.view(), 'egg_gift')).toMatchObject({ step: 'buyEgg', key: 'ftue.freeEgg' });
+    // No egg in the incubator: a pet in the storage is listed, then the buyer who writes is answered.
+    st.incubators[0] = { ...st.incubators[0]!, egg: null };
+    st.creatures.push({ uid: 'p1', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 });
+    expect(ftueHint(st, game.view())?.step).toBe('list');
+    game.list('p1');
+    for (let guard = 0; guard < 4000 && game.view().queue.length === 0; guard++) game.tick(STEP_SEC);
+    expect(ftueHint(game.state, game.view())?.step).toBe('sell');
+    // The egg in the incubator is the second hatch: it closes the first minute (the scripted rare), the shop goes on as usual.
+    game.state.incubators[0] = { ...game.state.incubators[0]!, egg: content.eggs.eggs[0]!.id, progress: 99, elapsed: 99, waiting: false };
+    game.tapIncubator(0);
+    expect(game.state.flags.ftue_done).toBe(true);
+  });
+
   it('every first-minute hint has at most 6 words in ru and en', () => {
     for (const lang of ['ru', 'en']) {
       const d = dict(lang);

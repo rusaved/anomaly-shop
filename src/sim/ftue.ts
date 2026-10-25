@@ -43,10 +43,16 @@ export function ftueHint(state: SaveData, view: GameView, freeEgg: string | null
   }
   // MU-04: the price button of the basic egg on «Яйца» (the tab first when another screen is open); круг правок FB-3 п. 6: a free gift egg
   // ready to take comes first — «Забрать» of it.
-  if (!state.flags[FLAGS.bought])
-    return freeEgg
-      ? { step: 'buyEgg', key: 'ftue.freeEgg', target: { kind: 'button', action: `egg-free-${freeEgg}|tab-eggs` } }
-      : { step: 'buyEgg', target: { kind: 'button', action: 'egg-buy-egg_basic|tab-eggs' } };
+  if (!state.flags[FLAGS.bought]) {
+    if (freeEgg) return { step: 'buyEgg', key: 'ftue.freeEgg', target: { kind: 'button', action: `egg-free-${freeEgg}|tab-eggs` } };
+    // M6-02: a first deal below the egg's price brings the rescue egg (or a door egg comes): an egg already in the incubator is
+    // tapped first, its pet goes on sale and the buyer gets an answer — the «buy» step never points at an egg the player cannot pay for
+    // while the way out is in the shop (sim:balance F10 found the dead end).
+    if (eggAt >= 0) return { step: 'tapEgg', target: { kind: 'incubator', index: eggAt } };
+    if (view.queue.length > 0) return { step: 'sell', target: SELL };
+    if (view.creatures.length === 0 && view.inventory.length > 0) return { step: 'list', target: LIST };
+    return { step: 'buyEgg', target: { kind: 'button', action: 'egg-buy-egg_basic|tab-eggs' } };
+  }
   if (state.stats.hatched < 2 && eggAt >= 0) return { step: 'hatchRare', target: { kind: 'incubator', index: eggAt } };
   return null;
 }

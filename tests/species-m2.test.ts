@@ -10,11 +10,21 @@ const content = loadGameContent();
 const style = JSON.parse(readFileSync(resolve(import.meta.dirname, '../content/style.json'), 'utf8')) as { creatures: Record<string, { shape: string }> };
 
 describe('M2-06 species and eggs', () => {
-  it('12 species, two of each of the six rarities (Q-022), each with a look', () => {
-    expect(content.species.species).toHaveLength(12);
-    for (const r of RARITIES) expect(content.species.species.filter((s) => s.rarity === r)).toHaveLength(2);
+  it('30 species (M6-02), five of each of the six rarities (Q-022), each with its own shape', () => {
+    expect(content.species.species).toHaveLength(30);
+    for (const r of RARITIES) expect(content.species.species.filter((s) => s.rarity === r)).toHaveLength(5);
     for (const s of content.species.species) expect(CREATURE_SHAPES).toContain(style.creatures[s.id]?.shape);
-    expect(new Set(content.species.species.map((s) => style.creatures[s.id]!.shape)).size).toBe(12);
+    expect(new Set(content.species.species.map((s) => style.creatures[s.id]!.shape)).size).toBe(30);
+  });
+
+  it('M6-02: the mean base price of each rarity stays as with two species (eggs pay as before), growth and max level by rarity', () => {
+    const mean = { common: 13, good: 35, valuable: 75, premium: 325, vip: 800, exclusive: 1900 } as const;
+    for (const r of RARITIES) {
+      const pool = content.species.species.filter((s) => s.rarity === r);
+      expect(pool.reduce((a, s) => a + s.basePrice, 0) / pool.length, r).toBe(mean[r]);
+      expect(new Set(pool.map((s) => s.growth)).size, r).toBe(1);
+      expect(new Set(pool.map((s) => s.maxLevel)).size, r).toBe(1);
+    }
   });
 
   it('odd and glowing eggs: priced, timed and their odds sum to 100', () => {

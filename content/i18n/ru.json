@@ -480,5 +480,6 @@
   "shopname.secret": "Секретное имя! Лавка сияет",
   "shopname.arrive1": "Говорят, в «{shop}» лучшие питомцы",
   "shopname.arrive2": "Это же «{shop}»! Наслышан",
-  "shopname.arrive3": "Мне про «{shop}» соседка рассказала"
+  "shopname.arrive3": "Мне про «{shop}» соседка рассказала",
+  "shopname.edit": "✎ Имя лавки"
 }

@@ -131,17 +131,25 @@ export function createSettingsWindow(
     nameAnswer.dataset.nameAnswer = r;
   });
   nameRow.append(nameInput, nameSave);
+  // Sideways the window has no room for one more row (круг правок FB п. 5: no scroll at 812×330): «✎ Shop name» by the title swaps
+  // the communities for the field while the player types (CSS .naming); upright the field is simply there and this button is hidden.
+  const nameEdit = button('shopname-edit', 'shopname.edit', 'name-edit');
+  nameEdit.addEventListener('click', () => {
+    overlay.card.classList.toggle('naming');
+    if (overlay.card.classList.contains('naming')) nameInput.focus();
+  });
 
   // MU-09: no second main button — «Назад» is dark, the ✕ does the same.
   const back = button('back', 'settings.back');
   overlay.card.append(title, soundRow, vibRow, langRow);
-  if (shopName) overlay.card.append(nameRow, nameAnswer);
+  if (shopName) overlay.card.append(nameEdit, nameRow, nameAnswer);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
 
   const win: SettingsWindow = {
     overlay,
     open() {
+      overlay.card.classList.remove('naming');
       if (shopName) {
         nameInput.value = shopName.name();
         nameAnswer.textContent = '';

@@ -1,0 +1,416 @@
+verify (milestone): 14 stages, full log /home/user/anomaly-shop/docs/evidence/M6/verify.txt
+
+== verify: typecheck
+ok   typecheck 2.8 s
+
+== verify: test
+
+ RUN  v5.0.3 /home/user/anomaly-shop
+
+
+ Test Files  69 passed (69)
+      Tests  328 passed (328)
+   Start at  09:28:18
+   Duration  35.86s (tests 89%, import 6%, transform 5%, worker 1%)
+
+    Isolate  69 workers spawned · ~178ms startup each (spawn + environment, per file)
+             at least ~3.91s faster with isolate: false — reuses workers across files instead of one per file
+
+ok   test 36.7 s
+
+== verify: validate:content
+validate:content: game.json and 27 content files — ok
+ok   validate:content 0.4 s
+
+== verify: sim:balance
+sim:balance — 4 bots × 24 seeds × 10 min; p50 / p90 of game seconds (limit in brackets)
+casual  F1 16/16 (40) ok · F2 37/53 (120) ok · F3 42/46 (180) ok · F4 24/24 (300) ok · F13 11/12 (60) ok · F14 51/117 (600) ok · F15 201/290 (600) ok · F16.2 35/36 (90) ok · F16.3 85/93 (180) ok · F16.4 144/160 (270) ok · F16.5 210/230 (360) ok · F5 ×2.0 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 650 coins; 10 min: 1878 coins (p50)
+rusher  F1 17/17 (40) ok · F2 46/67 (120) ok · F3 44/50 (180) ok · F4 25/25 (300) ok · F13 11/12 (60) ok · F14 51/183 (600) ok · F15 220/278 (600) ok · F16.2 36/38 (90) ok · F16.3 83/91 (180) ok · F16.4 140/153 (270) ok · F16.5 201/227 (360) ok · F5 ×1.9 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 593 coins; 10 min: 1429 coins (p50)
+tapper  F1 15/15 (40) ok · F2 34/37 (120) ok · F3 43/46 (180) ok · F4 23/23 (300) ok · F13 12/15 (60) ok · F14 55/168 (600) ok · F15 185/226 (600) ok · F16.2 34/37 (90) ok · F16.3 88/105 (180) ok · F16.4 143/166 (270) ok · F16.5 210/234 (360) ok · F5 ×2.8 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 832 coins; 10 min: 2010 coins (p50)
+slow    F1 20/20 (40) ok · F2 60/75 (120) ok · F3 52/60 (180) ok · F4 32/32 (300) ok · F13 11/13 (60) ok · F14 77/186 (600) ok · F15 202/314 (600) ok · F16.2 42/44 (90) ok · F16.3 92/99 (180) ok · F16.4 149/166 (270) ok · F16.5 211/242 (360) ok · F5 ×1.3 ok · F10 ok · F11 0/24 ok · 5 min: 18 deals, 616 coins; 10 min: 1384 coins (p50)
+long run — casual and slow × 8 seeds: 3 days of 30 active minutes + 8 h away
+casual  F19 income an hour of play / away: 29970 / 11626 (39 %, want 30–50 %), seller levels away +1 (≤ 1) ok
+casual  F6 8 h away = 48 min of play (30–60) ok · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 279 s, square 970 s p90 (600 / 2400) ok
+slow    F19 income an hour of play / away: 29226 / 10210 (35 %, want 30–50 %), seller levels away +1 (≤ 1) ok
+slow    F6 8 h away = 48 min of play (30–60) info · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 309 s, square 1084 s p90 (600 / 2400) ok
+keeper  F12 10 min = ×1.02 of casual (≤ ×2) · rebirth threshold on day 2.0 (≥ 1.0) ok
+week    F17 new things by day 48 / 28 / 54 / 20 / 57 / 33 / 48 (≥ 1 a day) ok · guest zone pays back ×5.31 (≥ 1) ok · F18 moves on day 2.0, the next 2.5 days later (1–3), the city egg on day 4.6 ok
+rewards FB-02 best reward in 5 min of income by ladder step (exclusive when bought p50 / hatch p90): basic 0.1/0.02 · warm 0.4/0.19 · odd 6.3/0.57 · glow 37.0/4.09 · star 88.0/9.04 · crystal 140.0/7.79 · rainbow 589.7/36.10; free rewards ≤ 5 min (capped)
+care    F20 VIP+exclusive without → with full care (b 0.5, top 0.35), EV in egg prices less food: basic 0.5→1.3 % · ×2.56→×3.46 · warm 2.0→4.4 % · ×1.03→×1.32 · odd 3.0→6.0 % · ×0.90→×1.11 · glow 3.0→6.0 % · ×0.91→×1.15 · star 3.0→6.0 % · ×0.97→×1.17 · crystal 3.0→6.1 % · ×0.95→×1.15 · rainbow 3.0→6.0 % · ×0.99→×1.16 · royal 3.0→6.0 % · ×1.01→×1.15 ok
+ads     M5-02 casual day of 30 min (p50): eggs for videos 3 of 325 (1 %) · boost +33 % · ×2 deal 30 of 353 deals (+8 %) · egg ads ≤ +50 % · F9 at most +92 % (want 30–100 %) ok
+RD-03 table (info, p50 / p90): short run — first buy (egg for coins / anything), wall = the longest wait between purchases in 10 min, s
+  casual  first egg 21 / 21 · first buy 21 / 21 · wall 30 / 37 · buys in 10 min 55 / 50 (p50 / p10)
+  rusher  first egg 22 / 22 · first buy 22 / 22 · wall 29 / 42 · buys in 10 min 53 / 50 (p50 / p10)
+  tapper  first egg 20 / 20 · first buy 20 / 20 · wall 30 / 37 · buys in 10 min 58 / 51 (p50 / p10)
+  slow    first egg 27 / 27 · first buy 27 / 27 · wall 32 / 42 · buys in 10 min 50 / 44 (p50 / p10)
+  casual  long run: wall day 1 / 2 / 3 1.7 / 2.2 · 2.1 / 2.4 · 2.3 / 2.5 min · an hour away against an hour of play 40 / 40 %
+  slow    long run: wall day 1 / 2 / 3 2.1 / 3.0 · 2.5 / 2.6 · 1.5 / 2.3 min · an hour away against an hour of play 40 / 40 %
+F1–F8, F10, F11, F12–F20: all green
+(115.2 s)
+ok   sim:balance 115.6 s
+
+== verify: build:e2e
+vite v8.3.2 building client environment for e2e...
+transforming...
+✓ 832 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-e2e/index.html                                         2.18 kB │ gzip:   1.06 kB
+dist-e2e/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-e2e/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-e2e/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-e2e/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-e2e/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-e2e/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-e2e/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-e2e/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-e2e/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-e2e/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-e2e/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-e2e/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-e2e/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-e2e/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-e2e/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-e2e/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-e2e/assets/index-Bv6moZux.css                         99.82 kB │ gzip:  18.68 kB
+dist-e2e/assets/webworkerAll-Dg0IomlO.js                    0.05 kB │ gzip:   0.06 kB
+dist-e2e/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-e2e/assets/test-api-CX9XuZth.js                        1.45 kB │ gzip:   0.67 kB
+dist-e2e/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-e2e/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-e2e/assets/yandex-yCQf81Cj.js                          9.98 kB │ gzip:   3.46 kB
+dist-e2e/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-e2e/assets/init-CG2n4fgJ.js                           15.31 kB │ gzip:   4.79 kB
+dist-e2e/assets/panel-Fkzp2KeX.js                          31.93 kB │ gzip:   8.60 kB
+dist-e2e/assets/browserAll-gC2OXIj1.js                     42.64 kB │ gzip:  11.19 kB
+dist-e2e/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-e2e/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-e2e/assets/index-DD3aAr6m.js                         760.86 kB │ gzip: 236.59 kB
+
+✓ built in 1.98s
+ok   build:e2e 2.8 s
+
+== verify: e2e [e2e: end of milestone only]
+
+Running 218 tests using 2 workers
+
+  ✓    2 [desktop] › e2e/back-fb.spec.ts:14:1 › FB-07 from «Склад»: «На продажу» → «Цена» → «‹» back to «Склад» (7.4s)
+  ✓    1 [desktop] › e2e/back-fb.spec.ts:26:1 › FB-07 from «Лавка»: «+» of the shelf → the pick → «Цена» → «‹» back to «Лавка» (8.0s)
+  ✓    3 [desktop] › e2e/back-fb.spec.ts:38:1 › FB-07 from «Продажи»: «+ Выставить» → the pick → «Цена» → «‹» back to the pick, then the list (5.2s)
+  ✓    5 [desktop] › e2e/burst-fb.spec.ts:41:1 › FB-09 prefers-reduced-motion — the flash only (7.8s)
+  ✓    4 [desktop] › e2e/burst-fb.spec.ts:20:1 › FB-09 common — no burst; VIP — sparks and salute; a tap skips; exclusive — the whole screen (14.9s)
+  ✓    6 [desktop] › e2e/devices-rd.spec.ts:10:1 › RD-06 device: the first minute to the first deal, F5 keeps it, no console errors (42.7s)
+  ✓    8 [desktop] › e2e/eggs-m3.spec.ts:10:1 › M3-04 egg card: odds match eggs.json, buy one and ×3 (10.5s)
+  ✓    9 [desktop] › e2e/fixes-fb.spec.ts:60:3 › Круг правок FB п. 1 portrait 375×650 › an egg → two quick taps on the strip → the pet is not sold, «Вылупился!» stays (9.6s)
+  ✓   10 [desktop] › e2e/fixes-fb.spec.ts:62:3 › Круг правок FB п. 1 portrait 375×650 › the buttons of the result take no press for 0.8 s after it shows (7.6s)
+  ✓    7 [desktop] › e2e/devices-rd.spec.ts:23:1 › RD-06 device: every tab opens, its buttons seen whole (1.2m)
+  ✓   12 [desktop] › e2e/fixes-fb.spec.ts:108:5 › Круг правок FB п. 2 375×650 › the upgrades: rows without a fill, only an affordable price filled — the same in «Лавка» and «Магазин»; the shelf places 44+ px, 8 px apart (3.4s)
+  ✓   11 [desktop] › e2e/fixes-fb.spec.ts:81:3 › Круг правок FB п. 1 sideways 812×330 › an egg → two quick taps on the strip → the pet is not sold, «Вылупился!» stays (9.6s)
+  ✓   13 [desktop] › e2e/fixes-fb.spec.ts:108:5 › Круг правок FB п. 2 812×330 › the upgrades: rows without a fill, only an affordable price filled — the same in «Лавка» and «Магазин»; the shelf places 44+ px, 8 px apart (4.7s)
+  ✓   14 [desktop] › e2e/fixes-fb.spec.ts:149:5 › Круг правок FB п. 3 375×650 › «Пока тебя не было»: the ad button says its number and stands 24 px from «Отлично» (4.6s)
+  ✓   15 [desktop] › e2e/fixes-fb.spec.ts:149:5 › Круг правок FB п. 3 812×330 › «Пока тебя не было»: the ad button says its number and stands 24 px from «Отлично» (4.5s)
+  ✓   16 [desktop] › e2e/fixes-fb.spec.ts:187:5 › Круг правок FB п. 4 sideways 812×330 › the egg card: «×3» and «×5» whole above the tab bar (5.5s)
+  ✓   17 [desktop] › e2e/fixes-fb.spec.ts:187:5 › Круг правок FB п. 4 sideways 812×330 › the egg card: «×3» and «×5» whole above the tab bar at 130 % (6.4s)
+  ✓   18 [desktop] › e2e/fixes-fb.spec.ts:207:5 › Круг правок FB п. 4 375×650 › «Вылупился!» at 130 %: the buttons whole, fields 12 px or more (6.1s)
+  ✓   19 [desktop] › e2e/fixes-fb.spec.ts:235:5 › Круг правок FB п. 4 375×650 › «Кого выставить» with an empty storage: «На складе пусто» and «Купить яйцо» (4.4s)
+  ✓   20 [desktop] › e2e/fixes-fb.spec.ts:207:5 › Круг правок FB п. 4 812×330 › «Вылупился!» at 130 %: the buttons whole, fields 12 px or more (6.2s)
+  ✓   21 [desktop] › e2e/fixes-fb.spec.ts:235:5 › Круг правок FB п. 4 812×330 › «Кого выставить» with an empty storage: «На складе пусто» and «Купить яйцо» (4.4s)
+  ✓   22 [desktop] › e2e/fixes-fb.spec.ts:262:7 › Круг правок FB п. 5 375×650 › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable (5.6s)
+  ✓   23 [desktop] › e2e/fixes-fb.spec.ts:262:7 › Круг правок FB п. 5 375×650 130 % › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable (5.5s)
+  ✘   24 [desktop] › e2e/fixes-fb.spec.ts:262:7 › Круг правок FB п. 5 812×330 › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable (5.7s)
+  ✘   25 [desktop] › e2e/fixes-fb.spec.ts:262:7 › Круг правок FB п. 5 812×330 130 % › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable (5.2s)
+  ✓   27 [desktop] › e2e/fixes-fb.spec.ts:357:3 › Круг правок FB п. 6 portrait 375×650 at 130 % › the tab labels stand 8 px apart, «Лавка» in the middle; a chat name never cut inside a word (7.5s)
+  ✓   26 [desktop] › e2e/fixes-fb.spec.ts:314:3 › Круг правок FB п. 6 sideways 812×330 at 130 % › the gift days, the lot, «Уровень продавца» — whole words in sight (10.7s)
+  ✓   28 [desktop] › e2e/fixes-fb.spec.ts:382:3 › Круг правок FB п. 7 portrait 375×650 › the tabs on their own places from the first minute; «Купи новое яйцо» with its tail on «10» (8.8s)
+  ✓   29 [desktop] › e2e/fixes-fb.spec.ts:409:3 › Круг правок FB п. 7 portrait 375×650 › «Забрать подарок дня» ≤ 360; the pet fills its tile; «Сытный корм» has its own picture; chats apart from the places (8.2s)
+  ✓   30 [desktop] › e2e/fixes-fb.spec.ts:451:3 › Круг правок FB п. 7 PC 1280×720 › «Лавка»: the right half holds the Store and the eggs (6.2s)
+  ✓   31 [desktop] › e2e/fixes-fb2.spec.ts:41:5 › Круг правок FB-2 п. 1 812×330 › the lot sideways: the main button and the lines whole (4.6s)
+  ✓   32 [desktop] › e2e/fixes-fb2.spec.ts:41:5 › Круг правок FB-2 п. 1 812×330 130 % › the lot sideways: the main button and the lines whole (4.9s)
+  ✓   33 [desktop] › e2e/fixes-fb2.spec.ts:90:3 › Круг правок FB-2 п. 2 375×650 › the salute brightens the card and keeps its words readable (8.0s)
+  ✓   34 [desktop] › e2e/fixes-fb2.spec.ts:139:3 › Круг правок FB-2 п. 3 375×650 130 % › the lot in portrait: the lines whole over the answers (5.8s)
+  ✓   35 [desktop] › e2e/fixes-fb2.spec.ts:168:5 › Круг правок FB-2 п. 4 375×650 › «Продать сразу» away from the strip and the corner; a full shelf — «На склад» main (6.3s)
+  ✓   36 [desktop] › e2e/fixes-fb2.spec.ts:168:5 › Круг правок FB-2 п. 4 812×330 › «Продать сразу» away from the strip and the corner; a full shelf — «На склад» main (5.7s)
+  ✓   37 [desktop] › e2e/fixes-fb2.spec.ts:206:5 › Круг правок FB-2 п. 5 375×650 › the upgrade rows: the accent price, one height, one icon size (4.8s)
+  ✓   38 [desktop] › e2e/fixes-fb2.spec.ts:206:5 › Круг правок FB-2 п. 5 812×330 › the upgrade rows: the accent price, one height, one icon size (4.1s)
+  ✓   40 [desktop] › e2e/fixes-fb2.spec.ts:292:5 › Круг правок FB-2 п. 6 375×650 › a toast in the first minute clears the hint and its target (3.8s)
+  ✓   39 [desktop] › e2e/fixes-fb2.spec.ts:275:5 › Круг правок FB-2 п. 6 375×650 › a toast clears the «‹» row and the hint; «Пункт» is not blank (6.6s)
+  ✓   41 [desktop] › e2e/fixes-fb2.spec.ts:275:5 › Круг правок FB-2 п. 6 812×330 › a toast clears the «‹» row and the hint; «Пункт» is not blank (5.0s)
+  ✓   42 [desktop] › e2e/fixes-fb2.spec.ts:292:5 › Круг правок FB-2 п. 6 812×330 › a toast in the first minute clears the hint and its target (3.5s)
+  ✓   44 [desktop] › e2e/fixes-fb2.spec.ts:309:5 › Круг правок FB-2 серия тапов 812×330 › a run of taps while the egg hatches sells nothing (9.6s)
+  ✓   43 [desktop] › e2e/fixes-fb2.spec.ts:309:5 › Круг правок FB-2 серия тапов 375×650 › a run of taps while the egg hatches sells nothing (10.2s)
+  ✓   45 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 sell 150 мс › a run of taps sells nothing and buys nothing (8.1s)
+  ✓   46 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 sell 300 мс › a run of taps sells nothing and buys nothing (9.0s)
+  ✓   48 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 strip 150 мс › a run of taps sells nothing and buys nothing (8.5s)
+  ✓   47 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 sell 500 мс › a run of taps sells nothing and buys nothing (10.6s)
+  ✓   49 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 strip 300 мс › a run of taps sells nothing and buys nothing (9.7s)
+  ✓   50 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 strip 500 мс › a run of taps sells nothing and buys nothing (10.9s)
+  ✓   51 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 dim 150 мс › a run of taps sells nothing and buys nothing (8.0s)
+  ✓   52 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 dim 300 мс › a run of taps sells nothing and buys nothing (9.3s)
+  ✓   53 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 dim 500 мс › a run of taps sells nothing and buys nothing (10.7s)
+  ✓   54 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 sell 150 мс › a run of taps sells nothing and buys nothing (8.0s)
+  ✓   55 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 sell 300 мс › a run of taps sells nothing and buys nothing (9.7s)
+  ✓   56 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 sell 500 мс › a run of taps sells nothing and buys nothing (10.6s)
+  ✓   57 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 strip 150 мс › a run of taps sells nothing and buys nothing (7.4s)
+  ✓   58 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 strip 300 мс › a run of taps sells nothing and buys nothing (9.1s)
+  ✓   59 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 strip 500 мс › a run of taps sells nothing and buys nothing (10.1s)
+  ✓   60 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 dim 150 мс › a run of taps sells nothing and buys nothing (7.7s)
+  ✓   61 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 dim 300 мс › a run of taps sells nothing and buys nothing (9.7s)
+  ✓   62 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 dim 500 мс › a run of taps sells nothing and buys nothing (11.3s)
+  ✓   63 [desktop] › e2e/fixes-fb3.spec.ts:76:5 › Круг правок FB-3 п. 3 812×330 › «Вылупился!» sideways: fields 16, the buttons right under the words (4.8s)
+  ✓   64 [desktop] › e2e/fixes-fb3.spec.ts:76:5 › Круг правок FB-3 п. 3 812×330 130 % › «Вылупился!» sideways: fields 16, the buttons right under the words (6.3s)
+  ✓   65 [desktop] › e2e/fixes-fb3.spec.ts:138:5 › Круг правок FB-3 п. 4 375×650 › a row cut by the scroll edge is whole (7.7s)
+  ✓   66 [desktop] › e2e/fixes-fb3.spec.ts:138:5 › Круг правок FB-3 п. 4 812×330 › a row cut by the scroll edge is whole (7.5s)
+  ✓   67 [desktop] › e2e/fixes-fb3.spec.ts:184:5 › Круг правок FB-3 п. 5 375×650 › a toast clears the scene, the hint, «‹» and the segments; a tap on it is its own (14.7s)
+  ✓   68 [desktop] › e2e/fixes-fb3.spec.ts:184:5 › Круг правок FB-3 п. 5 812×330 › a toast clears the scene, the hint, «‹» and the segments; a tap on it is its own (13.4s)
+  ✓   69 [desktop] › e2e/fixes-fb3.spec.ts:247:3 › Круг правок FB-3 п. 6 812×330 › the lot sideways: the main button at the left edge of its column (4.2s)
+  ✓   70 [desktop] › e2e/fixes-fb3.spec.ts:266:5 › Круг правок FB-3 п. 6 375×650 › «Пункт» closed, the icons of one mass, the empty dots ≥ 3:1 (5.3s)
+  ✓   72 [desktop] › e2e/fixes-fb3.spec.ts:266:5 › Круг правок FB-3 п. 6 812×330 › «Пункт» closed, the icons of one mass, the empty dots ≥ 3:1 (5.2s)
+  ✓   71 [desktop] › e2e/fixes-fb3.spec.ts:323:5 › Круг правок FB-3 п. 6 375×650 › «Покорми его тапами» off the incubator; a ready gift egg gets the «new egg» hint (13.5s)
+  ✓   73 [desktop] › e2e/fixes-fb3.spec.ts:323:5 › Круг правок FB-3 п. 6 812×330 › «Покорми его тапами» off the incubator; a ready gift egg gets the «new egg» hint (13.1s)
+  ✓   74 [desktop] › e2e/fixes-fb3.spec.ts:363:5 › Круг правок FB-3 ревизор удобства 375×650 › the tab bar under «Вылупился!» does nothing; the gift hint on «Яйца» (12.9s)
+  ✓   75 [desktop] › e2e/fixes-fb3.spec.ts:363:5 › Круг правок FB-3 ревизор удобства 812×330 › the tab bar under «Вылупился!» does nothing; the gift hint on «Яйца» (12.8s)
+  ✓   77 [desktop] › e2e/frames-m6.spec.ts:78:5 › 880x405 shop name › M6-23 the shop name in the settings: a stop-word is not taken, the name is kept after F5 @ 880x405 (14.7s)
+  ✓   76 [desktop] › e2e/frames-m6.spec.ts:32:5 › 880x405 › M6-02 the 30 species: collection and the shelf @ 880x405 (1.1m)
+  ✓   79 [desktop] › e2e/frames-m6.spec.ts:78:5 › 815x290 shop name › M6-23 the shop name in the settings: a stop-word is not taken, the name is kept after F5 @ 815x290 (12.8s)
+  ✓   80 [desktop] › e2e/frames-rd.spec.ts:18:1 › RD-02 every window in the code has an opener (11ms)
+  ✓   78 [desktop] › e2e/frames-m6.spec.ts:32:5 › 815x290 › M6-02 the 30 species: collection and the shelf @ 815x290 (56.8s)
+  ✓   82 [desktop] › e2e/frames-rd.spec.ts:29:5 › 815x290 › RD-02 every tab, sub-tab and window: buttons seen whole @ 815x290 (1.1m)
+  ✓   81 [desktop] › e2e/frames-rd.spec.ts:29:5 › 880x405 › RD-02 every tab, sub-tab and window: buttons seen whole @ 880x405 (1.3m)
+  ✓   83 [desktop] › e2e/gifts-m3.spec.ts:7:1 › M3-11 gifts: the daily gift and the review egg once, kept after a reload (18.5s)
+  ✓   84 [desktop] › e2e/hatch-ub.spec.ts:10:1 › UB-03 the first egg opens with one tap; the creature is nowhere until the strip stops; a tap skips; three choices (10.5s)
+  ✓   86 [desktop] › e2e/leaders-m4.spec.ts:5:1 › M4-04 leaders: sign in by the button, the score on the board, no SDK violations (8.2s)
+  ✓   85 [desktop] › e2e/hatch-ub.spec.ts:39:1 › M3-05 hatch show: 4–5 s, the roll on the card, sell now = the low end (16.7s)
+  ✓   88 [desktop] › e2e/loop.spec.ts:28:1 › M1-08 the upgrade shop: buying the second incubator changes the shop and survives F5 (18.5s)
+  ✓   87 [desktop] › e2e/loop.spec.ts:8:1 › SAV-01 F5 after a deal: coins, the deal count and the creatures come back (46.2s)
+  ✓   90 [desktop] › e2e/market-m3.spec.ts:5:1 › M3-09 market: lots, timer, a lot page opens, a quick buy (8.1s)
+  ✓   89 [desktop] › e2e/loop.spec.ts:48:1 › LOC-03 English: the home screen, the chats, the tab bar and the upgrade shop have no Russian text (35.1s)
+  ✓   91 [desktop] › e2e/mu-07.spec.ts:276:5 › MU-12 docs/07 at 375×650 › every screen keeps the rules of 07 and shows the rarity of every pet (23.7s)
+  ✓   92 [desktop] › e2e/mu-07.spec.ts:284:5 › MU-12 docs/07 at 375×650 › a system font at 130 %: nothing runs out of the screen or under the tab bar (24.2s)
+  ✓   93 [desktop] › e2e/mu-07.spec.ts:276:5 › MU-12 docs/07 at 812×330 › every screen keeps the rules of 07 and shows the rarity of every pet (22.6s)
+  ✓   94 [desktop] › e2e/mu-07.spec.ts:284:5 › MU-12 docs/07 at 812×330 › a system font at 130 %: nothing runs out of the screen or under the tab bar (22.1s)
+  ✓   95 [desktop] › e2e/mu-07.spec.ts:332:3 › the round of fixes, item 1: lists by the mockups at 375×650 › finds 172, the two gift cards 122, the sales places 200; the first line 8–14 px under the top bar (12.0s)
+  ✓   97 [desktop] › e2e/mu-07.spec.ts:473:5 › the round of fixes, item 3: the font scale of 07 at 375×650 › titles 18 on one line, pet names 18, the big price 32, section labels 12.5 (9.1s)
+  ✓   96 [desktop] › e2e/mu-07.spec.ts:375:3 › the round of fixes, item 2: sideways 812×330 is «list + detail» › rows 44–52 px (a second line of whole words up to 72); the lot, the egg card, the collection, the gifts and «Вылупился!» whole (19.0s)
+  ✓   98 [desktop] › e2e/mu-07.spec.ts:473:5 › the round of fixes, item 3: the font scale of 07 at 812×330 › titles 18 on one line, pet names 18, the big price 32, section labels 12.5 (8.3s)
+  ✓   99 [desktop] › e2e/mu-07.spec.ts:503:3 › the round of fixes, item 6: the small things › tab names and 12 px labels, the top bar 44 px, one green fill among the finds, «Скидка? Возьму за…» on one line (6.6s)
+  ✓  100 [desktop] › e2e/mu-07.spec.ts:535:3 › the round of fixes, item 8: a toast moves nothing, a hint lies on no card › a toast over «Рынок» leaves every card where the finger aims (7.2s)
+  ✓  101 [desktop] › e2e/mu-07.spec.ts:555:3 › the round of fixes, item 8: a toast moves nothing, a hint lies on no card › the hint over a tab of the bar takes its own band: no card of the open screen under it (12.3s)
+  ✓  102 [desktop] › e2e/mu-07.spec.ts:580:3 › the round of fixes, item 8 (the recheck): the first hint of a tab moves nothing when it goes › «Рынок» on its first visit: the hint stands in a band at the bottom, the lots stay put after the first tap (7.7s)
+  ✓  103 [desktop] › e2e/nav-ub.spec.ts:5:1 › UB-01 PC: one tab bar at the bottom, Eggs is home, every tab opens its screen (9.9s)
+  ✓  105 [desktop] › e2e/polish-m6.spec.ts:10:1 › M6-01 the hatch wheel clicks as portraits pass the marker; the result has its rarity sound (13.4s)
+  ✓  104 [desktop] › e2e/noise-m3.spec.ts:5:1 › M3-18 one text at a time; the ticker is quiet without a reason (30.8s)
+  ✓  106 [desktop] › e2e/polish-m6.spec.ts:30:1 › M6-20 window, clock and flower answer a tap; 15 on the window — the winged teapot; a tickle laughs (9.3s)
+  ✓  108 [desktop] › e2e/polish-m6.spec.ts:62:1 › M6-22 every speech line has its sound: a pet speaks on taps (chirp), a buyer writes (voice); marked pets on the shelf (8.2s)
+  ✓  107 [desktop] › e2e/polish-m6.spec.ts:51:1 › M6-20 the clock strikes noon by the device time: «Bong», a toast, a treat for every pet (10.6s)
+  ✓  110 [desktop] › e2e/rebirth-m4.spec.ts:6:1 › M4-06 rebirth: ready → the popup asks → a new city, the collection stays (13.1s)
+  ✓  109 [desktop] › e2e/press-fb.spec.ts:46:1 › FB-13 every button: the squeeze 0.95 and the press sound — «Лавка», «Яйца», «Склад», «Продажи», «Магазин», «Пауза» (15.2s)
+  ✓  112 [desktop] › e2e/reviewers-fb.spec.ts:32:3 › FB-14 portrait 375×650 › 130 %: tab labels, segments and names keep whole words (≥ 12 px) (6.2s)
+  ✓  111 [desktop] › e2e/reputation-ub.spec.ts:7:1 › UB-08 a deal brings the seller level up: the chip flashes, a toast, the panel lists what opens (10.5s)
+  ✓  113 [desktop] › e2e/reviewers-fb.spec.ts:45:3 › FB-14 portrait 375×650 › «Аномалия дня» in three lines; «Продать сразу» out of the bottom third; a cut card shows only its picture (7.1s)
+  ✓  114 [desktop] › e2e/reviewers-fb.spec.ts:81:3 › FB-14 sideways 812×330 › the section switcher ≤ 420 px, the main button ≤ 360 px (5.6s)
+  ✓  115 [desktop] › e2e/reviewers-fb.spec.ts:101:3 › FB-15 the round of fixes (usability review) › a second tap right after skipping the strip never sells the pet (5.2s)
+  ✓  116 [desktop] › e2e/reviewers-fb.spec.ts:117:3 › FB-15 the round of fixes (usability review) › «Пока тебя не было»: the ad button says its coins, away longer than the shop works says both times (4.2s)
+  ✓  117 [desktop] › e2e/sales-ub.spec.ts:8:1 › UB-05 one path: listed with the slider, a buyer writes, the creature is off the shelf meanwhile, sold from the chat (9.9s)
+  ✓  118 [desktop] › e2e/seller-m3.spec.ts:7:1 › M3-10 bought below the market → on sale → sold dearer (10.1s)
+  ✓  119 [desktop] › e2e/smoke.spec.ts:9:1 › environment: the game boots on the mock, WebGL renders, the test API answers (6.6s)
+  ✘  120 [desktop] › e2e/smoke.spec.ts:19:1 › SDK-02 ready() once, after the shop is drawn, within 4 s; the loading screen is gone (7.7s)
+  ✓  121 [desktop] › e2e/smoke.spec.ts:31:1 › SCR-09 zero console errors, page errors and dialogs through pause, settings and a reload (12.8s)
+  ✓  122 [desktop] › e2e/smoke.spec.ts:43:1 › SDK-03 startup ad: pause before ready, gameplay starts only after the resume (8.0s)
+  ✓  123 [desktop] › e2e/smoke.spec.ts:56:1 › SDK-04 GameplayAPI stop on pause and start on resume, only on transitions (8.6s)
+  ✓  125 [desktop] › e2e/smoke.spec.ts:83:1 › SAV-05 a corrupted save gives a fresh profile, no crash (6.5s)
+  ✓  124 [desktop] › e2e/smoke.spec.ts:67:1 › SAV-01 coins and a creature survive F5 (debug panel actions) (20.7s)
+  ✓  126 [desktop] › e2e/smoke.spec.ts:97:1 › SDK-05 LOC-03 language from the SDK: en → English UI, uk → Russian (11.6s)
+  ✓  128 [desktop] › e2e/smoke.spec.ts:122:1 › CNT-08 community buttons open the game.json addresses in a new tab, no reward, game paused (7.9s)
+  ✓  127 [desktop] › e2e/smoke.spec.ts:110:1 › LOC-05 manual language choice wins over the platform language and survives F5 (15.5s)
+  ✓  130 [desktop] › e2e/store-m5.spec.ts:19:3 › M5-04 store › payments off (game.json): «Акции» stays off, no store at all (6.1s)
+  ✓  129 [desktop] › e2e/smoke.spec.ts:140:1 › SCR-01 1280×720: the top bar, «Лавка», the tab bar, pause and settings windows fit the screen (8.8s)
+  ✓  131 [desktop] › e2e/store-m5.spec.ts:27:3 › M5-04 store › not in the first 3 minutes; then deals with the 48 h timer, coins, «Без рекламы», the note; prices from the catalog (10.2s)
+  ✓  132 [desktop] › e2e/store-m5.spec.ts:48:3 › M5-04 store › a purchase on the mock: the pack comes and is consumed; the starter deal goes once bought (12.1s)
+  ✓  133 [desktop] › e2e/store-m5.spec.ts:65:3 › M5-04 store › cancel gives nothing and says nothing; an error says the money was not taken (19.7s)
+  ✓  134 [desktop] › e2e/store-m5.spec.ts:80:3 › M5-04 store › «Без рекламы»: bought, then restored after a reload from the platform purchases (getPurchases) (18.9s)
+  ✓  136 [desktop] › e2e/store-m5.spec.ts:115:3 › M5-04 store › M5-06 the 1st session without a purchase: no review window (11.9s)
+  ✓  137 [desktop] › e2e/upgrades-ub.spec.ts:5:1 › UB-04 upgrades: a panel from the right by a button, the shop in view, the purchase shines (8.8s)
+  ✓  135 [desktop] › e2e/store-m5.spec.ts:96:3 › M5-04 store › M5-06 the review window asks once: from the 3rd session after 5 minutes of play, the chest after the platform window (28.6s)
+  ✓  138 [desktop] › e2e/usability-ub.spec.ts:6:1 › UB-09 PC: a tab tap closes any window (10.8s)
+  ✓  139 [desktop] › e2e/usability-ub.spec.ts:7:1 › UB-09 PC: one window at a time (14.0s)
+  ✓  140 [desktop] › e2e/usability-ub.spec.ts:8:1 › UB-09 PC: hints never lie over a window (16.0s)
+  ✓  141 [desktop] › e2e/usability-ub.spec.ts:9:1 › UB-09 PC: the hatch reward only after the strip (13.2s)
+  ✓  142 [desktop] › e2e/usability-ub.spec.ts:10:1 › UB-09 PC: hidden gestures are signed (22.4s)
+  ✓  144 [desktop] › e2e/usability-ub.spec.ts:12:1 › UB-09 PC: every tab has its label (7.1s)
+  ✓  143 [desktop] › e2e/usability-ub.spec.ts:11:1 › UB-09 PC: text 12 px and up (14 px and no cut text on a PC, M4-00), buttons 44 px and up on every screen (31.2s)
+  ✓  145 [desktop] › e2e/usability-ub.spec.ts:13:1 › UB-09 PC: no service marks (11.7s)
+  ✓  146 [desktop] › e2e/usability-ub.spec.ts:14:1 › M4-00 PC: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (10.4s)
+  ✓  148 [desktop] › e2e/windows-ub.spec.ts:4:1 › UB-02 PC: one window at a time, a tab works from any window, a tap outside closes it (12.7s)
+  ✓  149 [desktop] › e2e/windows-ub.spec.ts:5:1 › UB-02 PC: hints never lie over a window or another screen (9.4s)
+  ✓  147 [desktop] › e2e/usability-ub.spec.ts:15:1 › M4-00 PC: one caption on the shop at a time (36.9s)
+  ✓  150 [desktop] › e2e/work-m3.spec.ts:5:1 › M3-12 side job: a tap gives +N (8.9s)
+  ✓  151 [truthful] › e2e/truthful-m5.spec.ts:24:3 › M5-00 truthful stand › desktop: the banner stand-in takes 160 px on the right, the game narrows itself and nothing hides under it (9.1s)
+  ✓  152 [truthful] › e2e/truthful-m5.spec.ts:38:3 › M5-00 truthful stand › full screen on the first tap, once (11.6s)
+  ✓  153 [truthful] › e2e/truthful-m5.spec.ts:46:3 › M5-00 truthful stand › a rewarded video: the dark «Реклама» screen ~3 s, the game paused, the egg after it, the card stays with one less (12.3s)
+  ✓  154 [truthful] › e2e/truthful-m5.spec.ts:74:3 › M5-00 truthful stand › closed early (✕): no egg, a note, the button stays (9.5s)
+  ✓  156 [truthful] › e2e/truthful-m5.spec.ts:105:3 › M5-00 truthful stand › every rewarded place has its own button with the reward on it; none on the scene or the top bar (17.1s)
+  ✓  155 [truthful] › e2e/truthful-m5.spec.ts:88:3 › M5-00 truthful stand › no video (error): no egg, a note, the button stays; the late reward (onRewarded after onClose) still gives the egg (18.5s)
+  ✓  157 [truthful] › e2e/truthful-m5.spec.ts:129:3 › M5-00 truthful stand › M5-03 interstitial: not in the first 3 minutes; then on a window closed by the player; not again for 3 minutes (11.3s)
+  ✓  158 [truthful] › e2e/truthful-m5.spec.ts:145:3 › M5-00 truthful stand › M5-03 «no ads» stops the interstitial and the banner (60 s after a video — unit ad-gate) (12.5s)
+  ✓  160 [truthful] › e2e/truthful-m5.spec.ts:169:3 › M5-00 truthful stand › Q-045 A: stuck with no coins and no pets — the egg for a video gets the shop going again (8.1s)
+  ✓  159 [truthful] › e2e/truthful-m5.spec.ts:158:3 › M5-00 truthful stand › M5-03 an interstitial that fails (no ad) starts no cooldown and the game goes on (10.7s)
+  ✓  161 [phone] › e2e/ftue-ub.spec.ts:52:1 › UB-06 each tab gets one hint on its first visit, none on the next; never at a closed thing (18.3s)
+  ✓  162 [phone] › e2e/ftue-ub.spec.ts:16:1 › UB-06 first minute by taps only: egg → To the shop → a letter → Sell with no counter → a new egg, within 60 s; no hint at a closed thing (31.4s)
+  ✓  164 [phone] › e2e/layout-collection-m4.spec.ts:8:1 › M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold (7.7s)
+  ✓  165 [phone] › e2e/layout-collection-m4.spec.ts:33:1 › M4-23 market mood: the chip in the sale card of the species in fashion (5.9s)
+  ✓  163 [phone] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (32.3s)
+  ✓  166 [phone] › e2e/layout-collection-m4.spec.ts:47:1 › M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked (7.1s)
+  ✓  167 [phone] › e2e/layout-m2.spec.ts:5:1 › M2-04 away window after two hours with the helpers (6.1s)
+  ✓  168 [phone] › e2e/layout-nav-ub.spec.ts:5:1 › UB-01 phone: one tab bar at the bottom, Eggs is home, every tab opens its screen (9.7s)
+  ✓  169 [phone] › e2e/layout-sales-m3.spec.ts:7:1 › M3-06 phone: the price slider works by tap and by drag (7.7s)
+  ✓  171 [phone] › e2e/layout-store-m5.spec.ts:30:1 › M5-02 ad buttons on the phone: the egg cards, the market and the gifts tile read and tap (6.8s)
+  ✓  170 [phone] › e2e/layout-store-m5.spec.ts:9:1 › M5-04 «Акции» on the phone: every pack readable, its price button whole (9.8s)
+  ✓  172 [phone] › e2e/layout-upgrades-ub.spec.ts:5:1 › UB-04 phone: the upgrades panel from the right keeps the shop in view (6.3s)
+  ✓  173 [phone] › e2e/layout-usability-ub.spec.ts:7:1 › UB-09 phone: a tab tap closes any window (9.4s)
+  ✓  175 [phone] › e2e/layout-usability-ub.spec.ts:9:1 › UB-09 phone: hints never lie over a window (9.4s)
+  ✓  174 [phone] › e2e/layout-usability-ub.spec.ts:8:1 › UB-09 phone: one window at a time (13.3s)
+  ✓  176 [phone] › e2e/layout-usability-ub.spec.ts:10:1 › UB-09 phone: the hatch reward only after the strip (10.4s)
+  ✓  177 [phone] › e2e/layout-usability-ub.spec.ts:11:1 › UB-09 phone: hidden gestures are signed (15.6s)
+  ✓  179 [phone] › e2e/layout-usability-ub.spec.ts:13:1 › UB-09 phone: every tab has its label (4.7s)
+  ✓  180 [phone] › e2e/layout-usability-ub.spec.ts:14:1 › UB-09 phone: no service marks (9.1s)
+  ✓  178 [phone] › e2e/layout-usability-ub.spec.ts:12:1 › UB-09 phone: text 12 px and up (M4-00: 14 px on a PC), buttons 44 px and up on every screen (22.0s)
+  ✓  181 [phone] › e2e/layout-usability-ub.spec.ts:15:1 › M4-00 phone: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (8.8s)
+  ✓  183 [phone] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it (10.0s)
+  ✓  184 [phone] › e2e/layout-windows-ub.spec.ts:5:1 › UB-02 phone: hints never lie over a window or another screen (5.6s)
+  ✓  185 [phone] › e2e/layout.spec.ts:5:1 › SCR-01 phone: the top bar, «Лавка» with its shelf and the Store under it, the tab bar inside the viewport, no scroll (4.5s)
+  ✓  182 [phone] › e2e/layout-usability-ub.spec.ts:16:1 › M4-00 phone: one caption on the shop at a time (32.3s)
+  ✓  186 [phone] › e2e/layout.spec.ts:21:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (8.1s)
+  ✓  187 [phone] › e2e/layout.spec.ts:34:1 › SAV-03 rotation keeps the state and the layout follows (7.1s)
+  ✓  189 [phone-landscape] › e2e/ftue-ub.spec.ts:52:1 › UB-06 each tab gets one hint on its first visit, none on the next; never at a closed thing (16.1s)
+  ✓  188 [phone-landscape] › e2e/ftue-ub.spec.ts:16:1 › UB-06 first minute by taps only: egg → To the shop → a letter → Sell with no counter → a new egg, within 60 s; no hint at a closed thing (28.7s)
+  ✓  191 [phone-landscape] › e2e/layout-collection-m4.spec.ts:8:1 › M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold (7.0s)
+  ✓  192 [phone-landscape] › e2e/layout-collection-m4.spec.ts:33:1 › M4-23 market mood: the chip in the sale card of the species in fashion (5.9s)
+  ✓  193 [phone-landscape] › e2e/layout-collection-m4.spec.ts:47:1 › M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked (6.4s)
+  ✓  194 [phone-landscape] › e2e/layout-m2.spec.ts:5:1 › M2-04 away window after two hours with the helpers (6.1s)
+  ✓  190 [phone-landscape] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (40.5s)
+  ✓  195 [phone-landscape] › e2e/layout-nav-ub.spec.ts:5:1 › UB-01 phone: one tab bar at the bottom, Eggs is home, every tab opens its screen (9.6s)
+  ✓  196 [phone-landscape] › e2e/layout-sales-m3.spec.ts:7:1 › M3-06 phone: the price slider works by tap and by drag (8.8s)
+  ✓  197 [phone-landscape] › e2e/layout-store-m5.spec.ts:9:1 › M5-04 «Акции» on the phone: every pack readable, its price button whole (9.8s)
+  ✓  198 [phone-landscape] › e2e/layout-store-m5.spec.ts:30:1 › M5-02 ad buttons on the phone: the egg cards, the market and the gifts tile read and tap (6.7s)
+  ✓  199 [phone-landscape] › e2e/layout-upgrades-ub.spec.ts:5:1 › UB-04 phone: the upgrades panel from the right keeps the shop in view (5.5s)
+  ✓  200 [phone-landscape] › e2e/layout-usability-ub.spec.ts:7:1 › UB-09 phone: a tab tap closes any window (8.1s)
+  ✓  201 [phone-landscape] › e2e/layout-usability-ub.spec.ts:8:1 › UB-09 phone: one window at a time (11.3s)
+  ✓  202 [phone-landscape] › e2e/layout-usability-ub.spec.ts:9:1 › UB-09 phone: hints never lie over a window (9.5s)
+  ✓  203 [phone-landscape] › e2e/layout-usability-ub.spec.ts:10:1 › UB-09 phone: the hatch reward only after the strip (10.8s)
+  ✓  204 [phone-landscape] › e2e/layout-usability-ub.spec.ts:11:1 › UB-09 phone: hidden gestures are signed (14.5s)
+  ✓  206 [phone-landscape] › e2e/layout-usability-ub.spec.ts:13:1 › UB-09 phone: every tab has its label (4.3s)
+  ✓  207 [phone-landscape] › e2e/layout-usability-ub.spec.ts:14:1 › UB-09 phone: no service marks (7.9s)
+  ✓  205 [phone-landscape] › e2e/layout-usability-ub.spec.ts:12:1 › UB-09 phone: text 12 px and up (M4-00: 14 px on a PC), buttons 44 px and up on every screen (20.3s)
+  ✓  208 [phone-landscape] › e2e/layout-usability-ub.spec.ts:15:1 › M4-00 phone: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (8.5s)
+  ✓  210 [phone-landscape] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it (9.2s)
+  ✓  211 [phone-landscape] › e2e/layout-windows-ub.spec.ts:5:1 › UB-02 phone: hints never lie over a window or another screen (5.5s)
+  ✓  212 [phone-landscape] › e2e/layout.spec.ts:5:1 › SCR-01 phone: the top bar, «Лавка» with its shelf and the Store under it, the tab bar inside the viewport, no scroll (4.7s)
+  ✓  209 [phone-landscape] › e2e/layout-usability-ub.spec.ts:16:1 › M4-00 phone: one caption on the shop at a time (33.4s)
+  ✓  213 [phone-landscape] › e2e/layout.spec.ts:21:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (7.3s)
+  ✓  214 [phone-landscape] › e2e/layout.spec.ts:34:1 › SAV-03 rotation keeps the state and the layout follows (6.0s)
+  ✓  215 [mobile] › e2e/devices-rd.spec.ts:10:1 › RD-06 device: the first minute to the first deal, F5 keeps it, no console errors (31.5s)
+  ✓  216 [mobile] › e2e/devices-rd.spec.ts:23:1 › RD-06 device: every tab opens, its buttons seen whole (36.4s)
+
+
+  1) [desktop] › e2e/fixes-fb.spec.ts:262:7 › Круг правок FB п. 5 812×330 › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 225
+    Received:    272
+
+      284 |         // Everything in the card, the card between the bars, no scroll.
+      285 |         const card = await win.evaluate((c) => ({ scroll: c.scrollHeight, client: c.clientHeight, r: c.getBoundingClientRect().toJSON() as DOMRect }));
+    > 286 |         expect(card.scroll).toBeLessThanOrEqual(card.client + 1);
+          |                             ^
+      287 |         for (const sel of ['[data-action=lang-ru]', '[data-action=lang-en]', '[data-action=code-input]', '[data-action=code-apply]']) {
+      288 |           const b = (await page.locator(`[data-overlay=settings] ${sel}`).boundingBox())!;
+      289 |           expect(b.y, sel).toBeGreaterThanOrEqual(card.r.y);
+        at /home/user/anomaly-shop/e2e/fixes-fb.spec.ts:286:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/fixes-fb-Круг-правок-FB-п--a920f-ht-the-placeholder-readable-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/fixes-fb-Круг-правок-FB-п--a920f-ht-the-placeholder-readable-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/fixes-fb-Круг-правок-FB-п--a920f-ht-the-placeholder-readable-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/fixes-fb-Круг-правок-FB-п--a920f-ht-the-placeholder-readable-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop] › e2e/fixes-fb.spec.ts:262:7 › Круг правок FB п. 5 812×330 130 % › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 225
+    Received:    272
+
+      284 |         // Everything in the card, the card between the bars, no scroll.
+      285 |         const card = await win.evaluate((c) => ({ scroll: c.scrollHeight, client: c.clientHeight, r: c.getBoundingClientRect().toJSON() as DOMRect }));
+    > 286 |         expect(card.scroll).toBeLessThanOrEqual(card.client + 1);
+          |                             ^
+      287 |         for (const sel of ['[data-action=lang-ru]', '[data-action=lang-en]', '[data-action=code-input]', '[data-action=code-apply]']) {
+      288 |           const b = (await page.locator(`[data-overlay=settings] ${sel}`).boundingBox())!;
+      289 |           expect(b.y, sel).toBeGreaterThanOrEqual(card.r.y);
+        at /home/user/anomaly-shop/e2e/fixes-fb.spec.ts:286:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/fixes-fb-Круг-правок-FB-п--541ad-ht-the-placeholder-readable-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/fixes-fb-Круг-правок-FB-п--541ad-ht-the-placeholder-readable-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/fixes-fb-Круг-правок-FB-п--541ad-ht-the-placeholder-readable-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/fixes-fb-Круг-правок-FB-п--541ad-ht-the-placeholder-readable-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [desktop] › e2e/smoke.spec.ts:19:1 › SDK-02 ready() once, after the shop is drawn, within 4 s; the loading screen is gone 
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 4000
+    Received:   4419
+
+      24 |   const ready = (await events(page)).find((e) => e.name === 'gameReady');
+      25 |   expect(ready).toBeDefined();
+    > 26 |   expect(ready!.t).toBeLessThan(4000);
+         |                    ^
+      27 |   await expect(page.locator('#preloader')).toHaveClass(/hidden/);
+      28 |   expect(await mockViolations(page)).toEqual([]);
+      29 | });
+        at /home/user/anomaly-shop/e2e/smoke.spec.ts:26:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/smoke-SDK-02-ready-once-af-d00ef--the-loading-screen-is-gone-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/smoke-SDK-02-ready-once-af-d00ef--the-loading-screen-is-gone-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/smoke-SDK-02-ready-once-af-d00ef--the-loading-screen-is-gone-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/smoke-SDK-02-ready-once-af-d00ef--the-loading-screen-is-gone-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [desktop] › e2e/fixes-fb.spec.ts:262:7 › Круг правок FB п. 5 812×330 › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable 
+    [desktop] › e2e/fixes-fb.spec.ts:262:7 › Круг правок FB п. 5 812×330 130 % › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable 
+    [desktop] › e2e/smoke.spec.ts:19:1 › SDK-02 ready() once, after the shop is drawn, within 4 s; the loading screen is gone 
+  2 did not run
+  213 passed (23.2m)
+FAIL e2e [e2e: end of milestone only] after 1393.9 s (exit 1)
+EXIT=1

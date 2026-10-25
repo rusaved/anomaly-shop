@@ -3418,12 +3418,33 @@ button.mu-card {
 .landscape #ui .overlay[data-overlay='settings'] > .card > .code-answer {
   grid-column: 1 / -1;
 }
-/* M6-23: the shop name sideways — its label, field and answer in the right column under the communities (the left one is full:
-   sound, buzz, language; the usability review: in 815×290 the field fell below the fold). */
-.landscape #ui .overlay[data-overlay='settings'] > .card > .name-row,
-.landscape #ui .overlay[data-overlay='settings'] > .card > [data-name-answer] {
+/* M6-23: the shop name sideways — no row of its own (the window keeps no scroll at 812×330, круг правок FB п. 5): «✎ Имя лавки» sits in
+   the title row on the left; while it is on (.naming) the field and its answer take the communities' place in the right column. */
+.overlay[data-overlay='settings'] > .card > .name-edit {
+  display: none;
+}
+.landscape #ui .overlay[data-overlay='settings'] > .card > .name-edit {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  z-index: 2;
+  display: inline-flex;
+  width: auto !important;
+  min-height: 44px;
+  padding: 0 14px;
+}
+.landscape #ui .overlay[data-overlay='settings'] > .card:not(.naming) > .name-row,
+.landscape #ui .overlay[data-overlay='settings'] > .card:not(.naming) > [data-name-answer],
+.landscape #ui .overlay[data-overlay='settings'] > .card.naming > .community {
+  display: none;
+}
+.landscape #ui .overlay[data-overlay='settings'] > .card.naming > .name-row {
   grid-column: 2;
-  grid-row: auto;
+  grid-row: 3;
+}
+.landscape #ui .overlay[data-overlay='settings'] > .card.naming > [data-name-answer] {
+  grid-column: 2;
+  grid-row: 4;
 }
 .overlay[data-overlay='settings'] > .card > [data-name-answer]:empty {
   display: none;

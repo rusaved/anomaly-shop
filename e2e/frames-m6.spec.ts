@@ -82,8 +82,11 @@ for (const size of SIZES) {
       await seedSave(page, FRAMES_SAVE);
       await open(page);
       await OPENERS['overlay:settings']!(page);
+      // Sideways the field opens with «✎ Shop name» by the title (the window has no room for another row).
+      const edit = page.locator('[data-action=shopname-edit]');
+      if (await edit.isVisible()) await edit.click();
       const input = page.locator('[data-action=shopname-input]');
-      await input.scrollIntoViewIfNeeded();
+      await expect(input).toBeVisible();
       // A word of the stop-list (scripts/stopwords.json, never written in the game), upper case, inside a name.
       await input.fill(`Лавка ${stop.gambling[0]!.toUpperCase()}`);
       await page.locator('[data-action=shopname-save]').click();
@@ -95,6 +98,7 @@ for (const size of SIZES) {
       await closeAll(page);
       await page.reload();
       await OPENERS['overlay:settings']!(page);
+      if (await edit.isVisible()) await edit.click();
       await expect(page.locator('[data-action=shopname-input]')).toHaveValue('Чайная');
       expect(problems).toEqual([]);
       expect(errors).toEqual([]);

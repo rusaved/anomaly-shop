@@ -22,6 +22,9 @@ const hasWebkit = (() => {
   }
 })();
 const port = Number(process.env.E2E_PORT || 4173);
+// D-02: scripts/e2e.mjs runs E2E_PART=main (every project but perf), then E2E_PART=perf (perf alone, no dependencies):
+// Playwright does not apply --grep to dependency projects. Without E2E_PART — every project, perf after the rest.
+const part = process.env.E2E_PART;
 const markerFile = resolve(import.meta.dirname, '.cache/chromium-path');
 const executablePath =
   process.env.CHROMIUM_EXECUTABLE || (existsSync(markerFile) ? readFileSync(markerFile, 'utf8').trim() : undefined);
@@ -67,8 +70,8 @@ export default defineConfig({
       use: { ...devices['Pixel 7'], deviceScaleFactor: 1, launchOptions: executablePath ? { executablePath, args: launchArgs } : { args: launchArgs } },
     },
     ...(hasWebkit ? [{ name: 'webkit', testMatch: DEVICE_SPECS, use: { ...devices['iPhone 15'], deviceScaleFactor: 1, launchOptions: {} } }] : []),
-    { name: 'perf', testMatch: PERF_SPECS, dependencies: ['desktop', 'phone', 'phone-landscape', 'mobile', ...(hasWebkit ? ['webkit'] : [])] },
-  ],
+    { name: 'perf', testMatch: PERF_SPECS, dependencies: part ? [] : ['desktop', 'phone', 'phone-landscape', 'mobile', ...(hasWebkit ? ['webkit'] : [])] },
+  ].filter((p) => (part === 'perf' ? p.name === 'perf' : part === 'main' ? p.name !== 'perf' : true)),
   webServer: {
     command: `npx vite preview --outDir ${dist} --port ${port} --strictPort --host 127.0.0.1`,
     url: `http://127.0.0.1:${port}/`,

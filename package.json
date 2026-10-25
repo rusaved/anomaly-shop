@@ -28,6 +28,7 @@
     "pack": "node scripts/pack.mjs",
     "check-release": "node scripts/check-release.mjs",
     "check:youtube": "node scripts/check-bundle-urls.mjs dist-youtube --profile youtube",
+    "e2e:youtube": "node scripts/e2e-static.mjs youtube",
     "verify": "node scripts/verify.mjs",
     "verify:fast": "node scripts/verify.mjs --fast",
     "verify:full": "node scripts/verify.mjs --full",

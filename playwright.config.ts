@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 // e2e against `vite preview` of build:e2e (docs/02-tech.md, section 10). Runs only at the end of a milestone
 // (CLAUDE.md, «Экономия контекста и лимитов»). Phone first: portrait is the main mobile project.
 const dist = process.env.E2E_DIST || 'dist-e2e';
-const STATIC_SPECS = /(smoke-release|pages)\.spec\.ts$/;
+const STATIC_SPECS = /(smoke-release|pages|youtube-m6)\.spec\.ts$/;
 const PHONE_SPECS = /(touch|layout|ftue)[^/]*\.spec\.ts$/;
 // M4-09: the load budget on a slow CPU runs alone, after every other project (a busy neighbour skews it).
 const PERF_SPECS = /perf\.spec\.ts$/;

@@ -38,6 +38,7 @@ const STAGES = [
   { name: 'e2e:release', e2e: true },
   { name: 'build:youtube' },
   { name: 'check:youtube' },
+  { name: 'e2e:youtube', e2e: true },
 ];
 if (full) STAGES.push({ name: 'e2e:full', e2e: true });
 

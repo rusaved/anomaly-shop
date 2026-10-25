@@ -119,7 +119,7 @@
     { "id": "M6-01", "milestone": "M6", "priority": "P1", "title": "Сочность и звук — остаток после FB: отклик на каждый тап, звук рулетки и вылупления; музыка — только если файл уже в assets/, иначе вопрос", "criteria": "audio.json; ноль ошибок консоли", "passes": false },
     { "id": "M6-02", "milestone": "M6", "priority": "P1", "title": "30 видов существ с портретами и репликами", "criteria": "species.json, lines.json валидны", "passes": false },
     { "id": "M6-03", "milestone": "M6", "priority": "P1", "title": "Обложки и карточка под нишу ресейла (по докам 04-packaging), название и описание из game.json", "criteria": "docs/04 заполнен; 3 обложки в docs/evidence/M6", "passes": false, "deferred": true },
-    { "id": "M6-04", "milestone": "M6", "priority": "P1", "title": "Профиль youtube: сборка и тест «нет внешних URL», карточки подписки скрыты", "criteria": "check:youtube зелёный", "passes": false },
+    { "id": "M6-04", "milestone": "M6", "priority": "P1", "title": "Профиль youtube: сборка и тест «нет внешних URL», карточки подписки скрыты", "criteria": "check:youtube зелёный", "passes": true },
     { "id": "M6-05", "milestone": "M6", "priority": "P1", "title": "Бюджеты размера и fps на слабом профиле — сверка с RD-04 и остаток", "criteria": "size зелёный", "passes": false },
     { "id": "M6-06", "milestone": "M6", "priority": "P1", "title": "Итог вехи M6 по шаблону", "criteria": "«Ждёт решения продюсера»", "passes": false },
     { "id": "M7-01", "milestone": "M7", "priority": "P1", "title": "Чек-лист Яндекса (docs/03), релизный архив, карточка ru/en, финальные тесты, verify:full в чистом клоне", "criteria": "check-release зелёный; compliance/report.md без TODO", "passes": false },

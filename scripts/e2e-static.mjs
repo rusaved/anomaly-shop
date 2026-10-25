@@ -1,5 +1,6 @@
 // `npm run e2e:release` (mode release): unpack the newest release/*.zip and run e2e/smoke-release.spec.ts on it.
 // `node scripts/e2e-static.mjs pages`: run e2e/pages.spec.ts over dist-pages.
+// `npm run e2e:youtube` (mode youtube, M6-04): run e2e/youtube-m6.spec.ts over dist-youtube on a fake ytgame.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -48,6 +49,14 @@ if (mode === 'release') {
   }
   spec = 'pages.spec.ts';
   port = 4181;
+} else if (mode === 'youtube') {
+  dir = resolve(root, 'dist-youtube');
+  if (!existsSync(join(dir, 'index.html'))) {
+    console.error('e2e youtube: dist-youtube/index.html missing — run npm run build:youtube first');
+    process.exit(1);
+  }
+  spec = 'youtube-m6.spec.ts';
+  port = 4182;
 } else {
   console.error(`e2e-static: unknown mode ${mode}`);
   process.exit(2);

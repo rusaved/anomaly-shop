@@ -20,7 +20,7 @@ src/scene/     PixiJS: лавка, инкубаторы, витрина, оче�
 src/ui/        HTML: панели, окна, тосты, t(), числа, кнопки сообществ
 src/audio/ analytics/ debug/ studio/ test-api/;  dev/yasdk-mock/;  tests/ e2e/ scripts/
 ```
-Скрипты — `package.json`. `verify`: typecheck → test → validate:content → build:e2e → e2e → build → size → pack → check-release → e2e:release → build:youtube → check:youtube; `--fast` — первые три, `--full` — плюс `e2e:full`, `--no-e2e` — без e2e; полный лог — в файл `--log`, в консоль — ступени и 40 строк упавшей. Позже: `sim:balance` (`scripts/balance-model.ts`, `01a`, раздел 9), `studio:shots`, `promo:*`, мок `ytgame` для e2e.
+Скрипты — `package.json`. `verify`: typecheck → test → validate:content → build:e2e → e2e → build → size → pack → check-release → e2e:release → build:youtube → check:youtube → e2e:youtube (M6-04: youtube-сборка на фейковом `ytgame`, ни одного внешнего запроса, нет кнопок сообществ и подарка «За визит в группу»); `--fast` — первые три, `--full` — плюс `e2e:full`, `--no-e2e` — без e2e; полный лог — в файл `--log`, в консоль — ступени и 40 строк упавшей. Позже: `sim:balance` (`scripts/balance-model.ts`, `01a`, раздел 9), `studio:shots`, `promo:*`, мок `ytgame` для e2e.
 
 ## 4. Архитектура
 ### 4.1 Слои (проверяет `tests/architecture.test.ts`)

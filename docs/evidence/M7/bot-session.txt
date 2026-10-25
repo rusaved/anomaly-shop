@@ -1,0 +1,12 @@
+M7-05 bot session 2026-10-25T13:05, 1280×720, fresh game, real time
+min 1: coins 46, deals 2, hatched 2, controllable true, windows []
+min 2: coins 6, deals 4, hatched 9, controllable true, windows []
+min 3: coins 0, deals 7, hatched 16, controllable true, windows [hatch]
+min 4: coins 36, deals 11, hatched 22, controllable true, windows []
+min 5: coins 74, deals 17, hatched 32, controllable true, windows []
+min 6: coins 77, deals 25, hatched 43, controllable true, windows []
+min 7: coins 32, deals 32, hatched 52, controllable true, windows []
+min 8: coins 85, deals 37, hatched 60, controllable true, windows []
+min 9: coins 46, deals 43, hatched 67, controllable true, windows []
+min 10: coins 9, deals 47, hatched 74, controllable true, windows []
+end: deals 47, hatched 74; console errors 0; SDK violations 0

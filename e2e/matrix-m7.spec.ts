@@ -43,12 +43,13 @@ for (const s of SIZES) {
         await tab.click();
         await expect(tab).toHaveClass(/active/);
         await page.waitForTimeout(250);
-        for (const p of await buttonsSeenWhole(page)) problems.push(`${id}: ${p}`);
-        await expectNoPageScroll(page);
+        // The shot first: the check below scrolls the lists the way a player does.
         if (id === 'home' && shots && s.w <= 1280) {
           mkdirSync(shots, { recursive: true });
           await page.screenshot({ path: resolve(shots, `home_${name}_ru.png`) });
         }
+        for (const p of await buttonsSeenWhole(page)) problems.push(`${id}: ${p}`);
+        await expectNoPageScroll(page);
       }
       expect(problems).toEqual([]);
       expect(errors).toEqual([]);

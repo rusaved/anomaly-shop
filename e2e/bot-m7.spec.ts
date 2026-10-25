@@ -10,6 +10,8 @@ import { closeHatch, collectErrors, listFromInventory, mockViolations, open, pla
  */
 type S = { coins: number; controllable: boolean; stats: { deals: number; hatched: number }; windows: string[] };
 type T = { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }>; slots: Array<{ x: number; y: number }> } | null } };
+// A bot never waits on a button that is not there (an empty storage has no pet to list): every action gives up after 5 s.
+test.use({ actionTimeout: 5000 });
 const out = process.env.M7_BOT_OUT ? resolve(import.meta.dirname, '../docs/evidence/M7/bot-session.txt') : null;
 
 const tryDo = async (fn: () => Promise<unknown>): Promise<boolean> => {

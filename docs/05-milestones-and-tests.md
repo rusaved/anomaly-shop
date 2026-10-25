@@ -23,7 +23,7 @@
 | `verify:full` (+ `@full`) | M7 и подача | ≤ 30 мин |
 | `verify -- --no-e2e` | сборка посреди вехи, если нужно | ≤ 10 мин |
 
-- e2e-ступени (`e2e`, `e2e:release`, `e2e:full`) — только в итоге вехи.
+- e2e-ступени (`e2e`, `e2e:release`, `e2e:full`) — только в итоге вехи.; `e2e` и `e2e:full` идут через `scripts/e2e.mjs` двумя запусками — все проекты кроме `perf`, потом `perf` один (Playwright не применяет `--grep` к проектам-зависимостям, поэтому раньше долгие `@full` шли и в обычном `e2e`)
 - Полный прогон — в фоне: `npm run verify -- --log docs/evidence/<веха>/verify.txt > /dev/null 2>&1; echo "EXIT=$?" >> docs/evidence/<веха>/verify.txt`; читаешь `tail -n 40`.
 - CI (RD-01): `ci/verify.yml` — полный `verify` в GitHub Actions на каждый push в `main`, после того как продюсер положит его в `.github/workflows/verify.yml` (Q-049). Итог читаешь только `npm run ci:status` (последние прогоны verify и pages: статус, коммит, упавшая ступень и хвост 15 строк из аннотаций; `--sha <коммит> --wait 30` — дождаться прогона); весь лог — артефакт `verify-summary` прогона, в чат не тянешь. `verify` пишет итог в `.cache/verify-summary.json`
 - Всегда зелёных заглушек нет. Ступень дольше бюджета — запись в `progress.md`, долгие тесты — под тег `@full`.

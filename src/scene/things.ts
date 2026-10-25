@@ -17,6 +17,8 @@ export interface Things {
   tapped(first: string, count: number): void;
   /** A secret step (secrets.json show): teapot, bloom. */
   secret(show: string): void;
+  /** M6-21: the anomalous weather — a rainbow in the window while it lasts. */
+  weather(on: boolean): void;
   /** The flower's taps so far (the save): leaves and the bloom stay after a reload. */
   setFlower(taps: number): void;
   /** Animations; true while something moves. */
@@ -34,8 +36,9 @@ export function createThings(c: Colors): Things {
   const sky = new Container();
   const cloud = new Graphics();
   const teapot = new Graphics();
+  const rainbow = new Graphics();
   const skyMask = new Graphics();
-  sky.addChild(cloud, teapot);
+  sky.addChild(rainbow, cloud, teapot);
   sky.mask = skyMask;
   back.addChild(windowG, sky, skyMask);
   const clockG = new Graphics();
@@ -165,6 +168,13 @@ export function createThings(c: Colors): Things {
         flowerTaps = Math.max(flowerTaps, BLOOM_AT);
         drawFlower();
       }
+    },
+    weather(on) {
+      rainbow.clear();
+      if (!on || !l || l.decor.window.w <= 0) return;
+      const win = l.decor.window;
+      const colors = [c.blush, c.uiAccent, c.uiGood, c.rarityRare, c.rarityEpic];
+      colors.forEach((col, i) => rainbow.circle(win.x + win.w * 0.5, win.y + win.h * 1.15, win.w * (0.62 - i * 0.07)).stroke({ width: win.w * 0.07, color: col }));
     },
     setFlower(taps) {
       flowerTaps = taps;

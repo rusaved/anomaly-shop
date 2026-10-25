@@ -619,6 +619,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const markOf = (cr: Creature) => (cr.mark ? species.marks.list.find((m) => m.id === cr.mark) : undefined);
   /** Feeding taps a level needs: the sleepy one eats slower. */
   const needOf = (cr: Creature): number => Math.ceil(tapsForLevel(cr.level, species.tapsPerLevelBase, species.tapGrowth) * (markOf(cr)?.feedMult ?? 1));
+  /** M6-21: the anomalous weather shines on every pet on the shelf while it lasts (×priceMult, the mark's tint). */
+  const weatherOn = (cr: Creature): boolean => activeOf('weather') !== null && s().showcase.includes(cr.uid);
+  const weatherMult = (cr: Creature): number => (weatherOn(cr) ? (activeOf('weather')?.priceMult ?? 1) : 1);
   /** A mark at hatching from the creature's id (no extra roll: the rest of the game stays as it was for a seed). */
   const markFor = (uid: string): string | undefined => {
     const roll = dayHash(uid, s().createdAt) / 0x100000000;
@@ -628,6 +631,7 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const valueMult = (cr: Creature): number =>
     (cr.mult ?? 1) *
     (markOf(cr)?.priceMult ?? 1) *
+    weatherMult(cr) *
     (1 + shelfBonus(cr.age ?? 0, species.shelf, 1 + effectSum('shelfGrowth'))) *
     (1 + effectSum('appraisal')) *
     (1 + rowBonus(cr)) *
@@ -720,8 +724,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       fed: x.fed,
       need: needOf(x),
       hold: Math.ceil((x.hold ?? 0) / 60),
-      mark: x.mark ?? '',
-      tint: markOf(x)?.tint ?? '',
+      mark: x.mark ?? (weatherOn(x) ? (activeOf('weather')?.mark ?? '') : ''),
+      tint: markOf(x)?.tint ?? (weatherOn(x) ? (species.marks.list.find((m) => m.id === activeOf('weather')?.mark)?.tint ?? '') : ''),
     };
   }
 
@@ -814,7 +818,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     if (e.weight <= 0 || sessionSec < e.fromMin * 60) return false;
     // M4-21: an event about a species comes only while one is on the shelf (the kettle whistles, the lampbug glows, the cat walks).
     if ('needs' in e && !onSale().some((cr) => cr.species === e.needs)) return false;
-    if (e.kind === 'golden' || e.kind === 'sneeze' || e.kind === 'inspector' || e.kind === 'photo') return onSale().length > 0;
+    if (e.kind === 'golden' || e.kind === 'sneeze' || e.kind === 'inspector' || e.kind === 'photo' || e.kind === 'weather') return onSale().length > 0;
+    // M6-21: the parade brings an egg of the list that is open now.
+    if (e.kind === 'parade') return e.eggs.some((id) => eggs.eggs.some((x) => x.id === id && eggOpen(x)));
     return true;
   }
   /** M4-21: the events that may come now (the unit test of the weights and the species). */
@@ -868,7 +874,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     sessionSec += dt;
     if (active) {
       active.left -= dt;
-      if (active.left <= 0) endEvent('missed');
+      // M6-21: the weather is a gift by itself — it ends done, not missed.
+      if (active.left <= 0) endEvent(active.data.kind === 'weather' ? 'done' : 'missed');
       return;
     }
     eventIn -= dt;
@@ -2034,13 +2041,18 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         const cr = uid ? st.creatures.find((x) => x.uid === uid) : undefined;
         return pay(cr ? appraisal(cr) * data.share : 0);
       }
-      if (data.kind === 'pie') return pay(randInt(data.coins) * city);
+      if (data.kind === 'pie' || data.kind === 'mouse') return pay(randInt(data.coins) * city);
       if (data.kind === 'blink') {
         const bug = st.creatures.find((x) => x.uid === ev.uid);
         return pay((bug?.level ?? 1) * data.coinsPerLevel * city);
       }
       if (data.kind === 'catWalk') return rng.next() < data.crystalChance ? pay(0, 1) : pay(randInt(data.coins) * city);
-      if (ev.data.kind !== 'doorEgg' || !ev.egg) return;
+      // M6-21: a tap on the parade takes one of the rolling eggs (a random open one), like the egg at the door.
+      if (data.kind === 'parade') {
+        const open = data.eggs.filter((id) => eggs.eggs.some((x) => x.id === id && eggOpen(x)));
+        ev.egg = open[rng.int(open.length)] ?? basicEgg;
+      }
+      if ((ev.data.kind !== 'doorEgg' && ev.data.kind !== 'parade') || !ev.egg) return;
       const at = eggSpot();
       if (at >= 0) {
         placeEgg(at, ev.egg, false);

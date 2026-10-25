@@ -79,7 +79,10 @@ describe('M2-15 random events', () => {
       expect(started(seen).length).toBeLessThanOrEqual(30);
       for (const g of gaps.slice(1)) expect(g).toBeGreaterThanOrEqual(60 - 0.1);
       for (const g of gaps) expect(g).toBeLessThanOrEqual(120 + 0.1);
-      for (const s of spans) expect(s).toBeLessThanOrEqual(20 + 0.1);
+      // 8–20 s each; M6-21: the anomalous weather lasts its minute (01b §3, «на минуту»).
+      const longest = Math.max(...base.events.events.map((e) => e.durationSec));
+      expect(longest).toBe(60);
+      for (const s of spans) expect(s).toBeLessThanOrEqual(longest + 0.1);
       // One at a time: every start comes after the previous end.
       const marks = seen.filter((e) => e.type === 'eventStarted' || e.type === 'eventEnded').map((e) => e.type);
       for (let i = 1; i < marks.length; i++) expect(marks[i]).not.toBe(marks[i - 1]);

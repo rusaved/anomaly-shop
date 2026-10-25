@@ -25,8 +25,8 @@ function shop(onShelf: string[], seed = 4) {
 }
 
 describe('M4-21 events', () => {
-  it('twelve events in the data; the ones about a species need it on the shelf', () => {
-    expect(content.events.events).toHaveLength(12);
+  it('fifteen events in the data (M6-21: weather, mouse, parade); the ones about a species need it on the shelf', () => {
+    expect(content.events.events).toHaveLength(15);
     const { game } = shop(['sockfish']);
     game.tick(60 * 5);
     const without = game.eventsPossible();
@@ -59,7 +59,7 @@ describe('M4-21 events', () => {
     const { game, seen } = shop(['kettle', 'lampbug', 'cloudcat']);
     const paid: number[] = [];
     let fedSeen = false;
-    for (let i = 0; i < 400 && paid.length < 6; i++) {
+    for (let i = 0; i < 800 && (paid.length < 6 || !fedSeen); i++) {
       game.tick(130);
       const ev = game.view().event;
       if (ev && ['inspector', 'photo', 'pie', 'blink', 'catWalk'].includes(ev.kind)) {

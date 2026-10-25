@@ -467,5 +467,8 @@
   "fx.tick": "Tick",
   "fx.bong": "Bong!",
   "fx.giggle": "Hee-hee!",
-  "toast.chime": "The clock struck! A treat for every pet"
+  "toast.chime": "The clock struck! A treat for every pet",
+  "event.weather": "Anomalous weather! The shelf shines, prices up",
+  "event.mouse": "A mouse! Tap it before it runs",
+  "event.parade": "An egg parade at the door! Catch one"
 }

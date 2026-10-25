@@ -44,6 +44,18 @@ for (const size of SIZES) {
       });
       await open(page);
       await frame(page, problems, 'shop-new-species', tag);
+      // M6-21: the three new events in the shop (started by the test API past their first minutes), each frame «buttons seen whole».
+      const api = <T,>(fn: (t: { event(id: string): boolean; runSim(s: number): number; state(): { event: string | null } }) => T) =>
+        page.evaluate(`(${fn.toString()})(window.__TEST__)`) as Promise<T>;
+      await api((t) => t.runSim(250));
+      for (const id of ['weather', 'mouse', 'parade']) {
+        for (let i = 0; i < 6 && (await api((t) => t.state().event)); i++) await api((t) => t.runSim(25));
+        expect(await page.evaluate((x) => (window as unknown as { __TEST__: { event(id: string): boolean } }).__TEST__.event(x), id)).toBe(true);
+        // The event's toast (2.6 s) goes first: a toast over a button for a moment is not a layout fault.
+        await page.waitForTimeout(3200);
+        await frame(page, problems, `event-${id}`, tag);
+        await api((t) => t.runSim(61));
+      }
       await page.locator('[data-tab=inventory]').click();
       await page.locator('[data-sheet=inventory] [data-sub=collection]').click();
       await expect(page.locator('[data-sheet=inventory] [data-collected]')).toHaveAttribute('data-collected', `${species.species.length}/${species.species.length}`);

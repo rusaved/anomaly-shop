@@ -853,12 +853,14 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         eventLayer.addChild(box);
         eventCoins.set(coin.id, box);
       }
-    } else if (ev.kind === 'doorEgg' || ev.kind === 'merchant' || ev.kind === 'inspector' || ev.kind === 'photo' || ev.kind === 'pie' || ev.kind === 'blink' || ev.kind === 'catWalk') {
+    } else if (ev.kind === 'doorEgg' || ev.kind === 'merchant' || ev.kind === 'inspector' || ev.kind === 'photo' || ev.kind === 'pie' || ev.kind === 'blink' || ev.kind === 'catWalk' || ev.kind === 'mouse' || ev.kind === 'parade') {
       // M4-21: the cat sits on the sign; the rest wait at the door.
       const spot: Spot =
         ev.kind === 'catWalk'
           ? { x: l.decor.sign.x + l.decor.sign.w * 0.75, y: l.decor.sign.y - l.unit * 0.1, r: l.unit * 0.45 }
-          : { x: Math.max(l.stage.x + l.unit, l.door.x - l.unit * 0.75), y: l.floor.y + l.unit * 0.35, r: l.unit * 0.55 };
+          : ev.kind === 'mouse' || ev.kind === 'parade'
+            ? { x: l.floor.x + l.unit, y: l.roomBottom - Math.max(18, l.unit * 0.6), r: Math.max(16, l.unit * 0.6) }
+            : { x: Math.max(l.stage.x + l.unit, l.door.x - l.unit * 0.75), y: l.floor.y + l.unit * 0.35, r: l.unit * 0.55 };
       const box = new Container();
       const g = new Graphics();
       const r = spot.r;
@@ -889,6 +891,22 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         g.circle(0, 0, r * 1.1).fill({ color: c.counterTop, alpha: 0.35 });
         g.circle(0, 0, r * 0.55).fill(c.counterTop).stroke({ width: l.outline * 0.6, color: c.outline });
         g.rect(-r * 0.2, r * 0.5, r * 0.4, r * 0.25).fill(c.uiMuted).stroke({ width: l.outline * 0.5, color: c.outline });
+      } else if (ev.kind === 'mouse') {
+        // M6-21: a little grey mouse (it runs along the floor, animateEvent).
+        g.ellipse(0, r * 0.55, r * 0.6, r * 0.12).fill({ color: c.outline, alpha: 0.18 });
+        g.moveTo(-r * 0.5, r * 0.25).quadraticCurveTo(-r * 0.95, r * 0.1, -r * 0.9, -r * 0.25).stroke({ width: l.outline * 0.6, color: c.outline, cap: 'round' });
+        g.ellipse(0, r * 0.2, r * 0.55, r * 0.35).fill(c.uiMuted).stroke({ width: l.outline * 0.7, color: c.outline });
+        g.circle(r * 0.32, -r * 0.18, r * 0.2).fill(c.uiMuted).stroke({ width: l.outline * 0.6, color: c.outline });
+        g.circle(r * 0.5, r * 0.15, r * 0.07).fill(c.blush);
+        g.circle(r * 0.32, r * 0.08, r * 0.05).fill(c.outline);
+      } else if (ev.kind === 'parade') {
+        // M6-21: three eggs rolling by the door (the row moves, animateEvent).
+        for (const [i, id] of ['egg_basic', 'egg_warm', 'egg_odd'].entries()) {
+          const e = new Graphics();
+          drawEgg(e, r * 0.85, c, l.outline * 0.6, 0, style.eggs[id]);
+          e.position.set((i - 1) * r * 1.8, 0);
+          box.addChild(e);
+        }
       } else if (ev.kind === 'catWalk') {
         // The cloud cat: a puffy head with ears.
         g.poly([-r * 0.6, -r * 0.2, -r * 0.45, -r * 0.9, -r * 0.1, -r * 0.45]).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
@@ -924,7 +942,15 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     if (!ev) return false;
     let i = 0;
     for (const box of eventCoins.values()) box.pivot.y = Math.sin(time * 6 + i++) * l.unit * 0.06;
-    if (eventThing && eventSpot) {
+    if (eventThing && eventSpot && (ev.kind === 'mouse' || ev.kind === 'parade')) {
+      // M6-21: the mouse runs to and fro along the floor; the eggs roll by the door and tumble.
+      const span = Math.max(l.unit * 2, l.door.x - l.floor.x - l.unit * 1.5);
+      const k = ev.kind === 'mouse' ? Math.sin(time * 1.6) : ((time * 0.35) % 1) * 2 - 1;
+      eventThing.x = l.floor.x + l.unit * 0.75 + (span / 2) * (1 + k);
+      if (ev.kind === 'mouse') eventThing.scale.x = Math.cos(time * 1.6) >= 0 ? 1 : -1;
+      else for (const ch of eventThing.children) if (ch instanceof Graphics) ch.rotation = time * 4;
+      eventThing.y = eventSpot.y - Math.abs(Math.sin(time * (ev.kind === 'mouse' ? 14 : 5))) * l.unit * 0.05;
+    } else if (eventThing && eventSpot) {
       const k = Math.abs(Math.sin(time * 3));
       eventThing.scale.set(1 + 0.06 * k, 1 - 0.04 * k);
       eventThing.y = eventSpot.y - k * l.unit * 0.08;
@@ -1137,6 +1163,14 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           fx.float(box.x, box.y - current.unit * 0.4, `+${fmt(e.value)}`, c.uiAccent, Math.max(15, current.unit * 0.5), current.unit * 0.8);
           fx.burst(box.x, box.y, 6, [c.uiAccent, c.counterTop], current.unit * 1.5, current.outline);
         }
+      } else if ((e.type === 'eventStarted' || e.type === 'eventEnded') && e.kind === 'weather') {
+        // M6-21: a rainbow in the window, a shine over every pet on the shelf.
+        things.weather(e.type === 'eventStarted');
+        if (e.type === 'eventStarted')
+          for (const slot of current.slots.slice(0, slotUids.length)) {
+            const at = slotCenter(slot);
+            fx.burst(at.x, at.y, 8, [c.eyeWhite, c.uiAccent, c.rarityRare], at.r * 4, current.outline);
+          }
       } else if (e.type === 'eventStarted' && e.kind === 'sneeze' && e.uid) {
         const index = slotUids.indexOf(e.uid);
         const slot = current.slots[index];

@@ -465,6 +465,10 @@ export const RandomEvent = v.variant('kind', [
   v.object({ ...EventBase, kind: v.literal('kettle'), needs: Id, fedTaps: Count }),
   v.object({ ...EventBase, kind: v.literal('blink'), needs: Id, coinsPerLevel: Count }),
   v.object({ ...EventBase, kind: v.literal('catWalk'), needs: Id, coins: IntRange, crystalChance: Share }),
+  // M6-21 (01b §3): anomalous weather — a shine on every pet on the shelf for the event's time; the mouse runs across the floor; the eggs roll by.
+  v.object({ ...EventBase, kind: v.literal('weather'), priceMult: v.pipe(v.number(), v.minValue(1)), mark: Id }),
+  v.object({ ...EventBase, kind: v.literal('mouse'), coins: IntRange }),
+  v.object({ ...EventBase, kind: v.literal('parade'), eggs: v.pipe(v.array(Id), v.minLength(1)) }),
 ]);
 const SecRange = v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(v.number(), v.minValue(1)) });
 export const EventsFile = v.object({ firstAfterSec: SecRange, everySec: SecRange, events: v.pipe(v.array(RandomEvent), v.minLength(1)) });

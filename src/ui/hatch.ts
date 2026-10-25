@@ -19,6 +19,8 @@ export interface HatchLookups {
   spinSec(): number;
   /** Seconds the result's buttons wait before they take a press (feel.json hatchLockSec): a double tap of the skip never chooses. */
   lockSec(): number;
+  /** M7: taps extend the wait only within this many seconds after the result (feel.json hatchLockMaxSec). */
+  lockMaxSec(): number;
   onResult?(): void;
   /** M6-01: a portrait passes under the marker (the wheel's click; no more often than TICK_MS). */
   onTick?(): void;
@@ -111,7 +113,8 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   overlay.root.addEventListener(
     'pointerdown',
     () => {
-      if (!done || !locked) return;
+      // M7 (ревизор геймдизайна): only in the first lockMaxSec after the result — fast taps never lock the buttons for good.
+      if (!done || !locked || performance.now() - resultAt > look.lockMaxSec() * 1000) return;
       clearTimeout(unlock);
       unlock = window.setTimeout(() => setLocked(false), Math.max(0, look.lockSec()) * 1000);
     },

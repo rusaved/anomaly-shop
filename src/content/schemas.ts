@@ -259,6 +259,8 @@ export const FeelFile = v.object({
   hatchShowSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(8)),
   /** Круг правок FB п. 1: the hatch result's buttons take a press this long after it shows (a double tap of the skip never chooses), ≥ 0.5 s. */
   hatchLockSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(1.5)),
+  /** M7: taps extend the wait only this long after the result shows. */
+  hatchLockMaxSec: v.pipe(v.number(), v.minValue(3), v.maxValue(10)),
 });
 
 export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade', 'spin', 'giggle', 'bong', 'chirp', 'voice'] as const;

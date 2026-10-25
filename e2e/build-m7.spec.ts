@@ -160,3 +160,26 @@ test('CNT-08 the community buttons stay in the pause, «Подарки» gives n
   await expect(page.locator('[data-action=community-telegram]:visible').first()).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('M7 hatch: taps every 0.25 s for 7 s never lock «Вылупился!» for good — the choice takes a press after the run', async ({ page }) => {
+  const errors = collectErrors(page);
+  await open(page);
+  const egg = await page.evaluate(() => (window as unknown as { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }> } } }).__TEST__.targets().incubators[0]!);
+  await page.mouse.click(egg.x, egg.y);
+  await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+  await page.waitForTimeout(450);
+  await page.locator('[data-action=hatch-skip]').click();
+  await expect(page.locator('[data-hatch-result]')).toBeVisible();
+  // A child tapping the card's title again and again (a harmless spot: no button there).
+  const t = (await page.locator('.card-hatch h2, .card-hatch .hatch-title').first().boundingBox())!;
+  const end = Date.now() + 7000;
+  while (Date.now() < end) {
+    await page.mouse.click(t.x + t.width / 2, t.y + t.height / 2);
+    await page.waitForTimeout(250);
+  }
+  // Right after the run (no 0.8 s of silence): the buttons already take a press.
+  expect(await page.locator('.card-hatch').getAttribute('class')).not.toMatch(/hatch-locked/);
+  await page.locator('[data-action=hatch-keep]').click();
+  await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+  expect(errors).toEqual([]);
+});

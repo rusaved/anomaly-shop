@@ -121,7 +121,7 @@
     { "id": "M6-03", "milestone": "M6", "priority": "P1", "title": "Обложки и карточка под нишу ресейла (по докам 04-packaging), название и описание из game.json", "criteria": "docs/04 заполнен; 3 обложки в docs/evidence/M6", "passes": false, "deferred": true },
     { "id": "M6-04", "milestone": "M6", "priority": "P1", "title": "Профиль youtube: сборка и тест «нет внешних URL», карточки подписки скрыты", "criteria": "check:youtube зелёный", "passes": true },
     { "id": "M6-05", "milestone": "M6", "priority": "P1", "title": "Бюджеты размера и fps на слабом профиле — сверка с RD-04 и остаток", "criteria": "size зелёный", "passes": true },
-    { "id": "M6-06", "milestone": "M6", "priority": "P1", "title": "Итог вехи M6 по шаблону", "criteria": "«Ждёт решения продюсера»", "passes": false },
+    { "id": "M6-06", "milestone": "M6", "priority": "P1", "title": "Итог вехи M6 по шаблону", "criteria": "«Ждёт решения продюсера»", "passes": true },
     { "id": "M7-01", "milestone": "M7", "priority": "P1", "title": "Чек-лист Яндекса (docs/03), релизный архив, карточка ru/en, финальные тесты, verify:full в чистом клоне", "criteria": "check-release зелёный; compliance/report.md без TODO", "passes": false },
     { "id": "M7-02", "milestone": "M7", "priority": "P1", "title": "Итог вехи M7 и готовность к подаче", "criteria": "«Ждёт решения продюсера»", "passes": false },
     { "id": "M4-20", "milestone": "M4", "priority": "P1", "title": "Достижения («Находки»): отдельный экран (отзыв продюсера на M2: «достижения отдельно»), 30 достижений, 10 скрытых, названия-шутки (01b §5.5)", "criteria": "content/achievements.json; награда монеты или кристалл; скрытые видны только после получения; пасхалки 01b §2 дают находки", "passes": true },

@@ -8,18 +8,14 @@ test.use({ viewport: { width: 812, height: 375 } });
 
 test('Q-050 the last pet sold: «Склад» counts 0 and shows the empty list', async ({ page }) => {
   const errors = collectErrors(page);
-  await seedSave(page, { coins: 0, creatures: [{ uid: 'e2e1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }], showcase: [] });
+  await seedSave(page, { coins: 0, creatures: [{ uid: 'e2e1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }] });
   await open(page);
   const count = page.locator('[data-sheet=inventory] .seg-count');
   const label = (n: number) => translated(page, 'inventory.count').then((t) => t.replace('{n}', String(n)));
   await page.locator('[data-tab=inventory]').click();
   await expect(count).toHaveText(await label(1));
   await expect(page.locator('[data-sheet=inventory] [data-uid=e2e1]')).toBeVisible();
-  // The one pet goes on the shelf, a buyer writes, the deal in the chat takes it.
-  await page.locator('[data-tab=sales]').click();
-  await page.locator('[data-sheet=sales] [data-action=sale-add]').click();
-  await page.locator('[data-detail=sale] [data-action=sale-list-e2e1]').click();
-  await page.locator('[data-detail=sale] [data-action=sale-go-e2e1]').click();
+  // The one pet stands on the shelf (an old save puts its pets there), a buyer writes, the deal in the chat takes it.
   await runSim(page, 25);
   await sellInChat(page);
   await page.locator('[data-tab=inventory]').click();

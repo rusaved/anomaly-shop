@@ -48,6 +48,9 @@ for (const s of SIZES) {
           mkdirSync(shots, { recursive: true });
           await page.screenshot({ path: resolve(shots, `home_${name}_ru.png`) });
         }
+        // D-01: an event's toast (2.6 s) goes first, as in frames-m6 — one lay over the market's «Купить» for a moment (verify:full 25.10);
+        // a toast that never goes still fails the check below.
+        await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 15_000 }).catch(() => undefined);
         for (const p of await buttonsSeenWhole(page)) problems.push(`${id}: ${p}`);
         await expectNoPageScroll(page);
       }

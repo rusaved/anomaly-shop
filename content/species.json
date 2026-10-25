@@ -6,12 +6,12 @@
   "shelf": {"growthPerMin": 0.05, "maxBonus": 0.5},
   "crystalsPerSale": {"common": 0, "good": 0, "valuable": 1, "premium": 2, "vip": 3, "exclusive": 5},
   "marks": {
-    "note": "M4-25 (01b §5.7): при вылуплении с шансом chance — метка по весам: priceMult — к цене, feedMult — во сколько раз больше тапов на уровень, offerMult — к предложениям покупателей, tint — оттенок на сцене. Первые два вылупления и яйцо дня — без меток. Частицы — M5",
+    "note": "M4-25 (01b §5.7): при вылуплении с шансом chance — метка по весам: priceMult — к цене, feedMult — во сколько раз больше тапов на уровень, offerMult — к предложениям покупателей, tint — оттенок на сцене, particles — свои частицы над питомцем (M6-22: sparkle — искры, zzz — сонные «z», notes — ноты). Первые два вылупления и яйцо дня — без меток. Частицы — M5",
     "chance": 0.1,
     "list": [
-      {"id": "shiny", "weight": 1, "priceMult": 1.5, "feedMult": 1, "offerMult": 1, "tint": "#fff8d6"},
-      {"id": "sleepy", "weight": 1, "priceMult": 1.2, "feedMult": 2, "offerMult": 1, "tint": "#e2e8ff"},
-      {"id": "singing", "weight": 1, "priceMult": 1, "feedMult": 1, "offerMult": 1.15, "tint": "#ffe6f4"}
+      {"id": "shiny", "weight": 1, "priceMult": 1.5, "feedMult": 1, "offerMult": 1, "tint": "#fff8d6", "particles": "sparkle"},
+      {"id": "sleepy", "weight": 1, "priceMult": 1.2, "feedMult": 2, "offerMult": 1, "tint": "#e2e8ff", "particles": "zzz"},
+      {"id": "singing", "weight": 1, "priceMult": 1, "feedMult": 1, "offerMult": 1.15, "tint": "#ffe6f4", "particles": "notes"}
     ]
   },
   "species": [

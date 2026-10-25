@@ -58,3 +58,25 @@ test('M6-20 the clock strikes noon by the device time: «Bong», a toast, a trea
   expect((await sounds(page)).bong).toBe(1);
   expect(errors).toEqual([]);
 });
+
+test('M6-22 every speech line has its sound: a pet speaks on taps (chirp), a buyer writes (voice); marked pets on the shelf', async ({ page }) => {
+  const errors = collectErrors(page);
+  await seedSave(page, {
+    coins: 50,
+    creatures: [
+      { uid: 'm1', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0, mark: 'shiny' },
+      { uid: 'm2', species: 'sun_bun', level: 1, fed: 0, hatchedAt: 0, age: 0, mark: 'sleepy' },
+      { uid: 'm3', species: 'piano_dog', level: 1, fed: 0, hatchedAt: 0, age: 0, mark: 'singing' },
+    ],
+    showcase: ['m1', 'm2', 'm3'],
+    upgrades: { showcase: 2 },
+  });
+  await open(page);
+  const slot = (await targets(page)).slots[0]!;
+  for (let i = 0; i < 3; i++) await page.mouse.click(slot.x, slot.y);
+  await expect.poll(async () => (await sounds(page)).chirp ?? 0, { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
+  // A buyer comes and writes within a minute of game time; its line has the voice.
+  await page.evaluate(() => (window as unknown as { __TEST__: { runSim(s: number): number } }).__TEST__.runSim(40));
+  await expect.poll(async () => (await sounds(page)).voice ?? 0, { timeout: 15_000 }).toBeGreaterThanOrEqual(1);
+  expect(errors).toEqual([]);
+});

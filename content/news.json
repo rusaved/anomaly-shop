@@ -419,6 +419,382 @@
       },
       "ru": "Бродячий торговец заезжал. Тележка скрипела весело",
       "en": "The traveling merchant came by. The cart squeaked happily"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "mitten_seal"
+      },
+      "ru": "Варежка-тюлень на витрине. Зима передумала приходить",
+      "en": "Mitten Seal on the shelf. Winter changed its mind"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "button_bug"
+      },
+      "ru": "Пуговица-жучок застегнул район на все пуговицы",
+      "en": "Button Bug buttoned up the whole block"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "clip_snake"
+      },
+      "ru": "Скрепка-змейка навела порядок в почте района",
+      "en": "Paperclip Snake tidied up the local mail"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "slipper_pup"
+      },
+      "ru": "Тапок-щенок принёс соседу второй тапок. Сосед счастлив",
+      "en": "Slipper Pup brought a neighbour his other slipper. Pure joy"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "yarn_lamb"
+      },
+      "ru": "Клубок-барашек связал шарф для фонарного столба",
+      "en": "Yarn Lamb knitted a scarf for a lamppost"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "eraser_hamster"
+      },
+      "ru": "Ластик-хомяк стёр с карты одну лужу",
+      "en": "Eraser Hamster erased a puddle off the map"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "alarm_owl"
+      },
+      "ru": "Будильник-сова разбудила солнце на пять минут раньше",
+      "en": "Alarm Owl woke the sun five minutes early"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "bubble_fish"
+      },
+      "ru": "Пузырь-рыбка проплыла над рынком. Все задрали головы",
+      "en": "Bubble Fish swam over the market. Everyone looked up"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "mug_cub"
+      },
+      "ru": "Кружка-медвежонок пахнет какао на всю улицу",
+      "en": "Mug Cub makes the whole street smell of cocoa"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "rainbow_snail"
+      },
+      "ru": "Радуга-улитка опаздывает красиво. Как всегда",
+      "en": "Rainbow Snail is late in style. As usual"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "piano_dog"
+      },
+      "ru": "Пианино-такса сыграла гимн лавки. Голуби подпевали",
+      "en": "Piano Dachshund played the shop anthem. Pigeons sang along"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "book_moth"
+      },
+      "ru": "Книга-бабочка прочитала вслух прогноз погоды",
+      "en": "Book Butterfly read the forecast out loud"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "comet_fox"
+      },
+      "ru": "Комета-лисёнок пролетел над крышей. Загадывайте желания",
+      "en": "Comet Fox flew over the roof. Make a wish"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "lantern_jelly"
+      },
+      "ru": "Фонарь-медуза освещает витрину. Счёт за свет не пришёл",
+      "en": "Lantern Jelly lights the shelf. No electric bill arrived"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "globe_turtle"
+      },
+      "ru": "Глобус-черепаха нашла на себе новый остров",
+      "en": "Globe Turtle found a new island on her back"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "sun_bun"
+      },
+      "ru": "Солнце-булочка взошла над прилавком. Утро продлили",
+      "en": "Sun Bun rose over the counter. Morning got extended"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "crystal_deer"
+      },
+      "ru": "Хрустальный олень звенит. Коллекционеры уже бегут",
+      "en": "Crystal Deer chimes. Collectors are on their way"
+    },
+    {
+      "when": {
+        "type": "species",
+        "id": "clock_phoenix"
+      },
+      "ru": "Часы-феникс показывают время чудес",
+      "en": "Clock Phoenix shows wonder o’clock"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "weather"
+      },
+      "ru": "После аномальной погоды витрины блестят до сих пор",
+      "en": "After the odd weather the shelves still sparkle"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "mouse"
+      },
+      "ru": "Мышка из лавки дала интервью. Сказала «пи»",
+      "en": "The shop mouse gave an interview. It said «squeak»"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "parade"
+      },
+      "ru": "Парад яиц прошёл без происшествий. Одно яйцо помахало",
+      "en": "The egg parade went smoothly. One egg waved"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "excursion"
+      },
+      "ru": "Экскурсанты оставили в книге отзывов сорок сердечек",
+      "en": "The tour group left forty hearts in the guest book"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "inspector"
+      },
+      "ru": "Инспектор подтвердил: странность в норме, улыбки выше нормы",
+      "en": "Inspector confirms: weirdness normal, smiles above normal"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "photo"
+      },
+      "ru": "Фото из лавки висит на доске почёта района",
+      "en": "A photo from the shop hangs on the town honor board"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "pie"
+      },
+      "ru": "Пекарня по соседству передаёт привет и ещё пирожок",
+      "en": "The bakery next door sends hello and another pie"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "twins"
+      },
+      "ru": "В лавке двойня! Соседи принесли два одинаковых бантика",
+      "en": "Twins at the shop! Neighbours brought matching bows"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "kettle"
+      },
+      "ru": "Чайник вскипел так громко, что пришли гости",
+      "en": "The kettle whistled so loud that guests came over"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "blink"
+      },
+      "ru": "Свет мигнул, а лампожук и не заметил",
+      "en": "The lights blinked, the Lamp Bug didn’t even notice"
+    },
+    {
+      "when": {
+        "type": "event",
+        "id": "cat_walk"
+      },
+      "ru": "Кот-облако вернулся с прогулки слегка пушистее",
+      "en": "Cloud Cat came back from a walk a bit fluffier"
+    },
+    {
+      "when": {
+        "type": "upgrade",
+        "id": "stool"
+      },
+      "ru": "Новый табурет. Покупатели присаживаются и остаются подольше",
+      "en": "A new stool. Buyers sit down and stay longer"
+    },
+    {
+      "when": {
+        "type": "upgrade",
+        "id": "board"
+      },
+      "ru": "На доске заказов появилось первое «спасибо»",
+      "en": "The order board got its first «thank you»"
+    },
+    {
+      "when": {
+        "type": "upgrade",
+        "id": "tags"
+      },
+      "ru": "Ценники в лавке теперь пахнут ванилью",
+      "en": "The shop price tags now smell of vanilla"
+    },
+    {
+      "when": {
+        "type": "upgrade",
+        "id": "cash"
+      },
+      "ru": "Касса звенит мелодично. Районный хор завидует",
+      "en": "The register rings in tune. The local choir is jealous"
+    },
+    {
+      "when": {
+        "type": "upgrade",
+        "id": "showcase"
+      },
+      "ru": "Витрину расширили. Питомцам просторно и важно",
+      "en": "The shelf got wider. Pets feel roomy and important"
+    },
+    {
+      "when": {
+        "type": "upgrade",
+        "id": "incubator"
+      },
+      "ru": "Ещё один инкубатор. Яйца устроили новоселье",
+      "en": "Another incubator. The eggs threw a housewarming"
+    },
+    {
+      "when": {
+        "type": "upgrade",
+        "id": "point_rent"
+      },
+      "ru": "Лавка открыла пункт выдачи. Посылки здороваются",
+      "en": "The shop opened a pickup point. Parcels say hi"
+    },
+    {
+      "when": {
+        "type": "upgrade",
+        "id": "helper_sell"
+      },
+      "ru": "Новый продавец выучил имена всех покупателей",
+      "en": "The new seller learned every buyer’s name"
+    },
+    {
+      "when": {
+        "type": "upgrade",
+        "id": "helper_courier"
+      },
+      "ru": "Курьер принёс яйца и забыл, что умеет летать",
+      "en": "The courier brought eggs and forgot he could fly"
+    },
+    {
+      "when": {
+        "type": "deals",
+        "min": 500
+      },
+      "ru": "500 сделок. Лавку отметили на карте района",
+      "en": "500 deals. The shop got a pin on the town map"
+    },
+    {
+      "when": {
+        "type": "deals",
+        "min": 1000
+      },
+      "ru": "1 000 сделок! В честь лавки назвали лавочку",
+      "en": "1,000 deals! A bench was named after the shop"
+    },
+    {
+      "when": {
+        "type": "coins",
+        "min": 1000000
+      },
+      "ru": "Миллион монет. Копилка района уважительно звякнула",
+      "en": "A million coins. The town piggy bank clinked politely"
+    },
+    {
+      "when": {
+        "type": "hours",
+        "from": 6,
+        "to": 10
+      },
+      "ru": "Утро в зоне: питомцы делают зарядку",
+      "en": "Morning in the zone: pets are doing their stretches"
+    },
+    {
+      "when": {
+        "type": "hours",
+        "from": 12,
+        "to": 14
+      },
+      "ru": "Обеденный перерыв у аномалий длится ровно одну улыбку",
+      "en": "The anomalies’ lunch break lasts exactly one smile"
+    },
+    {
+      "when": {
+        "type": "district",
+        "id": "yard"
+      },
+      "ru": "Во дворе обсуждают новую лавку. Хвалят",
+      "en": "The yard is talking about the new shop. Kindly"
+    },
+    {
+      "when": {
+        "type": "district",
+        "id": "square"
+      },
+      "ru": "На площади поставили указатель к лавке",
+      "en": "The square got a signpost pointing to the shop"
+    },
+    {
+      "when": {
+        "type": "always"
+      },
+      "ru": "Учёные заметили: улыбки в зоне заразительны",
+      "en": "Scientists noticed: smiles in the zone are catching"
+    },
+    {
+      "when": {
+        "type": "always"
+      },
+      "ru": "В зоне потерялась тень. Нашлась у фонаря",
+      "en": "A shadow got lost in the zone. Found by a lamppost"
     }
   ],
   "showSec": 8

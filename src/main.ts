@@ -153,6 +153,9 @@ async function boot(): Promise<void> {
     feel,
     t: i18n.t,
     line: (id) => speciesById(id)?.line[i18n.lang()] ?? '',
+    // M6-22: a sound on every speech line (a chirp for a pet, a voice for a buyer); each mark its own particles.
+    onSpeech: (who) => sfx.play(who === 'creature' ? 'chirp' : 'voice'),
+    markParticles: (mark) => species.marks.list.find((m) => m.id === mark)?.particles ?? '',
     careShell: eggs.care.shell,
     invalidate: scene.invalidate,
     // FB-12: where a bought upgrade stands in the shop and its «+N» (the effect of one level, from the data).

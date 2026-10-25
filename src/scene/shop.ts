@@ -84,6 +84,8 @@ interface CreatureNode {
   arrive: number;
   from: { x: number; y: number } | null;
   landed: boolean;
+  /** M6-22: seconds to the next particle of its mark. */
+  markIn: number;
 }
 
 interface CustomerNode {
@@ -109,6 +111,10 @@ export interface ShopDeps {
   t: Translate;
   /** The creature's line in the current language. */
   line(species: string): string;
+  /** M6-22: a speech line showed (a creature's or a buyer's) — its little sound. */
+  onSpeech?(who: 'creature' | 'customer'): void;
+  /** M6-22: the particles of a mark (species.json marks), '' for none. */
+  markParticles?(mark: string): string;
   /** Egg shell tints by care level (eggs.json → care.shell; 0 is the egg's own color). */
   careShell: readonly string[];
   invalidate(): void;
@@ -567,6 +573,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   /** The creature's own hatch line (species.json). */
   function say(species: string, at: { x: number; y: number; r: number }, l: ShopLayout): void {
     showBubble(bubble, deps.line(species), at, l);
+    deps.onSpeech?.('creature');
   }
 
   function animateBubble(dt: number): boolean {
@@ -613,6 +620,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     offerText.position.set(hasCoin ? -w / 2 + size * 0.7 + coinR * 2 : -offerText.width / 2, 0);
   }
 
+  /** M6-22: buyer lines waiting for the buyer to be drawn (by customer id). */
+  const pendingTalk = new Map<number, string>();
+
   function animateCustomers(dt: number, view: GameView, l: ShopLayout): boolean {
     let moving = false;
     const first = l.queue[0];
@@ -644,7 +654,16 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         node.box.alpha = Math.min(1, node.box.alpha + dt * 4);
         moving = true;
       }
+      // M6-22: a line said before the buyer was drawn (the arrival line) shows once the buyer is in.
+      const waiting = pendingTalk.get(q.id);
+      if (waiting && node.box.alpha >= 1) {
+        pendingTalk.delete(q.id);
+        showBubble(talk, waiting, { x: node.box.x - l.unit * 0.6, y: node.box.y - l.unit * 2.6, r: l.unit * 0.9 }, l);
+        deps.onSpeech?.('customer');
+        moving = true;
+      }
     });
+    for (const id of pendingTalk.keys()) if (!present.has(id)) pendingTalk.delete(id);
     for (const [id, node] of visitors) {
       if (present.has(id)) continue;
       if (!node.leaving) {
@@ -751,7 +770,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         creaturesLayer.addChild(box);
         const from = spawnFrom.get(cv.uid) ?? null;
         spawnFrom.delete(cv.uid);
-        node = { box, art, tag, bar, price, level, key: '', shown: '', hop: 0, arrive: from ? 0 : 1, from, landed: !from };
+        node = { box, art, tag, bar, price, level, key: '', shown: '', hop: 0, arrive: from ? 0 : 1, from, landed: !from, markIn: Math.random() };
         creatures.set(cv.uid, node);
         moving = true;
       }
@@ -760,8 +779,20 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         node.key = key;
         node.shown = '';
         drawCreature(node.art, style.creatures[cv.species] ?? FALLBACK_LOOK, cv.rarity, at.r, c, l.outline * 0.8);
-        // M4-25: a marked one wears its tint (species.json marks); particles come in M5.
+        // M4-25: a marked one wears its tint (species.json marks); M6-22: and its particles (below).
         node.art.tint = cv.tint || 0xffffff;
+      }
+      const particles = cv.mark ? (deps.markParticles?.(cv.mark) ?? '') : '';
+      if (particles && node.arrive >= 1) {
+        moving = true;
+        node.markIn -= dt;
+        if (node.markIn <= 0) {
+          node.markIn = 1.1 + Math.random() * 0.6;
+          const x = at.x + (Math.random() - 0.5) * at.r;
+          const size = Math.max(12, at.r * 0.45);
+          if (particles === 'sparkle') fx.burst(x, at.y - at.r * 0.4, 4, [c.eyeWhite, c.uiAccent], at.r * 1.6, l.outline * 0.7);
+          else fx.float(x + at.r * 0.4, at.y - at.r * 0.8, particles === 'zzz' ? 'z' : '♪', particles === 'zzz' ? c.rarityRare : c.blush, size, at.r * 0.9);
+        }
       }
       const picked = false;
       const order = view.order && view.order.species === cv.species ? (cv.level >= view.order.level ? 'ready' : 'wanted') : 'none';
@@ -1247,10 +1278,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       if ('uid' in who) {
         const slot = current.slots[slotUids.indexOf(who.uid)];
         if (slot) showBubble(bubble, line, slotCenter(slot), current);
+        if (slot && line) deps.onSpeech?.('creature');
       } else {
         const node = visitors.get(who.customerId);
         // Over the customer's head, above the offer bubble.
         if (node) showBubble(talk, line, { x: node.box.x - current.unit * 0.6, y: node.box.y - current.unit * 2.6, r: current.unit * 0.9 }, current);
+        if (node && line) deps.onSpeech?.('customer');
+        else if (!node && line) pendingTalk.set(who.customerId, line);
       }
       invalidate();
     },

@@ -32,7 +32,8 @@ for (const size of SIZES) {
       const errors = collectErrors(page);
       const tag = `${size.width}x${size.height}`;
       const problems: string[] = [];
-      const pets = NEW.map((s, i) => ({ uid: `m6${i}`, species: s.id, level: 1 + (i % 5), fed: 0, hatchedAt: 0, age: 0 }));
+      // M6-22: the first three wear the three marks (their particles in the frame).
+      const pets = NEW.map((s, i) => ({ uid: `m6${i}`, species: s.id, level: 1 + (i % 5), fed: 0, hatchedAt: 0, age: 0, ...(i < 3 ? { mark: ['shiny', 'sleepy', 'singing'][i] } : {}) }));
       await seedSave(page, {
         ...FRAMES_SAVE,
         creatures: pets,

@@ -99,7 +99,9 @@ export const Species = v.object({
 export const Shelf = v.object({ growthPerMin: v.pipe(v.number(), v.minValue(0)), maxBonus: v.pipe(v.number(), v.minValue(0)) });
 const PerRarity = v.object(Object.fromEntries(RARITIES.map((r) => [r, Money])) as Record<(typeof RARITIES)[number], typeof Money>);
 /** M4-25: marks at hatching — a chance, then one by weight; each changes the price, the feeding and the offers, and tints the creature. */
-const Mark = v.object({ id: Id, weight: v.pipe(v.number(), v.minValue(0)), priceMult: v.pipe(v.number(), v.minValue(1)), feedMult: v.pipe(v.number(), v.minValue(1)), offerMult: v.pipe(v.number(), v.minValue(1)), tint: Color });
+/** M6-22 (01b §5.7): each mark has its own particles over the pet — sparkles, sleepy «z», notes. */
+export const MARK_PARTICLES = ['sparkle', 'zzz', 'notes'] as const;
+const Mark = v.object({ id: Id, weight: v.pipe(v.number(), v.minValue(0)), priceMult: v.pipe(v.number(), v.minValue(1)), feedMult: v.pipe(v.number(), v.minValue(1)), offerMult: v.pipe(v.number(), v.minValue(1)), tint: Color, particles: v.picklist(MARK_PARTICLES) });
 export const SpeciesFile = v.object({
   tapsPerLevelBase: Count,
   tapGrowth: v.pipe(v.number(), v.minValue(1)),
@@ -259,7 +261,7 @@ export const FeelFile = v.object({
   hatchLockSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(1.5)),
 });
 
-export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade', 'spin', 'giggle', 'bong'] as const;
+export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade', 'spin', 'giggle', 'bong', 'chirp', 'voice'] as const;
 const ZzfxParams = v.pipe(v.array(v.nullable(v.number())), v.minLength(1), v.maxLength(21));
 export const AudioFile = v.object({
   volume: Share,

@@ -10,11 +10,30 @@ const data = v.parse(NewsFile, JSON.parse(readFileSync(resolve(import.meta.dirna
 const ctx = (patch: Partial<NewsContext> = {}): NewsContext => ({ deals: 0, coins: 0, species: [], upgrades: [], districts: ['yard'], hour: 13, idleSec: 0, events: [], ...patch });
 
 describe('M2-14 news ticker', () => {
-  it('40+ lines, ru and en, every kind of condition of docs/01b §4.4', () => {
-    expect(data.lines.length).toBeGreaterThanOrEqual(40);
+  it('100+ lines (M6-22, 01b §4.4: «100 к M5»), ru and en, every kind of condition of docs/01b §4.4', () => {
+    expect(data.lines.length).toBeGreaterThanOrEqual(100);
     const kinds = new Set(data.lines.map((l) => l.when.type));
     for (const k of ['always', 'deals', 'species', 'upgrade', 'hours', 'coins', 'idle', 'event']) expect(kinds).toContain(k);
     expect(data.everySec).toEqual({ min: 25, max: 40 });
+  });
+
+  it('M6-22: every condition names a thing that exists — a species, an event, an upgrade, a district; every species has its own line', () => {
+    const read = (f: string) => JSON.parse(readFileSync(resolve(import.meta.dirname, `../content/${f}.json`), 'utf8'));
+    const ids = {
+      species: new Set<string>(read('species').species.map((x: { id: string }) => x.id)),
+      event: new Set<string>(read('events').events.map((x: { id: string }) => x.id)),
+      upgrade: new Set<string>(read('upgrades').upgrades.map((x: { id: string }) => x.id)),
+      district: new Set<string>(read('customers').districts.map((x: { id: string }) => x.id)),
+    };
+    for (const l of data.lines) {
+      const w = l.when as { type: string; id?: string };
+      if (w.type in ids) expect(ids[w.type as keyof typeof ids].has(w.id!), `${w.type} ${w.id}`).toBe(true);
+      for (const text of [l.ru, l.en]) expect(text.endsWith('.'), text).toBe(false);
+    }
+    for (const id of ids.species) expect(data.lines.some((l) => l.when.type === 'species' && (l.when as { id: string }).id === id), id).toBe(true);
+    // M6-22: each mark its own particles over the pet (01b §5.7).
+    const marks = read('species').marks.list as Array<{ particles: string }>;
+    expect(new Set(marks.map((m) => m.particles)).size).toBe(marks.length);
   });
 
   it('conditions: deals, showcase species, time of day across midnight, idle', () => {

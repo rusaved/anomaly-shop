@@ -1,16 +1,17 @@
-check-release: release/anomaly-shop-0.1.0.zip
-date: 2026-10-25T10:27:01.253Z
-files: 33
+check-release: release/anomaly-shop-0.1.0-playtest.zip
+date: 2026-10-25T12:24:58.170Z
+files: 34
   assets/BufferResource-7657QUKQ.js  10.8 KB
   assets/CanvasPool-BZOfdiYK.js  107.7 KB
   assets/RenderTargetSystem-k-tnMFYl.js  76.2 KB
   assets/ZzFX-C1HKDoVW.js  2.0 KB
-  assets/browserAll-D1ulb3bT.js  41.6 KB
+  assets/browserAll-C1_7Cnpi.js  41.6 KB
   assets/canvasUtils-_2Xt0X_j.js  5.9 KB
   assets/getTextureBatchBindGroup-Bz0KTaOB.js  0.3 KB
-  assets/index-B7Cq6aI5.js  741.3 KB
   assets/index-BNd5IYtz.css  98.0 KB
-  assets/init-BmyDIOVE.js  15.0 KB
+  assets/index-DAlX7-Y7.js  742.2 KB
+  assets/init-5sYKSIYb.js  15.0 KB
+  assets/panel-D7G_3bLr.js  31.2 KB
   assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2  7.7 KB
   assets/rubik-cyrillic-400-normal-D5R8xuhl.woff  9.6 KB
   assets/rubik-cyrillic-500-normal-BH_pkKR0.woff  9.7 KB
@@ -31,21 +32,22 @@ files: 33
   assets/rubik-latin-700-normal-KHOtubUA.woff  23.7 KB
   assets/rubik-latin-800-normal-BtaGuVpR.woff2  18.6 KB
   assets/rubik-latin-800-normal-Dq1miTTj.woff  23.6 KB
-  assets/webworkerAll-DjlQCUWK.js  0.1 KB
-  assets/yandex-BMD0VfP7.js  9.7 KB
+  assets/webworkerAll-CGOrEeqz.js  0.1 KB
+  assets/yandex-yCQf81Cj.js  9.8 KB
   index.html  2.1 KB
 
 PASS  1. index.html at the root, paths only [A-Za-z0-9._/-]
 PASS  2. zip and unpacked ≤ 30 MB, JS gzip ≤ 600 KB
-        zip 638.1 KB, unpacked 1408.4 KB, js gzip 307.4 KB
+        zip 647.3 KB, unpacked 1440.5 KB, js gzip 316.2 KB
 PASS  3. no external addresses except /sdk.js, mc.yandex.ru and the community links (namespaces allowed)
 PASS  4. <script src="/sdk.js"> exactly once, before the game code
         found 1
 PASS  5. sound only through Web Audio: no <audio>, <video>, new Audio(, media elements
         Web Audio (AudioContext) in the code: yes
-PASS  6. no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, youtube.com/game_api
+FAIL  6. no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, youtube.com/game_api
+        assets/panel-D7G_3bLr.js: lil-gui
 PASS  7. no development or stop-list words in shipped texts
 PASS  8. language keys: ru and en the same, none empty, no Cyrillic in en (i18n and the {ru, en} texts of content/)
         {ru, en} texts in content/*.json: 947
 
-RESULT: PASS
+RESULT: FAIL (1 check(s))

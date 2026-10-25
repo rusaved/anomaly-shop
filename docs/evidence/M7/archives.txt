@@ -1,0 +1,7 @@
+M7-04 · архивы в downloads/ (сессия по расписанию 25.10), сборка с коммита a5e0c55
+85a20c5f7a9f292e2fcc91abdfa43d3d6ef9c35ec7491f8edc82d37ef21921ee  downloads/anomaly-shop-0.1.0-playtest.zip
+33adb5eea516e2754ce639ab6d7e4855a4329983b6a0efcef5f2f85a8c656c8e  downloads/anomaly-shop-0.1.0.zip
+662847 downloads/anomaly-shop-0.1.0-playtest.zip
+653703 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8) — docs/evidence/M7/check-release.txt
+check-release playtest: RESULT: FAIL (1 check) — п. 6 мок и отладка: так и задумано

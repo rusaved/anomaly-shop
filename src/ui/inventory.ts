@@ -62,6 +62,8 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
     const next = `i:${look.lang()}:${all.map(({ c, where }) => `${c.uid}.${c.level}.${c.price}.${where}`).join(',')}:${hatching.map((x) => `${x.inc.egg}.${Math.round(x.inc.share * 100)}`).join(',')}:${JSON.stringify(game.mood())}`;
     if (next === key) return;
     key = next;
+    // l3: sideways the count of pets stands right of the segments. Q-050: set before the empty list too — the last pet sold left «питомцев: 1».
+    count.textContent = look.t('inventory.count', { n: all.length });
     if (!all.length && !hatching.length) {
       list.innerHTML = `<p class="empty" data-empty>${esc(look.t('inventory.empty'))}</p>`;
       return;
@@ -86,8 +88,6 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
           `<span class="mu-meta">${Math.round(inc.share * 100)} %</span><button type="button" class="mu-btn" data-action="inv-eggs">${esc(look.t('eggs.open'))}</button></div>`,
       );
     list.innerHTML = `<div class="mu-grid">${cards.join('')}</div>`;
-    // l3: sideways the count of pets stands right of the segments.
-    count.textContent = look.t('inventory.count', { n: all.length });
     for (const { c, where } of all) {
       list.querySelector(`[data-action="inv-list-${c.uid}"]`)?.addEventListener('click', () => look.list(c.uid));
       list.querySelector(`[data-action="inv-off-${c.uid}"]`)?.addEventListener('click', () => game.unlist(c.uid));

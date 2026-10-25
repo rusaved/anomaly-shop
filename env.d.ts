@@ -17,7 +17,7 @@ declare const __GAME__: {
   ruFallbackLanguages: string[];
   community: { telegram: string; vk: string; placement: string[] } | null;
   metrikaCounterId: number;
-  profile: { name: 'yandex' | 'null' | 'youtube'; community: boolean; ads: boolean; payments: boolean; analytics: boolean; externalRequests: boolean };
+  profile: { name: 'yandex' | 'null' | 'youtube'; community: boolean; communityGift?: boolean; ads: boolean; payments: boolean; analytics: boolean; externalRequests: boolean };
 };
 /** ZzFX 1.4.0 ships no types; src/audio/sfx.ts imports it after a user gesture and plays cached samples on ZZFX.audioContext. */
 declare module 'zzfx' {

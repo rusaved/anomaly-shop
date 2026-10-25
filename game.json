@@ -35,6 +35,7 @@
   "profiles": {
     "yandex": {
       "community": true,
+      "communityGift": false,
       "ads": true,
       "payments": false,
       "analytics": true,
@@ -43,6 +44,7 @@
     },
     "null": {
       "community": true,
+      "communityGift": false,
       "ads": false,
       "payments": false,
       "analytics": false,

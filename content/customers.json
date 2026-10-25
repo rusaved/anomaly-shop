@@ -167,11 +167,11 @@
     {"id": "fishing", "name": {"ru": "Рыбалка", "en": "Fishing"}, "line": {"ru": "Вчера поймал карася с ладошку", "en": "Caught a fish the size of my palm"}},
     {"id": "chess", "name": {"ru": "Шахматы", "en": "Chess"}, "line": {"ru": "Сыграл вничью сам с собой", "en": "Played myself to a draw"}},
     {"id": "baking", "name": {"ru": "Выпечка", "en": "Baking"}, "line": {"ru": "Пеку пирог с вишней", "en": "Baking a cherry pie"}},
-    {"id": "garden", "name": {"ru": "Огород", "en": "Gardening"}, "line": {"ru": "Кабачок вырос с кота", "en": "My zucchini is cat sized"}},
+    {"id": "garden", "name": {"ru": "Огород", "en": "Gardening"}, "line": {"ru": "Кабачок вырос с кота", "en": "My zucchini is cat-sized"}},
     {"id": "music", "name": {"ru": "Музыка", "en": "Music"}, "line": {"ru": "Учу третий аккорд", "en": "Learning my third chord"}},
     {"id": "stars", "name": {"ru": "Звёзды", "en": "Stargazing"}, "line": {"ru": "Ночью видел падающую звезду", "en": "Saw a shooting star last night"}},
     {"id": "football", "name": {"ru": "Футбол", "en": "Football"}, "line": {"ru": "Наши вчера выиграли", "en": "Our team won yesterday"}},
-    {"id": "puzzles", "name": {"ru": "Пазлы", "en": "Puzzles"}, "line": {"ru": "Собрал пазл на тысячу деталей", "en": "Finished a thousand piece puzzle"}}
+    {"id": "puzzles", "name": {"ru": "Пазлы", "en": "Puzzles"}, "line": {"ru": "Собрал пазл на тысячу деталей", "en": "Finished a thousand-piece puzzle"}}
   ],
   "chat": {"keep": 12, "holdOnShelf": true, "firstCounter": false, "gentleDeals": 3, "gentleMinOffer": 0.8}
 }

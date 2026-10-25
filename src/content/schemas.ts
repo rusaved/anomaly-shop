@@ -540,6 +540,8 @@ export const I18nFile = v.record(v.string(), NonEmpty);
 
 const Profile = v.object({
   community: v.boolean(),
+  /** M7-01, CNT-08: the «visit the group» gift card in «Подарки» (off: the community buttons stay, without a reward). */
+  communityGift: v.optional(v.boolean()),
   ads: v.boolean(),
   payments: v.boolean(),
   analytics: v.boolean(),

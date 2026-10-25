@@ -53,6 +53,7 @@ export const EVENTS = [
   'load_failed',
   'save_failed',
   'save_corrupted',
+  'save_too_big',
 ] as const;
 
 export type EventName = (typeof EVENTS)[number];

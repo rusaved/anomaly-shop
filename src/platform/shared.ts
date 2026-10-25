@@ -38,7 +38,7 @@ export function profileCaps(): PlatformCaps {
   const p = __GAME__.profile;
   // M5-04: ?payments=1 turns the store on in test and debug builds only (the producer link, the shots); a release follows game.json.
   const force = (__TEST_API__ || __DEBUG_TOOLS__) && typeof location !== 'undefined' && new URLSearchParams(location.search).get('payments') === '1';
-  return { ads: p.ads, payments: p.payments || force, community: p.community, analytics: p.analytics };
+  return { ads: p.ads, payments: p.payments || force, community: p.community, communityGift: p.community && p.communityGift === true, analytics: p.analytics };
 }
 
 export function gameLanguage(code: string | null | undefined): Lang {

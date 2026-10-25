@@ -159,7 +159,7 @@
         "id": "kettle"
       },
       "ru": "Чайник на витрине. Соседи кипят от зависти",
-      "en": "A kettle on the shelf. The neighbours are steaming"
+      "en": "A kettle on the shelf. The neighbors are steaming"
     },
     {
       "when": {
@@ -255,7 +255,7 @@
         "id": "mat"
       },
       "ru": "Купили коврик. Покупатели вытирают ноги. Иногда",
-      "en": "A new door mat. Customers wipe their feet. Sometimes"
+      "en": "A new doormat. Customers wipe their feet. Sometimes"
     },
     {
       "when": {
@@ -271,7 +271,7 @@
         "id": "radio"
       },
       "ru": "В лавке играет радио. Существа подпевают мимо нот",
-      "en": "The radio is on. The creatures sing along off key"
+      "en": "The radio is on. The creatures sing along off-key"
     },
     {
       "when": {
@@ -303,7 +303,7 @@
         "id": "helper_feed"
       },
       "ru": "Кормилец просит добавки для всех. Даём",
-      "en": "The feeder asks seconds for everyone. Granted"
+      "en": "The feeder asks for seconds for everyone. Granted"
     },
     {
       "when": {
@@ -450,7 +450,7 @@
         "id": "slipper_pup"
       },
       "ru": "Тапок-щенок принёс соседу второй тапок. Сосед счастлив",
-      "en": "Slipper Pup brought a neighbour his other slipper. Pure joy"
+      "en": "Slipper Pup brought a neighbor his other slipper. Pure joy"
     },
     {
       "when": {
@@ -578,7 +578,7 @@
         "id": "mouse"
       },
       "ru": "Мышка из лавки дала интервью. Сказала «пи»",
-      "en": "The shop mouse gave an interview. It said «squeak»"
+      "en": "The shop mouse gave an interview. It said “squeak”"
     },
     {
       "when": {
@@ -626,7 +626,7 @@
         "id": "twins"
       },
       "ru": "В лавке двойня! Соседи принесли два одинаковых бантика",
-      "en": "Twins at the shop! Neighbours brought matching bows"
+      "en": "Twins at the shop! Neighbors brought matching bows"
     },
     {
       "when": {
@@ -642,7 +642,7 @@
         "id": "blink"
       },
       "ru": "Свет мигнул, а лампожук и не заметил",
-      "en": "The lights blinked, the Lamp Bug didn’t even notice"
+      "en": "The lights blinked, but the Lamp Bug didn’t even notice"
     },
     {
       "when": {
@@ -666,7 +666,7 @@
         "id": "board"
       },
       "ru": "На доске заказов появилось первое «спасибо»",
-      "en": "The order board got its first «thank you»"
+      "en": "The order board got its first “thank you”"
     },
     {
       "when": {

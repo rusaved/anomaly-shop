@@ -132,7 +132,7 @@ async function boot(): Promise<void> {
   const store = createStore(await loadState(platform, track), () => platform.now());
   /** Last save of the previous visit: the shop works on for the time since (helpers, incubators). */
   const lastSeen = store.state.savedAt;
-  const persistence = bindPersistence(store, platform);
+  const persistence = bindPersistence(store, platform, track);
   flushSave = () => persistence.flush();
   const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection, decor: decorData, achievements, calendar, ads: adsData }, createRng(platform.now()));
   game = play;
@@ -146,7 +146,19 @@ async function boot(): Promise<void> {
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
   const appRoot = document.getElementById('app') as HTMLElement;
   const uiRoot = document.getElementById('ui') as HTMLElement;
-  const scene = await createSceneApp(canvas, style.colors.sky, window.devicePixelRatio);
+  // BLD-06: no WebGL — a calm screen in the player's language instead of a spinner forever (no technical words, no error).
+  const scene = await createSceneApp(canvas, style.colors.sky, window.devicePixelRatio).catch(() => null);
+  if (!scene) {
+    const pre = document.getElementById('preloader');
+    if (pre) {
+      pre.innerHTML = '';
+      const note = document.createElement('p');
+      note.id = 'unsupported';
+      note.textContent = i18n.t('boot.unsupported');
+      pre.appendChild(note);
+    }
+    return;
+  }
   await document.fonts.ready;
   const shop = createShopView(scene.app, {
     style: styleData,
@@ -524,7 +536,8 @@ async function boot(): Promise<void> {
     t: i18n.t,
     lang: i18n.lang,
     gifts,
-    links,
+    // M7-01, CNT-08: no reward for a visit to the group unless the profile allows it (docs/03: community buttons without a reward).
+    links: platform.caps.communityGift === true ? links : null,
     today,
     rewardText,
     rewardShort: (reward) => {
@@ -1071,6 +1084,7 @@ async function boot(): Promise<void> {
         captions: [...shop.captions(), ...(sceneHintOn ? [hints.text()] : []), ...(toasts.showing() ? [toasts.showing()] : [])],
         hatchTiming: hatchShow.timing(),
         sounds: sfx.asked(),
+        sound: sfx.status(),
         newest: (() => {
           // The newest creature wherever it is (UB-05: a tapped egg's creature waits in the inventory).
           const v = play.view();

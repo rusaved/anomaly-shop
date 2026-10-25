@@ -20,7 +20,7 @@
       "levelUp": [
         {"ru": "Я стал вместительнее!", "en": "Now I hold more tea!"},
         {"ru": "Свисток стал звонче!", "en": "My whistle got louder!"},
-        {"ru": "Пш-ш! Расту как пар!", "en": "Pssh! Rising like steam!"}
+        {"ru": "Пш-ш! Расту, как пар!", "en": "Pssh! Rising like steam!"}
       ],
       "max": [
         {"ru": "Я самовар мечты!", "en": "Fully steamed and gleaming!"},
@@ -374,7 +374,7 @@
         {"ru": "Застёгиваюсь крепче!", "en": "Buttoned up tighter!"}
       ],
       "max": [
-        {"ru": "Пуговица высшей пробы", "en": "Top quality button"},
+        {"ru": "Пуговица высшей пробы", "en": "Top-quality button"},
         {"ru": "На мне держится всё", "en": "I hold it all together"},
         {"ru": "Самый круглый жучок", "en": "The roundest bug ever"}
       ],
@@ -429,7 +429,7 @@
       ],
       "max": [
         {"ru": "Самый уютный тапок!", "en": "Coziest slipper ever!"},
-        {"ru": "Лучший друг ноги", "en": "A foot best friend"},
+        {"ru": "Лучший друг ноги", "en": "A foot's best friend"},
         {"ru": "Пушистый чемпион!", "en": "Fluffy champion!"}
       ],
       "sold": [
@@ -460,7 +460,7 @@
         {"ru": "Бе-е-есподобно!", "en": "Baa-rilliant!"}
       ],
       "sold": [
-        {"ru": "Свяжу вам уют!", "en": "I will knit you cozy!"},
+        {"ru": "Свяжу вам уют!", "en": "I will knit you something cozy!"},
         {"ru": "Бе-е, пока!", "en": "Baa, bye!"},
         {"ru": "Покатился в новый дом", "en": "Rolling to a new home"}
       ]
@@ -499,7 +499,7 @@
         {"ru": "Звеню от радости!", "en": "Ringing with joy!"}
       ],
       "hungry": [
-        {"ru": "Ух? Время обеда", "en": "Hoo? Lunch time"},
+        {"ru": "Ух? Время обеда", "en": "Hoo? Lunchtime"},
         {"ru": "Тик-так, я голодная", "en": "Tick tock, hungry"},
         {"ru": "Звоночек просит перекус", "en": "My bell wants a snack"}
       ],
@@ -538,7 +538,7 @@
       "max": [
         {"ru": "Самый круглый пузырь!", "en": "The roundest bubble!"},
         {"ru": "Рыбка-чемпион!", "en": "Champion fish!"},
-        {"ru": "Сияю как жемчуг", "en": "Shining like a pearl"}
+        {"ru": "Сияю, как жемчуг", "en": "Shining like a pearl"}
       ],
       "sold": [
         {"ru": "Поплыву в новый дом", "en": "Swimming to a new home"},
@@ -726,7 +726,7 @@
       ],
       "max": [
         {"ru": "Целая планета мудрости", "en": "A planet of wisdom"},
-        {"ru": "Самая кругосветная", "en": "Most well traveled"},
+        {"ru": "Самая кругосветная", "en": "Most well-traveled"},
         {"ru": "Мир в полном порядке", "en": "The world is just fine"}
       ],
       "sold": [
@@ -759,7 +759,7 @@
       "sold": [
         {"ru": "Взойду у вас дома", "en": "I will rise at your home"},
         {"ru": "Тёплого дня!", "en": "Have a warm day!"},
-        {"ru": "Посвечу вам утром", "en": "I will shine your morning"}
+        {"ru": "Посвечу вам утром", "en": "I will brighten your morning"}
       ]
     },
     "crystal_deer": {
@@ -891,7 +891,7 @@
       "offer": [
         {"ru": "Уровень маловат, но мило", "en": "Low level, but cute"},
         {"ru": "Уровень! Беру два. Шучу", "en": "Level! I'll take two. Kidding"},
-        {"ru": "А можно с позолотой?", "en": "Does it come gold plated?"}
+        {"ru": "А можно с позолотой?", "en": "Does it come gold-plated?"}
       ],
       "haggleUp": [
         {"ru": "Деньги не проблема!", "en": "Money is no problem!"},

@@ -13,6 +13,8 @@ export interface Sfx {
   /** Sounds asked for so far, by name (test API: every action has its sound, M6-01), heard or not. */
   asked(): Partial<Record<SfxName, number>>;
   setSuspended(paused: boolean): void;
+  /** Test API (SND-02, SND-03): the sound is held by a pause, and the audio context's own state once the synth is loaded. */
+  status(): { suspended: boolean; context: string };
 }
 
 export function createSfx(data: AudioData, enabled: () => boolean): Sfx {
@@ -60,6 +62,7 @@ export function createSfx(data: AudioData, enabled: () => boolean): Sfx {
       }
     },
     asked: () => ({ ...counts }),
+    status: () => ({ suspended, context: context()?.state ?? 'none' }),
     setSuspended(paused) {
       suspended = paused;
       const ctx = context();

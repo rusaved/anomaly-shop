@@ -10,6 +10,8 @@ export interface PlatformCaps {
   ads: boolean;
   payments: boolean;
   community: boolean;
+  /** M7-01, CNT-08: a gift for a visit to the community group (game.json profile communityGift). */
+  communityGift?: boolean;
   analytics: boolean;
 }
 

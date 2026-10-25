@@ -12,7 +12,5 @@
     {"from": 14, "name": {"ru": "Мастер лавки", "en": "Shop Master"}},
     {"from": 18, "name": {"ru": "Легенда рынка", "en": "Market Legend"}}
   ],
-  "future": [
-    {"level": 8, "id": "pickup", "name": {"ru": "Свой пункт продаж", "en": "Your own pickup point"}}
-  ]
+  "future": []
 }

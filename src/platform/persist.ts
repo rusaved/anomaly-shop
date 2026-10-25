@@ -4,7 +4,7 @@
 
 import type { GameStore } from '../sim/store.ts';
 import { migrate } from '../sim/migrate.ts';
-import { newSave, parseSave, serialize, type SaveData } from '../sim/state.ts';
+import { newSave, parseSave, SAVE_LIMIT_BYTES, serialize, type SaveData } from '../sim/state.ts';
 import type { Platform, PlatformTrack } from './types.ts';
 
 export async function loadState(platform: Platform, track: PlatformTrack): Promise<SaveData> {
@@ -25,11 +25,22 @@ export interface Persistence {
   flush(): void;
 }
 
-export function bindPersistence(store: GameStore, platform: Platform): Persistence {
-  store.onCommit((state, flush) => platform.save(serialize(state), { flush }));
+export function bindPersistence(store: GameStore, platform: Platform, track: PlatformTrack = () => undefined): Persistence {
+  // SAV-02: a save over our ceiling (100 KB, Yandex takes 200 KB) is refused and reported once, the last good one stays.
+  let reported = false;
+  const write = (state: SaveData, flush: boolean) => {
+    const text = serialize(state);
+    if (new TextEncoder().encode(text).length > SAVE_LIMIT_BYTES) {
+      if (!reported) track('save_too_big');
+      reported = true;
+      return;
+    }
+    platform.save(text, { flush });
+  };
+  store.onCommit((state, flush) => write(state, flush));
   return {
     flush() {
-      platform.save(serialize(store.state), { flush: true });
+      write(store.state, true);
     },
   };
 }

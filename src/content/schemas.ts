@@ -259,7 +259,7 @@ export const FeelFile = v.object({
   hatchLockSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(1.5)),
 });
 
-export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade'] as const;
+export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade', 'spin'] as const;
 const ZzfxParams = v.pipe(v.array(v.nullable(v.number())), v.minLength(1), v.maxLength(21));
 export const AudioFile = v.object({
   volume: Share,

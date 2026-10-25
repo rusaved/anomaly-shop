@@ -20,6 +20,8 @@ export interface HatchLookups {
   /** Seconds the result's buttons wait before they take a press (feel.json hatchLockSec): a double tap of the skip never chooses. */
   lockSec(): number;
   onResult?(): void;
+  /** M6-01: a portrait passes under the marker (the wheel's click; no more often than TICK_MS). */
+  onTick?(): void;
   /** The result shows (UB-03: the rare sound plays here, not when the egg cracks — no spoiler). */
   onReveal?(rarity: RarityName): void;
   /** UB-10: «To the shop» put it on sale (the price slider may open). */
@@ -37,6 +39,8 @@ export interface HatchShow {
 const STRIP = 36;
 const TARGET = 30;
 const ITEM = 76;
+/** M6-01: the wheel clicks no more often than this, ms (the strip starts fast). */
+const TICK_MS = 45;
 
 export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLookups): HatchShow {
   // UB-02: a tap outside skips the run; after the result it keeps the creature («Take»); круг правок FB-3: a tab tap does nothing while it is open.
@@ -235,11 +239,22 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
       const startX = windowW / 2 - ITEM / 2;
       const dur = Math.max(0.5, look.spinSec()) * 1000;
       start = performance.now();
+      let passed = 0;
+      let tickAt = -1e9;
       const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
       const step = (now: number): void => {
         const k = Math.min(1, (now - start) / dur);
         const ease = 1 - Math.pow(1 - k, 4);
-        strip.style.transform = `translateX(${startX + (endX - startX) * ease}px)`;
+        const x = startX + (endX - startX) * ease;
+        strip.style.transform = `translateX(${x}px)`;
+        const n = Math.floor((startX - x) / ITEM);
+        if (n > passed) {
+          passed = n;
+          if (now - tickAt >= TICK_MS) {
+            tickAt = now;
+            look.onTick?.();
+          }
+        }
         if (k >= 1) showResult();
         else raf = requestAnimationFrame(step);
       };

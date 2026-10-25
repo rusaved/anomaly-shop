@@ -10,6 +10,8 @@ export interface Sfx {
   /** Loads the synth inside a user gesture; safe to call many times. */
   unlock(): void;
   play(name: SfxName): void;
+  /** Sounds asked for so far, by name (test API: every action has its sound, M6-01), heard or not. */
+  asked(): Partial<Record<SfxName, number>>;
   setSuspended(paused: boolean): void;
 }
 
@@ -18,6 +20,7 @@ export function createSfx(data: AudioData, enabled: () => boolean): Sfx {
   let loading = false;
   let suspended = false;
   const cache = new Map<SfxName, number[]>();
+  const counts: Partial<Record<SfxName, number>> = {};
 
   const context = (): AudioContext | null => {
     try {
@@ -43,6 +46,7 @@ export function createSfx(data: AudioData, enabled: () => boolean): Sfx {
         });
     },
     play(name) {
+      counts[name] = (counts[name] ?? 0) + 1;
       if (!mod || suspended || !enabled()) return;
       try {
         let samples = cache.get(name);
@@ -55,6 +59,7 @@ export function createSfx(data: AudioData, enabled: () => boolean): Sfx {
         /* no audio: the game goes on */
       }
     },
+    asked: () => ({ ...counts }),
     setSuspended(paused) {
       suspended = paused;
       const ctx = context();

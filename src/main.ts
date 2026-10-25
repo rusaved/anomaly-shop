@@ -406,6 +406,7 @@ async function boot(): Promise<void> {
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
     spinSec: () => feel.hatchShowSec,
     lockSec: () => feel.hatchLockSec,
+    onTick: () => sfx.play('spin'),
     // FB-09: the result shows — its rarity's sound and celebration (VIP and exclusive have their own sounds).
     onReveal: (rarity) => {
       const lvl = burst.play(rarity, uiRoot.querySelector<HTMLElement>('[data-hatch-pic]'), rarityColor(styleData.rarity, rarity));
@@ -1037,6 +1038,7 @@ async function boot(): Promise<void> {
         city: play.rebirthView().city,
         captions: [...shop.captions(), ...(sceneHintOn ? [hints.text()] : []), ...(toasts.showing() ? [toasts.showing()] : [])],
         hatchTiming: hatchShow.timing(),
+        sounds: sfx.asked(),
         newest: (() => {
           // The newest creature wherever it is (UB-05: a tapped egg's creature waits in the inventory).
           const v = play.view();

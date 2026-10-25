@@ -31,12 +31,16 @@ test('M6-20 window, clock and flower answer a tap; 15 on the window — the wing
   const errors = collectErrors(page);
   await seedSave(page, { coins: 50, creatures: [{ uid: 'k1', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }], showcase: ['k1'] });
   await open(page);
+  // D-01: the game clock stops — a buyer walking in took the pet off the shelf into a chat while the window was tapped (verify:full 25.10).
+  await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
   const t = await targets(page);
   expect(t.things.window).not.toBeNull();
   const win = t.things.window!;
   const tTeapot = await page.evaluate(() => (window as unknown as { __TEST__: { t(k: string): string } }).__TEST__.t('secret.window.teapot'));
   for (let i = 0; i < 15; i++) await page.mouse.click(win.x, win.y);
   await expect(page.locator('.toast', { hasText: tTeapot })).toBeVisible();
+  // D-01: on 1280×720 that toast lies over the clock — the tap waits for it to go (it took the tap in 5 runs of 6).
+  await expect(page.locator('.toast', { hasText: tTeapot })).toBeHidden();
   await page.mouse.click(t.things.clock.x, t.things.clock.y);
   await page.mouse.click(t.things.flower.x, t.things.flower.y);
   // M7: the counter is read once the last tap is handled (a busy machine handles it a frame later — verify:full of M7 read 16).

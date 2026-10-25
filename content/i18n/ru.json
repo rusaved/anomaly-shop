@@ -460,5 +460,12 @@
   "store.coins_l": "Сундук монет",
   "ad.eggsHead": "За видео",
   "ad.oneVideo": "За один ролик",
-  "ad.doubleIn": "▶ Реклама: ×2 через {t}"
+  "ad.doubleIn": "▶ Реклама: ×2 через {t}",
+  "secret.window.teapot": "За окном пролетел чайник с крылышками",
+  "secret.flower.bloom": "Цветок расцвёл!",
+  "secret.label.hello": "Привет от создателей лавки!",
+  "fx.tick": "Тик",
+  "fx.bong": "Бом!",
+  "fx.giggle": "Хи-хи!",
+  "toast.chime": "Часы пробили! Всем питомцам вкусняшка"
 }

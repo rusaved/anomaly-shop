@@ -180,6 +180,7 @@ async function boot(): Promise<void> {
       },
     },
   });
+  shop.setFlower(store.state.secrets.flower ?? 0);
   const hud = createHud(uiRoot, lang, () => feel.hudRollSec);
   hud.update(store.state.coins, { snap: true });
   // Sale coins roll the counter only as they land (M1-07, the sold handler below); everything else rolls at once.
@@ -742,6 +743,15 @@ async function boot(): Promise<void> {
   };
   syncDay();
   window.setInterval(syncDay, 60_000);
+  // M6-20: the clock strikes noon and midnight by the device's clock (secrets.json chime) — once a strike, while the game runs.
+  let struck = '';
+  window.setInterval(() => {
+    const now = new Date();
+    const key = `${now.toDateString()} ${now.getHours()}`;
+    if (now.getMinutes() !== 0 || key === struck || runtime.pause.isPaused()) return;
+    struck = key;
+    play.chime(now.getHours());
+  }, 1000);
   // Круг правок FB-2 (арт-ревизия): on «Лавка» a toast never lies on the shelf frame drawn in the scene (its places, 12 px around).
   const toasts = createToasts(uiRoot, () => {
     const slots = nav.active() === 'home' ? (shop.anchors()?.slots ?? []) : [];
@@ -875,6 +885,10 @@ async function boot(): Promise<void> {
       toasts.show(i18n.t('toast.upgradeUnlocked', { name }), 'good', 2400);
     }
     else if (e.type === 'cuckoo') sfx.play('levelUp');
+    else if (e.type === 'chime') {
+      toasts.show(i18n.t('toast.chime'), 'good', 2600);
+      sfx.play('bong');
+    } else if (e.type === 'tickle') sfx.play('giggle');
     else if (e.type === 'repUp') {
       // UB-08: the seller level grows — the chip flashes, a toast says what opened.
       const opened = reputationChip.up(e.level);
@@ -971,7 +985,8 @@ async function boot(): Promise<void> {
   const freeEggReady = (): string | null =>
     store.state.flags.ftue_bought ? null : (play.eggShop().eggs.find((e) => e.section === 'free' && e.open && e.freeIn === 0)?.id ?? null);
   // UB-07: the milestone label is a dev trace — only with ?debug=1 (the producer link keeps it there).
-  if (new URLSearchParams(location.search).has('debug')) renderBuildLabel(uiRoot, __BUILD_LABEL__);
+  // M6-20: seven taps on the milestone label say hello (secrets.json label).
+  if (new URLSearchParams(location.search).has('debug')) renderBuildLabel(uiRoot, __BUILD_LABEL__, () => play.tapThing('label'));
   i18n.apply(uiRoot);
   i18n.onChange((next) => {
     document.documentElement.lang = next;

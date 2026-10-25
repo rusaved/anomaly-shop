@@ -19,9 +19,11 @@ function shop(patch: (s: ReturnType<typeof newSave>) => void = () => undefined) 
 }
 
 describe('M4-20 finds', () => {
-  it('30 finds, 10 hidden, every one gives coins or crystals', () => {
-    expect(content.achievements.items).toHaveLength(30);
-    expect(content.achievements.items.filter((x) => x.hidden)).toHaveLength(10);
+  it('30 finds, 10 hidden (M4-20), and the hidden ones of the M6 secrets; every one gives coins or crystals', () => {
+    const extra = ['gardener'];
+    expect(content.achievements.items).toHaveLength(30 + extra.length);
+    expect(content.achievements.items.filter((x) => x.hidden)).toHaveLength(10 + extra.length);
+    for (const id of extra) expect(content.achievements.items.find((x) => x.id === id)?.hidden, id).toBe(true);
     for (const f of content.achievements.items) expect(Boolean(f.reward.coins || f.reward.crystals), f.id).toBe(true);
   });
 

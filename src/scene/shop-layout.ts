@@ -68,6 +68,10 @@ export interface Decor {
    * the clerk at the counter's left end, the guest zone along the bottom of the floor, the poster under the showcase. */
   shelves: Rect;
   pointSign: Spot;
+  /** M6-20: easter egg things — a window on the wall between the showcase and the door (w 0 when there is no room), a flower pot on
+   * the counter top at its right end. */
+  window: Rect;
+  flower: Spot;
   locker: Rect;
   clerk: Spot;
   guests: Rect;
@@ -186,6 +190,22 @@ export function computeShopLayout(
   };
   const signW = door.w * 1.3;
   const sideX = counter.x + counter.w;
+  /** M6-20: the window takes the free wall between the showcase and the door, under the lamp and the clock; none when there is no room.
+   * It stands behind the pickup point's shelves (they cover its lower part once the point is rented). */
+  const windowRect = (lamp: Spot, clock: Spot): Rect => {
+    const left = showcase.x + showcase.w + u * 0.45;
+    const right = door.x - u * 0.7;
+    const w = Math.min(u * 1.5, right - left);
+    const x = (left + right) / 2 - w / 2;
+    const over = (cx: number, cr: number) => cx + cr > x && cx - cr < x + w;
+    let yTop = top + u * 0.3;
+    if (over(lamp.x, lamp.r * 1.2)) yTop = Math.max(yTop, lamp.y + lamp.r * 1.6);
+    if (over(clock.x, clock.r * 1.1)) yTop = Math.max(yTop, clock.y + clock.r * 1.9);
+    const h = Math.min(w * 0.8, floorY - u * 0.5 - yTop);
+    if (w < u * 0.9 || h < u * 0.6) return { x: left, y: yTop, w: 0, h: 0 };
+    return { x, y: yTop, w, h };
+  };
+  const lampAt = lampSpot();
   const decor: Decor = {
     sign: { x: door.x + door.w / 2 - signW / 2, y: Math.max(top + 2, door.y - u * 0.62 - signH), w: signW, h: signH },
     register: { x: counter.x + counter.w - u * 1.05, y: counter.y + counter.h * 0.14, w: u * 0.85, h: counter.h * 0.72 },
@@ -195,7 +215,9 @@ export function computeShopLayout(
     stool: { x: counter.x + counter.w * 0.6, y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.55), r: u * 0.36 },
     radio: { x: showcase.x + showcase.w - u * 1.2, y: showcase.y - u * 0.5, w: u * 0.9, h: u * 0.55 },
     clock: { x: stage.x + stage.w * 0.63, y: stage.y + Math.max(u * 0.75, top * 0.55), r: u * 0.42 },
-    lamp: lampSpot(),
+    lamp: lampAt,
+    window: { x: 0, y: 0, w: 0, h: 0 },
+    flower: { x: counterTop.x + counterTop.w - u * 0.45, y: counterTop.y, r: u * 0.3 },
     board: { x: counter.x + u * 0.2, y: counter.y + counter.h * 0.14, w: Math.min(u * 1.1, counter.h * 1.1), h: counter.h * 0.72 },
     feeder: { x: Math.max(stage.x + u * 0.35, counter.x - u * 0.05), y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.25), r: u * 0.3 },
     seller: { x: Math.min(sideX + u * 0.5, door.x - spotR * 2.2), y: counter.y + counter.h * 0.8, r: u * 0.38 },
@@ -206,6 +228,10 @@ export function computeShopLayout(
   // The clock steps left of the radio when they would meet over the showcase (wide screens).
   const k = decor.clock;
   if (k.x + k.r * 1.1 > decor.radio.x && k.x - k.r * 1.1 < decor.radio.x + decor.radio.w && k.y + k.r * 1.7 > decor.radio.y - decor.radio.h) k.x = decor.radio.x - k.r * 1.6;
+  // M6-20: the wall clock is always there now — it steps left of the hanging lamp when they would meet.
+  const apart = k.r * 1.1 + lampAt.r * 1.5;
+  if (Math.abs(k.x - lampAt.x) < apart && Math.abs(k.y - lampAt.y) < k.r * 1.3 + lampAt.r * 1.5) k.x = lampAt.x - apart - u * 0.15;
+  decor.window = windowRect(lampAt, k);
 
   if (!shelf) return { stage: full, unit: u, wall, floor: { ...floor, h: full.y + full.h - floorY }, counter, counterTop, incubator, incubators, showcase, slots, slotGap: gap, door, queue, decor, outline, radius, strip: false, frame: showcase, roomBottom: stage.y + stage.h };
   // MU-03 (s1-shop-scene): the places of the «Витрина» strip — 4 in a row (5 from 9 places), the size of a card picture.

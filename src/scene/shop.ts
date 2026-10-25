@@ -9,6 +9,7 @@ import { drawCreature, drawCustomer, drawEgg, drawRing, rarityColor } from './ar
 import type { EventView } from '../sim/game.ts';
 import { createFx } from './fx.ts';
 import { drawBell, drawPointBack, drawDecor, drawLamp, drawSign } from './decor.ts';
+import { createThings } from './things.ts';
 import type { SecretTarget } from '../content/schemas.ts';
 import { computeShopLayout, type Rect, type ShopLayout, type Spot } from './shop-layout.ts';
 
@@ -33,7 +34,7 @@ export interface ShopAnchors {
   eventCoins: Array<{ id: number; x: number; y: number }>;
   eventThing: Spot | null;
   /** Easter egg things: sign, door, lamp. */
-  things: { sign: Rect; door: Rect; lamp: Spot };
+  things: { sign: Rect; door: Rect; lamp: Spot; window: Rect; clock: Spot; flower: Spot };
   /** UB-09: the caption on the counter that signs the scene's tap gestures ('' when none). */
   caption: string;
 }
@@ -47,6 +48,8 @@ export interface ShopView {
   onEvent(e: GameEvent): void;
   /** The last text that flew up in the scene for a purchase (test API, M3-17). */
   lastUpgradeText(): string;
+  /** M6-20: the flower's taps from the save (its leaves and the bloom). */
+  setFlower(taps: number): void;
   relabel(): void;
   /** Stage coordinates of the tappable pieces (hints, test API); null before the first layout. */
   anchors(): ShopAnchors | null;
@@ -163,6 +166,8 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let lampWarm = true;
   let discoLeft = 0;
   const thingHits: Container[] = [];
+  // M6-20: window, wall clock, flower pot.
+  const things = createThings(c);
 
   function buildThings(l: ShopLayout, level: number): void {
     const d = l.decor;
@@ -198,6 +203,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     hit('sign', new Rectangle(d.sign.x - 4, d.sign.y - 4, d.sign.w + 8, Math.max(44, d.sign.h + 12)));
     hit('door', new Rectangle(l.door.x, l.door.y, l.door.w, l.door.h));
     hit('lamp', new Circle(d.lamp.x, d.lamp.y, Math.max(22, d.lamp.r * 1.4)));
+    things.build(l, Boolean(decorItems.clock), hit);
     if (decorItems.board) {
       const box = new Container();
       box.eventMode = 'static';
@@ -210,7 +216,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   }
 
   function animateThings(dt: number, l: ShopLayout): boolean {
-    let moving = false;
+    let moving = things.animate(dt);
     if (signSwing > 0) {
       signSwing = Math.max(0, signSwing - dt);
       signBox.rotation = Math.sin(signSwing * 22) * 0.18 * (signSwing / 0.9);
@@ -255,7 +261,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
   let eventCoins = new Map<number, Container>();
   let eventThing: Container | null = null;
   let eventSpot: Spot | null = null;
-  root.addChild(back, pointBack, furniture, stranger, plaqueBox, decorG, signBox, lampBox, bellBox, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, disco, fx.layer, hits, eventLayer);
+  root.addChild(back, things.back, pointBack, furniture, stranger, plaqueBox, decorG, things.front, signBox, lampBox, bellBox, selection, rings, eggsLayer, customersLayer, creaturesLayer, labels, disco, fx.layer, hits, eventLayer);
   app.stage.addChild(root);
 
   let stageRect: Rect | null = null;
@@ -1101,6 +1107,10 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         } else if (e.target === 'lamp') {
           lampWarm = !lampWarm;
           drawLamp(lampG, current.decor.lamp.r, current.decor.lamp.y - current.stage.y, lampWarm, c, current.outline);
+        } else if (e.target === 'pane' || e.target === 'clock' || e.target === 'flower') {
+          things.tapped(e.first, e.count);
+          const at = things.spot(e.target);
+          if (at && e.target === 'clock') fx.float(at.x, at.y - at.r * 1.1, t('fx.tick'), c.eyeWhite, Math.max(14, current.unit * 0.45), current.unit * 0.6);
         }
       } else if (e.type === 'secret') {
         if (e.show === 'hop') badgeHop = 0.9;
@@ -1111,6 +1121,11 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           doorKnock = 0.6;
           fx.float(current.door.x + current.door.w / 2, current.door.y + current.door.h * 0.3, t('fx.knock'), c.eyeWhite, Math.max(15, current.unit * 0.5), current.unit * 0.8);
         } else if (e.show === 'stranger') strangerLeft = 2.2;
+        else if (e.show === 'teapot' || e.show === 'bloom') {
+          things.secret(e.show);
+          const at = things.spot(e.show === 'teapot' ? 'pane' : 'flower');
+          if (at) fx.burst(at.x, at.y, 10, [c.uiAccent, c.eyeWhite, c.blush], current.unit * 2, current.outline);
+        }
         else if (e.show === 'disco') discoLeft = 3;
         if (e.coins > 0) fx.float(current.door.x, current.door.y - current.unit * 0.6, `+${fmt(e.coins)}`, c.uiAccent, Math.max(16, current.unit * 0.55), current.unit);
       } else if (e.type === 'orderDone') {
@@ -1136,6 +1151,21 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         const k = current.decor.clock;
         fx.float(k.x, k.y - k.r * 1.2, t('fx.cuckoo'), c.uiAccent, Math.max(14, current.unit * 0.5), current.unit * 0.8);
         fx.burst(k.x, k.y - k.r * 0.7, 6, [c.uiAccent, c.eyeWhite], current.unit * 1.5, current.outline);
+      } else if (e.type === 'chime') {
+        const k = current.decor.clock;
+        fx.float(k.x, k.y - k.r * 1.3, t('fx.bong'), c.uiAccent, Math.max(16, current.unit * 0.6), current.unit);
+        fx.burst(k.x, k.y, 10, [c.uiAccent, c.eyeWhite], current.unit * 2, current.outline);
+        for (const node of creatures.values()) node.hop = feel.bounceSec * 2;
+      } else if (e.type === 'tickle') {
+        // M6-20: a laugh and a jump twice as high; the coin flies up.
+        const node = creatures.get(e.uid);
+        const slot = current.slots[slotUids.indexOf(e.uid)];
+        if (node) node.hop = feel.bounceSec * 2;
+        if (slot) {
+          const at = slotCenter(slot);
+          fx.float(at.x, at.y - at.r * 1.4, t('fx.giggle'), c.eyeWhite, Math.max(15, at.r * 0.6), current.unit);
+          if (e.coins > 0) fx.float(at.x + at.r, at.y - at.r * 0.8, `+${fmt(e.coins)}`, c.uiAccent, Math.max(15, at.r * 0.55), current.unit * 0.9);
+        }
       } else if (e.type === 'customerArrived') {
         if (decorItems.bell) bellSwing = 0.8;
       } else if (e.type === 'eggBought' || e.type === 'rescueEgg') {
@@ -1170,6 +1200,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       invalidate();
     },
     lastUpgradeText: () => upgradeText,
+    setFlower: (taps) => things.setFlower(taps),
     relabel() {
       caption.text = captionKey ? t(captionKey) : '';
       fitCaption();
@@ -1214,7 +1245,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     anchors() {
       if (!current) return null;
       const coinsAt = [...eventCoins.entries()].map(([id, box]) => ({ id, x: box.x, y: box.y }));
-      return { incubators: current.incubators, slots: current.slots, queue: current.queue, counter: current.counter, eventCoins: coinsAt, eventThing: eventSpot, things: { sign: current.decor.sign, door: current.door, lamp: current.decor.lamp }, caption: caption.text };
+      return { incubators: current.incubators, slots: current.slots, queue: current.queue, counter: current.counter, eventCoins: coinsAt, eventThing: eventSpot, things: { sign: current.decor.sign, door: current.door, lamp: current.decor.lamp, window: current.decor.window, clock: current.decor.clock, flower: current.decor.flower }, caption: caption.text };
     },
   };
 }

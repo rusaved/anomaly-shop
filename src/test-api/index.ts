@@ -78,6 +78,10 @@ export function installTestApi(hooks: TestHooks): void {
           sign: pt(a.things.sign.x + a.things.sign.w / 2, a.things.sign.y + a.things.sign.h / 2),
           door: pt(a.things.door.x + a.things.door.w / 2, a.things.door.y + a.things.door.h / 2),
           lamp: pt(a.things.lamp.x, a.things.lamp.y),
+          // M6-20: centres; the window is null when the wall has no room for it.
+          window: a.things.window.w > 0 ? pt(a.things.window.x + a.things.window.w / 2, a.things.window.y + a.things.window.h / 2) : null,
+          clock: pt(a.things.clock.x, a.things.clock.y),
+          flower: pt(a.things.flower.x, a.things.flower.y - a.things.flower.r * 1.5),
         },
       };
     },

@@ -63,7 +63,7 @@ export interface MerchantOffer {
 }
 
 /** Who fed a creature: the player's tap, the feeder helper, the cuckoo clock. */
-export type FeedBy = 'tap' | 'helper' | 'cuckoo';
+export type FeedBy = 'tap' | 'helper' | 'cuckoo' | 'chime';
 
 /** What the helpers did while the player was away (docs/01a, section 5: up to 8 hours at offlineRate of the live pace). */
 export interface OfflineReport {
@@ -141,6 +141,10 @@ export type GameEvent =
   | { type: 'districtOpened'; district: string; customer: string }
   | { type: 'firstCrystal' }
   | { type: 'cuckoo' }
+  /** M6-20: 10 quick taps on one creature — it laughs and jumps; coins once per tickle. */
+  | { type: 'tickle'; uid: string; coins: number }
+  /** M6-20: the clock struck noon or midnight (the device's time): every creature got fed. */
+  | { type: 'chime'; hour: number; fed: number }
   | { type: 'eventStarted'; id: string; kind: EventKind; uid?: string | undefined }
   | { type: 'eventEnded'; id: string; kind: EventKind; outcome: 'done' | 'missed' }
   | { type: 'eventCoin'; id: number; value: number }
@@ -410,6 +414,8 @@ export interface Game {
   merchantBuy(choice: 'discount' | 'mystery'): boolean;
   /** A tap on a shop thing (sign, door, lamp): a reply always, a secret on the counter (docs/01b, section 2). */
   tapThing(target: SecretTarget): void;
+  /** M6-20: the clock strikes (the ui calls it on the hour of secrets.json chime, once a strike): food for every creature. */
+  chime(hour: number): boolean;
   /** The nearest goal not reached yet: the one with the largest share done (shop positions, the next seller level, deal goals; rebirth when all is bought). */
   nextGoal(): GoalView;
   /** M4-06: the move to a new city — coins earned here against what it needs, the income multiplier now and after. */
@@ -875,6 +881,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   // ---- Easter eggs (docs/01b, section 2; M2-16): counters in the save, a streak for «in a row».
   let clock = 0;
   const streaks: Record<string, { n: number; at: number }> = {};
+  /** M6-20: recent tap times per creature (game seconds), for the tickle. */
+  const tickles: Record<string, number[]> = {};
 
   function merchantOffer(): MerchantOffer | null {
     const ev = active;
@@ -1839,6 +1847,17 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const changed = selectedUid !== uid;
       selectedUid = uid;
       st.stats.taps += 1;
+      // M6-20: a tickle — taps quick taps on the same creature (01b §2); the run starts again after it.
+      const tk = content.secrets.tickle;
+      const run = (tickles[uid] ??= []);
+      run.push(clock);
+      while (run.length && clock - run[0]! > tk.sec) run.shift();
+      if (run.length >= tk.taps) {
+        run.length = 0;
+        st.coins += tk.coins;
+        st.stats.coinsEarned += tk.coins;
+        emit({ type: 'tickle', uid, coins: tk.coins });
+      }
       if (feed(cr, 1 + effectSum('feedPerTap'), 'tap') || changed) emit({ type: 'change' });
     },
     selected,
@@ -2071,6 +2090,14 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         });
       }
       commit();
+    },
+    chime(hour) {
+      const ch = content.secrets.chime;
+      if (!ch.hours.includes(hour)) return false;
+      emit({ type: 'chime', hour, fed: ch.fed });
+      for (const cr of [...s().creatures]) feed(cr, ch.fed, 'chime');
+      commit();
+      return true;
     },
     merchantOffer,
     merchantBuy(choice) {

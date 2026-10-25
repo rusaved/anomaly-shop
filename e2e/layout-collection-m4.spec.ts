@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { collectErrors, open, seedSave, translated } from './helpers.ts';
 import { marketMood } from '../src/sim/rules.ts';
 import species from '../content/species.json' with { type: 'json' };
+import achievements from '../content/achievements.json' with { type: 'json' };
 
 /** M4-01 on the phone projects: the collection by rarity — «Collected N/M», a row per rarity with its bonus, statuses on the tiles. */
 test('M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold', async ({ page }) => {
@@ -49,11 +50,11 @@ test('M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked',
   await open(page, '?mock_device=mobile');
   await page.locator('[data-tab=inventory]').tap();
   await page.locator('[data-sheet=inventory] [data-sub=finds]').tap();
-  await expect(page.locator('[data-sheet=inventory] [data-finds]')).toHaveAttribute('data-finds', /^\d+\/30$/);
+  await expect(page.locator('[data-sheet=inventory] [data-finds]')).toHaveAttribute('data-finds', new RegExp(`^\\d+/${achievements.items.length}$`));
   await expect(page.locator('[data-find=first_deal]')).toHaveClass(/got/);
   await page.locator('[data-action=find-take-first_deal]').tap();
   await expect(page.locator('[data-find=first_deal] .find-progress')).not.toBeEmpty();
   await expect(page.locator('[data-find=door_knock] .find-name')).toHaveText('???');
-  await expect(page.locator('.find.secret')).toHaveCount(10);
+  await expect(page.locator('.find.secret')).toHaveCount(achievements.items.filter((x) => x.hidden).length);
   expect(errors).toEqual([]);
 });

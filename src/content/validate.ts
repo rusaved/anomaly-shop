@@ -318,8 +318,9 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   if (finds) {
     duplicates('achievements.json', 'items', finds.items.map((x) => x.id), errors);
     // M4-20 (docs/01b §5.5): 30 finds, 10 of them hidden; each gives something.
-    if (finds.items.length !== 30) errors.push(`achievements.json: items — ${finds.items.length} finds, expected 30`);
-    if (finds.items.filter((x) => x.hidden).length !== 10) errors.push('achievements.json: items — expected 10 hidden finds');
+    // M4-20: 30 finds, 10 hidden; M6-20 and M6-23 add hidden ones for the new secrets (01b §2, §5.8).
+    if (finds.items.length < 30) errors.push(`achievements.json: items — ${finds.items.length} finds, expected at least 30`);
+    if (finds.items.filter((x) => x.hidden).length < 10) errors.push('achievements.json: items — expected at least 10 hidden finds');
     finds.items.forEach((x, i) => {
       if (!x.reward.coins && !x.reward.crystals) errors.push(`achievements.json: items.${i}.reward — coins or crystals`);
     });

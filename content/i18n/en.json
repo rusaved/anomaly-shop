@@ -460,5 +460,12 @@
   "store.coins_l": "Chest of coins",
   "ad.eggsHead": "For a video",
   "ad.oneVideo": "For one video",
-  "ad.doubleIn": "▶ Ad: ×2 in {t}"
+  "ad.doubleIn": "▶ Ad: ×2 in {t}",
+  "secret.window.teapot": "A winged teapot flew past the window",
+  "secret.flower.bloom": "The flower bloomed!",
+  "secret.label.hello": "Hi from the shop makers!",
+  "fx.tick": "Tick",
+  "fx.bong": "Bong!",
+  "fx.giggle": "Hee-hee!",
+  "toast.chime": "The clock struck! A treat for every pet"
 }

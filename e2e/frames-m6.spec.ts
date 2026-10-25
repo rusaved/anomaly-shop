@@ -38,6 +38,8 @@ for (const size of SIZES) {
         creatures: pets,
         showcase: pets.slice(0, 6).map((p) => p.uid),
         upgrades: { ...FRAMES_SAVE.upgrades, showcase: 5 },
+        // M6-20: the flower in bloom on the counter, the window and the wall clock in the frame.
+        secrets: { flower: 30 },
         collection: Object.fromEntries(species.species.map((s) => [s.id, { seen: 1, hatched: 1, sold: 0 }])),
       });
       await open(page);

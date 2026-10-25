@@ -259,7 +259,7 @@ export const FeelFile = v.object({
   hatchLockSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(1.5)),
 });
 
-export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade', 'spin'] as const;
+export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade', 'spin', 'giggle', 'bong'] as const;
 const ZzfxParams = v.pipe(v.array(v.nullable(v.number())), v.minLength(1), v.maxLength(21));
 export const AudioFile = v.object({
   volume: Share,
@@ -470,7 +470,7 @@ const SecRange = v.object({ min: v.pipe(v.number(), v.minValue(1)), max: v.pipe(
 export const EventsFile = v.object({ firstAfterSec: SecRange, everySec: SecRange, events: v.pipe(v.array(RandomEvent), v.minLength(1)) });
 
 /** Easter eggs on taps (docs/01b, section 2; M2-16): a reply to every tap, a secret on a counter. */
-export const SECRET_TARGETS = ['sign', 'door', 'lamp'] as const;
+export const SECRET_TARGETS = ['sign', 'door', 'lamp', 'pane', 'clock', 'flower', 'label'] as const;
 export const SecretsFile = v.object({
   streakSec: v.pipe(v.number(), v.minValue(0.1)),
   secrets: v.pipe(
@@ -479,11 +479,16 @@ export const SecretsFile = v.object({
         id: Id,
         target: v.picklist(SECRET_TARGETS),
         first: Id,
-        steps: v.pipe(v.array(v.object({ at: Count, streak: v.optional(v.boolean()), show: Id, coins: Money })), v.minLength(1)),
+        // M6-20: the clock has no counter step — its secret is the time of day (chime below).
+        steps: v.array(v.object({ at: Count, streak: v.optional(v.boolean()), show: Id, coins: Money })),
       }),
     ),
     v.minLength(1),
   ),
+  /** M6-20: taps taps on one creature within sec seconds — a tickle: a laugh, a higher jump, coins. */
+  tickle: v.object({ taps: Count, sec: v.pipe(v.number(), v.minValue(0.5)), coins: Money }),
+  /** M6-20: the clock chimes at these hours of the device (0–23, on the hour): every creature gets fed taps of food. */
+  chime: v.object({ hours: v.pipe(v.array(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(23))), v.minLength(1)), fed: Count }),
 });
 
 /** Creature and customer lines by context (docs/01b, sections 4.1–4.2; M2-17). */

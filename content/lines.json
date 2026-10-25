@@ -332,12 +332,12 @@
     },
     "mitten_seal": {
       "tap": [
-        {"ru": "Хлоп-хлоп ластами!", "en": "Flap flap, thank you!"},
+        {"ru": "Хлоп-хлоп, спасибо!", "en": "Flap flap, thank you!"},
         {"ru": "Вкусно и уютно!", "en": "Tasty and cozy!"},
-        {"ru": "Шерстинки встали дыбом от радости", "en": "My wool is happy!"}
+        {"ru": "Шерстинки радуются!", "en": "My wool is happy!"}
       ],
       "hungry": [
-        {"ru": "Ластики зовут обед", "en": "My flippers want lunch"},
+        {"ru": "Ласты зовут обед", "en": "My flippers want lunch"},
         {"ru": "Тюлень скучает по рыбке", "en": "This seal misses fish"},
         {"ru": "Эй, тут варежка голодная", "en": "Hey, a hungry mitten here"}
       ],
@@ -447,7 +447,7 @@
       "hungry": [
         {"ru": "Бе-е? А травка?", "en": "Baa? Any grass?"},
         {"ru": "Клубочек просит перекус", "en": "Yarn ball wants a snack"},
-        {"ru": "Ниточка поникла", "en": "My thread droops"}
+        {"ru": "Ниточка ждёт вкусняшку", "en": "My thread waits for a treat"}
       ],
       "levelUp": [
         {"ru": "Стал круглее!", "en": "Rounder now!"},
@@ -528,7 +528,7 @@
       "hungry": [
         {"ru": "Буль-буль, корм?", "en": "Blub blub, food?"},
         {"ru": "Рыбка ждёт у стекла", "en": "Fish waits at the glass"},
-        {"ru": "Пузырь сдувается от голода", "en": "Bubble sags, hungry"}
+        {"ru": "Пузырёк просит крошку", "en": "Bubble asks for a crumb"}
       ],
       "levelUp": [
         {"ru": "Пузырь больше!", "en": "Bigger bubble!"},
@@ -548,19 +548,19 @@
     },
     "mug_cub": {
       "tap": [
-        {"ru": "Ур-р, вкусно!", "en": "Grr, yummy!"},
+        {"ru": "Ур-р, вкусно!", "en": "Mmm, yummy!"},
         {"ru": "Какао греет!", "en": "Cocoa warms me!"},
         {"ru": "Медвежья благодарность!", "en": "A bear-sized thank you!"}
       ],
       "hungry": [
         {"ru": "Кружка пустая, ой", "en": "Empty mug, oops"},
         {"ru": "Мишка ждёт какао", "en": "Cub waits for cocoa"},
-        {"ru": "Ур-р? Перекус?", "en": "Grr? Snack?"}
+        {"ru": "Ур-р? Перекус?", "en": "Mmm? Snack?"}
       ],
       "levelUp": [
         {"ru": "Вмещаю больше какао!", "en": "More cocoa fits now!"},
         {"ru": "Ушки теплее!", "en": "Warmer ears!"},
-        {"ru": "Ур-р! Подрос", "en": "Grr! I grew"}
+        {"ru": "Ур-р! Подрос", "en": "Mmm! I grew"}
       ],
       "max": [
         {"ru": "Самая уютная кружка", "en": "Coziest mug ever"},
@@ -569,7 +569,7 @@
       ],
       "sold": [
         {"ru": "Буду греть вам руки", "en": "I will warm your hands"},
-        {"ru": "Ур-р, пока!", "en": "Grr, bye!"},
+        {"ru": "Ур-р, пока!", "en": "Mmm, bye!"},
         {"ru": "Поехал пить какао", "en": "Off for cocoa"}
       ]
     },
@@ -582,7 +582,7 @@
       "hungry": [
         {"ru": "Листочек бы, а?", "en": "A leaf, maybe?"},
         {"ru": "Улитка ждёт, терпеливо", "en": "Snail waits patiently"},
-        {"ru": "Радуга бледнеет", "en": "My rainbow fades"}
+        {"ru": "Радуга хочет перекус", "en": "My rainbow wants a snack"}
       ],
       "levelUp": [
         {"ru": "Ещё одна полоска!", "en": "One more stripe!"},
@@ -662,7 +662,7 @@
       ],
       "hungry": [
         {"ru": "Фыр? Где ужин?", "en": "Yip? Where is dinner?"},
-        {"ru": "Комета гаснет без еды", "en": "Comet dims when hungry"},
+        {"ru": "Комета мечтает о печенье", "en": "Comet dreams of a cookie"},
         {"ru": "Лисёнок смотрит хитро", "en": "Fox looks sly"}
       ],
       "levelUp": [
@@ -688,7 +688,7 @@
         {"ru": "Спасибо, сияю!", "en": "Thanks, glowing!"}
       ],
       "hungry": [
-        {"ru": "Фонарик тускнеет", "en": "My light dims"},
+        {"ru": "Фонарик ждёт ужин", "en": "My light waits for dinner"},
         {"ru": "Блуп? Перекус?", "en": "Bloop? Snack?"},
         {"ru": "Медуза ждёт ужин", "en": "Jelly waits for dinner"}
       ],
@@ -744,7 +744,7 @@
       "hungry": [
         {"ru": "Солнышко за тучкой", "en": "Sun behind a cloud"},
         {"ru": "Булочка ждёт джем", "en": "Bun waits for jam"},
-        {"ru": "Лучики поникли", "en": "My rays droop"}
+        {"ru": "Лучики ждут джем", "en": "My rays wait for jam"}
       ],
       "levelUp": [
         {"ru": "Свечу ярче!", "en": "Shining brighter!"},
@@ -770,7 +770,7 @@
       ],
       "hungry": [
         {"ru": "Олень ждёт мох", "en": "Deer waits for moss"},
-        {"ru": "Хрусталь тускнеет", "en": "Crystal grows dull"},
+        {"ru": "Хрусталь звенит: обед?", "en": "Crystal chimes: lunch?"},
         {"ru": "Дзинь? Перекус?", "en": "Chime? Snack?"}
       ],
       "levelUp": [

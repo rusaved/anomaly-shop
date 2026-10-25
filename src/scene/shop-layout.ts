@@ -217,7 +217,7 @@ export function computeShopLayout(
     clock: { x: stage.x + stage.w * 0.63, y: stage.y + Math.max(u * 0.75, top * 0.55), r: u * 0.42 },
     lamp: lampAt,
     window: { x: 0, y: 0, w: 0, h: 0 },
-    flower: { x: counterTop.x + counterTop.w - u * 0.45, y: counterTop.y, r: u * 0.3 },
+    flower: { x: counterTop.x + counterTop.w - u * 0.5, y: counterTop.y, r: u * 0.4 },
     board: { x: counter.x + u * 0.2, y: counter.y + counter.h * 0.14, w: Math.min(u * 1.1, counter.h * 1.1), h: counter.h * 0.72 },
     feeder: { x: Math.max(stage.x + u * 0.35, counter.x - u * 0.05), y: Math.min(stage.y + stage.h - u * 0.45, counter.y + counter.h + u * 0.25), r: u * 0.3 },
     seller: { x: Math.min(sideX + u * 0.5, door.x - spotR * 2.2), y: counter.y + counter.h * 0.8, r: u * 0.38 },

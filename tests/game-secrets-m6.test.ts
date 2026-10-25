@@ -61,6 +61,13 @@ describe('M6-20 new things and small secrets', () => {
     expect(game.state.coins).toBe(coins + content.secrets.tickle.coins);
     for (let i = 0; i < 9; i++) game.tapCreature('b');
     expect(seen.filter((e) => e.type === 'tickle')).toHaveLength(1);
+    // The next tickle within cooldownSec laughs but pays nothing (the game design review: no coin farm).
+    game.tapCreature('b');
+    expect(seen.filter((e) => e.type === 'tickle').at(-1)).toEqual({ type: 'tickle', uid: 'b', coins: 0 });
+    expect(game.state.coins).toBe(coins + content.secrets.tickle.coins);
+    wait(content.secrets.tickle.cooldownSec);
+    for (let i = 0; i < 10; i++) game.tapCreature('b');
+    expect(seen.filter((e) => e.type === 'tickle').at(-1)).toMatchObject({ coins: content.secrets.tickle.coins });
   });
 
   it('the clock strikes noon and midnight only: every pet gets food (a level for a pet one tap short)', () => {

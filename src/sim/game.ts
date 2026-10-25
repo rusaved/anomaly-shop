@@ -894,6 +894,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
   const streaks: Record<string, { n: number; at: number }> = {};
   /** M6-20: recent tap times per creature (game seconds), for the tickle. */
   const tickles: Record<string, number[]> = {};
+  /** M6-20: when a pet last paid a tickle coin (game seconds). */
+  const tickledAt: Record<string, number> = {};
 
   function merchantOffer(): MerchantOffer | null {
     const ev = active;
@@ -1865,9 +1867,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       while (run.length && clock - run[0]! > tk.sec) run.shift();
       if (run.length >= tk.taps) {
         run.length = 0;
-        st.coins += tk.coins;
-        st.stats.coinsEarned += tk.coins;
-        emit({ type: 'tickle', uid, coins: tk.coins });
+        const paid = clock - (tickledAt[uid] ?? -Infinity) >= tk.cooldownSec ? tk.coins : 0;
+        if (paid) tickledAt[uid] = clock;
+        st.coins += paid;
+        st.stats.coinsEarned += paid;
+        emit({ type: 'tickle', uid, coins: paid });
       }
       if (feed(cr, 1 + effectSum('feedPerTap'), 'tap') || changed) emit({ type: 'change' });
     },

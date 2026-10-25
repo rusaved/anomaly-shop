@@ -491,8 +491,8 @@ export const SecretsFile = v.object({
     ),
     v.minLength(1),
   ),
-  /** M6-20: taps taps on one creature within sec seconds — a tickle: a laugh, a higher jump, coins. */
-  tickle: v.object({ taps: Count, sec: v.pipe(v.number(), v.minValue(0.5)), coins: Money }),
+  /** M6-20: taps taps on one creature within sec seconds — a tickle: a laugh, a higher jump; coins at most once in cooldownSec a pet. */
+  tickle: v.object({ taps: Count, sec: v.pipe(v.number(), v.minValue(0.5)), coins: Money, cooldownSec: v.pipe(v.number(), v.minValue(0)) }),
   /** M6-20: the clock chimes at these hours of the device (0–23, on the hour): every creature gets fed taps of food. */
   /** M6-23 (01b §5.8): the player names the shop — up to maxLength letters; secret names give the find; blocked — FNV hashes of the
    * stop-list words (scripts/stopwords.json via scripts/stopword-hashes.mjs), so the words never ship. */

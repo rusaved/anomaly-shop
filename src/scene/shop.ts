@@ -926,8 +926,10 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         // M6-21: a little grey mouse (it runs along the floor, animateEvent).
         g.ellipse(0, r * 0.55, r * 0.6, r * 0.12).fill({ color: c.outline, alpha: 0.18 });
         g.moveTo(-r * 0.5, r * 0.25).quadraticCurveTo(-r * 0.95, r * 0.1, -r * 0.9, -r * 0.25).stroke({ width: l.outline * 0.6, color: c.outline, cap: 'round' });
-        g.ellipse(0, r * 0.2, r * 0.55, r * 0.35).fill(c.uiMuted).stroke({ width: l.outline * 0.7, color: c.outline });
-        g.circle(r * 0.32, -r * 0.18, r * 0.2).fill(c.uiMuted).stroke({ width: l.outline * 0.6, color: c.outline });
+        // Light on the dark floor, so it is seen at once.
+        g.ellipse(0, r * 0.2, r * 0.55, r * 0.35).fill(c.eyeWhite).stroke({ width: l.outline * 0.7, color: c.outline });
+        g.circle(r * 0.32, -r * 0.18, r * 0.2).fill(c.eyeWhite).stroke({ width: l.outline * 0.6, color: c.outline });
+        g.circle(r * 0.18, -r * 0.38, r * 0.12).fill(c.blush).stroke({ width: l.outline * 0.5, color: c.outline });
         g.circle(r * 0.5, r * 0.15, r * 0.07).fill(c.blush);
         g.circle(r * 0.32, r * 0.08, r * 0.05).fill(c.outline);
       } else if (ev.kind === 'parade') {
@@ -975,9 +977,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     for (const box of eventCoins.values()) box.pivot.y = Math.sin(time * 6 + i++) * l.unit * 0.06;
     if (eventThing && eventSpot && (ev.kind === 'mouse' || ev.kind === 'parade')) {
       // M6-21: the mouse runs to and fro along the floor; the eggs roll by the door and tumble.
-      const span = Math.max(l.unit * 2, l.door.x - l.floor.x - l.unit * 1.5);
+      // The free floor: right of the counter and the showcase, left of the door (the whole floor when that is too narrow).
+      const free0 = Math.max(l.counter.x + l.counter.w, l.strip ? 0 : l.showcase.x + l.showcase.w) + eventSpot.r;
+      const free1 = l.door.x - eventSpot.r * 0.5;
+      const x0 = free1 - free0 >= l.unit * 2 ? free0 : l.floor.x + l.unit * 0.75;
+      const span = Math.max(l.unit * 2, free1 - x0);
       const k = ev.kind === 'mouse' ? Math.sin(time * 1.6) : ((time * 0.35) % 1) * 2 - 1;
-      eventThing.x = l.floor.x + l.unit * 0.75 + (span / 2) * (1 + k);
+      eventThing.x = x0 + (span / 2) * (1 + k);
       if (ev.kind === 'mouse') eventThing.scale.x = Math.cos(time * 1.6) >= 0 ? 1 : -1;
       else for (const ch of eventThing.children) if (ch instanceof Graphics) ch.rotation = time * 4;
       eventThing.y = eventSpot.y - Math.abs(Math.sin(time * (ev.kind === 'mouse' ? 14 : 5))) * l.unit * 0.05;

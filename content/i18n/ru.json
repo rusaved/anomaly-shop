@@ -471,8 +471,7 @@
   "event.weather": "Аномальная погода! Витрина блестит, цены выше",
   "event.mouse": "Мышка! Тапни, пока не убежала",
   "event.parade": "Парад яиц у двери! Лови одно",
-  "shopname.label": "Имя лавки",
-  "shopname.placeholder": "Например, «Чайная»",
+  "shopname.placeholder": "Имя лавки",
   "shopname.save": "Сохранить",
   "shopname.ok": "Готово! Район уже знает",
   "shopname.empty": "Впиши хотя бы одну букву",
@@ -480,6 +479,6 @@
   "shopname.blocked": "Такое имя не подойдёт, попробуй другое",
   "shopname.secret": "Секретное имя! Лавка сияет",
   "shopname.arrive1": "Говорят, в «{shop}» лучшие питомцы",
-  "shopname.arrive2": "Это же та самая «{shop}»!",
+  "shopname.arrive2": "Это же «{shop}»! Наслышан",
   "shopname.arrive3": "Мне про «{shop}» соседка рассказала"
 }

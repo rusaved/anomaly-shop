@@ -7,13 +7,14 @@ import { events, open, seedSave } from './helpers.ts';
  * The budgets of docs/02, section 8, on a 4× slower CPU. M4-09: the project runs alone after all the others — next to another test
  * on the same machine the emulated slow CPU measured 6–8 s; alone it stays under the budget (the full verify of M4).
  * RD-04: the first screen on 4G (docs/02: 10 Mbit/s, RTT 100 ms) and CPU ×4 ≤ 5 s; FPS ≥ 30 on CPU ×4; the memory does not grow in
- * 10 minutes of play (@full). RD_SHOTS=1 writes the numbers to docs/evidence/RD/perf.txt.
+ * 10 minutes of play (@full). RD_SHOTS=1 writes the numbers to docs/evidence/RD/perf.txt, PERF_OUT=M6 to docs/evidence/M6/perf.txt.
  * FPS in the cloud is the software WebGL's (SwiftShader draws on the CPU: ~10 FPS even without a slowdown, the page itself idle), not
  * the game's: the check is the game's own main-thread work per drawn frame on CPU ×4 — ≤ 33 ms keeps 30 FPS on a phone whose GPU
  * draws the frame (docs/допущения.md). The tests run one after another in one worker: a neighbour skews a slowed CPU.
  */
 test.describe.configure({ mode: 'default' });
-const evidence = process.env.RD_SHOTS ? resolve(import.meta.dirname, '../docs/evidence/RD/perf.txt') : null;
+// M6-05: PERF_OUT=<milestone> writes to that milestone's evidence (RD_SHOTS=1 — RD's, as before).
+const evidence = process.env.PERF_OUT ? resolve(import.meta.dirname, `../docs/evidence/${process.env.PERF_OUT}/perf.txt`) : process.env.RD_SHOTS ? resolve(import.meta.dirname, '../docs/evidence/RD/perf.txt') : null;
 const note = (line: string) => {
   console.log(line);
   if (!evidence) return;

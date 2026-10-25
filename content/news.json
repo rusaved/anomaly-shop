@@ -801,21 +801,21 @@
         "type": "named"
       },
       "ru": "Лавка «{shop}» открыла двери. Район в восторге",
-      "en": "«{shop}» opened its doors. The town is delighted"
+      "en": "“{shop}” opened its doors. The town is delighted"
     },
     {
       "when": {
         "type": "named"
       },
       "ru": "Про «{shop}» уже пишут в газете зоны",
-      "en": "The zone paper is writing about «{shop}»"
+      "en": "The zone paper is writing about “{shop}”"
     },
     {
       "when": {
         "type": "named"
       },
       "ru": "Голуби выучили дорогу в «{shop}»",
-      "en": "The pigeons learned the way to «{shop}»"
+      "en": "The pigeons learned the way to “{shop}”"
     }
   ],
   "showSec": 8

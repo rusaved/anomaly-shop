@@ -108,12 +108,7 @@ export function createSettingsWindow(
   });
   codeRow.append(codeInput, codeApply);
 
-  // M6-23 (01b §5.8): the shop's name — a field, «Save» and a soft answer; the name lives in the save.
-  const nameLabel = document.createElement('div');
-  nameLabel.className = 'row name-label';
-  const nameText = document.createElement('span');
-  nameText.dataset.i18n = 'shopname.label';
-  nameLabel.append(nameText);
+  // M6-23 (01b §5.8): the shop's name — a field («Shop name» inside it), «Save» and a soft answer; the name lives in the save.
   const nameRow = document.createElement('div');
   nameRow.className = 'row code-row name-row';
   const nameInput = document.createElement('input');
@@ -140,7 +135,7 @@ export function createSettingsWindow(
   // MU-09: no second main button — «Назад» is dark, the ✕ does the same.
   const back = button('back', 'settings.back');
   overlay.card.append(title, soundRow, vibRow, langRow);
-  if (shopName) overlay.card.append(nameLabel, nameRow, nameAnswer);
+  if (shopName) overlay.card.append(nameRow, nameAnswer);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
 

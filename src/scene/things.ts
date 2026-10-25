@@ -77,7 +77,10 @@ export function createThings(c: Colors): Things {
         flowerG.circle(f.x + Math.cos(a) * r * 0.3, top + Math.sin(a) * r * 0.3, r * 0.24).fill(c.blush).stroke({ width: w * 0.5, color: c.outline });
       }
       flowerG.circle(f.x, top, r * 0.18).fill(c.uiAccent).stroke({ width: w * 0.5, color: c.outline });
-    } else flowerG.circle(f.x, top, r * 0.12).fill(c.uiGood).stroke({ width: w * 0.5, color: c.outline });
+    } else {
+      // A bright bud from the start (the usability review: «a dark squiggle»).
+      flowerG.ellipse(f.x, top - r * 0.05, r * 0.2, r * 0.26).fill(c.blush).stroke({ width: w * 0.5, color: c.outline });
+    }
   };
 
   const drawHands = (): void => {
@@ -85,11 +88,12 @@ export function createThings(c: Colors): Things {
     if (!l || clockG.visible === false) return;
     const k = l.decor.clock;
     const w = l.outline;
+    const R = clockG.visible ? Math.max(k.r * 1.3, 14) : k.r;
     const wobble = tickLeft > 0 ? Math.sin(tickLeft * 30) * 0.25 : 0;
     const a = -Math.PI / 2 + Math.PI * 0.35 + wobble;
-    handG.moveTo(k.x, k.y).lineTo(k.x + Math.cos(a) * k.r * 0.55, k.y + Math.sin(a) * k.r * 0.55).stroke({ width: w * 0.7, color: c.outline, cap: 'round' });
-    handG.moveTo(k.x, k.y).lineTo(k.x, k.y - k.r * 0.38).stroke({ width: w * 0.7, color: c.outline, cap: 'round' });
-    handG.circle(k.x, k.y, w * 0.6).fill(c.outline);
+    handG.moveTo(k.x, k.y).lineTo(k.x + Math.cos(a) * R * 0.55, k.y + Math.sin(a) * R * 0.55).stroke({ width: Math.max(1, R * 0.09), color: c.outline, cap: 'round' });
+    handG.moveTo(k.x, k.y).lineTo(k.x, k.y - R * 0.4).stroke({ width: Math.max(1.2, R * 0.12), color: c.outline, cap: 'round' });
+    handG.circle(k.x, k.y, Math.max(1, R * 0.08)).fill(c.outline);
   };
 
   const drawCloud = (g: Graphics, x: number, y: number, s: number): void => {
@@ -136,11 +140,13 @@ export function createThings(c: Colors): Things {
       clockG.clear();
       clockG.visible = !cuckoo;
       if (!cuckoo) {
-        clockG.circle(k.x, k.y, k.r * 0.85).fill(c.counter).stroke({ width: w, color: c.outline });
-        clockG.circle(k.x, k.y, k.r * 0.68).fill(c.eyeWhite).stroke({ width: w * 0.6, color: c.outline });
-        for (let i = 0; i < 4; i++) {
-          const a = (Math.PI * i) / 2;
-          clockG.circle(k.x + Math.cos(a) * k.r * 0.52, k.y + Math.sin(a) * k.r * 0.52, w * 0.5).fill(c.outline);
+        // A round wall clock as big as the cuckoo one: a bright rim, a white face, hour marks (the usability review: «a dark dot»).
+        const R = Math.max(k.r * 1.3, 14);
+        clockG.circle(k.x, k.y, R).fill(c.uiAccent).stroke({ width: Math.max(1, w * 0.5), color: c.outline });
+        clockG.circle(k.x, k.y, R * 0.78).fill(c.eyeWhite);
+        for (let i = 0; i < 12; i += 3) {
+          const a = (Math.PI * i) / 6;
+          clockG.circle(k.x + Math.cos(a) * R * 0.62, k.y + Math.sin(a) * R * 0.62, Math.max(1, R * 0.07)).fill(c.outline);
         }
       }
       drawHands();

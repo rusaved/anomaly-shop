@@ -3418,11 +3418,11 @@ button.mu-card {
 .landscape #ui .overlay[data-overlay='settings'] > .card > .code-answer {
   grid-column: 1 / -1;
 }
-/* M6-23: the shop name sideways — its label, field and answer in the left column, under the language (the promo code keeps the right one). */
-.landscape #ui .overlay[data-overlay='settings'] > .card > .name-label,
+/* M6-23: the shop name sideways — its label, field and answer in the right column under the communities (the left one is full:
+   sound, buzz, language; the usability review: in 815×290 the field fell below the fold). */
 .landscape #ui .overlay[data-overlay='settings'] > .card > .name-row,
 .landscape #ui .overlay[data-overlay='settings'] > .card > [data-name-answer] {
-  grid-column: 1;
+  grid-column: 2;
   grid-row: auto;
 }
 .overlay[data-overlay='settings'] > .card > [data-name-answer]:empty {
@@ -4275,4 +4275,9 @@ button.mu-card {
   .gift-boost .btn-ad {
     grid-column: 1 / -1;
   }
+}
+
+/* M6-23: the shop name is typed as written (the promo code field above it shows capitals). */
+.name-row .code-input {
+  text-transform: none;
 }

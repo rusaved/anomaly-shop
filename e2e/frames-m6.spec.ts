@@ -55,6 +55,7 @@ for (const size of SIZES) {
         expect(await page.evaluate((x) => (window as unknown as { __TEST__: { event(id: string): boolean } }).__TEST__.event(x), id)).toBe(true);
         // The event's toast (2.6 s) goes first: a toast over a button for a moment is not a layout fault.
         await page.waitForTimeout(3200);
+        await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 15_000 }).catch(() => undefined);
         await frame(page, problems, `event-${id}`, tag);
         await api((t) => t.runSim(61));
       }

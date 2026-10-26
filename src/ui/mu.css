@@ -4707,10 +4707,11 @@ button.mu-card {
   text-align: left;
 }
 /* T-06: the egg card on a low screen sideways (815×290, 812×330 too: T-08) — «Что внутри» stands level with the back row, the pets
-   with their chances right under it (in sight without a scroll); the line about care goes under the buy buttons. */
+   with their chances right under it (in sight without a scroll); the line about care goes under the buy buttons.
+   F-03: the buy buttons right under the name, the egg with its hatching time under them — «×3 / ×5» whole over the tab bar. */
 @media (max-height: 340px) {
   .landscape .detail-page:has(> .cards-odds) {
-    grid-template-areas: 'back inside' 'hero odds' 'buy odds' 'care odds';
+    grid-template-areas: 'back inside' 'buy odds' 'hero odds' 'care odds';
     grid-template-rows: auto auto auto 1fr;
   }
   .landscape .detail-page:has(> .cards-odds) > .mu-head {

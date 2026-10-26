@@ -167,3 +167,18 @@ for (const size of SIZES) {
     }
   });
 }
+
+for (const size of SIZES) {
+  const tag = `${size.width}x${size.height}`;
+  test.describe(`${tag} egg card`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+    test(`F-03 the egg card: «Купить», «×3» and «×5» whole over the tab bar, nothing on them @ ${tag}`, async ({ page }) => {
+      const errors = collectErrors(page);
+      await rich(page);
+      await OPENERS['detail:egg-card']!(page);
+      await page.waitForTimeout(400);
+      for (const n of [1, 3, 5]) await whole(page, `[data-detail=egg-card] [data-action=egg-buy-${n}]`, 0);
+      expect(errors).toEqual([]);
+    });
+  });
+}

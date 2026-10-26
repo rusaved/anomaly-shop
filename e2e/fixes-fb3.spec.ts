@@ -6,7 +6,9 @@ type Snap = { coins: number; creatures: unknown[]; upgrades?: unknown };
 const snap = (page: Page) => page.evaluate(() => (window as unknown as { __TEST__: { state(): Snap } }).__TEST__.state());
 
 /** п. 1: a run of 8 taps 150, 300 and 500 ms apart right after the egg — on the spot of «Продать сразу», on the strip's lower edge and on
- *  the dim — portrait and sideways: nothing sold, nothing bought, the window stays (the buttons wait for 0.8 s of no taps). */
+ *  the dim — portrait and sideways: nothing sold, nothing bought, the window stays. P-05 (Q-048 Б): the buttons wait 0.8 s once after the
+ *  result, so the run counts only up to the end of that pause (a tap on a button after it is the player's choice: the card grows under the
+ *  finger when the strip ends). */
 for (const [w, h] of [[375, 650], [812, 330]] as const)
   for (const where of ['sell', 'strip', 'dim'] as const)
     for (const step of [150, 300, 500])
@@ -35,18 +37,16 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
             const c = card.getBoundingClientRect();
             return innerWidth > innerHeight ? { x: (c.right + innerWidth) / 2, y: c.y + c.height / 2 } : { x: innerWidth / 2, y: (c.bottom + innerHeight) / 2 - 20 };
           }, where);
-          await page.evaluate(() => {
-            (window as unknown as { taps: number[] }).taps = [];
-            addEventListener('pointerdown', () => (window as unknown as { taps: number[] }).taps.push(performance.now()), true);
-          });
           for (let i = 0; i < 8; i++) {
             await page.waitForTimeout(step);
+            const late = await page.evaluate(() => {
+              const r = (window as unknown as { __TEST__: { state(): { hatchTiming: { result: number } } } }).__TEST__.state().hatchTiming.result;
+              return r > 0 && performance.now() - r > 600;
+            });
+            if (late) break;
             await page.touchscreen.tap(p.x, p.y);
           }
           await page.waitForTimeout(100);
-          const gaps = await page.evaluate(() => (window as unknown as { taps: number[] }).taps.slice(1).map((t, i, a) => t - ((window as unknown as { taps: number[] }).taps[i] ?? t)));
-          // The run itself is quicker than the silence the buttons wait for (a slow machine that broke it is no proof).
-          expect(Math.max(...gaps)).toBeLessThan(800);
           await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
           const after = await snap(page);
           expect(after.coins).toBe(before.coins);

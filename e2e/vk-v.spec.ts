@@ -281,8 +281,8 @@ for (const size of [
       expect(card.y, 'the window from the top edge').toBeGreaterThanOrEqual(0);
       expect(card.y + card.height, 'the window ends over the tab bar').toBeLessThanOrEqual(bar);
       await whole(page, '[data-action=menu-back]');
-      // The lowest row of the window under the finger: still the window, not «Яйца» under it.
-      await page.touchscreen.tap(card.x + card.width - 6, card.y + card.height - 3);
+      // The lowest row of the window under the finger (left of «Назад»): still the window, not a tab under it.
+      await page.touchscreen.tap(card.x + 40, card.y + card.height - 3);
       await expect(page.locator('[data-overlay=menu] .menu-how')).toBeVisible();
       await page.locator('[data-action=menu-back]').tap();
       await expect(page.locator('[data-action=menu-play]')).toBeVisible();
@@ -310,12 +310,13 @@ test.describe('815x290 P-01 menu, loading, toast, join', () => {
     // The pet waits in «Склад».
     await page.locator('[data-tab=inventory]').tap();
     await expect(page.locator('[data-sheet=inventory] .tile').first()).toBeVisible();
-    // A popup (the balance) and a screen (the gifts): the same one tap.
-    for (const open of ['balance', 'gifts']) {
-      await page.locator(`[data-action=${open}]`).tap();
+    // A window of the scene («Подработка») and a screen (the gifts): the same one tap.
+    await page.locator('[data-tab=home]').tap();
+    for (const open of ['[data-action=gifts]', '.hud [aria-label^="Уровень"]']) {
+      await page.locator(open).first().tap();
       await expect(page.locator('.overlay:not([hidden]):not(.under)').first()).toBeVisible();
-      const btn = page.locator('[data-action=menu-float]:visible, .hud [data-action=menu]').first();
-      await btn.tap();
+      const float = page.locator('[data-action=menu-float]');
+      await ((await float.isVisible()) ? float : page.locator('.hud [data-action=menu]')).tap();
       await expect(page.locator('[data-overlay=menu]')).toBeVisible();
       await expect(page.locator('.overlay:not([hidden]):not([data-overlay=menu])')).toHaveCount(0);
       await page.locator('[data-action=menu-play]').tap();
@@ -425,7 +426,7 @@ for (const site of ['vk', 'ok'] as const)
       expect(await links()).toEqual([]);
       for (const b of await page.locator('[data-overlay=menu] .card button').all()) {
         if ((await b.getAttribute('data-action')) === 'menu-back') continue;
-        await b.tap().catch(() => undefined);
+        await b.tap({ timeout: 3000 }).catch(() => undefined);
         const no = page.locator('[data-vk-mock=no]');
         if (await no.isVisible().catch(() => false)) await no.tap();
       }
@@ -437,9 +438,9 @@ for (const site of ['vk', 'ok'] as const)
       await page.locator('[data-action=menu-play]').tap();
       await page.locator('[data-action=gifts]').tap();
       expect(await links()).toEqual([]);
-      await page.locator('[data-action=gifts-close]').first().tap().catch(() => undefined);
+      await page.locator('[data-action=gifts-close]').first().tap({ timeout: 3000 }).catch(() => undefined);
       for (const tab of await page.locator('#nav [data-tab]').all()) {
-        await tab.tap().catch(() => undefined);
+        await tab.tap({ timeout: 3000 }).catch(() => undefined);
         expect(await links()).toEqual([]);
       }
       expect(await page.evaluate(() => (window as unknown as { __opened: string[] }).__opened)).toEqual([]);

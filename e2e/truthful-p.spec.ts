@@ -42,3 +42,51 @@ test.describe('815x290 P-02', () => {
       expect(errors).toEqual([]);
     });
 });
+
+for (const size of [
+  { width: 815, height: 290 },
+  { width: 812, height: 330 },
+  { width: 880, height: 405 },
+]) {
+  const tag = `${size.width}x${size.height}`;
+  test.describe(`${tag} P-05`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+
+    test(`P-05 (Q-048 Б) knocking every 0.3 s: the buttons of «Вылупился!» muted for one pause, then «На склад» takes the tap within 1 s of the strip @ ${tag}`, async ({ page }) => {
+      const errors = collectErrors(page);
+      await open(page);
+      const egg = (await page.evaluate(() => (window as unknown as T).__TEST__.targets()))!.incubators[0]!;
+      await page.touchscreen.tap(egg.x, egg.y);
+      await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+      // The knocking spot: the dim right of the card (sideways), where a tap chooses nothing.
+      const dim = await page.evaluate(() => {
+        const c = document.querySelector('.card-hatch')!.getBoundingClientRect();
+        return { x: (c.right + innerWidth) / 2, y: c.y + c.height / 2 };
+      });
+      const keep = page.locator('[data-action=hatch-keep]');
+      const now = () =>
+        page.evaluate(() => {
+          const r = (window as unknown as { __TEST__: { state(): { hatchTiming: { result: number } } } }).__TEST__.state().hatchTiming.result;
+          return { since: r > 0 ? performance.now() - r : -1, muted: document.querySelector('.card-hatch')!.classList.contains('hatch-locked') };
+        });
+      let mutedSeen = false;
+      let tookAt = -1;
+      for (let i = 0; i < 60 && tookAt < 0; i++) {
+        await page.touchscreen.tap(dim.x, dim.y);
+        const s = await now();
+        if (s.since >= 0 && s.since < 600 && s.muted) mutedSeen = true;
+        if (s.since >= 820) {
+          // The player stops knocking and takes the pet.
+          expect(s.muted, 'live after the one pause').toBe(false);
+          await keep.tap();
+          tookAt = s.since;
+        } else await page.waitForTimeout(300);
+      }
+      await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+      expect(mutedSeen, 'muted during the pause').toBe(true);
+      expect(tookAt, 'taken within 1 s after the strip').toBeGreaterThan(0);
+      expect(tookAt).toBeLessThanOrEqual(1300);
+      expect(errors).toEqual([]);
+    });
+  });
+}

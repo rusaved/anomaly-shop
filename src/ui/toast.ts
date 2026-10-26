@@ -141,6 +141,10 @@ function place(el: HTMLElement, extra: () => DOMRect[]): void {
     root.style.paddingLeft = `${Math.round(from)}px`;
     el.style.maxWidth = `${Math.floor(base.width - from - 8)}px`;
   }
+  // P-01: narrowed into more lines, the toast still ends 4 px over the tab bar — whole in sight, never on a tab.
+  const bar = document.querySelector('#nav')?.getBoundingClientRect();
+  const end = el.getBoundingClientRect().bottom;
+  if (bar && bar.height > 0 && end > bar.top - 4) root.style.transform = `translateY(${Math.round(shift - (end - bar.top + 4))}px)`;
 }
 
 /** extra — rects of the scene a toast never covers either (the shelf frame drawn in the canvas: круг правок FB-2, арт-ревизия). */

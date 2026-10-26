@@ -7,7 +7,8 @@ import { collectErrors, open, seedSave, state } from './helpers.ts';
  */
 type T = { __TEST__: { grant(n: number): void; setTimeScale(k: number): void; targets(): { incubators: Array<{ x: number; y: number }>; slots: Array<{ x: number; y: number }>; things: { door: { x: number; y: number } } } | null; t(k: string): string } };
 const scale = (page: Page, k: number) => page.evaluate((n) => (window as unknown as T).__TEST__.setTimeScale(n), k);
-type St = Awaited<ReturnType<typeof state>> & { chats: Array<{ offer: number }>; stats: { deals: number } };
+type St = Awaited<ReturnType<typeof state>> & { chats: Array<{ offer: number }>; stats: { deals: number }; windows: string[]; ftue: string | null };
+const st = async (page: Page) => (await state(page)) as St;
 
 test.describe('815x290 P-02', () => {
   test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
@@ -90,3 +91,58 @@ for (const size of [
     });
   });
 }
+
+test.describe('815x290 P-03', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+
+  test('P-03 (Q-057 Б) 0 coins, empty incubators and «Мои яйца» past the first minute: the free egg at once — a short toast, no window', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, {
+      coins: 0,
+      incubators: [{ egg: null }],
+      myEggs: {},
+      creatures: [{ uid: 'p1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }],
+      showcase: ['p1'],
+    });
+    await open(page);
+    await expect.poll(async () => ((await state(page)) as St & { incubators: Array<{ egg: string | null }> }).incubators[0]!.egg, { timeout: 3000 }).toBe('egg_basic');
+    const toast = page.locator('.toast').first();
+    await expect(toast).toBeVisible();
+    expect((await toast.innerText()).trim().split(/\s+/).length).toBeLessThanOrEqual(6);
+    expect((await st(page)).windows).toEqual([]);
+    expect((await state(page)).coins).toBe(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('P-03 the ring «Покупатель уже идёт» answers a tap: the door rocks, a line of up to 6 words; nothing spent, nothing opened, the buyer still comes', async ({ page }) => {
+    test.setTimeout(90_000);
+    const errors = collectErrors(page);
+    await open(page);
+    const t = (await page.evaluate(() => (window as unknown as T).__TEST__.targets()))!;
+    await page.touchscreen.tap(t.incubators[0]!.x, t.incubators[0]!.y);
+    await page.locator('[data-overlay=hatch] [data-action=hatch-shop]').tap({ timeout: 10_000 });
+    await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+    // Fed by taps until the lesson moves on to waiting for the buyer.
+    for (let i = 0; i < 30 && (await st(page)).ftue === 'feed'; i++) {
+      const pet = (await page.evaluate(() => (window as unknown as T).__TEST__.targets()))!.slots[0]!;
+      await page.touchscreen.tap(pet.x, pet.y);
+      await page.waitForTimeout(250);
+    }
+    await expect.poll(async () => (await st(page)).ftue, { timeout: 10_000 }).toBe('waitCustomer');
+    const ring = page.locator('.hint-ring[data-step=waitCustomer]');
+    await expect(ring).toBeVisible();
+    const before = (await state(page)) as St;
+    const r = (await ring.boundingBox())!;
+    await page.touchscreen.tap(r.x + r.width / 2, r.y + r.height / 2);
+    const toast = page.locator('.toast').first();
+    await expect(toast).toContainText('Покупатель напишет');
+    expect((await toast.innerText()).trim().split(/\s+/).length).toBeLessThanOrEqual(6);
+    const after = (await state(page)) as St;
+    expect(after.coins).toBe(before.coins);
+    expect(after.windows).toEqual([]);
+    expect(after.stats.deals).toBe(0);
+    // The buyer comes as before.
+    await expect.poll(async () => ((await state(page)) as St).chats.length, { timeout: 30_000 }).toBeGreaterThan(0);
+    expect(errors).toEqual([]);
+  });
+});

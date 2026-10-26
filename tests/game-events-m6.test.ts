@@ -20,6 +20,8 @@ function setup(kind: string) {
     { uid: 'b', species: 'mug_cub', level: 2, fed: 0, hatchedAt: 0, age: 0 },
   ];
   save.showcase = ['a', 'b'];
+  // P-03: a coin in the till — 0 coins with nothing to hatch brings the free egg and would fill the incubator the parade needs.
+  save.coins = 1;
   const game = createGame(createStore(save, () => 0), only(kind), createRng(4));
   const seen: GameEvent[] = [];
   game.events.on((e) => seen.push(e));

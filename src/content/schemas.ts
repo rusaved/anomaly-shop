@@ -84,7 +84,7 @@ export const Care = v.object({
  * at the start. A free reward (a gift egg, the anomaly of the day, a gift, a find) is worth at most rewardCapMin minutes of it.
  */
 export const Income = v.object({ windowMin: v.pipe(v.number(), v.minValue(1)), spikeMedians: v.pipe(v.number(), v.minValue(1)), floorPerMin: v.pipe(v.number(), v.minValue(1)), rewardCapMin: v.pipe(v.number(), v.minValue(0)) });
-export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, rescueEgg: Id, care: Care, income: Income, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
+export const EggsFile = v.object({ tapSpeedupSec: v.pipe(v.number(), v.minValue(0)), minHatchSec: Money, rescueEgg: Id, /** P-03 (Q-057 Б): after the first minute, the free egg at 0 coins with nothing to hatch comes at once, then not more often than this. */ rescueGapSec: v.pipe(v.number(), v.minValue(0), v.maxValue(600)), care: Care, income: Income, eggs: v.pipe(v.array(Egg), v.minLength(1)) });
 
 export const Species = v.object({
   id: Id,

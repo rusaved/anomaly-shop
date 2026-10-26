@@ -412,6 +412,11 @@
 .hint-ring[hidden] {
   display: none;
 }
+/* P-03: the ring «Покупатель уже идёт» answers a tap (the door rocks, a line says what comes next). */
+.hint-ring[data-step='waitCustomer'] {
+  pointer-events: auto;
+  cursor: pointer;
+}
 .hint-arrow {
   position: absolute;
   left: calc(var(--arrow-x, 50%) - 9px);

@@ -57,6 +57,8 @@ export interface ShopView {
   signGestures(on: boolean): void;
   /** M4-00: a hint points into the shop — the shop's own captions and lines keep quiet meanwhile (one caption at a time). */
   quiet(on: boolean): void;
+  /** P-03: the door rocks a little (the ring «Покупатель уже идёт» was tapped); nothing else changes. */
+  knock(): void;
   /** M4-00: the captions on the shop now (labels, the counter sign, speech lines, floating words) — never more than one. */
   captions(): string[];
   /** Stage point above a customer (coin flights start there). */
@@ -1300,6 +1302,9 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
     },
     signGestures(on) {
       captionsOn = on;
+    },
+    knock() {
+      doorKnock = 0.6;
     },
     quiet(on) {
       if (on === quietOn) return;

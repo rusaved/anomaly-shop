@@ -1,6 +1,6 @@
 // What: first-minute hints (docs/01, section 4; 07 rule 16): a bubble of up to 6 words next to the target, the target in a green ring or frame.
 // Called by: src/main.ts every frame with ftueHint(state, view); the shop anchors give scene targets, panel buttons are found by data-action.
-// Keep: hints never block taps (pointer-events: none); DOM is touched only when the hint or its spot changes.
+// Keep: hints never block taps (pointer-events: none) — but the ring of «Покупатель уже идёт», which answers its own tap (P-03); DOM is touched only when the hint or its spot changes.
 
 import type { FtueHint } from '../sim/ftue.ts';
 import type { ShopAnchors } from '../scene/shop.ts';
@@ -132,6 +132,8 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         return;
       }
       const text = deps.t(hint.key ?? `ftue.${hint.step}`);
+      // P-03: the ring knows its step — «Покупатель уже идёт» answers a tap (src/main.ts), the others let taps through.
+      ring.dataset.step = hint.step;
       // UB-10: inside an open window (or the answers of a chat, under the offer line) a bubble would cover the text — the target only glows.
       if (button && (win || button.closest('[data-hint-glow]'))) {
         const glowKey = `glow:${hint.key ?? hint.step}`;

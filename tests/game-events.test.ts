@@ -20,7 +20,8 @@ function setup(content: GameContent = base, opts: { ftueDone?: boolean; creature
   save.stats.hatched = 5;
   save.stats.deals = opts.deals ?? 10;
   save.stats.coinsEarned = 400;
-  save.coins = opts.coins ?? 0;
+  // P-03: a coin in the till — 0 coins with nothing to hatch brings the free egg at once and would fill the incubator these tests watch.
+  save.coins = opts.coins ?? 1;
   const game = createGame(createStore(save, () => 0), content, createRng(opts.seed ?? 8));
   const seen: GameEvent[] = [];
   game.events.on((e) => seen.push(e));
@@ -131,7 +132,7 @@ describe('M2-15 random events', () => {
     const got = seen.filter((e) => e.type === 'eventCoin').map((e) => (e.type === 'eventCoin' ? e.value : 0));
     expect(got).toHaveLength(ev.coins.length);
     for (const v of got) expect(v).toBeGreaterThanOrEqual(1);
-    expect(game.state.coins).toBe(got.reduce((a, b) => a + b, 0));
+    expect(game.state.coins).toBe(1 + got.reduce((a, b) => a + b, 0));
     expect(game.view().event).toBeNull();
   });
 

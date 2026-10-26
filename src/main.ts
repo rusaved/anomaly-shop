@@ -875,6 +875,13 @@ async function boot(): Promise<void> {
       new DOMRect(t.window.x + c.left, t.window.y + c.top, t.window.w, t.window.h),
     ];
   });
+  // P-03 (Q-057 Б): the ring «Покупатель уже идёт» on the door answers a tap — the door rocks and a line says what comes; nothing is spent.
+  uiRoot.addEventListener('click', (e) => {
+    if (!(e.target as HTMLElement).closest?.('.hint-ring[data-step="waitCustomer"]')) return;
+    shop.knock();
+    sfx.play('tap');
+    toasts.show(i18n.t('ftue.waitCustomerTap'), 'info', 2400);
+  });
   noteAd = (kind) => toasts.show(i18n.t(`ad.${kind}`), kind === 'got' ? 'good' : 'info', 2400);
   // M5-03: the interstitial only between screens by the player's tap — a window closed (not the hatch) or a tab changed.
   document.addEventListener(

@@ -1024,6 +1024,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
     return { have: st.flags[w.id] ? 1 : 0, need: 1 };
   };
   let findsIn = 0;
+  /** P-03: seconds until the free egg at 0 coins may come again (not saved: a reload may bring it at once). */
+  let rescueIn = 0;
   function checkFinds(): void {
     const st = s();
     for (const f of content.achievements.items) {
@@ -1903,10 +1905,15 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       }
       for (const cr of onSale()) cr.age = (cr.age ?? 0) + dt;
       for (const cr of st.creatures) if (cr.hold && (cr.hold = Math.max(0, cr.hold - dt)) === 0) delete cr.hold;
-      // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free.
-      if (st.creatures.length === 0 && st.incubators[0] && !st.incubators.some((i) => i.egg) && !Object.keys(st.myEggs).length && st.stats.hatched > 0) {
+      // No dead end (genre standard): an empty shop without coins for the cheapest egg gets one for free. P-03 (Q-057 Б): past the
+      // first minute 0 coins with nothing to hatch is enough (pets may wait on the shelf) — at once, then once in rescueGapSec.
+      rescueIn = Math.max(0, rescueIn - dt);
+      const nothing = st.incubators[0] && !st.incubators.some((i) => i.egg) && !Object.keys(st.myEggs).length && st.stats.hatched > 0;
+      const broke = nothing && st.flags[FLAGS.done] === true && st.coins < 1 && rescueIn <= 0;
+      if (nothing && (st.creatures.length === 0 || broke)) {
         const cheapest = Math.min(...eggs.eggs.filter(eggOpen).map((e) => e.price.coins));
         if (st.coins + 1e-9 < cheapest) {
+          if (broke) rescueIn = eggs.rescueGapSec;
           placeEgg(0, eggs.rescueEgg, false);
           commit({ flush: true });
           emit({ type: 'rescueEgg', incubator: 0 });

@@ -79,3 +79,23 @@
 .card-menu .menu-side > p {
   margin: 0;
 }
+
+/* V-04: «Звук · Помощь · Настройки» one row under «Играть» — the whole menu fits a phone lying in a browser (290 px). */
+.card-menu .menu-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card-menu .menu-row > .mu-btn {
+  min-height: 44px;
+  font-size: 15px;
+}
+.landscape .card-menu .menu-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.landscape .overlay > .card.card-menu:not([data-page='help']) {
+  width: min(480px, calc(100vw - 32px));
+  max-width: none;
+}

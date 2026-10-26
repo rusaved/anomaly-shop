@@ -70,9 +70,9 @@ export function createVkMenu(parent: HTMLElement, d: VkMenuDeps): VkMenu {
       overlay.card.innerHTML =
         `<h2>${vt('menu.title')}</h2>` +
         `<button type="button" class="mu-btn main" data-action="menu-play">${vt('menu.play')}</button>` +
-        `<button type="button" class="mu-btn" data-action="menu-sound" aria-pressed="${d.sound()}">${vt(d.sound() ? 'menu.soundOn' : 'menu.soundOff')}</button>` +
+        `<div class="menu-row"><button type="button" class="mu-btn" data-action="menu-sound" aria-pressed="${d.sound()}">${vt(d.sound() ? 'menu.soundOn' : 'menu.soundOff')}</button>` +
         `<button type="button" class="mu-btn" data-action="menu-help">${vt('menu.help')}</button>` +
-        `<button type="button" class="mu-btn off-text" data-action="menu-settings">${vt('menu.settings')}</button>`;
+        `<button type="button" class="mu-btn" data-action="menu-settings">${vt('menu.settings')}</button></div>`;
     } else {
       const how = ['help.how1', 'help.how2', 'help.how3', 'help.how4'].map((k) => `<li>${vt(k)}</li>`).join('');
       // Two columns sideways (a phone lying in a browser is 290 px high): how to play | support, documents, back.

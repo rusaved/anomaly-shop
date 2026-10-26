@@ -1,5 +1,5 @@
 // `npm run check:vk` (V-04, V-12 «Ресейл 16»): the VK and OK build passes the platform's rules as far as a file can show them —
-// no external address, no word or link of other platforms, no review window call, no counters, no debug or test API,
+// no external address, no word or link of other platforms, no review window call, no counters, no debug or test API, the ids filled (--submit),
 // VK Bridge in, VKWebAppInit present; prints the weight of dist-vk.
 // Contract: checkVkBuild(files: Array<[relativePath, text]>) => { problems: string[] }; exit 1 on a problem.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -53,6 +53,11 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename
   };
   walk(dir);
   const { problems } = checkVkBuild(files);
+  // V-11 (модератор VK/ОК): without the ids there is no support channel and no join — a warning for the producer link, red with --submit.
+  const ids = JSON.parse(readFileSync(resolve(import.meta.dirname, '../content/vk.json'), 'utf8'));
+  const empty = ['appId', 'vkGroupId', 'okGroupId'].filter((k) => !ids[k]);
+  if (empty.length && process.argv.includes('--submit')) problems.push(`content/vk.json: пусто — ${empty.join(', ')}`);
+  else if (empty.length) console.log(`  ⚠ к подаче: пусто в content/vk.json — ${empty.join(', ')} (нет кнопки «Вступить» и канала поддержки)`);
   const mb = (n) => (n / 1024 / 1024).toFixed(2);
   console.log(`check:vk: ${files.length} файлов, ${mb(bytes)} МБ, код gzip ${mb(gz)} МБ`);
   for (const p of problems) console.log(`  ✗ ${p}`);

@@ -657,6 +657,8 @@ async function boot(): Promise<void> {
     '<button type="button" class="hud-btn" data-action="leaders" data-i18n="leaders.title" data-i18n-attr="aria-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4"/><path d="M17 6h3a3 3 0 0 1-3 4"/><path d="M12 14v4M8 20h8"/></svg></button>',
   );
   (hud.side.querySelector('[data-action="leaders"]') as HTMLElement).addEventListener('click', () => leadersWindow.open());
+  // V-11 (модератор VK/ОК): the platform leaderboard is off on VK and OK — no board of made-up neighbours there.
+  if (__PLATFORM__ === 'vk') (hud.side.querySelector('[data-action="leaders"]') as HTMLElement).hidden = true;
   // MU-02: «Сезон» is a mark of the top bar after the release (content/nav.json tabs.season; hidden until then).
   hud.side.insertAdjacentHTML(
     'beforeend',

@@ -268,6 +268,8 @@ export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', '
 const ZzfxParams = v.pipe(v.array(v.nullable(v.number())), v.minLength(1), v.maxLength(21));
 export const AudioFile = v.object({
   volume: Share,
+  /** P-07 (Q-051 Б): the background music — its quiet volume and the weight one file may have (assets/audio/music). */
+  music: v.object({ volume: Share, maxFileKb: v.pipe(v.number(), v.minValue(100), v.maxValue(1536)) }),
   sfx: v.object(Object.fromEntries(SFX_NAMES.map((k) => [k, ZzfxParams])) as Record<(typeof SFX_NAMES)[number], typeof ZzfxParams>),
 });
 

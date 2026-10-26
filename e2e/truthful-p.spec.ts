@@ -189,3 +189,27 @@ test.describe('815x290 P-04', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('815x290 P-07', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+
+  test('P-07 (Q-051 Б) «Музыка» in the settings apart from «Звук»; no file in the build — silence and no error', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page);
+    await open(page);
+    await page.locator('.hud [data-action=pause]').tap();
+    const settings = page.locator('[data-action=pause-settings], [data-action=settings]').first();
+    if (await settings.isVisible().catch(() => false)) await settings.tap();
+    const music = page.locator('[data-overlay=settings] [data-action=music]');
+    const sound = page.locator('[data-overlay=settings] [data-action=sound]');
+    await expect(music).toBeVisible();
+    await expect(music).toHaveAttribute('aria-checked', 'true');
+    await music.tap();
+    await expect(music).toHaveAttribute('aria-checked', 'false');
+    await expect(sound).toHaveAttribute('aria-checked', 'false');
+    const s = (await state(page)) as unknown as { music: { track: string; playing: boolean } };
+    expect(s.music).toEqual({ track: '', playing: false });
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('anomaly-shop:save') ?? '{}').settings?.music)).toBe(false);
+    expect(errors).toEqual([]);
+  });
+});

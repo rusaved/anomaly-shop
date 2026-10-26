@@ -1,4 +1,4 @@
-// What: the settings window: sound and the buzz on/off (switches), language (Русский / English, LOC-05), the shop name (M6-23), promo code, community, Back.
+// What: the settings window: sound, music (P-07) and the buzz on/off (switches), language (Русский / English, LOC-05), the shop name (M6-23), promo code, community, Back.
 // Called by: src/main.ts; opened from the pause window and returns to it.
 // Keep: sound and language live in the save (settings.sound, settings.lang); the window never holds a pause reason of its own.
 
@@ -54,6 +54,11 @@ export function createSettingsWindow(
   };
   const soundRow = toggleRow('sound', 'settings.sound', store.state.settings.sound, (next) => {
     store.state.settings.sound = next;
+    store.commit();
+  });
+  // P-07: the music on and off apart from the sounds.
+  const musicRow = toggleRow('music', 'settings.music', store.state.settings.music !== false, (next) => {
+    store.state.settings.music = next;
     store.commit();
   });
   // FB-13: the buzz of the main buttons (Android; a phone without it never shows the row).
@@ -143,7 +148,7 @@ export function createSettingsWindow(
   const back = button('back', 'settings.back');
   // V-04: one language (VK and OK: Russian only) — no language row.
   langRow.hidden = __GAME__.languages.length < 2;
-  overlay.card.append(title, soundRow, vibRow, langRow);
+  overlay.card.append(title, soundRow, musicRow, vibRow, langRow);
   if (shopName) overlay.card.append(nameEdit, nameRow, nameAnswer);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
@@ -154,6 +159,7 @@ export function createSettingsWindow(
       overlay.card.classList.remove('naming');
       // V-04: the sound may have changed elsewhere (the VK menu) — the switch shows the saved state.
       soundRow.querySelector('[role=switch]')?.setAttribute('aria-checked', String(store.state.settings.sound));
+      musicRow.querySelector('[role=switch]')?.setAttribute('aria-checked', String(store.state.settings.music !== false));
       if (shopName) {
         nameInput.value = shopName.name();
         nameAnswer.textContent = '';

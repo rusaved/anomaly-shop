@@ -82,7 +82,7 @@ export interface SaveData {
   incomeMinutes?: number[];
   /** FB-15: eggs of «my eggs» that came as gifts (they hatch as free rewards), by kind. */
   giftEggs?: Record<string, number>;
-  settings: { sound: boolean; lang: Lang | null; vibrate?: boolean };
+  settings: { sound: boolean; lang: Lang | null; vibrate?: boolean; music?: boolean };
   /** Once-per-player analytics flags and tutorial marks. */
   flags: Record<string, boolean>;
   /** Taps on shop things for the easter eggs (docs/01b, section 2): sign, door, lamp. */
@@ -191,7 +191,7 @@ export function newSave(now: number): SaveData {
     stats: { deals: 0, coinsEarned: 0, hatched: 0, taps: 0, levelUps: 0, haggles: 0, xp: 0, dealsAll: 0, income: 0, awayDeals: 0, sessions: 0 },
     incomeMinutes: [],
     giftEggs: {},
-    settings: { sound: true, lang: null, vibrate: true },
+    settings: { sound: true, lang: null, vibrate: true, music: true },
     flags: {},
     secrets: {},
     order: null,
@@ -299,7 +299,7 @@ export function normalize(raw: unknown, now: number): SaveData {
     },
     giftEggs: numberMap(r.giftEggs),
     incomeMinutes: arr(r.incomeMinutes).filter((x): x is number => typeof x === 'number' && Number.isFinite(x) && x >= 0).slice(-30),
-    settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null, vibrate: bool(set.vibrate, true) },
+    settings: { sound: bool(set.sound, true), lang: lang === 'ru' || lang === 'en' ? lang : null, vibrate: bool(set.vibrate, true), music: bool(set.music, true) },
     flags: Object.fromEntries(Object.entries(rec(r.flags)).filter(([, v]) => v === true).map(([k]) => [k, true])),
     secrets: numberMap(r.secrets),
     ...(typeof r.shopName === 'string' && r.shopName ? { shopName: r.shopName.slice(0, 40) } : {}),

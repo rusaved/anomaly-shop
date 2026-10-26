@@ -82,7 +82,15 @@ for (const size of [
       // VKWebAppInit was the first call of the bridge.
       const calls = await page.evaluate(() => (window as unknown as Calls).__VK_MOCK__!.calls.map((c) => c.method));
       expect(calls[0]).toBe('VKWebAppInit');
-      for (const a of ['menu-play', 'menu-sound', 'menu-help']) await whole(page, `[data-action=${a}]`);
+      for (const a of ['menu-play', 'menu-sound', 'menu-music', 'menu-help']) await whole(page, `[data-action=${a}]`);
+      // P-07: «Музыка» apart from «Звук».
+      const music = page.locator('[data-action=menu-music]');
+      await expect(music).toHaveText('Музыка: вкл');
+      await music.tap();
+      await expect(music).toHaveText('Музыка: выкл');
+      await expect(page.locator('[data-action=menu-sound]')).toHaveText(/Звук: вкл/);
+      await music.tap();
+      await expect(music).toHaveText('Музыка: вкл');
       // The loading said how far it was.
       await expect(page.locator('[data-boot-progress]')).toHaveText(/100/);
       // Sound off and on from the menu.

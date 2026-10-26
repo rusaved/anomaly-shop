@@ -14,7 +14,7 @@ describe('SaveData', () => {
     const n = normalize({ v: 1, coins: -5, creatures: [{ uid: 'a', species: 'kettle', level: 'x' }, { species: 'no-uid' }, 7], settings: { lang: 'xx' } }, 50);
     expect(n.coins).toBe(0);
     expect(n.creatures).toEqual([{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0, mult: 1 }]);
-    expect(n.settings).toEqual({ sound: true, lang: null, vibrate: true });
+    expect(n.settings).toEqual({ sound: true, lang: null, vibrate: true, music: true });
     expect(n.incubators).toHaveLength(1);
     expect(n.createdAt).toBe(50);
     for (const junk of ['{broken', '[]', '"x"', '{"coins":1}', '', null, undefined]) expect(parseSave(junk)).toBeNull();

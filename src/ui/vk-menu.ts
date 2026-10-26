@@ -63,6 +63,9 @@ export interface VkMenuDeps {
   pause: PauseManager;
   sound(): boolean;
   setSound(on: boolean): void;
+  /** P-07: the music apart from the sounds. */
+  music(): boolean;
+  setMusic(on: boolean): void;
   openSettings(): void;
   /** The platform's «join» window (the gift is given by the caller); null — the community id is not filled yet. */
   join: (() => Promise<void>) | null;
@@ -89,6 +92,7 @@ export function createVkMenu(parent: HTMLElement, d: VkMenuDeps): VkMenu {
         `<h2>${vt('menu.title')}</h2>` +
         `<button type="button" class="mu-btn main" data-action="menu-play">${vt('menu.play')}</button>` +
         `<div class="menu-row"><button type="button" class="mu-btn" data-action="menu-sound" aria-pressed="${d.sound()}">${vt(d.sound() ? 'menu.soundOn' : 'menu.soundOff')}</button>` +
+        `<button type="button" class="mu-btn" data-action="menu-music" aria-pressed="${d.music()}">${vt(d.music() ? 'menu.musicOn' : 'menu.musicOff')}</button>` +
         `<button type="button" class="mu-btn" data-action="menu-help">${vt('menu.help')}</button>` +
         `<button type="button" class="mu-btn" data-action="menu-settings">${vt('menu.settings')}</button></div>`;
     } else {
@@ -108,6 +112,10 @@ export function createVkMenu(parent: HTMLElement, d: VkMenuDeps): VkMenu {
     on('menu-play', () => menu.close());
     on('menu-sound', () => {
       d.setSound(!d.sound());
+      render();
+    });
+    on('menu-music', () => {
+      d.setMusic(!d.music());
       render();
     });
     on('menu-help', () => {

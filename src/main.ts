@@ -62,6 +62,7 @@ import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
 import { ads as adsData, shopData, achievements, audio, calendar, codes, collection, decor as decorData, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
+import { createMusic, musicTrack } from './audio/music.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
 import { loadPlatform } from './platform/index.ts';
@@ -941,10 +942,22 @@ async function boot(): Promise<void> {
   };
   catchUp((platform.now() - lastSeen) / 1000);
   const sfx = createSfx(audio, () => store.state.settings.sound && platform.audioAllowed());
-  document.addEventListener('pointerdown', () => sfx.unlock(), { capture: true });
+  // P-07 (Q-051 Б): the quiet loop of the shop (assets/audio/music/shop.mp3; no file — silence), after the first tap, never under a pause.
+  const music = createMusic(musicTrack('shop'), audio.music.volume, () => store.state.settings.music !== false && platform.audioAllowed());
+  document.addEventListener(
+    'pointerdown',
+    () => {
+      sfx.unlock();
+      music.unlock();
+    },
+    { capture: true },
+  );
   // FB-13: every button clicks, the main ones buzz on Android (settings «Вибрация»).
   const press = installPress(document, { sound: () => sfx.play('press'), vibrate: () => store.state.settings.vibrate !== false && typeof navigator.vibrate === 'function', buzzMs: feel.buzzMs });
-  runtime.pause.onChange((paused) => sfx.setSuspended(paused));
+  runtime.pause.onChange((paused) => {
+    sfx.setSuspended(paused);
+    music.setPaused(paused);
+  });
   const chatter = createChatter({
     lines,
     lang: () => i18n.lang(),
@@ -1114,6 +1127,11 @@ async function boot(): Promise<void> {
             store.state.settings.sound = on;
             store.commit();
           },
+          music: () => store.state.settings.music !== false,
+          setMusic: (on) => {
+            store.state.settings.music = on;
+            store.commit();
+          },
           openSettings: () => settingsWindow.open(),
           join: platform.joinCommunity
             ? async () => {
@@ -1229,6 +1247,7 @@ async function boot(): Promise<void> {
         hatchTiming: hatchShow.timing(),
         sounds: sfx.asked(),
         sound: sfx.status(),
+        music: music.status(),
         newest: (() => {
           // The newest creature wherever it is (UB-05: a tapped egg's creature waits in the inventory).
           const v = play.view();
@@ -1288,6 +1307,7 @@ async function boot(): Promise<void> {
     finger.point(spot ? { x: spot.x, y: spot.y } : (openBtn ?? null));
     sceneHintOn = Boolean(shownHint && (SCENE_TARGETS.has(shownHint.target.kind) || hints.outside()) && hints.text());
     shop.quiet(sceneHintOn || Boolean(toastNow));
+    music.sync();
     newsTicker.tick(runtime.pause.isPaused() ? 0 : ticker.deltaMS / 1000, controllable && Boolean(store.state.flags.ftue_done));
     if (!runtime.pause.isPaused() && store.state.flags.ftue_done) chatter.tick(ticker.deltaMS / 1000);
     funnel.tick(runtime.elapsed());

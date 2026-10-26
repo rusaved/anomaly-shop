@@ -1,0 +1,7 @@
+V · архивы в downloads/ — пересобраны в итоге «Ресейл 16 · Выход на VK и ОК» (сессия по расписанию штаба 26.10): код игры коммита ee57f70 (в сборке Яндекса — только V-01)
+3f3f7f5e934e2db088b0f487ec4865652cd3cd5ce1aba530574dcae9097e90db  downloads/anomaly-shop-0.1.0-playtest.zip
+6ecdc2871d9bb9eeebb96f8b2c6a65ae0877b69903ce9d35d9dcf837b6c9f3aa  downloads/anomaly-shop-0.1.0.zip
+666575 downloads/anomaly-shop-0.1.0-playtest.zip
+657396 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8)
+dist-vk: 38 файлов, 1,38 МБ, код gzip 0,32 МБ (check:vk)

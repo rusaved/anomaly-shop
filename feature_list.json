@@ -211,7 +211,7 @@
     { "id": "V-08", "milestone": "V", "priority": "P1", "title": "Вступление в сообщество через VKWebAppJoinGroup", "criteria": "VK — сообщество, ОК — группа; награда как у подарка за сообщество — один раз и только при result: true; не окном при первом запуске; отказ запомнен, снова не чаще раза в месяц; unit", "passes": true },
     { "id": "V-09", "milestone": "V", "priority": "P1", "title": "Выкладка dist-vk на GitHub Pages /vk/", "criteria": "build:pages собирает обе сборки, dist-vk в /vk/; e2e в iframe 1000×600, 630×600 и на 815×290, 880×405 с ?mock=vk", "passes": true },
     { "id": "V-10", "milestone": "V", "priority": "P1", "title": "Пользовательское соглашение и политика конфиденциальности", "criteria": "/legal/terms.html и /legal/privacy.html по-русски от студии Sunhearth, данные — сохранение и id VK, заглушки {{ОПЕРАТОР}}, {{КОНТАКТ}}; ссылки в «Помощи»", "passes": true },
-    { "id": "V-11", "milestone": "V", "priority": "P1", "title": "Ревизоры удобства и «модератор VK/ОК», бот-сессия первой минуты на dist-vk", "criteria": "отчёты в docs/evidence/V/; оценки «2» исправлены до итога", "passes": false },
-    { "id": "V-12", "milestone": "V", "priority": "P1", "title": "Итог: архивы Яндекса без изменений, dist-vk собран и выложен, отчёт соответствия VK/ОК", "criteria": "check-release 8/8; вес dist-vk в итоге; docs/vk-compliance.md по пунктам V-04…V-08", "passes": false }
+    { "id": "V-11", "milestone": "V", "priority": "P1", "title": "Ревизоры удобства и «модератор VK/ОК», бот-сессия первой минуты на dist-vk", "criteria": "отчёты в docs/evidence/V/; оценки «2» исправлены до итога", "passes": true },
+    { "id": "V-12", "milestone": "V", "priority": "P1", "title": "Итог: архивы Яндекса без изменений, dist-vk собран и выложен, отчёт соответствия VK/ОК", "criteria": "check-release 8/8; вес dist-vk в итоге; docs/vk-compliance.md по пунктам V-04…V-08", "passes": true }
   ]
 }

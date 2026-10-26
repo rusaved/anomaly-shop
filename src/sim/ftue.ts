@@ -68,6 +68,25 @@ export function shelfHint(state: SaveData, view: GameView, idleSec: number, afte
 }
 
 /**
+ * P-04 (Q-056 Б п. 1): after the first minute, an empty incubator while the player is idle — «Купи новое яйцо» on it, but only when a tap
+ * there buys the egg (coins for the basic egg, no egg of «Мои яйца» waiting, none ready to open).
+ */
+export function eggHint(state: SaveData, view: GameView, idleSec: number, afterSec: number, eggPrice: number): FtueHint | null {
+  if (!state.flags[FLAGS.done] || idleSec < afterSec) return null;
+  if (state.coins + 1e-9 < eggPrice || Object.keys(state.myEggs).length > 0 || view.incubators.some((i) => i.ready)) return null;
+  const index = view.incubators.findIndex((i) => !i.egg);
+  return index < 0 ? null : { step: 'buyEgg', target: { kind: 'incubator', index } };
+}
+
+/**
+ * P-04 (Q-056 Б п. 2): the «rare egg» step on «Яйца» stands on «Открыть» of its incubator's row (the incubator itself is off screen there).
+ */
+export function onEggsTab(hint: FtueHint | null): FtueHint | null {
+  if (hint?.step !== 'hatchRare' || hint.target.kind !== 'incubator') return hint;
+  return { ...hint, target: { kind: 'button', action: `egg-open-${hint.target.index}` } };
+}
+
+/**
  * UB-06: the first visit of a tab — one hint at its main thing, the tab title when the tab is empty.
  * «home» (MU-02: «Лавка») is the home screen: the first minute above is its hint.
  */

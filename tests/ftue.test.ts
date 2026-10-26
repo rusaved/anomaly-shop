@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
-import { ftueHint, shelfHint, tabHint, type FtueStep } from '../src/sim/ftue.ts';
+import { eggHint, ftueHint, onEggsTab, shelfHint, tabHint, type FtueStep } from '../src/sim/ftue.ts';
 import { TABS } from '../src/ui/nav.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
@@ -167,5 +167,35 @@ describe('M4-09 empty shelf hint', () => {
     expect(shelfHint(game.state, view, 9, 8)?.step).toBe('list');
     game.list('a');
     expect(shelfHint(game.state, game.view(), 9, 8)).toBeNull();
+  });
+});
+
+describe('P-04 (Q-056 Б) hints after the first minute', () => {
+  const price = content.eggs.eggs.find((e) => e.id === content.ftue.starterEgg)!.price.coins;
+  const setup = (coins: number) => {
+    const save = newSave(0);
+    Object.assign(save.flags, { ftue_starter: true, ftue_fed: true, ftue_bought: true, ftue_done: true });
+    save.stats.hatched = 3;
+    save.coins = coins;
+    const game = createGame(createStore(save, () => 0), content, createRng(1));
+    return game;
+  };
+
+  it('«Купи новое яйцо» on the empty incubator after eggHintSec of idling, only when its tap buys the egg', () => {
+    const game = setup(price);
+    const idle = content.ftue.eggHintSec;
+    expect(eggHint(game.state, game.view(), idle - 0.1, idle, price)).toBeNull();
+    expect(eggHint(game.state, game.view(), idle, idle, price)).toEqual({ step: 'buyEgg', target: { kind: 'incubator', index: 0 } });
+    // Too few coins: the tap would be refused — no call.
+    expect(eggHint(setup(price - 1).state, game.view(), idle, idle, price)).toBeNull();
+    // An egg of «Мои яйца» waits: no «buy».
+    game.state.myEggs = { egg_basic: 1 };
+    expect(eggHint(game.state, game.view(), idle, idle, price)).toBeNull();
+  });
+
+  it('the «rare egg» step on «Яйца» stands on «Открыть» of its row; other hints stay as they are', () => {
+    expect(onEggsTab({ step: 'hatchRare', target: { kind: 'incubator', index: 1 } })).toEqual({ step: 'hatchRare', target: { kind: 'button', action: 'egg-open-1' } });
+    expect(onEggsTab({ step: 'tapEgg', target: { kind: 'incubator', index: 0 } })).toEqual({ step: 'tapEgg', target: { kind: 'incubator', index: 0 } });
+    expect(onEggsTab(null)).toBeNull();
   });
 });

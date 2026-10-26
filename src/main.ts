@@ -41,7 +41,7 @@ import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { createAds } from './ui/ads.ts';
 import { createShopStore } from './ui/store.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { ftueHint, shelfHint, tabHint, tabUnlocked } from './sim/ftue.ts';
+import { eggHint, ftueHint, onEggsTab, shelfHint, tabHint, tabUnlocked } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { createNav, TABS, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
@@ -697,6 +697,8 @@ async function boot(): Promise<void> {
     true,
   );
   const cheapestEgg = Math.min(...eggs.eggs.map((e) => e.price.coins || Infinity));
+  /** P-04: what a tap on an empty incubator buys (the first egg of the ladder). */
+  const basicEggPrice = eggs.eggs.find((e) => e.id === ftue.starterEgg)?.price.coins ?? cheapestEgg;
   function renderShelf(): void {
     const v = play.view();
     const anchors = shop.anchors();
@@ -1263,13 +1265,17 @@ async function boot(): Promise<void> {
     // MU-12: the «+» places follow the scene's own layout (it relayouts on its frame when the shelf grows).
     if (nav.active() === 'home') renderShelf();
     // UB-01, UB-02: a hint at the shop shows on the home screen only, and never over a window.
-    const hint = controllable ? (ftueHint(store.state, view, freeEggReady()) ?? shelfHint(store.state, view, (performance.now() - lastInputAt) / 1000, ftue.shelfHintSec)) : null;
+    const idle = (performance.now() - lastInputAt) / 1000;
+    const onEggs = nav.active() === 'eggs';
+    const first = ftueHint(store.state, view, freeEggReady());
+    // P-04: on «Яйца» the «rare egg» step points at «Открыть»; after the first minute an idle empty incubator says «Купи новое яйцо».
+    const hint = controllable ? ((onEggs ? onEggsTab(first) : first) ?? shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice)) : null;
     const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';
     const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
     // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.
     const toastNow = toasts.showing();
     // Круг правок FB-3 п. 6: the gift egg's hint wins over the first visit of «Яйца» (both would point at an egg; the gift is the free one).
-    const gift = hint?.key === 'ftue.freeEgg' && nav.active() === 'eggs';
+    const gift = (hint?.key === 'ftue.freeEgg' || hint?.step === 'hatchRare') && onEggs;
     const wanted = (gift ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
     // Круг правок FB-3 п. 5: portrait the toast stands over the tab bar, off the scene — the scene's hint stays.
     const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) && !appRoot.classList.contains('portrait') ? null : wanted;

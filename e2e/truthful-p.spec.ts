@@ -146,3 +146,46 @@ test.describe('815x290 P-03', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('815x290 P-04', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+
+  test('P-04 (Q-056 Б п. 1) after the first minute an empty incubator says «Купи новое яйцо» after 8 s of idling; its tap buys the egg', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 30, incubators: [{ egg: null }], myEggs: {}, creatures: [] });
+    await open(page);
+    const t0 = Date.now();
+    const hint = page.locator('.hint[data-hint=buyEgg]');
+    await page.waitForTimeout(5000);
+    await expect(hint).toBeHidden();
+    await expect(hint).toBeVisible({ timeout: 6000 });
+    expect(Date.now() - t0).toBeGreaterThanOrEqual(7500);
+    await expect(hint).toContainText('Купи новое яйцо');
+    const ring = (await page.locator('.hint-ring').boundingBox())!;
+    const inc = (await page.evaluate(() => (window as unknown as T).__TEST__.targets()))!.incubators[0]!;
+    expect(Math.abs(ring.x + ring.width / 2 - inc.x)).toBeLessThan(4);
+    await page.touchscreen.tap(inc.x, inc.y);
+    await expect.poll(async () => ((await st(page)) as St & { incubators: Array<{ egg: string | null }> }).incubators[0]!.egg).toBe('egg_basic');
+    expect((await st(page)).coins).toBe(20);
+    expect(errors).toEqual([]);
+  });
+
+  test('P-04 (Q-056 Б п. 2) the «rare egg» step on «Яйца» stands on «Открыть»; its tap opens the egg', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, {
+      coins: 0,
+      incubators: [{ egg: 'egg_basic', startedAt: 0, progress: 999, elapsed: 999, waiting: false, careTaps: 0, careFed: 0, ripeSec: 0 }],
+      stats: { deals: 1, coinsEarned: 10, hatched: 1, taps: 10, levelUps: 1, haggles: 0 },
+      flags: { ftue_starter: true, ftue_fed: true, ftue_bought: true },
+    });
+    await open(page);
+    await expect.poll(async () => (await st(page)).ftue).toBe('hatchRare');
+    await page.locator('[data-tab=eggs]').tap();
+    const open0 = page.locator('[data-sheet=eggs] [data-action=egg-open-0]');
+    await expect(open0).toHaveClass(/is-hinted/);
+    await expect(page.locator('.hint')).toContainText('Тапай, там сюрприз');
+    await open0.tap();
+    await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+});

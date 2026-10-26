@@ -283,6 +283,8 @@ export const FtueFile = v.object({
   firstOfferShare: v.pipe(v.number(), v.minValue(0), v.maxValue(1.5)),
   /** M4-09: after the first minute, an empty shelf with pets in the inventory brings back «List it» once the player is idle this long. */
   shelfHintSec: v.pipe(v.number(), v.minValue(1)),
+  /** P-04 (Q-056 Б п. 1): after the first minute, an empty incubator with coins for an egg gets «Купи новое яйцо» once the player is idle this long. */
+  eggHintSec: v.pipe(v.number(), v.minValue(1)),
   /** FB-08: the finger taps a ready egg for this many hatches after the first minute. */
   fingerHatches: v.optional(Count, 3),
   maxHintWords: Count,

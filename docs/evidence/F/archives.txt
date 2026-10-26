@@ -1,0 +1,7 @@
+F · архивы в downloads/ — пересобраны в итоге «Ресейл 15 · Первая минута и яйца» (сессия по расписанию штаба 26.10): код игры коммита 080abf4
+932e393a7c3d0e39b478cf5bcaf039b44e47a7b5de70eaa7bc33be5205b3417b  downloads/anomaly-shop-0.1.0-playtest.zip
+c07af7cb2ab002f843103d63bb2ce2401805806e22875793215b3bcc79269048  downloads/anomaly-shop-0.1.0.zip
+665997 downloads/anomaly-shop-0.1.0-playtest.zip
+656814 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8)
+check-release playtest: FAIL п. 6 (мок и отладка) — так и задумано

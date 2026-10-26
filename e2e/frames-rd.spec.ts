@@ -134,3 +134,59 @@ for (const size of SIZES) {
     }
   });
 }
+
+// F: the first minute when a buyer writes (the freed place and its hint), «Яйца» with four eggs of «Мои яйца» (two rows before F-02),
+// the egg card and the seller level — frames only (RD_SHOTS=F/screens).
+for (const size of SIZES) {
+  const tag = `${size.width}x${size.height}`;
+  test.describe(`${tag} F frames`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+    test(`F the first minute with a buyer writing: frames @ ${tag}`, async ({ page }) => {
+      test.skip(!shotsDir, 'frames only');
+      test.setTimeout(120_000);
+      const errors = collectErrors(page);
+      await open(page);
+      const at = () => page.evaluate(() => (window as unknown as { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }>; slots: Array<{ x: number; y: number }> } } }).__TEST__.targets());
+      const egg = (await at()).incubators[0]!;
+      await page.touchscreen.tap(egg.x, egg.y);
+      await page.locator('[data-overlay=hatch] [data-action=hatch-shop]').click({ timeout: 10_000 });
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${shotsDir}/ftue-feed_${tag}.png` });
+      const pet = (await at()).slots[0]!;
+      const badge = page.locator('[data-tab=chats] [data-badge]');
+      for (let i = 0; i < 400 && !(await badge.isVisible()); i++) {
+        await page.touchscreen.tap(pet.x, pet.y);
+        await page.waitForTimeout(120);
+      }
+      await page.waitForTimeout(600);
+      await page.touchscreen.tap(pet.x, pet.y);
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${shotsDir}/ftue-buyer_${tag}.png` });
+      expect(errors).toEqual([]);
+    });
+    test(`F «Яйца» with four eggs, the egg card, the seller level: frames @ ${tag}`, async ({ page }) => {
+      test.skip(!shotsDir, 'frames only');
+      const errors = collectErrors(page);
+      const egging = { egg: 'egg_basic', startedAt: 0, progress: 0, elapsed: 0, waiting: false, careFed: 1 };
+      await seedSave(page, { ...FRAMES_SAVE, incubators: [egging, egging, egging], upgrades: { ...FRAMES_SAVE.upgrades, incubator: 2 }, stats: { ...FRAMES_SAVE.stats, xp: 600 } });
+      await open(page);
+      await page.evaluate(() => (window as unknown as { __TEST__: { setTimeScale(k: number): void } }).__TEST__.setTimeScale(0));
+      await closeAll(page);
+      const shot = async (name: string) => {
+        await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 }).catch(() => undefined);
+        await page.waitForTimeout(300);
+        await page.screenshot({ path: `${shotsDir}/${name}_${tag}.png` });
+      };
+      await page.locator('[data-tab=eggs]').click();
+      await shot('tab-eggs-4');
+      await page.locator('[data-sheet=eggs] [data-section=my]').evaluate((e) => e.scrollTo({ left: e.scrollWidth }));
+      await shot('tab-eggs-4-scrolled');
+      await OPENERS['detail:egg-card']!(page);
+      await shot('detail-egg-card');
+      await closeAll(page);
+      await OPENERS['overlay:reputation']!(page);
+      await shot('overlay-reputation');
+      expect(errors).toEqual([]);
+    });
+  });
+}

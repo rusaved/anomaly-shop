@@ -434,6 +434,8 @@ export interface Game {
   eventsPossible(): string[];
   /** e2e and screenshots only (the test API): starts one event now if it may come. */
   startEventNow(id: string): boolean;
+  /** F-05: the ?debug=1 panel only — the event now, past its «from minute» and in place of the one on now (the producer checks the merchant). */
+  debugEvent(id: string): boolean;
   /** M4-20: the finds — got or not, the reward claimed or waiting, hidden, how far a numeric one is. */
   finds(): Array<{ id: string; got: boolean; claimed: boolean; hidden: boolean; have: number; need: number }>;
   /** M4-20: takes the reward of a find (coins or crystals), once. */
@@ -2182,6 +2184,16 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       if (active || !possibleEvents().includes(id)) return false;
       const keep = content.events.events;
       startEvent(keep.filter((e) => e.id === id));
+      return active !== null;
+    },
+    debugEvent(id) {
+      if (active) endEvent('missed');
+      const data = content.events.events.find((e) => e.id === id);
+      if (!data) return false;
+      const was = sessionSec;
+      sessionSec = Math.max(sessionSec, data.fromMin * 60);
+      startEvent([data]);
+      sessionSec = was;
       return active !== null;
     },
     finds() {

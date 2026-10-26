@@ -1101,6 +1101,10 @@ async function boot(): Promise<void> {
         store.state.stats.coinsEarned += Math.max(0, r.need - r.have);
         store.commit({ flush: true });
       },
+      merchant: () => {
+        play.debugEvent('merchant');
+      },
+      merchantLabel: i18n.t('merchant.title'),
     });
   }
   if (__TEST_API__) {

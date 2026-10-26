@@ -208,3 +208,25 @@ for (const size of SIZES) {
     }
   });
 }
+
+test.describe('815x290 debug merchant', () => {
+  test.use({ viewport: PANEL, isMobile: true, hasTouch: true });
+  test('F-05 ?debug=1: the merchant button brings the merchant to the door at once; a tap on the cart opens his window', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { ...FRAMES_SAVE });
+    await open(page, '?debug=1');
+    await closeAll(page);
+    const gui = page.locator('.lil-gui.lil-root');
+    await gui.locator('.lil-title').first().click();
+    const name = await page.evaluate(() => (window as unknown as T).__TEST__.t('merchant.title'));
+    await gui.getByText(name, { exact: true }).click();
+    await expect.poll(() => page.evaluate(() => Boolean((window as unknown as { __TEST__: { targets(): { eventThing: unknown } | null } }).__TEST__.targets()?.eventThing))).toBe(true);
+    expect((await state(page) as unknown as { event: string | null }).event).toBe('merchant');
+    // Close the panel, then the cart takes a finger like in play.
+    await gui.locator('.lil-title').first().click();
+    const cart = (await page.evaluate(() => (window as unknown as { __TEST__: { targets(): { eventThing: { x: number; y: number } } } }).__TEST__.targets().eventThing))!;
+    await page.touchscreen.tap(cart.x, cart.y);
+    await expect(page.locator('[data-overlay=merchant]')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+});

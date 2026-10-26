@@ -17,7 +17,8 @@ export interface WindowsInCode {
 export function windowsInCode(): WindowsInCode {
   const dir = resolve(import.meta.dirname, '../src/ui');
   const src = readdirSync(dir)
-    .filter((f) => f.endsWith('.ts'))
+    // V («Ресейл 16»): the windows of the VK and OK build (vk-*.ts) exist only there — e2e/vk-v.spec.ts opens them on dist-vk.
+    .filter((f) => f.endsWith('.ts') && !f.startsWith('vk-'))
     .map((f) => readFileSync(resolve(dir, f), 'utf8'))
     .join('\n');
   const tabs = JSON.parse(src.match(/export const TABS = (\[[^\]]+\])/)![1]!.replace(/'/g, '"')) as string[];

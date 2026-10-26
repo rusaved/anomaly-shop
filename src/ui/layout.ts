@@ -51,8 +51,8 @@ export const PANEL = {
   hudHeight: 48,
   navHeight: 56,
   navHeightShort: 48,
-  /** W (Ресейл 13): sideways at this height and lower the top bar and the tab bar are 44 px — the tap zone itself (07 rule 4). */
-  shortHeight: 340,
+  /** W (Ресейл 13): sideways at this height and lower (a browser with its panel, 815×290) the top bar and the tab bar are 44 px — the tap zone itself (07 rule 4); 812×330 keeps the frame of MU. */
+  shortHeight: 300,
   barCompact: 44,
   /** The shelf strip keeps the screen margins (07 rule 1: 16 px). */
   pad: 16,

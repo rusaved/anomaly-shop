@@ -4346,15 +4346,11 @@ button.mu-card {
 .landscape.short #ui .sheet[data-kind='dock'] > .sheet-head:not(:empty) + .sheet-body {
   padding-top: 6px;
 }
-/* A window over the screen grows to the visible height − 16 (8 px top and bottom), over the bars and under its own dim:
-   its text and buttons fit; a tap on the dim closes it as before, the tab bar waits under the dim. */
+/* A window over the screen grows up over the top bar (8 px from the edge) and down to 4 px over the tab bar, which stays above every
+   window (UB-02: a tab closes it): its text and buttons fit. */
 .landscape.short #ui > .overlay:not([data-kind='screen']) {
-  z-index: 41;
   padding-top: calc(8px + var(--safe-top, 0px));
-  padding-bottom: calc(8px + var(--safe-bottom, 0px));
-}
-.landscape.short #ui:has(> .overlay:not([data-kind='screen']):not([hidden])) .nav::after {
-  content: none;
+  padding-bottom: calc(var(--nav-size, 44px) + 4px);
 }
 /* The hint over a tab of the bar: a compact bubble, its band at the bottom of the list as small (src/ui/hints.ts). */
 .landscape.short #ui .hint {
@@ -4428,6 +4424,8 @@ button.mu-card {
   align-self: start;
   align-content: start;
   gap: 6px;
+  /* 8 px under the top bar (круг правок FB-2 п. 1). */
+  padding-top: 2px;
   padding-bottom: 0;
 }
 /* W-12: the wandering merchant — its two offers side by side in a wider window, both whole with the ✕ and «Не сейчас». */
@@ -4589,4 +4587,8 @@ button.mu-card {
 }
 .landscape.short #ui .sheet[data-sheet='market'] .card-lot {
   column-gap: 8px;
+}
+.landscape.short #ui .sheet[data-sheet='eggs'] .mu-card:not(.card-empty) {
+  padding-top: 3px;
+  padding-bottom: 3px;
 }

@@ -40,7 +40,13 @@ for (const size of SIZES) {
         await page.waitForTimeout(250);
         for (const p of await buttonsSeenWhole(page)) problems.push(`${name}: ${p}`);
         if (shotsDir) {
-          await page.evaluate(() => document.querySelectorAll('.sheet-body, .detail-page, .overlay .card, [data-sheet] .mu-scroll').forEach((e) => (e.scrollTop = 0)));
+          // W: every scroll of the screen at its start, as a player opens it (the lines of a chat open on the newest, UB-10).
+          await page.evaluate(() =>
+            document.querySelectorAll<HTMLElement>('.sheet:not([hidden]) *, .overlay:not([hidden]) *, .sheet:not([hidden]), .overlay:not([hidden])').forEach((e) => {
+              if (e.scrollTop > 0 && !e.matches('.chat-lines')) e.scrollTop = 0;
+            }),
+          );
+          await page.waitForTimeout(100);
           await page.screenshot({ path: `${shotsDir}/${name}_${tag}.png` });
         }
       };
@@ -61,6 +67,17 @@ for (const size of SIZES) {
         }
         if (n > 1) await subs.first().click();
       }
+      // W: «Цена» (the pet picked for sale) and the goals of the day in «Подарки» — screens inside the windows above.
+      await OPENERS['detail:sale']!(page);
+      await page.locator('[data-detail=sale] [data-action^=sale-list-]').first().click();
+      await frame('detail-sale-price');
+      await closeAll(page);
+      await OPENERS['overlay:gifts']!(page);
+      if (shotsDir) {
+        await page.locator('[data-overlay=gifts] .day-goal').first().scrollIntoViewIfNeeded();
+        await page.screenshot({ path: `${shotsDir}/overlay-gifts-goals_${tag}.png` });
+      }
+      await closeAll(page);
       for (const kind of ['detail', 'overlay'] as const) {
         const ids = kind === 'overlay' ? [...w.overlays.filter((id) => id !== 'merchant'), 'merchant'] : w.details;
         for (const id of ids) {
@@ -76,3 +93,21 @@ for (const size of SIZES) {
   });
 }
 
+// W: the first minute (the hint at the egg, then «Покорми его тапами») in both sizes — frames only (RD_SHOTS).
+for (const size of SIZES) {
+  test.describe(`${size.width}x${size.height} first minute`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+    test(`W the first minute: frames @ ${size.width}x${size.height}`, async ({ page }) => {
+      test.skip(!shotsDir, 'frames only');
+      const errors = collectErrors(page);
+      await open(page);
+      await expect(page.locator('.hint [data-hint-text]')).toBeVisible();
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${shotsDir}/ftue-egg_${size.width}x${size.height}.png` });
+      await page.locator('[data-tab=eggs]').click();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${shotsDir}/ftue-eggs_${size.width}x${size.height}.png` });
+      expect(errors).toEqual([]);
+    });
+  });
+}

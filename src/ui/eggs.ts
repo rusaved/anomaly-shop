@@ -167,7 +167,10 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
       const list = shop.eggs.filter((e) => e.section === s && (s !== 'seasonal' || e.open));
       if (list.length) html += head(look.t(`eggs.${s}`), look.t('eggs.perEgg')) + `<div class="mu-grid" data-section="${s}">${list.map((e) => shopCard(e, fmt)).join('')}</div>`;
     }
+    // F-02: sideways «Мои яйца» scroll sideways — a new render keeps the place the player scrolled to.
+    const myLeft = root.querySelector<HTMLElement>('[data-section="my"]')?.scrollLeft ?? 0;
     root.innerHTML = html;
+    if (myLeft) root.querySelector<HTMLElement>('[data-section="my"]')?.scrollTo({ left: myLeft });
     // T-05 (the usability review): the button the hint names wears the green frame of a hint (07 rule 16).
     if (hint?.target) root.querySelector<HTMLElement>(`[data-action^="${hint.target}"]:not([aria-disabled="true"])`)?.classList.add('is-hinted');
     root.querySelectorAll<HTMLElement>('[data-action^="egg-card-"]').forEach((b) => b.addEventListener('click', () => tab.show(b.dataset.action!.slice('egg-card-'.length))));

@@ -4675,6 +4675,20 @@ button.mu-card {
     margin-top: 0;
   }
 }
+/* F-02: sideways «Мои яйца» stay one row at any count — from the third egg on they scroll sideways, the edge of the next card shows
+   there is more; «За видео» under them keeps its place out of the lower third. */
+.landscape #ui [data-sheet='eggs'] .eggs > [data-section='my']:has(> :nth-child(3)) {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: calc(50% - 40px);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.landscape #ui [data-sheet='eggs'] .eggs > [data-section='my'] > * {
+  scroll-snap-align: start;
+}
 /* T-05: the first-minute line in the head of «Мои яйца» — between the head and «1 из 1», never on a button; upright it takes its own line. */
 #ui .mu-head .eggs-hint {
   flex: 1 1 auto;

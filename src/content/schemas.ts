@@ -281,7 +281,8 @@ export const FtueFile = v.object({
   firstRarity: Rarity,
   secondRarity: Rarity,
   firstCustomerSec: v.pipe(v.number(), v.minValue(0)),
-  firstOfferShare: Share,
+  /** P-02 (Q-045 Б): the first buyer's share of the price before the first deal — above 1 so a cold day of the market still pays an egg. */
+  firstOfferShare: v.pipe(v.number(), v.minValue(0), v.maxValue(1.5)),
   /** M4-09: after the first minute, an empty shelf with pets in the inventory brings back «List it» once the player is idle this long. */
   shelfHintSec: v.pipe(v.number(), v.minValue(1)),
   /** FB-08: the finger taps a ready egg for this many hatches after the first minute. */

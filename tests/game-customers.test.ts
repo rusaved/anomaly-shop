@@ -111,3 +111,28 @@ describe('UB-05 buyers', () => {
     expect(offerFor(cat, 3, { share: 0.8, mult: 1.25, cashBonus: 0.03 })).toBe(coins(base * 0.8 * 1.25 * 1.03));
   });
 });
+
+describe('P-02 (Q-045 Б) the first deal pays an egg', () => {
+  const egg = content.eggs.eggs.find((e) => e.id === 'egg_basic')!.price.coins;
+  const commons = content.species.species.filter((s) => s.rarity === 'common');
+
+  it('five common pets', () => expect(commons).toHaveLength(5));
+
+  it('the first offer for any common pet of level 1 is not below «Обычное яйцо», even on its cold day of the market', () => {
+    for (const spec of commons) {
+      expect(offerFor(spec, 1, { share: content.ftue.firstOfferShare, mult: 1 }), spec.id).toBeGreaterThanOrEqual(egg);
+      expect(offerFor(spec, 1, { share: content.ftue.firstOfferShare, mult: 1, valueMult: content.market.mood.cold }), `${spec.id} cold`).toBeGreaterThanOrEqual(egg);
+    }
+  });
+
+  it('in the game: the first buyer of a fresh shop offers at least the egg for each of the five, whatever the buyer', () => {
+    for (const spec of commons)
+      for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+        const { game } = setup([{ uid: 'a', species: spec.id, level: 1, fed: 0, hatchedAt: 0, age: 0 }], seed);
+        game.state.stats.deals = 0;
+        const fresh = createGame(createStore(game.state, () => 0), content, createRng(seed));
+        run(fresh, content.ftue.firstCustomerSec + 0.2);
+        expect(open(fresh)[0]!.offer, `${spec.id} seed ${seed}`).toBeGreaterThanOrEqual(egg);
+      }
+  });
+});

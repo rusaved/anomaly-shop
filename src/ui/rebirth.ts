@@ -23,8 +23,10 @@ export function createRebirthWindow(parent: HTMLElement, game: Game, look: Rebir
   const overlay = createOverlay(parent, 'rebirth', () => overlay.hide());
   overlay.card.classList.add('card-rebirth');
   overlay.card.innerHTML =
-    '<h2 data-rebirth-title></h2><p class="rebirth-mult" data-rebirth-mult></p><div class="rep-bar" aria-hidden="true"><i data-rebirth-bar></i></div>' +
-    '<p class="card-sub" data-rebirth-have></p><p class="rebirth-gift" data-rebirth-gift></p><p class="card-sub" data-rebirth-reset></p><p class="card-sub" data-rebirth-keep></p><div class="rebirth-buttons"></div>';
+    '<h2 data-rebirth-title></h2><div class="rebirth-gain"><p class="rebirth-mult" data-rebirth-mult></p><div class="rep-bar" aria-hidden="true"><i data-rebirth-bar></i></div>' +
+    '<p class="card-sub" data-rebirth-have></p><p class="rebirth-gift" data-rebirth-gift></p></div>' +
+    // W-02: what starts over and what stays always stand before «Переехать» (sideways — over it, in the right column).
+    '<div class="rebirth-side"><p class="card-sub" data-rebirth-reset></p><p class="card-sub" data-rebirth-keep></p><div class="rebirth-buttons"></div></div>';
   const move = button('rebirth-move', 'rebirth.move', 'btn-primary');
   const later = button('rebirth-later', 'rebirth.later');
   (overlay.card.querySelector('.rebirth-buttons') as HTMLElement).append(move, later);

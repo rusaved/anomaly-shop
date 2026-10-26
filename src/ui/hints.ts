@@ -43,9 +43,14 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
   /** The usability review (the round of fixes): a bubble over a tab of the bar takes a band at the bottom of the open screen — its list ends above. */
   let lowered: HTMLElement | null = null;
   const lower = (sheet: HTMLElement | null, h = 0): void => {
-    if (lowered && lowered !== sheet) lowered.style.removeProperty('--hint-bottom');
+    if (lowered && lowered !== sheet) {
+      lowered.style.removeProperty('--hint-bottom');
+      lowered.classList.remove('hint-band');
+    }
     lowered = sheet;
     sheet?.style.setProperty('--hint-bottom', `${Math.ceil(h)}px`);
+    // W-05: the list over the band ends without its fade (the bubble is its edge) — a short screen keeps two rows in sight.
+    sheet?.classList.add('hint-band');
   };
 
   const setGlow = (el: HTMLElement | null): void => {
@@ -198,7 +203,8 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
       root.dataset.hint = hint.step;
       root.classList.toggle('below', !above);
       const w = root.offsetWidth;
-      lower(openSheet, root.offsetHeight + 24);
+      // W: on a short screen sideways (815×290) the band is the bubble and its gap only — the list keeps its rows.
+      lower(openSheet, root.offsetHeight + (parent.closest('.short') ? 14 : 24));
       // Sideways a bubble of the scene stays over the scene — never on the list right of it.
       const stageW = !button && base.width > base.height ? parseFloat(getComputedStyle(parent).getPropertyValue('--stage-w')) || base.width : base.width;
       let left = Math.max(8, Math.min(stageW - w - 8, x - w / 2));

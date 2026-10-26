@@ -2820,25 +2820,44 @@ button.mu-card {
     padding: 0 20px;
   }
 }
-/* RD-02: the move to a new city sideways — what it gives left, «Переехать» and «Позже» right, both seen without scrolling. */
+/* RD-02, W-02: the move to a new city sideways — what it gives left; what starts over, what stays and then «Переехать» and «Позже»
+   right: the losses are read before the button, everything seen without scrolling. Portrait keeps one column (the boxes melt). */
+.card-rebirth > .rebirth-gain,
+.card-rebirth > .rebirth-side {
+  display: contents;
+}
 .landscape .overlay > .card.card-rebirth {
-  width: min(100%, 680px);
+  width: min(100%, 720px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 200px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto;
   column-gap: 20px;
   row-gap: 4px;
   align-content: start;
 }
-.landscape .card-rebirth > * {
-  grid-column: 1;
-}
 .landscape .card-rebirth > h2 {
   grid-column: 1 / -1;
 }
-.landscape .card-rebirth > .rebirth-buttons {
-  grid-column: 2;
-  grid-row: 2 / span 6;
-  align-self: start;
+.landscape .card-rebirth > .rebirth-gain,
+.landscape .card-rebirth > .rebirth-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.landscape .card-rebirth > .rebirth-gain > *,
+.landscape .card-rebirth > .rebirth-side > * {
+  margin: 0;
+}
+.landscape .card-rebirth > .rebirth-side > .card-sub {
+  font-size: 13px;
+  line-height: 1.3;
+}
+.landscape .card-rebirth .rebirth-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
 }
 /* RD-02: the merchant's price buttons keep their own width in the window (not the window buttons' full width). */
 .overlay > .card .shop-item .btn-buy {
@@ -4301,4 +4320,273 @@ button.mu-card {
 /* M6-23: the shop name is typed as written (the promo code field above it shows capitals). */
 .name-row .code-input {
   text-transform: none;
+}
+
+/* ---- W (Ресейл 13 · Окна под браузер): a short screen sideways (a browser with its panel, 815×290; src/ui/layout.ts PANEL.shortHeight) ----
+   The top bar and the tab bar are 44 px (the tap zone itself), the segments lose their frame and come closer, the lists start
+   higher: the main action and the deciding line of every window stay above the tab bar without scrolling. */
+.landscape.short .hud {
+  padding-top: var(--safe-top, 0px);
+  padding-bottom: 0;
+}
+.landscape.short .nav-tab[data-tab='home'] .nav-icon {
+  width: 34px;
+  height: 34px;
+}
+.landscape.short #ui .sheet[data-kind='dock'] > .sheet-head {
+  margin-top: 4px;
+}
+.landscape.short #ui .sheet-head .mu-seg {
+  padding: 0;
+  gap: 2px;
+  border-radius: var(--mu-r);
+}
+.landscape.short #ui .sheet[data-kind='dock'] > .sheet-body,
+.landscape.short #ui .sheet[data-kind='dock'] > .sheet-detail,
+.landscape.short #ui .sheet[data-kind='dock'] > .sheet-head:not(:empty) + .sheet-body {
+  padding-top: 6px;
+}
+/* A window over the screen grows to the visible height − 16 (8 px top and bottom), over the bars and under its own dim:
+   its text and buttons fit; a tap on the dim closes it as before, the tab bar waits under the dim. */
+.landscape.short #ui > .overlay:not([data-kind='screen']) {
+  z-index: 41;
+  padding-top: calc(8px + var(--safe-top, 0px));
+  padding-bottom: calc(8px + var(--safe-bottom, 0px));
+}
+.landscape.short #ui:has(> .overlay:not([data-kind='screen']):not([hidden])) .nav::after {
+  content: none;
+}
+/* The hint over a tab of the bar: a compact bubble, its band at the bottom of the list as small (src/ui/hints.ts). */
+.landscape.short #ui .hint {
+  padding: 3px 10px;
+  font-size: 14px;
+}
+/* Lists on a short screen: closer section heads, rows and cards — two rows of cards stand over the tab bar. */
+.landscape.short #ui .mu-head {
+  margin: 10px 0 6px;
+}
+.landscape.short #ui .mu-head:first-child {
+  margin-top: 0;
+}
+.landscape.short #ui .sheet .mu-grid {
+  row-gap: 6px;
+}
+.landscape.short #ui .sheet .mu-card:not(.card-empty) {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+/* W-04: «Продажи» with buyers writing — «В переписке» left and «Мои продажи» right, each a column of rows from the top:
+   both lists in sight however many write. */
+.landscape.short #ui .sheet[data-sheet='sales'] .sales:has(> .sales-chats) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: 'chatsHead placesHead' 'chats places';
+  align-items: start;
+  column-gap: 12px;
+}
+.landscape.short #ui .sheet[data-sheet='sales'] .sales > .sales-chats {
+  grid-area: chatsHead;
+  margin-top: 0;
+}
+.landscape.short #ui .sheet[data-sheet='sales'] .sales > .sales-chats + .mu-grid {
+  grid-area: chats;
+  grid-template-columns: minmax(0, 1fr);
+}
+.landscape.short #ui .sheet[data-sheet='sales'] .sales:has(> .sales-chats) > .sales-places {
+  grid-area: placesHead;
+  margin-top: 0;
+}
+.landscape.short #ui .sheet[data-sheet='sales'] .sales:has(> .sales-chats) > .sales-places + .mu-grid {
+  grid-area: places;
+  grid-template-columns: minmax(0, 1fr);
+}
+/* Inner pages (the price, the lot, the egg card, a chat): the back row is the 44 px of its «‹». */
+.landscape.short #ui .mu-back {
+  min-height: 44px;
+  margin-bottom: 4px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+/* W-01: the lot — left the seller («‹»), the pet with «рынок N · ниже рынка» and the lines; right only the answers, «Заберу сейчас»
+   at the top: the market price and the button are whole, nothing lies over them. */
+.landscape.short #ui [data-detail='lot'] .detail-page {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas: 'back buttons' 'pet buttons' 'lines buttons';
+  row-gap: 4px;
+}
+.landscape.short #ui [data-detail='lot'] .detail-page > .mu-back {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.landscape.short #ui [data-detail='lot'] .lot-pet {
+  grid-area: pet;
+  align-self: start;
+  padding-top: 0;
+}
+.landscape.short #ui [data-detail='lot'] .lot-buttons {
+  grid-area: buttons;
+  align-self: start;
+  align-content: start;
+  gap: 6px;
+  padding-bottom: 0;
+}
+/* W-12: the wandering merchant — its two offers side by side in a wider window, both whole with the ✕ and «Не сейчас». */
+.landscape.short #ui .overlay[data-overlay='merchant'] > .card {
+  width: min(100%, 640px);
+  gap: 8px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.landscape.short #ui .overlay[data-overlay='merchant'] .shop-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0;
+}
+/* W-09 (07 rule 2: what pays — not in the lower third, the main action low): on a short screen «За видео» stands first in «Яйца»,
+   «Мои яйца» with «Покормить» under it; the list order elsewhere is unchanged (Q-058). */
+.landscape.short #ui [data-sheet='eggs'] .eggs:has(> [data-section='ad']) {
+  display: flex;
+  flex-direction: column;
+}
+.landscape.short #ui [data-sheet='eggs'] .eggs > .mu-head:has(+ [data-section='ad']),
+.landscape.short #ui [data-sheet='eggs'] .eggs > [data-section='ad'] {
+  order: -1;
+}
+.landscape.short #ui [data-sheet='eggs'] .eggs > .mu-head:has(+ [data-section='ad']) {
+  margin-top: 0;
+}
+.landscape.short #ui [data-sheet='eggs'] .eggs > .mu-head:has(+ [data-section='my']) {
+  margin-top: 10px;
+}
+/* W-07, W: a phone sideways (≤ 520 px high) — the fade at the bottom of a list is 14 px (07 rule 15 gives 28 for an upright phone):
+   «Забрать подарок дня», a boost and the last row of a list stay whole over the tab bar. */
+@media (max-height: 520px) {
+  .landscape #ui .sheet[data-kind='dock']:not(.sheet-fixed) > .sheet-body,
+  .landscape #ui .chat-list,
+  .landscape #ui .overlay[data-kind='screen'] > .card {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent);
+  }
+  .landscape #ui .overlay[data-overlay='gifts'] .day {
+    min-height: 40px;
+    padding: 2px;
+  }
+  .landscape #ui .overlay[data-overlay='gifts'] .days {
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .mu-back {
+    min-height: 44px;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+/* W-10: «Продать сразу» in «Вылупился!» sideways — a secondary button (dark, 44 px, its words in the middle), 24 px under the pet's tile,
+   out of the lower third; the window keeps its top (a phone sideways). */
+@media (max-height: 520px) {
+  #app.landscape #ui > .overlay[data-overlay='hatch'] {
+    align-items: flex-start;
+  }
+  #app.landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+    align-self: start;
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    margin: 120px 0 0;
+    padding: 12px;
+    line-height: 20px;
+    border-radius: var(--mu-r);
+    background: var(--c-uiPanelHi);
+    color: var(--c-uiText);
+    text-align: center;
+  }
+}
+/* W-11: «Цена» on a short screen — the back row right under the top bar, the pet closer: «Выставить на продажу» whole over the tab bar. */
+.landscape.short #ui .sheet-detail > .detail-page > .mu-back:first-child {
+  margin-top: 0;
+}
+.landscape.short #ui [data-detail='sale'] .price-pet {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+/* W-03: «Рынок» — «▶ Реклама: новые лоты сейчас» stands in the head row right of «РЫНОК · обновится через», the lots right under. */
+.landscape.short #ui .sheet[data-sheet='market'] .market:has(> .btn-wide) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'head ad' 'lots lots';
+  column-gap: 16px;
+  align-items: center;
+}
+.landscape.short #ui .sheet[data-sheet='market'] .market > .mu-head {
+  grid-area: head;
+  justify-content: flex-start;
+  gap: 12px;
+  margin: 0;
+}
+.landscape.short #ui .sheet[data-sheet='market'] .market > .btn-wide {
+  grid-area: ad;
+  width: auto;
+  margin: 0;
+  padding: 0 20px;
+}
+.landscape.short #ui .sheet[data-sheet='market'] .market > .mu-grid {
+  grid-area: lots;
+  margin-top: 6px;
+}
+/* W-03, W-05, W-06: the lists start closer under the top bar and the segments: two rows of lots, pets and finds stay whole. */
+.landscape.short #ui .sheet[data-kind='dock'] > .sheet-head {
+  margin-top: 2px;
+}
+.landscape.short #ui .sheet[data-kind='dock'] > .sheet-body,
+.landscape.short #ui .sheet[data-kind='dock'] > .sheet-head:not(:empty) + .sheet-body {
+  padding-top: 4px;
+}
+.landscape.short #ui .sheet[data-sheet='market'] .btn-ad.btn-wide {
+  margin-bottom: 6px;
+}
+.landscape.short #ui .sheet[data-sheet='market'] .mu-head {
+  margin-bottom: 4px;
+}
+.landscape.short #ui .sheet[data-sheet='inventory'] .col-row {
+  margin-top: 6px;
+}
+.landscape.short #ui .sheet[data-sheet='inventory'] .col-row:first-child {
+  margin-top: 0;
+}
+.landscape.short #ui .sheet[data-sheet='inventory'] .col-row .mu-card {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+.landscape.short #ui .sheet[data-sheet='inventory'] .col-row .mu-head {
+  margin-bottom: 4px;
+}
+/* W-05: over the band of a hint (only while it is on) the list ends without its fade — the bubble is its edge. */
+.landscape.short #ui .sheet.hint-band[data-kind='dock'] > .sheet-body {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+/* W-02: the move sideways keeps its top (under the top bar; on a short screen 8 px from the edge) — «Переехать» after the losses stays
+   out of the lower third. */
+@media (max-height: 520px) {
+  .landscape #ui .overlay[data-overlay='rebirth'] > .card.card-rebirth {
+    align-self: flex-start;
+  }
+}
+.landscape.short #ui .overlay[data-overlay='rebirth'] > .card.card-rebirth {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.landscape.short #ui .card-rebirth > .rebirth-side {
+  gap: 4px;
+}
+/* W-03: a lot's line «1 058 · выше рынка» stays one line next to «Купить» / «Торг» (a narrower price button): the rows keep their height. */
+.landscape.short #ui .sheet[data-sheet='market'] .card-lot .mu-btn {
+  min-width: 0;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+.landscape.short #ui .sheet[data-sheet='market'] .card-lot {
+  column-gap: 8px;
 }

@@ -44,6 +44,8 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
   let open: number | null = null;
   let listKey = '';
   let dialogKey = '';
+  /** W-14: the chat and the answers drawn now (their nodes stay while only the lines change). */
+  let shown: { id: number; buttons: string } | null = null;
 
   const fmt = (): Intl.NumberFormat => new Intl.NumberFormat(look.lang());
   const who = (c: Chat): string => {
@@ -107,6 +109,7 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     if (!c) {
       open = null;
       dialogEl.innerHTML = '';
+      shown = null;
       return;
     }
     // Q-025: the creature of an open chat is off the shelf («talking»); a closed one may be back on the shelf or in the inventory.
@@ -135,12 +138,24 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
         `<button type="button" class="mu-btn main" data-action="chat-sell">${iconize(look.t('chats.sell', { n: `◉ ${f.format(c.offer)}` }))}</button>` +
         // MU-05 (s2-chat-dialog): two answers only — «Продать за N» and a dark «Отказаться» (the counter price waits, Q-036).
         `<button type="button" class="mu-btn" data-action="chat-decline">${esc(look.t('chats.decline'))}</button>`;
-    dialogEl.innerHTML =
+    const head =
       `<div class="mu-back chat-top">${look.wide() ? '' : `<button type="button" class="mu-round" data-action="chat-back" aria-label="${esc(look.t('eggs.back'))}">‹</button>`}` +
       `${avatar(c, 44)}<span class="chat-main"><b class="chat-who">${esc(who(c))}</b><span class="chat-last">${esc(look.t('chats.wants', { name: look.speciesName(c.species) }))}</span></span>` +
       `<span class="chat-ask" data-rarity="${rarity}">${ringPic(look.portrait(c.species, rarity), rarity, 28)}${cr ? money(cr.ask, f) : ''}</span></div>` +
-      `<div class="chat-lines">${c.lines.map((l) => `<p class="bubble ${l.from === 'me' ? 'me' : 'them'}">${text(c, l)}</p>`).join('')}</div>` +
-      `<div class="chat-buttons" data-hint-glow>${buttons}</div>`;
+      `<div class="chat-lines">${c.lines.map((l) => `<p class="bubble ${l.from === 'me' ? 'me' : 'them'}">${text(c, l)}</p>`).join('')}</div>`;
+    // W-14: a new line of the buyer (or its seconds) re-draws the head and the lines only — the answers under a finger stay the same
+    // nodes, so a press that began before the line still sells on release.
+    const same = shown?.id === id && shown.buttons === buttons && dialogEl.querySelector('.chat-buttons') !== null;
+    if (same) {
+      dialogEl.querySelectorAll(':scope > .chat-top, :scope > .chat-lines').forEach((e) => e.remove());
+      dialogEl.insertAdjacentHTML('afterbegin', head);
+      dialogEl.querySelector('[data-action="chat-back"]')?.addEventListener('click', () => tab.show(null));
+      const lines = dialogEl.querySelector('.chat-lines') as HTMLElement;
+      lines.scrollTop = lines.scrollHeight;
+      return;
+    }
+    shown = { id, buttons };
+    dialogEl.innerHTML = head + `<div class="chat-buttons" data-hint-glow>${buttons}</div>`;
     dialogEl.querySelector('[data-action="chat-back"]')?.addEventListener('click', () => tab.show(null));
     dialogEl.querySelector('[data-action="chat-sell"]')?.addEventListener('click', () => game.chatSell(c.id));
     dialogEl.querySelector('[data-action="chat-decline"]')?.addEventListener('click', () => game.chatDecline(c.id));
@@ -163,6 +178,7 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
         renderDialog(open);
       } else {
         dialogEl.innerHTML = '';
+        shown = null;
         dialogKey = '';
       }
       renderList();

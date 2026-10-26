@@ -154,6 +154,14 @@ export function computeShopLayout(
   let counterY = floorY + floor.h * 0.3;
   const clash = showcase.y + showcase.h + 8 - (counterY - u * 0.25 - incR * 1.95);
   if (clash > 0) counterY = Math.max(counterY, Math.min(counterY + clash, stage.y + stage.h - counterH - u * 0.15));
+  // W-08: a short room (a browser with its panel sideways, 815×290) — what the counter could not step down, the shelf steps up to the
+  // top inset: a dome and a place of the shelf never share a finger.
+  const rest = clash - (counterY - (floorY + floor.h * 0.3));
+  if (rest > 0) {
+    const lift = Math.min(rest, Math.max(0, showcase.y - top));
+    showcase.y -= lift;
+    for (const s of slots) s.y -= lift;
+  }
   const counter: Rect = { x: stage.x + Math.min(stage.w * 0.42 - counterW / 2, door.x - spotR * 2.6 - counterW - stage.x), y: counterY, w: counterW, h: counterH };
   const counterTop: Rect = { x: counter.x - u * 0.15, y: counter.y - u * 0.25, w: counterW + u * 0.3, h: u * 0.35 };
   const incubators: Spot[] = [];

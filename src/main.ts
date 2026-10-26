@@ -772,12 +772,25 @@ async function boot(): Promise<void> {
   }, 1000);
   // Круг правок FB-2 (арт-ревизия): on «Лавка» a toast never lies on the shelf frame drawn in the scene (its places, 12 px around).
   const toasts = createToasts(uiRoot, () => {
-    const slots = nav.active() === 'home' ? (shop.anchors()?.slots ?? []) : [];
-    if (!slots.length) return [];
+    const a = nav.active() === 'home' ? shop.anchors() : null;
+    const slots = a?.slots ?? [];
+    if (!a || !slots.length) return [];
     const c = canvas.getBoundingClientRect();
     const x = Math.min(...slots.map((r) => r.x)) - 12 + c.left;
     const y = Math.min(...slots.map((r) => r.y)) - 12 + c.top;
-    return [new DOMRect(x, y, Math.max(...slots.map((r) => r.x + r.w)) + 12 + c.left - x, Math.max(...slots.map((r) => r.y + r.h)) + 12 + c.top - y)];
+    // W-13: the things on the wall that answer a tap (the clock, the window, the flower, the lamp) — a toast never lies on them.
+    const spot = (p: { x: number; y: number; r: number }): DOMRect => {
+      const r = Math.max(22, p.r * 1.4);
+      return new DOMRect(p.x - r + c.left, p.y - r + c.top, r * 2, r * 2);
+    };
+    const t = a.things;
+    return [
+      new DOMRect(x, y, Math.max(...slots.map((r) => r.x + r.w)) + 12 + c.left - x, Math.max(...slots.map((r) => r.y + r.h)) + 12 + c.top - y),
+      spot(t.clock),
+      spot(t.flower),
+      spot(t.lamp),
+      new DOMRect(t.window.x + c.left, t.window.y + c.top, t.window.w, t.window.h),
+    ];
   });
   noteAd = (kind) => toasts.show(i18n.t(`ad.${kind}`), kind === 'got' ? 'good' : 'info', 2400);
   // M5-03: the interstitial only between screens by the player's tap — a window closed (not the hatch) or a tab changed.

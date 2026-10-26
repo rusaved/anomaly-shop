@@ -12,7 +12,8 @@ const SIZES = [
   { width: 880, height: 405 },
   { width: 815, height: 290 },
 ];
-const shotsDir = process.env.RD_SHOTS ? resolve(import.meta.dirname, '../docs/evidence/RD/screens') : null;
+// W: RD_SHOTS=<dir under docs/evidence> puts them elsewhere (RD_SHOTS=W/screens — the frames of «Окна под браузер»).
+const shotsDir = process.env.RD_SHOTS ? resolve(import.meta.dirname, '../docs/evidence', process.env.RD_SHOTS === '1' ? 'RD' : process.env.RD_SHOTS.replace(/\/screens$/, ''), 'screens') : null;
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 
 test('RD-02 every window in the code has an opener', () => {

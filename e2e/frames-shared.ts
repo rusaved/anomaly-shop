@@ -172,7 +172,10 @@ function checkButtons(page: Page): Promise<string[]> {
     const tab = document.querySelector<HTMLElement>('[data-tab].active')?.dataset.tab ?? 'home';
     const screen = [document.querySelector<HTMLElement>(`[data-sheet=${tab}]`), ...(tab === 'home' ? [...document.querySelectorAll<HTMLElement>('.home-ui')] : [])];
     const bars = [document.getElementById('hud') ?? document.querySelector<HTMLElement>('.hud'), document.getElementById('nav')];
-    const roots = (top ? [top, bars[1]] : [...screen, ...bars]).filter((e): e is HTMLElement => Boolean(e));
+    // W: on a short screen a window lies over the tab bar under its own dim — then the bar is not on the screen for a tap.
+    const nb = bars[1]?.getBoundingClientRect();
+    const navUnder = Boolean(top && nb && top.contains(document.elementFromPoint(nb.left + nb.width / 2, nb.top + nb.height / 2)));
+    const roots = (top ? [top, ...(navUnder ? [] : [bars[1]])] : [...screen, ...bars]).filter((e): e is HTMLElement => Boolean(e));
     const buttons = roots.flatMap((root) => [...root.querySelectorAll<HTMLElement>('button, [role=button], a[href]')]).filter(visible);
     // RD-02 after the review: in a popup the main action is seen whole before any scrolling (the move window hid its buttons
     // below the fold sideways); and a button of a window stays inside its card (the merchant's price buttons ran over the names).

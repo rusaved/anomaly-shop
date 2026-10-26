@@ -30,6 +30,8 @@ export interface Layout {
   /** MU-02: a tab is a screen — everything between the top bar and the tab bar. */
   screen: Rect;
   hudHeight: number;
+  /** W (Ресейл 13): a short screen sideways (a browser with its panel, 815×290) — the compact top bar, segments and tab bar. */
+  short: boolean;
   safe: Insets;
 }
 
@@ -49,11 +51,16 @@ export const PANEL = {
   hudHeight: 48,
   navHeight: 56,
   navHeightShort: 48,
+  /** W (Ресейл 13): sideways at this height and lower the top bar and the tab bar are 44 px — the tap zone itself (07 rule 4). */
+  shortHeight: 340,
+  barCompact: 44,
   /** The shelf strip keeps the screen margins (07 rule 1: 16 px). */
   pad: 16,
   /** A phone sideways (the stage lower than this): the scene buttons get a band of floor under the room (44 + 12 + 12 px). */
   landscapeShort: 400,
   landscapeBand: 68,
+  /** W-08: on a short screen sideways the band is the 44 px button and 6 px around it — the room keeps the shelf off the domes. */
+  landscapeBandShort: 56,
   /** FB-10 (homeShop): portrait — the room under the top bar takes this share of the height between the bars, the Store list the rest. */
   homeShopShare: 0.42,
   homeShopMin: 200,
@@ -67,8 +74,9 @@ export function computeLayout(width: number, height: number, safe: Insets = NO_I
   const w = Math.max(1, Math.floor(width));
   const h = Math.max(1, Math.floor(height));
   const portrait = h >= w;
-  const hudHeight = Math.min(PANEL.hudHeight + safe.top, Math.max(1, Math.floor(h / 3)));
-  const navH = Math.min((portrait ? PANEL.navHeight : PANEL.navHeightShort) + safe.bottom, Math.max(1, Math.floor(h / 3)));
+  const short = !portrait && h <= PANEL.shortHeight;
+  const hudHeight = Math.min((short ? PANEL.barCompact : PANEL.hudHeight) + safe.top, Math.max(1, Math.floor(h / 3)));
+  const navH = Math.min((portrait ? PANEL.navHeight : short ? PANEL.barCompact : PANEL.navHeightShort) + safe.bottom, Math.max(1, Math.floor(h / 3)));
   const nav = { x: 0, y: h - navH, w, h: navH };
   const screen = { x: 0, y: hudHeight, w, h: Math.max(1, h - navH - hudHeight) };
   const above = Math.max(1, h - navH);
@@ -86,6 +94,7 @@ export function computeLayout(width: number, height: number, safe: Insets = NO_I
       nav,
       screen,
       hudHeight,
+      short,
       safe,
     };
   }
@@ -102,6 +111,7 @@ export function computeLayout(width: number, height: number, safe: Insets = NO_I
       nav,
       screen,
       hudHeight,
+      short,
       safe,
     };
   }
@@ -117,6 +127,7 @@ export function computeLayout(width: number, height: number, safe: Insets = NO_I
     nav,
     screen,
     hudHeight,
+    short,
     safe,
   };
 }
@@ -125,7 +136,7 @@ export function computeLayout(width: number, height: number, safe: Insets = NO_I
 export function roomHeight(layout: Layout): number {
   // FB-10: with the Store under it the portrait room has no button band (the scene buttons are round, in its corner).
   if (layout.shelf || layout.stage.h >= PANEL.landscapeShort || layout.orientation === 'portrait') return 0;
-  return Math.max(1, layout.stage.h - PANEL.landscapeBand);
+  return Math.max(1, layout.stage.h - (layout.short ? PANEL.landscapeBandShort : PANEL.landscapeBand));
 }
 
 /** The top inset the shop room keeps for the top bar: portrait — the bar lies over the room; landscape — the room is under the bar already. */
@@ -148,6 +159,7 @@ export function readSafeInsets(doc: Document): Insets {
 export function applyLayout(appRoot: HTMLElement, layout: Layout): void {
   appRoot.classList.toggle('portrait', layout.orientation === 'portrait');
   appRoot.classList.toggle('landscape', layout.orientation === 'landscape');
+  appRoot.classList.toggle('short', layout.short);
   const set = (name: string, px: number): void => appRoot.style.setProperty(name, `${px}px`);
   set('--hud-height', layout.hudHeight);
   set('--nav-size', layout.nav.h);

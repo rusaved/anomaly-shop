@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeShopLayout, type Rect } from '../src/scene/shop-layout.ts';
-import { computeLayout, sceneTop } from '../src/ui/layout.ts';
+import { computeLayout, roomHeight, sceneTop } from '../src/ui/layout.ts';
 
 /** M0-08: every shop piece sits inside the stage in both orientations and nothing overlaps what it should not. */
 const inside = (r: Rect, s: Rect, slack = 1): boolean => r.x >= s.x - slack && r.y >= s.y - slack && r.x + r.w <= s.x + s.w + slack && r.y + r.h <= s.y + s.h + slack;
@@ -28,3 +28,22 @@ describe('computeShopLayout', () => {
     });
   }
 });
+
+describe('W-08: a short room sideways — a dome and a place of the shelf never share a finger', () => {
+  for (const [w, h] of [[815, 290], [812, 330], [880, 405]] as const) {
+    for (const inc of [1, 2, 3, 4]) {
+      it(`${w}×${h}, ${inc} incubators: the dome and its tap circle stay under the shelf and its places`, () => {
+        const page = computeLayout(w, h);
+        const l = computeShopLayout(page.stage, sceneTop(page), 0.34, 4, 18, inc, 3, 3, null, roomHeight(page));
+        const shelfBottom = l.showcase.y + l.showcase.h;
+        // The tap zones of src/scene/shop.ts: a dome — a circle of 1.25 r; a place — its rect, 10 % over its bottom.
+        const slotTapBottom = Math.max(...l.slots.map((s) => s.y + s.h * 1.1));
+        for (const i of l.incubators) {
+          expect(i.y - i.r - l.outline).toBeGreaterThanOrEqual(shelfBottom);
+          expect(i.y - i.r * 1.25).toBeGreaterThanOrEqual(slotTapBottom);
+        }
+      });
+    }
+  }
+});
+

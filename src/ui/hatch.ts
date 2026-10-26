@@ -193,7 +193,9 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     if (card.offsetHeight > room || card.scrollHeight > card.clientHeight + 1) card.classList.add('hatch-tight');
     const full = card.offsetHeight;
     card.classList.toggle('shown', shown);
-    const top = Math.max(0, Math.floor((room - full) / 2));
+    // W-10: a phone sideways (≤ 520 px high) keeps the window at the top — «Продать сразу» under the tile stays out of the lower third.
+    const high = overlay.root.closest('.landscape') !== null && window.innerHeight <= 520;
+    const top = high ? 0 : Math.max(0, Math.floor((room - full) / 2));
     card.style.marginTop = `${top}px`;
     card.style.maxHeight = `${Math.max(0, room - top)}px`;
   }

@@ -25,8 +25,9 @@ export interface EggsLookups {
   careTop: number;
   /** M5-02: rewarded ads (the yandex profile): the egg-ad cards and «hatch now»; missing — no ad buttons. */
   ad?: EggAds;
-  /** T-05: the first-minute line in the «Мои яйца» head while the tab's green dot calls ('' — none). */
-  hint?(): string;
+  /** T-05: the first-minute line in the «Мои яйца» head while the tab's green dot calls, and the button it names (a data-action
+   * prefix; '' — none); null — no line. */
+  hint?(): { text: string; target: string } | null;
 }
 
 export interface EggAds {
@@ -97,8 +98,8 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
     const fmt = new Intl.NumberFormat(look.lang());
     const coins = game.state.coins;
     const adKey = look.ad ? `${look.ad.busy()}:${JSON.stringify(look.ad.cards().map((c) => [c.egg, c.left, Math.ceil(c.waitSec)]))}:${view.incubators.map((i) => i.leftSec > look.ad!.minLeftSec).join('')}` : '';
-    const hint = look.hint?.() ?? '';
-    const next = `l:${look.lang()}:${hint}:${adKey}:${JSON.stringify(shop, (k, x: unknown) => (k === 'freeIn' && typeof x === 'number' ? Math.ceil(x) : x))}:${view.incubators.map((i) => `${i.egg}.${i.ready}.${i.careLevel}.${i.feedPrice}.${Math.round(i.share * 100)}`).join(',')}:${Math.floor(coins)}`;
+    const hint = look.hint?.() ?? null;
+    const next = `l:${look.lang()}:${hint ? `${hint.text}>${hint.target}` : ''}:${adKey}:${JSON.stringify(shop, (k, x: unknown) => (k === 'freeIn' && typeof x === 'number' ? Math.ceil(x) : x))}:${view.incubators.map((i) => `${i.egg}.${i.ready}.${i.careLevel}.${i.feedPrice}.${Math.round(i.share * 100)}`).join(',')}:${Math.floor(coins)}`;
     if (next === key) return;
     key = next;
     const mine: string[] = [];
@@ -159,7 +160,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
     let html = '';
     // T-05: the hint lives in the head row of «Мои яйца» — it never lies on a button of the list.
     const myHead = head(look.t('eggs.my'), look.t('eggs.slots', { n: busy, all: view.incubators.length }));
-    const myHint = hint ? myHead.replace('</h3>', `</h3><b class="eggs-hint" data-eggs-hint>${esc(hint)}</b>`) : myHead;
+    const myHint = hint ? myHead.replace('</h3>', `</h3><b class="eggs-hint" data-eggs-hint>${esc(hint.text)}</b>`) : myHead;
     if (mine.length) html += myHint + `<div class="mu-grid" data-section="my">${mine.join('')}</div>`;
     if (ads.length) html += head(look.t('ad.eggsHead'), look.t('ad.left', { n: adCards[0]?.left ?? 0 })) + `<div class="mu-grid" data-section="ad">${ads.join('')}</div>`;
     for (const s of SECTIONS) {
@@ -167,6 +168,8 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
       if (list.length) html += head(look.t(`eggs.${s}`), look.t('eggs.perEgg')) + `<div class="mu-grid" data-section="${s}">${list.map((e) => shopCard(e, fmt)).join('')}</div>`;
     }
     root.innerHTML = html;
+    // T-05 (the usability review): the button the hint names wears the green frame of a hint (07 rule 16).
+    if (hint?.target) root.querySelector<HTMLElement>(`[data-action^="${hint.target}"]:not([aria-disabled="true"])`)?.classList.add('is-hinted');
     root.querySelectorAll<HTMLElement>('[data-action^="egg-card-"]').forEach((b) => b.addEventListener('click', () => tab.show(b.dataset.action!.slice('egg-card-'.length))));
     root.querySelectorAll<HTMLElement>('[data-action^="egg-buy-"]').forEach((b) => b.addEventListener('click', () => game.buyEggs(b.dataset.action!.slice('egg-buy-'.length), 1)));
     root.querySelectorAll<HTMLElement>('[data-action^="egg-free-"]').forEach((b) => b.addEventListener('click', () => game.claimFree(b.dataset.action!.slice('egg-free-'.length))));

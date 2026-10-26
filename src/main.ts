@@ -398,8 +398,17 @@ async function boot(): Promise<void> {
     careShell: eggs.care.shell,
     careMax: eggs.care.maxBonus,
     careTop: eggs.care.topShare,
-    // T-05: the first minute — the green dot of «Яйца» calls, the head of «Мои яйца» says what to do with an egg of one's own.
-    hint: () => (!store.state.flags.ftue_done && play.eggShop().eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open)) ? i18n.t('eggs.hint') : ''),
+    // T-05: the first minute — the green dot of «Яйца» calls, the head of «Мои яйца» names the one step open now (the usability
+    // review: never a button that cannot be pressed): the gift egg, food for one's egg, a new egg, else the taps in «Лавка».
+    hint: () => {
+      const list = play.eggShop().eggs;
+      if (store.state.flags.ftue_done || !list.some((e) => e.fresh || (e.freeIn === 0 && e.open))) return null;
+      const coins = store.state.coins + 1e-9;
+      if (list.some((e) => e.section === 'free' && e.freeIn === 0)) return { text: i18n.t('eggs.hintFree'), target: 'egg-free-' };
+      if (play.view().incubators.some((i) => i.egg && !i.ready && i.feedPrice !== null && coins >= i.feedPrice)) return { text: i18n.t('eggs.hint'), target: 'egg-feed-' };
+      if (list.some((e) => e.open && e.freeIn === null && coins >= e.price)) return { text: i18n.t('eggs.hintBuy'), target: 'egg-buy-' };
+      return { text: i18n.t('eggs.hintGrow'), target: '' };
+    },
     ...(adsMod.on
       ? {
           ad: {

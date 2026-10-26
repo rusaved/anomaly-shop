@@ -253,14 +253,19 @@ for (const size of [PANEL, PHONE]) {
   const tag = `${size.width}x${size.height}`;
   test.describe(`${tag} first minute`, () => {
     test.use({ viewport: size, isMobile: true, hasTouch: true });
-    test(`T-05 «Яйца» in the first minute: the green dot calls, the hint says what to do and lies on no button @ ${tag}`, async ({ page }) => {
+    test(`T-05 «Яйца» in the first minute: the green dot calls, the hint names the open step and lies on no button @ ${tag}`, async ({ page }) => {
       const errors = collectErrors(page);
       await open(page);
       await expect(page.locator('[data-tab=eggs] [data-badge]')).toBeVisible();
       await page.locator('[data-tab=eggs]').click();
       const hint = page.locator('[data-sheet=eggs] [data-eggs-hint]');
       await expect(hint).toBeVisible();
-      expect(await hint.textContent()).toBe(await page.evaluate(() => (window as unknown as { __TEST__: { t(k: string): string } }).__TEST__.t('eggs.hint')));
+      // The first minute: no coins, the gift egg ready — the hint names «Забрать», the one button open, and frames it.
+      expect(await hint.textContent()).toBe(await page.evaluate(() => (window as unknown as { __TEST__: { t(k: string): string } }).__TEST__.t('eggs.hintFree')));
+      const named = page.locator('[data-sheet=eggs] .is-hinted');
+      await expect(named).toHaveCount(1);
+      expect(await named.getAttribute('data-action')).toMatch(/^egg-free-/);
+      expect(await named.getAttribute('aria-disabled')).not.toBe('true');
       const h = (await hint.boundingBox())!;
       const buttons = await page.locator('[data-sheet=eggs] button').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => e.getBoundingClientRect()).map((r) => ({ x: r.x, y: r.y, w: r.width, h: r.height })));
       for (const b of buttons) expect(h.x < b.x + b.w && h.x + h.width > b.x && h.y < b.y + b.h && h.y + h.height > b.y, 'the hint lies on a button').toBe(false);

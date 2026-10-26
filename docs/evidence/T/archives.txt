@@ -1,0 +1,7 @@
+T · архивы в downloads/ — пересобраны в итоге «Ресейл 14 · Торговец и полка» (сессия по расписанию штаба 26.10): код игры коммита a5bb873 + правка двойки ревизора (подсказка «Яиц»)
+9769b5644478abd56557ab40b651bb5d065068407ce0691248a3891da4661fb9  downloads/anomaly-shop-0.1.0-playtest.zip
+4128a8ac782402b650bb7331126e3bac070428af82d3101b30cf36d21671170b  downloads/anomaly-shop-0.1.0.zip
+665380 downloads/anomaly-shop-0.1.0-playtest.zip
+656254 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8)
+check-release playtest: FAIL п. 6 (мок и отладка) — так и задумано

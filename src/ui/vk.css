@@ -29,22 +29,8 @@
   font-size: 14px;
   line-height: 1.4;
 }
-.card-menu .menu-legal {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 16px;
-  margin: 0;
-  font-size: 13px;
-}
-.card-menu .menu-legal a {
-  color: inherit;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
 .landscape .overlay > .card.card-menu {
-  max-height: calc(var(--vh, 100vh) - 16px);
+  max-height: 100%;
   overflow-y: auto;
 }
 
@@ -59,10 +45,19 @@
   font: 600 15px/1.4 system-ui, sans-serif;
 }
 
-/* V-04: «Помощь» sideways — two columns, so «Назад» and the documents stay in sight at 290 px. */
+/* V-04, P-01: «Помощь» sideways — two columns, the steps of the game one line each, so the whole window and «Назад» stand over the
+   tab bar at 290 px (the card never grows past the window's room: max-height 100% of the overlay, whose bottom is the bar). */
 .landscape .overlay > .card.card-menu[data-page='help'] {
-  width: min(640px, calc(100vw - 32px));
+  width: min(760px, calc(100vw - 32px));
   max-width: none;
+}
+.landscape.short .overlay > .card.card-menu[data-page='help'] {
+  padding: 12px 16px;
+  gap: 6px;
+}
+.landscape.short .card-menu[data-page='help'] > h2 {
+  margin: 0;
+  font-size: 18px;
 }
 .card-menu .menu-side {
   display: flex;
@@ -72,7 +67,7 @@
 }
 .landscape .card-menu .menu-cols {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 3fr 2fr;
   gap: 12px;
   align-items: start;
 }
@@ -104,4 +99,24 @@
 #app .rar-badge,
 #app .nav-badge {
   font-size: 12px;
+}
+
+/* P-01: the menu button over the dim of any open window (src/ui/vk-menu.ts floatMenuButton): one tap closes the window and opens the
+   menu. It stands where the top bar's own button is; the windows keep clear of it (sideways at the left, upright at the top). */
+#ui > .vk-menu-float {
+  position: absolute;
+  z-index: 32;
+  top: calc(8px + var(--safe-top, 0px));
+  left: calc(8px + var(--safe-left, 0px));
+  display: none;
+  pointer-events: auto;
+}
+#ui:has(> .overlay:not([hidden]):not([data-overlay='menu'])) > .vk-menu-float {
+  display: inline-flex;
+}
+.landscape #ui:has(> .vk-menu-float) > .overlay:not([data-overlay='menu']):not([data-kind='screen']) {
+  padding-left: calc(60px + var(--safe-left, 0px));
+}
+.portrait #ui:has(> .vk-menu-float) > .overlay:not([data-overlay='menu']):not([data-kind='screen']) {
+  padding-top: calc(60px + var(--safe-top, 0px));
 }

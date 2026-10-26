@@ -18,6 +18,8 @@ export const BANNED = [
   [/одноклассник/i, 'название ОК (сборка общая для VK и ОК)'],
   [/mc\.yandex|tag\.js|googletagmanager|google-analytics|gtag\(|top-fwz1|counter\.yadro/i, 'сторонний счётчик'],
   [/__TEST__|lil-gui/, 'тестовый API или отладка'],
+  // P-06 («Ресейл 17»): VK 4.2.3, OK 5.1 — no way out of the game; the documents are VK's own, chosen in its panel.
+  [/legal\/(terms|privacy)|terms\.html|privacy\.html/, 'ссылка на свою страницу документов (P-06)'],
 ];
 
 export function checkVkBuild(files) {

@@ -257,10 +257,8 @@ export const FeelFile = v.object({
   burst: v.object({ sec: v.pipe(v.number(), v.minValue(0.2), v.maxValue(1.5)), good: BurstLevel, valuable: BurstLevel, premium: BurstLevel, vip: BurstLevel, exclusive: BurstLevel }),
   /** The hatch show (M3-05): seconds the portraits run before the result, 4–5. */
   hatchShowSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(8)),
-  /** Круг правок FB п. 1: the hatch result's buttons take a press this long after it shows (a double tap of the skip never chooses), ≥ 0.5 s. */
+  /** Круг правок FB п. 1: the hatch result's buttons take a press this long after it shows (a double tap of the skip never chooses), ≥ 0.5 s; P-05: once, taps never stretch it. */
   hatchLockSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(1.5)),
-  /** M7: taps extend the wait only this long after the result shows. */
-  hatchLockMaxSec: v.pipe(v.number(), v.minValue(3), v.maxValue(10)),
   /** F-01: a «+» of a place that has just been freed takes no tap this long (0.3–0.6 s). */
   slotGuardSec: v.pipe(v.number(), v.minValue(0.3), v.maxValue(0.6)),
   slotStreakGapSec: v.pipe(v.number(), v.minValue(0.3), v.maxValue(1.5)),

@@ -2,8 +2,9 @@ import { expect, test, type Frame, type Page } from '@playwright/test';
 import { seedSave } from './helpers.ts';
 
 /**
- * V «Выход на VK и ОК» (Ресейл 16): the published site of build:pages (dist-pages: the VK and OK build in vk/, the terms and privacy
- * in legal/) served static; the game on the bridge stand-in (?mock=vk). Every check taps like a finger; no test API in this build.
+ * V «Выход на VK и ОК» (Ресейл 16), P «Доводка» (Ресейл 17): the published site of build:pages (dist-pages: the VK and OK build in vk/)
+ * served static; the game on the bridge stand-in (?mock=vk). Every check taps like a finger; no test API in this build. P-06: no link
+ * and no way out of the game's own address (VK 4.2.3, OK 5.1).
  */
 const VK = 'vk/?mock=vk';
 type Calls = { __VK_MOCK__?: { calls: Array<{ method: string; params?: Record<string, unknown> }> } };
@@ -52,8 +53,7 @@ for (const size of [
   test(`V-09 in an iframe ${size.width}×${size.height} like VK on a computer: boots, the menu whole, no outside request, no error`, async ({ page, baseURL }) => {
     const w = watch(page);
     await page.setViewportSize({ width: size.width + 40, height: size.height + 40 });
-    // A host page of the same server holds the game in a frame of the size VK gives it.
-    await page.goto('/legal/terms.html');
+    // A host page holds the game in a frame of the size VK gives it.
     await page.setContent(`<body style="margin:0;background:#edeef0"><iframe id="g" src="${baseURL}${VK}" style="border:0;margin:20px;width:${size.width}px;height:${size.height}px"></iframe></body>`);
     const frame = page.frameLocator('#g');
     await expect(frame.locator('#preloader')).toHaveClass(/hidden/, { timeout: 30_000 });
@@ -92,22 +92,11 @@ for (const size of [
       await expect(sound).not.toHaveAttribute('aria-pressed', was!);
       await sound.tap();
       await expect(sound).toHaveAttribute('aria-pressed', was!);
-      // Help: how to play, the community as the support channel, the terms and privacy next to the game.
+      // Help: how to play and the community as the support channel; P-06: no document link (VK's own documents, chosen in its panel).
       await page.locator('[data-action=menu-help]').tap();
       await expect(page.locator('[data-overlay=menu] .menu-how li')).toHaveCount(4);
       await whole(page, '[data-action=menu-join]');
-      for (const [a, file] of [
-        ['menu-terms', 'terms.html'],
-        ['menu-privacy', 'privacy.html'],
-      ] as const) {
-        const href = await page.locator(`[data-action=${a}]`).getAttribute('href');
-        expect(href).toBe(`../legal/${file}`);
-        const res = await page.request.get(new URL(href!, page.url()).toString());
-        expect(res.status()).toBe(200);
-        const body = await res.text();
-        expect(body).toContain('Sunhearth');
-        expect(body).toContain('{{ОПЕРАТОР}}');
-      }
+      await expect(page.locator('[data-overlay=menu] a')).toHaveCount(0);
       await page.locator('[data-action=menu-back]').tap();
       await page.locator('[data-action=menu-play]').tap();
       await expect(page.locator('[data-overlay=menu]')).toBeHidden();
@@ -264,3 +253,199 @@ test.describe('880x405 first minute', () => {
     expect(w.outside).toEqual([]);
   });
 });
+
+/** The green ring of the first minute's hint (a scene spot) — the finger taps its middle. */
+async function tapRing(page: Page) {
+  const ring = page.locator('.hint-ring');
+  await expect(ring).toBeVisible({ timeout: 15_000 });
+  const r = (await ring.boundingBox())!;
+  await page.touchscreen.tap(r.x + r.width / 2, r.y + r.height / 2);
+}
+const navTop = (page: Page) => page.evaluate(() => document.querySelector('#nav')!.getBoundingClientRect().top);
+
+for (const size of [
+  { width: 815, height: 290 },
+  { width: 812, height: 330 },
+]) {
+  const tag = `${size.width}x${size.height}`;
+  test.describe(`${tag} P-01`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+
+    test(`P-01 «Помощь» whole over the tab bar; «Назад» answers the first tap; a tap at the window's edge is no tab @ ${tag}`, async ({ page }) => {
+      const w = watch(page);
+      await page.goto(`/${VK}`);
+      await up(page);
+      await page.locator('[data-action=menu-help]').tap();
+      const card = (await page.locator('[data-overlay=menu] > .card').boundingBox())!;
+      const bar = await navTop(page);
+      expect(card.y, 'the window from the top edge').toBeGreaterThanOrEqual(0);
+      expect(card.y + card.height, 'the window ends over the tab bar').toBeLessThanOrEqual(bar);
+      await whole(page, '[data-action=menu-back]');
+      // The lowest row of the window under the finger: still the window, not «Яйца» under it.
+      await page.touchscreen.tap(card.x + card.width - 6, card.y + card.height - 3);
+      await expect(page.locator('[data-overlay=menu] .menu-how')).toBeVisible();
+      await page.locator('[data-action=menu-back]').tap();
+      await expect(page.locator('[data-action=menu-play]')).toBeVisible();
+      await page.screenshot({ path: `test-results/vk-help-${tag}.png` });
+      expect(w.errors).toEqual([]);
+    });
+  });
+}
+
+test.describe('815x290 P-01 menu, loading, toast, join', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+
+  test('P-01 ☰ over the dim: one tap closes «Вылупился!» (the pet goes to the storage) or any window and opens the menu', async ({ page }) => {
+    const w = watch(page);
+    await page.goto(`/${VK}`);
+    await up(page);
+    await page.locator('[data-action=menu-play]').tap();
+    await tapRing(page);
+    await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+    await whole(page, '[data-action=menu-float]');
+    await page.locator('[data-action=menu-float]').tap();
+    await expect(page.locator('[data-overlay=menu]')).toBeVisible();
+    await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+    await page.locator('[data-action=menu-play]').tap();
+    // The pet waits in «Склад».
+    await page.locator('[data-tab=inventory]').tap();
+    await expect(page.locator('[data-sheet=inventory] .tile').first()).toBeVisible();
+    // A popup (the balance) and a screen (the gifts): the same one tap.
+    for (const open of ['balance', 'gifts']) {
+      await page.locator(`[data-action=${open}]`).tap();
+      await expect(page.locator('.overlay:not([hidden]):not(.under)').first()).toBeVisible();
+      const btn = page.locator('[data-action=menu-float]:visible, .hud [data-action=menu]').first();
+      await btn.tap();
+      await expect(page.locator('[data-overlay=menu]')).toBeVisible();
+      await expect(page.locator('.overlay:not([hidden]):not([data-overlay=menu])')).toHaveCount(0);
+      await page.locator('[data-action=menu-play]').tap();
+    }
+    expect(w.errors).toEqual([]);
+  });
+
+  test('P-01 on a slow network the percent of the loading grows from the first bytes, step by step, to 100', async ({ page }) => {
+    test.setTimeout(120_000);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Network.enable');
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 160 * 1024, uploadThroughput: 64 * 1024 });
+    const t0 = Date.now();
+    await page.goto(`/${VK}`, { waitUntil: 'commit' });
+    const seen: Array<{ t: number; n: number }> = [];
+    while (Date.now() - t0 < 60_000) {
+      const n = await page.evaluate(() => {
+        const t = document.querySelector('[data-boot-progress]')?.textContent ?? '';
+        const m = /(\d+)/.exec(t);
+        return m ? Number(m[1]) : -1;
+      }).catch(() => -1);
+      if (n >= 0 && (!seen.length || seen.at(-1)!.n !== n)) seen.push({ t: Date.now() - t0, n });
+      if (n === 100) break;
+      await page.waitForTimeout(100);
+    }
+    console.log(`P-01 loading: ${seen.map((s) => `${(s.t / 1000).toFixed(1)}s ${s.n}%`).join(', ')}`);
+    expect(seen[0]!.t, 'the percent from the first second').toBeLessThan(2500);
+    expect(seen.at(-1)!.n).toBe(100);
+    for (let i = 1; i < seen.length; i++) expect(seen[i]!.n, 'never back').toBeGreaterThan(seen[i - 1]!.n);
+    // Step by step: no jump over a third of the way, at least 8 steps under 100.
+    expect(seen.filter((s) => s.n < 100).length).toBeGreaterThanOrEqual(8);
+    const before = seen.filter((s) => s.n < 70);
+    expect(before.length, 'the bytes of the code counted').toBeGreaterThanOrEqual(5);
+    for (let i = 1; i < seen.length; i++) expect(seen[i]!.n - seen[i - 1]!.n, `${seen[i - 1]!.n} → ${seen[i]!.n}`).toBeLessThanOrEqual(34);
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+    await up(page);
+  });
+
+  test('P-01 the toast «Покупатель пишет…» stands whole over the tab bar', async ({ page }) => {
+    test.setTimeout(90_000);
+    const w = watch(page);
+    await page.goto(`/${VK}`);
+    await up(page);
+    await page.locator('[data-action=menu-play]').tap();
+    await tapRing(page);
+    await page.locator('[data-overlay=hatch] [data-action=hatch-shop]').tap({ timeout: 10_000 });
+    await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+    // The buyer takes the pet into the chat: the place on the shelf is a «+».
+    await expect(page.locator('[data-tab=chats] [data-badge]')).toBeVisible({ timeout: 40_000 });
+    await page.waitForTimeout(600);
+    await page.locator('[data-action=shelf-add]').first().tap();
+    const toast = page.locator('.toast').first();
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText('Покупатель пишет');
+    const r = (await toast.boundingBox())!;
+    expect(r.y).toBeGreaterThanOrEqual(0);
+    expect(r.x).toBeGreaterThanOrEqual(0);
+    expect(r.x + r.width).toBeLessThanOrEqual(815);
+    expect(r.y + r.height, 'the toast over the tab bar').toBeLessThanOrEqual(await navTop(page));
+    await page.screenshot({ path: 'test-results/vk-toast-815x290.png' });
+    expect(w.errors).toEqual([]);
+  });
+
+  test('P-01 after the gift for joining, «Помощь» and «Подарки» say «Уже в сообществе» instead of «Вступить»', async ({ page }) => {
+    const w = watch(page);
+    await page.goto(`/${VK}`);
+    await up(page);
+    await page.locator('[data-action=menu-help]').tap();
+    await page.locator('[data-action=menu-join]').tap();
+    await page.locator('[data-vk-mock=yes]').tap();
+    await expect(page.locator('[data-action=menu-joined]')).toHaveText('Уже в сообществе');
+    await expect(page.locator('[data-action=menu-join]')).toHaveCount(0);
+    await page.locator('[data-action=menu-back]').tap();
+    await page.locator('[data-action=menu-play]').tap();
+    await page.locator('[data-action=gifts]').tap();
+    await expect(page.locator('[data-gift=group] [aria-disabled=true]')).toHaveText('Уже в сообществе');
+    await expect(page.locator('[data-action=gift-join]')).toHaveCount(0);
+    expect(w.errors).toEqual([]);
+  });
+});
+
+for (const site of ['vk', 'ok'] as const)
+  test.describe(`815x290 P-06 ${site}`, () => {
+    test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+
+    test(`P-06 no link and no way out of the game's address on ${site.toUpperCase()}: the menu, «Помощь», the settings, «Подарки», every tab`, async ({ page, context }) => {
+      const w = watch(page);
+      const away: string[] = [];
+      context.on('page', (p) => away.push(`popup ${p.url()}`));
+      page.on('framenavigated', (f) => {
+        if (f === page.mainFrame() && !f.url().startsWith('http://127.0.0.1') ) away.push(f.url());
+      });
+      await page.addInitScript(() => {
+        const opened: string[] = [];
+        (window as unknown as { __opened: string[] }).__opened = opened;
+        window.open = ((u?: string | URL) => {
+          opened.push(String(u));
+          return null;
+        }) as typeof window.open;
+      });
+      const links = () => page.evaluate(() => [...document.querySelectorAll('a[href], area[href], form[action]')].map((a) => a.outerHTML.slice(0, 120)));
+      await page.goto(`/${VK}${site === 'ok' ? '&vk_client=ok&vk_platform=mobile_web' : ''}`);
+      const home = page.url();
+      await up(page);
+      expect(await links()).toEqual([]);
+      await page.locator('[data-action=menu-help]').tap();
+      expect(await links()).toEqual([]);
+      for (const b of await page.locator('[data-overlay=menu] .card button').all()) {
+        if ((await b.getAttribute('data-action')) === 'menu-back') continue;
+        await b.tap().catch(() => undefined);
+        const no = page.locator('[data-vk-mock=no]');
+        if (await no.isVisible().catch(() => false)) await no.tap();
+      }
+      await page.locator('[data-action=menu-back]').tap();
+      await page.locator('[data-action=menu-settings]').tap();
+      await expect(page.locator('[data-overlay=settings]')).toBeVisible();
+      expect(await links()).toEqual([]);
+      await page.locator('[data-overlay=settings] [data-action=settings-close]').tap();
+      await page.locator('[data-action=menu-play]').tap();
+      await page.locator('[data-action=gifts]').tap();
+      expect(await links()).toEqual([]);
+      await page.locator('[data-action=gifts-close]').first().tap().catch(() => undefined);
+      for (const tab of await page.locator('#nav [data-tab]').all()) {
+        await tab.tap().catch(() => undefined);
+        expect(await links()).toEqual([]);
+      }
+      expect(await page.evaluate(() => (window as unknown as { __opened: string[] }).__opened)).toEqual([]);
+      expect(away).toEqual([]);
+      expect(page.url()).toBe(home);
+      expect(w.outside).toEqual([]);
+      expect(w.errors).toEqual([]);
+    });
+  });

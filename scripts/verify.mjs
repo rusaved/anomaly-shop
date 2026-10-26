@@ -39,7 +39,7 @@ const STAGES = [
   { name: 'build:youtube' },
   { name: 'check:youtube' },
   { name: 'e2e:youtube', e2e: true },
-  // V-12 («Ресейл 16»): the VK and OK build — its own checks, then the published site (vk/, legal/) on the bridge stand-in.
+  // V-12 («Ресейл 16»): the VK and OK build — its own checks, then the published site (vk/) on the bridge stand-in.
   { name: 'build:vk' },
   { name: 'check:vk' },
   { name: 'build:pages' },

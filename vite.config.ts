@@ -163,6 +163,54 @@ function vkContentPlugin(): Plugin {
   };
 }
 
+/**
+ * P-01: the VK and OK build counts its loading from the first byte. The code (the entry, its preloaded chunks and the styles) is
+ * fetched by a small loader of index.html that shows «Загрузка N%» by the bytes received of the build's own sizes, up to BOOT_BASE %;
+ * then the game starts from the browser's cache and src/ui/vk-menu.ts bootProgress fills the rest. Any failure — the game starts
+ * as before.
+ */
+const BOOT_BASE = 70;
+function vkBootPlugin(): Plugin {
+  return {
+    name: 'vk-boot',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        if (!ctx.bundle) return html;
+        const size = (href: string): number => {
+          const item = ctx.bundle![href.replace(/^\.\//, '')];
+          if (!item) return 0;
+          return item.type === 'chunk' ? Buffer.byteLength(item.code) : typeof item.source === 'string' ? Buffer.byteLength(item.source) : item.source.byteLength;
+        };
+        const files: Array<[string, number, number]> = [];
+        const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>\s*/.exec(html);
+        if (!entry) return html;
+        files.push([entry[1]!, size(entry[1]!), 0]);
+        let out = html.replace(entry[0], '');
+        out = out.replace(/<link rel="(modulepreload|stylesheet)" crossorigin href="([^"]+)">\s*/g, (_, rel: string, href: string) => {
+          files.push([href, size(href), rel === 'stylesheet' ? 1 : 2]);
+          return '';
+        });
+        const vk = readJson<{ texts: { common: Record<string, string> } }>(resolve(root, 'content/vk.json'));
+        const text = vk.texts.common['boot.loading'] ?? '{n}%';
+        const loader =
+          `<script>window.__BOOT_BASE__=${BOOT_BASE};(function(){var L=${JSON.stringify(files)},T=0,G=0,B=${BOOT_BASE},M=${JSON.stringify(text)};` +
+          `L.forEach(function(f){T+=f[1]||1});var pre=document.getElementById('preloader'),el=document.createElement('p');` +
+          `el.className='boot-progress';el.setAttribute('data-boot-progress','0');el.style.cssText='margin:0;color:#fff;font:600 15px/1.4 system-ui,sans-serif';` +
+          `pre.style.flexDirection='column';pre.style.gap='12px';pre.appendChild(el);` +
+          `function show(){var n=Math.min(B,Math.floor(G/T*B));if(n<+el.getAttribute('data-boot-progress')&&el.textContent)return;el.setAttribute('data-boot-progress',n);el.textContent=M.replace('{n}',n)}show();` +
+          `function get(u){return fetch(u).then(function(r){if(!r.ok||!r.body||!r.body.getReader)return;var rd=r.body.getReader();` +
+          `return(function pump(){return rd.read().then(function(x){if(x.done)return;G+=x.value.byteLength;show();return pump()})})()}).catch(function(){})}` +
+          `var started=0;function run(){if(started++)return;var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=L[0][0];document.body.appendChild(s)}` +
+          `function go(){var css=0,h=document.head;L.forEach(function(f){if(!f[2])return;var e=document.createElement('link');e.rel=f[2]===1?'stylesheet':'modulepreload';e.crossOrigin='';e.href=f[0];` +
+          `if(f[2]===1){css++;e.onload=e.onerror=function(){if(!--css)run()}}h.appendChild(e)});if(!css)run()}` +
+          `Promise.all(L.map(function(f){return get(f[0])})).then(go,go)})()</script>`;
+        return out.replace('</body>', `${loader}\n  </body>`);
+      },
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const base = MODES[mode] ?? MODES.production!;
   const override = process.env.VITE_PLATFORM as Profile | undefined;
@@ -171,7 +219,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './',
-    plugins: [sdkMockPlugin(), htmlPlugin(mode, flags), ...(flags.platform === 'vk' ? [vkContentPlugin()] : [])],
+    plugins: [sdkMockPlugin(), htmlPlugin(mode, flags), ...(flags.platform === 'vk' ? [vkContentPlugin(), vkBootPlugin()] : [])],
     resolve: {
       alias: {
         '@content': resolve(root, 'content'),

@@ -27,7 +27,7 @@ export interface GiftsLookups {
   goalName(id: string): string;
   review(): Promise<{ available: boolean; sent: boolean }>;
   /** V-08 (vk build): «join the community» through the platform instead of a link; the egg only when the player joined. */
-  join?: { card: string; button: string; hidden(): boolean; run(): Promise<boolean> };
+  join?: { card: string; button: string; done: string; hidden(): boolean; run(): Promise<boolean> };
   /** V-04 (vk build): no review window on the platform — no review chest. */
   noReview?: boolean;
   /** M5-02: the time boost tile (sales ×mult for a video); missing — no ad tile. */
@@ -119,7 +119,7 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
         cards.push(
           `<div class="mu-card gift-card" data-gift="group"><span class="mu-pic"><img alt="" src="${look.eggPicture(look.gifts.subscribe[0]?.reward.egg ?? 'egg_warm')}"></span><span class="mu-name">${esc(look.join.card)}</span>` +
             (v.subscribed[joinId]
-              ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('gifts.got'))}</button>`
+              ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.join.done)}</button>`
               : `<button type="button" class="mu-btn" data-action="gift-join">${esc(look.join.button)} · ${esc(look.t('gifts.egg'))}</button>`) +
             '</div>',
         );

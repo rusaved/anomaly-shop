@@ -452,7 +452,6 @@ async function boot(): Promise<void> {
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
     spinSec: () => feel.hatchShowSec,
     lockSec: () => feel.hatchLockSec,
-    lockMaxSec: () => feel.hatchLockMaxSec,
     onTick: () => sfx.play('spin'),
     // FB-09: the result shows — its rarity's sound and celebration (VIP and exclusive have their own sounds).
     onReveal: (rarity) => {
@@ -603,7 +602,7 @@ async function boot(): Promise<void> {
     goalName: (id) => calendar.tasks.pool.find((g) => g.id === id)?.name[i18n.lang()] ?? id,
     review: () => platform.requestReview(),
     ...(vkData && platform.site && platform.joinCommunity
-      ? { noReview: true, join: { card: vkData.vkText(platform.site, 'join.card'), button: vkData.vkText(platform.site, 'join.short'), hidden: joinHidden, run: joinRun } }
+      ? { noReview: true, join: { card: vkData.vkText(platform.site, 'join.card'), button: vkData.vkText(platform.site, 'join.short'), done: vkData.vkText(platform.site, 'join.done'), hidden: joinHidden, run: joinRun } }
       : {}),
     ...(adsMod.on
       ? { boost: { busy: () => adsMod.busy(), left: () => play.boostLeft(), more: () => play.boostsLeft(today()), watch: () => void adsMod.rewarded('sales_boost', () => void play.startBoost(today())), thing: 'tags' } }
@@ -1112,11 +1111,13 @@ async function boot(): Promise<void> {
                 await joinRun();
               }
             : null,
-          legalBase: vkUi.legalBase(),
+          joined: () => Boolean(store.state.gifts.subscribed[gifts.subscribe[0]?.id ?? 'vk']),
         })
       : null;
   if (vkMenu) backToMenu = () => vkMenu.open();
   if (vkMenu) vkUi!.menuButton(hud.pauseButton, vkUi!.vkContent.vkText(platform.site!, 'menu.open'));
+  // P-01: over the dim of a window the menu opens with one tap too.
+  if (vkMenu) vkUi!.floatMenuButton(uiRoot, hud.pauseButton, () => vkMenu.open());
   hud.pauseButton.addEventListener('click', () => (vkMenu ? vkMenu.open() : pauseWindow.open()));
   document.addEventListener('keydown', (e) => {
     if (e.code !== 'Escape' || !controllable) return;

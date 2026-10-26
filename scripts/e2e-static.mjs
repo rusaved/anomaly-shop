@@ -1,7 +1,7 @@
 // `npm run e2e:release` (mode release): unpack the newest release/*.zip and run e2e/smoke-release.spec.ts on it.
 // `node scripts/e2e-static.mjs pages`: run e2e/pages.spec.ts over dist-pages.
 // `npm run e2e:youtube` (mode youtube, M6-04): run e2e/youtube-m6.spec.ts over dist-youtube on a fake ytgame.
-// `npm run e2e:vk` (mode vk, V-09): run e2e/vk-v.spec.ts over dist-pages (vk/ and legal/) on the bridge stand-in.
+// `npm run e2e:vk` (mode vk, V-09): run e2e/vk-v.spec.ts over dist-pages (vk/) on the bridge stand-in.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -59,10 +59,10 @@ if (mode === 'release') {
   spec = 'youtube-m6.spec.ts';
   port = 4182;
 } else if (mode === 'vk') {
-  // V-09: the published site of build:pages — the VK and OK build in vk/, the documents in legal/.
+  // V-09: the published site of build:pages — the VK and OK build in vk/ (P-06: no pages of documents).
   dir = resolve(root, 'dist-pages');
-  if (!existsSync(join(dir, 'vk/index.html')) || !existsSync(join(dir, 'legal/terms.html'))) {
-    console.error('e2e vk: dist-pages/vk or dist-pages/legal missing — run npm run build:pages first');
+  if (!existsSync(join(dir, 'vk/index.html'))) {
+    console.error('e2e vk: dist-pages/vk missing — run npm run build:pages first');
     process.exit(1);
   }
   spec = 'vk-v.spec.ts';

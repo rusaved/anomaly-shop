@@ -1,6 +1,6 @@
 // What: the hatch show as a case (docs/01 §3 p. 12; M3-05, UB-03; MU-09 by s6, r1, r2): portraits run under a marker 4–5 s; «Hatched!» — «На витрину», «На склад», «Продать сразу».
 // Called by: src/main.ts on a hatched event the player tapped (by: 'tap'); hatches by themselves (helpers, time away) skip the show.
-// Keep: the result is the game's roll (the uid from the event); the strip around it is decoration (Math.random is fine in ui); a tap skips to the end; the strip runs in the pet's place and the card keeps its top, the buttons wait lockSec (круг правок FB п. 1).
+// Keep: the result is the game's roll (the uid from the event); the strip around it is decoration (Math.random is fine in ui); a tap skips to the end; the strip runs in the pet's place and the card keeps its top, the buttons wait lockSec once (круг правок FB п. 1, P-05).
 
 import type { RarityName } from '../content/schemas.ts';
 import type { CreatureView, Game } from '../sim/game.ts';
@@ -19,8 +19,6 @@ export interface HatchLookups {
   spinSec(): number;
   /** Seconds the result's buttons wait before they take a press (feel.json hatchLockSec): a double tap of the skip never chooses. */
   lockSec(): number;
-  /** M7: taps extend the wait only within this many seconds after the result (feel.json hatchLockMaxSec). */
-  lockMaxSec(): number;
   onResult?(): void;
   /** M6-01: a portrait passes under the marker (the wheel's click; no more often than TICK_MS). */
   onTick?(): void;
@@ -108,18 +106,8 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
     game.sellNow(uid);
     close();
   });
-  // Круг правок FB-2 (ревизор удобства), FB-3 п. 1: the buttons wake up after lockSec (0.8 s) with no taps — every tap while they wait starts
-  // the wait again, so a run of skip taps (up to 0.5 s apart) never sells or closes the window, wherever its buttons land under the finger.
-  overlay.root.addEventListener(
-    'pointerdown',
-    () => {
-      // M7 (ревизор геймдизайна): only in the first lockMaxSec after the result — fast taps never lock the buttons for good.
-      if (!done || !locked || performance.now() - resultAt > look.lockMaxSec() * 1000) return;
-      clearTimeout(unlock);
-      unlock = window.setTimeout(() => setLocked(false), Math.max(0, look.lockSec()) * 1000);
-    },
-    { capture: true },
-  );
+  // Круг правок FB-2 (ревизор удобства), P-05 (Q-048 Б): the buttons wake up once, lockSec (0.8 s) after the result — muted for that
+  // pause, then live at once; new taps never stretch it (a tap on the skip landing on «Продать сразу» right away still sells nothing).
   // UB-10: the tap that cracked the egg is not a skip (touch: its click lands on the strip that just opened under the finger).
   overlay.card.addEventListener('click', () => {
     if (!done && performance.now() - start >= 400) skip();

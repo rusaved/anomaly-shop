@@ -603,7 +603,7 @@ async function boot(): Promise<void> {
     goalName: (id) => calendar.tasks.pool.find((g) => g.id === id)?.name[i18n.lang()] ?? id,
     review: () => platform.requestReview(),
     ...(vkData && platform.site && platform.joinCommunity
-      ? { noReview: true, join: { card: vkData.vkText(platform.site, 'join.card'), button: vkData.vkText(platform.site, 'join.button'), hidden: joinHidden, run: joinRun } }
+      ? { noReview: true, join: { card: vkData.vkText(platform.site, 'join.card'), button: vkData.vkText(platform.site, 'join.short'), hidden: joinHidden, run: joinRun } }
       : {}),
     ...(adsMod.on
       ? { boost: { busy: () => adsMod.busy(), left: () => play.boostLeft(), more: () => play.boostsLeft(today()), watch: () => void adsMod.rewarded('sales_boost', () => void play.startBoost(today())), thing: 'tags' } }

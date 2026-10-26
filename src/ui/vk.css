@@ -39,7 +39,7 @@
 }
 .card-menu .menu-legal a {
   color: inherit;
-  min-height: 24px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
 }
@@ -98,4 +98,10 @@
 .landscape .overlay > .card.card-menu:not([data-page='help']) {
   width: min(480px, calc(100vw - 32px));
   max-width: none;
+}
+
+/* V-11 (ревизор удобства): text from 12 px on VK and OK — the rarity labels and the count on a tab. */
+#app .rar-badge,
+#app .nav-badge {
+  font-size: 12px;
 }

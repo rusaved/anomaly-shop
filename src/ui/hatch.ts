@@ -48,7 +48,7 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   // UB-02: a tap outside skips the run; after the result it keeps the creature («Take»); круг правок FB-3: a tab tap does nothing while it is open.
   // Круг правок FB-2 (ревизор удобства): after the result a tap on the dim does nothing — a run of taps that skipped the strip never
   // closes the window and lands on the shop under it; a tab tap still keeps the pet.
-  const overlay = createOverlay(parent, 'hatch', () => (done ? undefined : skip()), { dismiss: () => keepIt() });
+  const overlay = createOverlay(parent, 'hatch', () => (done ? undefined : skip()), { dismiss: () => keepIt(), priced: true });
   overlay.card.classList.add('card-hatch');
   // MU-09 (s6-hatch-result, r1, r2): the pet, its rarity word over the name, the price range (and the chance from VIP up), three ways out.
   // The strip and «тап — пропустить» live in the result's frame (CSS: in its pet and rarity-word places) until it shows.

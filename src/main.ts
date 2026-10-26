@@ -198,8 +198,12 @@ async function boot(): Promise<void> {
   shop.setFlower(store.state.secrets.flower ?? 0);
   const hud = createHud(uiRoot, lang, () => feel.hudRollSec);
   hud.update(store.state.coins, { snap: true });
+  hud.crystals(store.state.crystals);
   // Sale coins roll the counter only as they land (M1-07, the sold handler below); everything else rolls at once.
-  store.onCommit((s) => hud.update(s.coins));
+  store.onCommit((s) => {
+    hud.update(s.coins);
+    hud.crystals(s.crystals);
+  });
   const flight = createCoinFlight(uiRoot);
   // FB-13: where the last press was (coins fly from the button that earned them) and the flight into the counter, which rolls as they land.
   let lastPress = { x: 0, y: 0, at: -1e9 };
@@ -394,6 +398,8 @@ async function boot(): Promise<void> {
     careShell: eggs.care.shell,
     careMax: eggs.care.maxBonus,
     careTop: eggs.care.topShare,
+    // T-05: the first minute — the green dot of «Яйца» calls, the head of «Мои яйца» says what to do with an egg of one's own.
+    hint: () => (!store.state.flags.ftue_done && play.eggShop().eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open)) ? i18n.t('eggs.hint') : ''),
     ...(adsMod.on
       ? {
           ad: {

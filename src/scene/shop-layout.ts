@@ -145,11 +145,11 @@ export function computeShopLayout(
 
   // Counter on the floor, centred; incubator stands on its left end.
   // MU-02: u * 6.4 — four incubators keep their 44 px tap zones in the 45 % room of a landscape phone (l1).
-  const counterW = Math.min(stage.w * 0.58, u * 6.4, door.x - spotR * 2.6 - u * 0.6 - stage.x);
+  let counterW = Math.min(stage.w * 0.58, u * 6.4, door.x - spotR * 2.6 - u * 0.6 - stage.x);
   const counterH = Math.min(u * 1.1, floor.h * 0.45);
   // Incubators stand side by side on the left part of the counter; the right part stays free for the deal.
   const count = Math.max(1, Math.floor(incubatorCount));
-  const incR = Math.min(u * 0.9, counterW * 0.2, counterW / (count * 2.4 + 0.2));
+  let incR = Math.min(u * 0.9, counterW * 0.2, counterW / (count * 2.4 + 0.2));
   // Круг правок FB (арт-ревизия): the shelf never lies on the incubators — the counter steps down onto the free floor (8 px between them).
   let counterY = floorY + floor.h * 0.3;
   const clash = showcase.y + showcase.h + 8 - (counterY - u * 0.25 - incR * 1.95);
@@ -162,7 +162,17 @@ export function computeShopLayout(
     showcase.y -= lift;
     for (const s of slots) s.y -= lift;
   }
-  const counter: Rect = { x: stage.x + Math.min(stage.w * 0.42 - counterW / 2, door.x - spotR * 2.6 - counterW - stage.x), y: counterY, w: counterW, h: counterH };
+  let counterX = stage.x + Math.min(stage.w * 0.42 - counterW / 2, door.x - spotR * 2.6 - counterW - stage.x);
+  // T-03: two rows of the shelf in a short room still reach the domes after the lift (5–6 places at 815×290) — the counter steps right
+  // of the shelf (narrower when it must): a dome and a place stand a finger apart side by side.
+  const shelfBottom = showcase.y + showcase.h + 8;
+  const shelfRight = showcase.x + showcase.w + 8;
+  if (shelfBottom > counterY - u * 0.25 - incR * 1.95 && counterX < shelfRight) {
+    counterX = shelfRight;
+    counterW = Math.min(counterW, Math.max(u * 3, door.x - spotR * 2.6 - counterX));
+    incR = Math.min(u * 0.9, counterW * 0.2, counterW / (count * 2.4 + 0.2));
+  }
+  const counter: Rect = { x: counterX, y: counterY, w: counterW, h: counterH };
   const counterTop: Rect = { x: counter.x - u * 0.15, y: counter.y - u * 0.25, w: counterW + u * 0.3, h: u * 0.35 };
   const incubators: Spot[] = [];
   for (let i = 0; i < count; i++) incubators.push({ x: counter.x + incR * 1.3 + i * incR * 2.4, y: counterTop.y - incR * 0.95, r: incR });

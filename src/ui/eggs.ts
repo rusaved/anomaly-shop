@@ -25,6 +25,8 @@ export interface EggsLookups {
   careTop: number;
   /** M5-02: rewarded ads (the yandex profile): the egg-ad cards and «hatch now»; missing — no ad buttons. */
   ad?: EggAds;
+  /** T-05: the first-minute line in the «Мои яйца» head while the tab's green dot calls ('' — none). */
+  hint?(): string;
 }
 
 export interface EggAds {
@@ -95,7 +97,8 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
     const fmt = new Intl.NumberFormat(look.lang());
     const coins = game.state.coins;
     const adKey = look.ad ? `${look.ad.busy()}:${JSON.stringify(look.ad.cards().map((c) => [c.egg, c.left, Math.ceil(c.waitSec)]))}:${view.incubators.map((i) => i.leftSec > look.ad!.minLeftSec).join('')}` : '';
-    const next = `l:${look.lang()}:${adKey}:${JSON.stringify(shop, (k, x: unknown) => (k === 'freeIn' && typeof x === 'number' ? Math.ceil(x) : x))}:${view.incubators.map((i) => `${i.egg}.${i.ready}.${i.careLevel}.${i.feedPrice}.${Math.round(i.share * 100)}`).join(',')}:${Math.floor(coins)}`;
+    const hint = look.hint?.() ?? '';
+    const next = `l:${look.lang()}:${hint}:${adKey}:${JSON.stringify(shop, (k, x: unknown) => (k === 'freeIn' && typeof x === 'number' ? Math.ceil(x) : x))}:${view.incubators.map((i) => `${i.egg}.${i.ready}.${i.careLevel}.${i.feedPrice}.${Math.round(i.share * 100)}`).join(',')}:${Math.floor(coins)}`;
     if (next === key) return;
     key = next;
     const mine: string[] = [];
@@ -154,7 +157,10 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
     });
     const busy = view.incubators.filter((i) => i.egg).length;
     let html = '';
-    if (mine.length) html += head(look.t('eggs.my'), look.t('eggs.slots', { n: busy, all: view.incubators.length })) + `<div class="mu-grid" data-section="my">${mine.join('')}</div>`;
+    // T-05: the hint lives in the head row of «Мои яйца» — it never lies on a button of the list.
+    const myHead = head(look.t('eggs.my'), look.t('eggs.slots', { n: busy, all: view.incubators.length }));
+    const myHint = hint ? myHead.replace('</h3>', `</h3><b class="eggs-hint" data-eggs-hint>${esc(hint)}</b>`) : myHead;
+    if (mine.length) html += myHint + `<div class="mu-grid" data-section="my">${mine.join('')}</div>`;
     if (ads.length) html += head(look.t('ad.eggsHead'), look.t('ad.left', { n: adCards[0]?.left ?? 0 })) + `<div class="mu-grid" data-section="ad">${ads.join('')}</div>`;
     for (const s of SECTIONS) {
       const list = shop.eggs.filter((e) => e.section === s && (s !== 'seasonal' || e.open));

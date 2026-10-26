@@ -5,6 +5,9 @@
 import type { Game } from '../sim/game.ts';
 import { button, closeX, createOverlay, type Overlay } from './overlay.ts';
 
+/** T-01: how long the fresh window ignores taps (a tap and its click 300–400 ms apart on a phone). */
+const GUARD_MS = 350;
+
 export interface MerchantLookups {
   t(key: string, vars?: Record<string, string | number>): string;
   lang(): string;
@@ -20,7 +23,8 @@ export interface MerchantWindow {
 }
 
 export function createMerchantWindow(parent: HTMLElement, game: Game, look: MerchantLookups): MerchantWindow {
-  const overlay = createOverlay(parent, 'merchant', () => win.close(), { dismiss: () => win.close() });
+  // T-01: opened by a tap on the cart — the first 350 ms the window takes no tap (the opening tap bought an egg on a phone sideways).
+  const overlay = createOverlay(parent, 'merchant', () => win.close(), { dismiss: () => win.close(), guardMs: GUARD_MS, priced: true });
   overlay.card.classList.add('card-shop');
   const title = document.createElement('h2');
   const list = document.createElement('div');

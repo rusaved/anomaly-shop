@@ -20,6 +20,8 @@ export interface Hud {
   update(coins: number, opts?: { delaySec?: number; snap?: boolean }): void;
   /** A short pulse of the coin chip (a coin landed). */
   pulse(): void;
+  /** T-08: the crystals in the balance pill (sideways; none while 0). */
+  crystals(n: number): void;
   setLanguage(lang: string): void;
 }
 
@@ -32,12 +34,14 @@ export function createHud(parent: HTMLElement, lang: string, rollSec: () => numb
   root.innerHTML =
     `<div class="hud-side" data-hud="side"><button type="button" class="hud-btn" data-action="pause" data-i18n="hud.settings" data-i18n-attr="aria-label">${GEAR}</button></div>` +
     '<div class="hud-right" data-hud="right"><button type="button" class="hud-wallet" data-action="balance" data-i18n="hud.balance" data-i18n-attr="aria-label">' +
-    '<span class="hud-pill"><span class="hud-coins" data-hud="coins" role="status"><span class="coin hud-coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></span>' +
+    '<span class="hud-pill"><span class="hud-gems" data-hud="crystals" hidden><span class="mu-gem" aria-hidden="true"></span><b>0</b></span><span class="hud-coins" data-hud="coins" role="status"><span class="coin hud-coin" aria-hidden="true"></span><span class="hud-coins-value">0</span></span>' +
     '<span class="hud-plus" aria-hidden="true">+</span></span></button></div>';
   parent.appendChild(root);
   const chip = root.querySelector('.hud-coins') as HTMLElement;
   const value = root.querySelector('.hud-coins-value') as HTMLElement;
   const coinIcon = root.querySelector('.hud-coin') as HTMLElement;
+  const gems = root.querySelector('.hud-gems') as HTMLElement;
+  const gemValue = gems.querySelector('b') as HTMLElement;
   const pauseButton = root.querySelector('[data-action="pause"]') as HTMLButtonElement;
   let format = new Intl.NumberFormat(lang);
   const counter = createCounter(0);
@@ -83,6 +87,11 @@ export function createHud(parent: HTMLElement, lang: string, rollSec: () => numb
       if (coins === counter.target() && delay === 0) return;
       counter.set(coins, rollSec(), delay, delay > 0);
       kick();
+    },
+    crystals(n) {
+      gems.hidden = n <= 0;
+      const text = format.format(n);
+      if (gemValue.textContent !== text) gemValue.textContent = text;
     },
     pulse() {
       chip.classList.remove('pulse');

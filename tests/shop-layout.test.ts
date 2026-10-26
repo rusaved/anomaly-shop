@@ -47,3 +47,25 @@ describe('W-08: a short room sideways — a dome and a place of the shelf never 
   }
 });
 
+
+describe('T-03: a dome and a place of the shelf stay a finger apart at any number of places (one and two rows)', () => {
+  // The distance from a point to a rect (0 inside it).
+  const away = (x: number, y: number, r: { x: number; y: number; w: number; h: number }) => Math.hypot(Math.max(r.x - x, 0, x - r.x - r.w), Math.max(r.y - y, 0, y - r.y - r.h));
+  for (const [w, h] of [[815, 290], [812, 330], [880, 405]] as const) {
+    for (const places of [3, 4, 5, 6]) {
+      for (const inc of [1, 2, 3, 4]) {
+        it(`${w}×${h}, ${places} places, ${inc} incubators`, () => {
+          const page = computeLayout(w, h);
+          const l = computeShopLayout(page.stage, sceneTop(page), 0.34, 4, 18, inc, places, 3, null, roomHeight(page));
+          // The tap zone of a place (src/scene/shop.ts): its rect with half a gap at the sides and 10 % over the top and bottom;
+          // the «+» of a free place is the rect itself.
+          const taps = l.slots.map((s) => ({ x: s.x - l.slotGap / 2, y: s.y - s.h * 0.1, w: s.w + l.slotGap, h: s.h * 1.2 }));
+          for (const i of l.incubators) for (const t of taps) expect(away(i.x, i.y, t)).toBeGreaterThanOrEqual(Math.max(22, i.r * 1.25));
+          // The counter stays in the room, clear of the queue at the door.
+          expect(l.counter.x + l.counter.w).toBeLessThanOrEqual(l.door.x);
+          for (const i of l.incubators) expect(i.r * 2.4).toBeGreaterThanOrEqual(26);
+        });
+      }
+    }
+  }
+});

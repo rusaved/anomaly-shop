@@ -4443,22 +4443,6 @@ button.mu-card {
     padding: 0;
 }
 }
-/* W-09 (07 rule 2: what pays — not in the lower third, the main action low): on a short screen «За видео» stands first in «Яйца»,
-   «Мои яйца» with «Покормить» under it; the list order elsewhere is unchanged (Q-058). */
-.landscape.short #ui [data-sheet='eggs'] .eggs:has(> [data-section='ad']) {
-  display: flex;
-  flex-direction: column;
-}
-.landscape.short #ui [data-sheet='eggs'] .eggs > .mu-head:has(+ [data-section='ad']),
-.landscape.short #ui [data-sheet='eggs'] .eggs > [data-section='ad'] {
-  order: -1;
-}
-.landscape.short #ui [data-sheet='eggs'] .eggs > .mu-head:has(+ [data-section='ad']) {
-  margin-top: 0;
-}
-.landscape.short #ui [data-sheet='eggs'] .eggs > .mu-head:has(+ [data-section='my']) {
-  margin-top: 10px;
-}
 /* W-07, W: a phone sideways (≤ 520 px high) — the fade at the bottom of a list is 14 px (07 rule 15 gives 28 for an upright phone):
    «Забрать подарок дня», a boost and the last row of a list stay whole over the tab bar. */
 @media (max-height: 520px) {
@@ -4593,4 +4577,141 @@ button.mu-card {
 .landscape.short #ui .sheet[data-sheet='eggs'] .mu-card:not(.card-empty) {
   padding-top: 3px;
   padding-bottom: 3px;
+}
+/* ---- T (Ресейл 14 · Торговец и полка) ---- */
+/* T-02 (Q-059 «в»): a window with a price never hides the balance — the top bar stands over the dim while it is open (its other
+   buttons rest, the balance lit), and on a short screen sideways the window opens under the top bar. */
+#ui:has(> .overlay[data-priced]:not([hidden])) > .hud {
+  z-index: 31;
+  pointer-events: none;
+}
+#ui:has(> .overlay[data-priced]:not([hidden])) > .hud * {
+  pointer-events: none;
+}
+#ui:has(> .overlay[data-priced]:not([hidden])) > .hud > :not(.hud-right),
+#ui:has(> .overlay[data-priced]:not([hidden])) > .hud > .hud-right > :not(.hud-wallet) {
+  opacity: 0.35;
+}
+.landscape.short #ui > .overlay[data-priced]:not([data-kind='screen']):not([data-overlay='hatch']) {
+  padding-top: calc(var(--hud-height, 44px) + 4px);
+}
+/* «Вылупился!» keeps its top (W-10: «Продать сразу» out of the lower third) and stands at the left, clear of the balance. */
+.landscape.short #ui > .overlay[data-overlay='hatch'] {
+  justify-content: flex-start;
+}
+/* T-01: sideways the merchant's window stands at the right — his cart at the door of the room lies under the window's left part
+   (an egg picture and a name), never under a price button. */
+@media (max-height: 520px) {
+  .landscape #ui .overlay[data-overlay='merchant'] {
+    justify-content: flex-end;
+  }
+}
+.landscape.short #ui .overlay[data-overlay='merchant'] > .card {
+  gap: 6px;
+  padding-top: 8px;
+  padding-bottom: 10px;
+}
+.landscape.short #ui .overlay[data-overlay='merchant'] .shop-item {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+/* T-04 (07 rule 2: what pays — not in the lower third): «Подарки» sideways — the sales boost for a video stands at the top of the
+   right column (its button under its name), the review chest under it; «Забрать подарок дня» stays left under the days. */
+@media (max-height: 520px) {
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .mu-head:has(+ .gift-boost) {
+    display: none;
+  }
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .gift-boost {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 6px;
+  }
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .gift-boost .btn-ad {
+    grid-column: 1 / -1;
+  }
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .gift-top:has(~ .gift-boost) {
+    grid-row: 3 / span 2;
+  }
+  .landscape #ui .overlay[data-overlay='gifts'] > .card:has(> .gift-boost) > .days {
+    align-self: start;
+  }
+  /* T-08: the ✕ stands 16 px under the «+» of the balance (never a finger's slip from it), the boost starts under the ✕. */
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .gifts-top > .mu-round {
+    position: relative;
+    top: 12px;
+  }
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .gift-boost {
+    margin-top: 14px;
+  }
+}
+/* A low screen (815×290, 812×330): the name alone over the button (the picture and the line under the name return while the boost runs). */
+@media (max-height: 340px) {
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .gift-boost:has(.btn-ad) {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .gift-boost:has(.btn-ad) > .mu-pic,
+  .landscape #ui .overlay[data-overlay='gifts'] > .card > .gift-boost:has(.btn-ad) .mu-meta {
+    display: none;
+  }
+}
+/* T-07 (Q-058 «б»): «Мои яйца» stand first in «Яйца» on every screen (W-09 put «За видео» over them on a short one); «▶ Реклама: яйцо»
+   under them stays out of the lower third — on a low screen (up to 340 px) the section heads come closer. */
+@media (max-height: 340px) {
+  .landscape #ui [data-sheet='eggs'] .eggs > .mu-head {
+    margin: 4px 0;
+  }
+  .landscape #ui [data-sheet='eggs'] .eggs > .mu-head:first-child {
+    margin-top: 0;
+  }
+}
+/* T-05: the first-minute line in the head of «Мои яйца» — between the head and «1 из 1», never on a button; upright it takes its own line. */
+#ui .mu-head .eggs-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--mu-fs-section);
+  font-weight: 700;
+  text-align: center;
+  color: var(--c-uiGood);
+}
+.portrait #ui .mu-head:has(.eggs-hint) {
+  flex-wrap: wrap;
+}
+.portrait #ui .mu-head .eggs-hint {
+  order: 3;
+  flex-basis: 100%;
+  text-align: left;
+}
+/* T-06: the egg card on a low screen sideways (815×290, 812×330 too: T-08) — «Что внутри» stands level with the back row, the pets
+   with their chances right under it (in sight without a scroll); the line about care goes under the buy buttons. */
+@media (max-height: 340px) {
+  .landscape .detail-page:has(> .cards-odds) {
+    grid-template-areas: 'back inside' 'hero odds' 'buy odds' 'care odds';
+    grid-template-rows: auto auto auto 1fr;
+  }
+  .landscape .detail-page:has(> .cards-odds) > .mu-head {
+    align-self: center;
+  }
+}
+/* T-08: the crystals sideways — a small piece of the balance pill left of the coins (an upright phone keeps the bar for the coins). */
+.hud-gems {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.hud-gems[hidden],
+.portrait .hud-gems {
+  display: none;
+}
+/* T-08: «Магазин» and the upgrades of «Лавка» sideways — the list ends 8 px over the tab bar: a price button is never a slip from a tab. */
+@media (max-height: 520px) {
+  .landscape #ui .sheet:is([data-sheet='home'], [data-sheet='shop'])[data-kind='dock'] > .sheet-body {
+    margin-bottom: 8px;
+  }
 }

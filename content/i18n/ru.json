@@ -387,6 +387,7 @@
   "eggs.warming": "Греется",
   "eggs.free1": "бесплатно",
   "eggs.slots": "{n} из {all}",
+  "eggs.hint": "Своё яйцо: «Купить» или «Покормить»",
   "eggs.perEgg": "цена за яйцо",
   "chats.new.one": "{n} новый",
   "chats.new.few": "{n} новых",

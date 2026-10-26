@@ -21,6 +21,10 @@ export interface OverlayOptions {
   dismiss?: () => void;
   /** Windows that stay open underneath this one (settings over pause). */
   over?: string[];
+  /** T-01: no tap inside the window counts this long after it opens (a window opened by a tap on the scene lies under that finger). */
+  guardMs?: number;
+  /** T-02: the window shows a price — sideways it opens under the top bar and the balance stays in sight over the dim. */
+  priced?: boolean;
 }
 
 /** A click this soon after a window opens is the opening tap itself (touch: pointerdown opens, the click follows). */
@@ -53,6 +57,7 @@ export function createOverlay(parent: HTMLElement, name: string, onBackdrop?: ()
   root.dataset.overlay = name;
   root.dataset.kind = kind;
   root.hidden = true;
+  if (opts.priced) root.dataset.priced = '';
   const card = document.createElement('div');
   card.className = 'card';
   card.setAttribute('role', 'dialog');
@@ -67,6 +72,17 @@ export function createOverlay(parent: HTMLElement, name: string, onBackdrop?: ()
     if (onBackdrop) onBackdrop();
     else overlay.hide();
   });
+  // T-01: the click of the opening tap lands on whatever of the fresh window is under the finger (the merchant's «Купить» over his cart).
+  if (opts.guardMs)
+    root.addEventListener(
+      'click',
+      (e) => {
+        if (performance.now() - shownAt >= opts.guardMs!) return;
+        e.stopPropagation();
+        e.preventDefault();
+      },
+      true,
+    );
   const overlay: Overlay = {
     root,
     card,

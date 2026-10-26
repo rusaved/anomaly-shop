@@ -182,3 +182,29 @@ for (const size of SIZES) {
     });
   });
 }
+
+for (const size of SIZES) {
+  const tag = `${size.width}x${size.height}`;
+  test.describe(`${tag} seller level`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+    for (const xp of [400, 600]) {
+      test(`F-04 «Уровень продавца» at ${xp} points: the bar fills as «N из M» reads @ ${tag}`, async ({ page }) => {
+        const errors = collectErrors(page);
+        await rich(page, { stats: { ...FRAMES_SAVE.stats, xp } });
+        await OPENERS['overlay:reputation']!(page);
+        const card = page.locator('[data-overlay=reputation] > .card');
+        await expect(card.locator('.rep-bar')).toBeVisible();
+        const read = await card.evaluate((c) => {
+          const bar = c.querySelector('.rep-bar')!.getBoundingClientRect().width;
+          const fill = c.querySelector('.rep-bar i')!.getBoundingClientRect().width;
+          const line = [...c.querySelectorAll('.card-sub')].map((e) => e.textContent ?? '').find((t) => /\d/.test(t) && t.includes('·'))!;
+          const [n, m] = (line.match(/\d+(?:[\s\u00a0]\d{3})*/g) ?? []).map((x) => Number(x.replace(/\D/g, '')));
+          return { share: fill / bar, n: n!, m: m!, line };
+        });
+        expect(read.m, read.line).toBeGreaterThan(0);
+        expect(Math.abs(read.share - read.n / read.m), `${read.line}: the bar ${Math.round(read.share * 100)}%`).toBeLessThanOrEqual(0.05);
+        expect(errors).toEqual([]);
+      });
+    }
+  });
+}

@@ -1,8 +1,10 @@
 // What: the Platform contract (docs/02-tech.md, section 6.1); one implementation per profile, chosen at build time.
-// Called by: src/main.ts and any module that needs saves, language, pause, ads or time; implemented by yandex.ts, youtube.ts, null.ts.
+// Called by: src/main.ts and any module that needs saves, language, pause, ads or time; implemented by yandex.ts, youtube.ts, vk.ts, null.ts.
 // Keep: this shape is all the game knows about a platform; SDK types never leak out of src/platform.
 
-export type PlatformName = 'yandex' | 'null' | 'youtube';
+export type PlatformName = 'yandex' | 'null' | 'youtube' | 'vk';
+/** V-02: where the vk build runs — VK or OK (by the launch parameters). */
+export type VkSite = 'vk' | 'ok';
 export type DeviceType = 'desktop' | 'mobile' | 'tablet';
 export type Lang = 'ru' | 'en';
 
@@ -80,6 +82,12 @@ export interface Platform {
   load(): Promise<string | null>;
   save(data: string, opts?: { flush?: boolean }): void;
   now(): number;
+  /** V-02 (vk only): VK or OK. */
+  readonly site?: VkSite;
+  /** V-05 (vk only): a rewarded video is loaded now — an ad button shows only then. */
+  rewardedReady?(): boolean;
+  /** V-08 (vk only): the platform's «join the community» window; true only when the player joined. */
+  joinCommunity?(): Promise<boolean>;
 }
 
 /** Side channel for technical events (sdk_init_slow, cloud_save_failed, ...): the platform never imports analytics. */

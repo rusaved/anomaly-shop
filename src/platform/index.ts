@@ -1,4 +1,4 @@
-// What: picks the one platform module of this build by __PLATFORM__; the other two never land in the bundle.
+// What: picks the one platform module of this build by __PLATFORM__; the others never land in the bundle.
 // Called by: src/main.ts.
 // Keep: each branch compares a build-time constant, so the bundler drops the dead dynamic imports (docs/02-tech.md, section 6).
 
@@ -12,6 +12,16 @@ export async function loadPlatform(track: PlatformTrack): Promise<Platform> {
   if (__PLATFORM__ === 'youtube') {
     const m = await import('./youtube.ts');
     return m.createYoutubePlatform(m.browserDeps(track));
+  }
+  if (__PLATFORM__ === 'vk') {
+    // V-02: the npm bridge inside VK and OK; the stand-in only for ?mock=vk in a plain tab (never when VK or OK launched the game).
+    const m = await import('./vk.ts');
+    const { vk, vkGroupId } = await import('../content/vk.ts');
+    const mock = new URLSearchParams(location.search).get('mock') === 'vk' && !m.launchedByPlatform(location.search);
+    const bridge = mock ? (await import('./vk-mock.ts')).createVkMock() : (await import('@vkontakte/vk-bridge')).default;
+    // The stand-in joins a made-up group while the studio has not filled the ids (the flow can be tried on the producer link).
+    const groupId = mock ? (site: 'vk' | 'ok') => vkGroupId(site) || 1 : vkGroupId;
+    return m.createVkPlatform(m.browserDeps(bridge as unknown as import('./vk.ts').VkBridgeLike, track, { ...vk.save, rewardedRecheckSec: vk.ads.rewardedRecheckSec }, groupId));
   }
   const m = await import('./null.ts');
   return m.createNullPlatform(m.browserDeps());

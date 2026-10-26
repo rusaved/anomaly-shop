@@ -82,7 +82,7 @@ for (const size of SIZES) {
       const s = await state(page);
       expect(s.coins, "less than the cheapest egg").toBeLessThan(10);
       // A deliberate tap on the «+» later: nothing to put and nothing to buy with — a short hint what to do, no dead end.
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1200);
       await page.touchscreen.tap(pet.x, pet.y);
       await page.waitForTimeout(400);
       expect(await sales.isVisible()).toBe(false);
@@ -119,8 +119,8 @@ for (const size of SIZES) {
       }
       await page.waitForTimeout(150);
       expect(await sales.isVisible(), 'a press at once opens nothing').toBe(false);
-      // A deliberate tap later opens the pick (with coins it leads to an egg).
-      await page.waitForTimeout(500);
+      // A deliberate tap later (V-01: after the feeding series ended, a pause over slotStreakGapSec) opens the pick.
+      await page.waitForTimeout(1200);
       await page.touchscreen.tap(pet.x, pet.y);
       await expect(sales).toBeVisible();
       expect(errors).toEqual([]);

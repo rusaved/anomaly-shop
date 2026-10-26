@@ -83,6 +83,15 @@ async function boot(): Promise<void> {
   // MU-01: one rarity scale everywhere (docs/07 «Редкость»): frames, badges and rings read --r-<rarity>.
   applyTheme(style.rarity, document.documentElement, 'r');
   const platform = await loadPlatform(track);
+  // V-02…V-08: the VK and OK build — its menu, texts and rules (other builds never load them).
+  const vkUi = __PLATFORM__ === 'vk' ? await import('./ui/vk-menu.ts') : null;
+  const vkData = vkUi ? vkUi.vkContent : null;
+  // V-07: the loading shows how far it is (vk build; elsewhere the spinner alone).
+  const bootStep = (n: number): void => {
+    if (!vkUi || !platform.site) return;
+    vkUi.bootProgress(platform.site, n);
+  };
+  bootStep(10);
   let game: Game | null = null;
   const runtime = createRuntime((dt) => game?.tick(dt));
   let controllable = false;
@@ -129,7 +138,9 @@ async function boot(): Promise<void> {
   });
 
   await platform.init();
+  bootStep(30);
   const store = createStore(await loadState(platform, track), () => platform.now());
+  bootStep(50);
   /** Last save of the previous visit: the shop works on for the time since (helpers, incubators). */
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform, track);
@@ -159,7 +170,9 @@ async function boot(): Promise<void> {
     }
     return;
   }
+  bootStep(70);
   await document.fonts.ready;
+  bootStep(90);
   const shop = createShopView(scene.app, {
     style: styleData,
     feel,
@@ -318,7 +331,8 @@ async function boot(): Promise<void> {
     upgrade: (id) => upgrades.upgrades.find((u) => u.id === id),
     tierColors: Object.values(styleData.rarity),
     // M5-04: «Акции» is on with the payments of the platform (game.json: off till the «Сборка» milestone).
-    sections: navData.shop.sections.map((x) => (x.id === 'deals' ? { ...x, enabled: x.enabled || platform.caps.payments } : x)),
+    // V-04: VK and OK — no purchases at all: the closed «Акции» is not even shown.
+    sections: navData.shop.sections.map((x) => (x.id === 'deals' ? { ...x, enabled: x.enabled || platform.caps.payments } : x)).filter((x) => __PLATFORM__ !== 'vk' || x.enabled),
     ...(platform.caps.payments ? { deals: (box: HTMLElement) => storeMod.render(box) } : {}),
     guestName: (id) => decorData.items.find((x) => x.id === id)?.name[i18n.lang()] ?? id,
     themeName: (theme) => decorData.sets.find((x) => x.theme === theme)?.name[i18n.lang()] ?? theme,
@@ -374,10 +388,11 @@ async function boot(): Promise<void> {
     platform,
     pause: runtime.pause,
     track,
-    rules: adsData,
+    // V-05: VK — the interstitial by its own rules, never in the first minute's lessons.
+    rules: vkData ? { ...adsData, interstitial: { ...adsData.interstitial, firstSec: vkData.vk.ads.interstitialFirstSec, gapSec: vkData.vk.ads.interstitialGapSec } } : adsData,
     playSec: () => runtime.elapsed(),
     noAds: () => Boolean(store.state.shop?.noAds),
-    busyNow: () => hatchShow.isOpen(),
+    busyNow: () => hatchShow.isOpen() || (vkData !== null && !store.state.flags.ftue_done),
     note: (kind) => noteAd(kind),
     changed: () => {
       renderUi();
@@ -548,6 +563,27 @@ async function boot(): Promise<void> {
     if (r.crystals) return i18n.t('gifts.crystals', { n: fmt.format(r.crystals) });
     return i18n.t('gifts.coins', { n: fmt.format(r.coins ?? 0) });
   };
+  // V-08: joining the community (VK) or group (OK) through the platform: the gift once and only for a real join; after a «no»
+  // the card rests for repeatDays (never a window at launch).
+  const joinNo = `${__GAME__.id}:vk_join_no`;
+  const joinHidden = (): boolean => {
+    try {
+      return Date.now() - Number(localStorage.getItem(joinNo) || 0) < (vkData?.vk.join.repeatDays ?? 30) * 86_400_000;
+    } catch {
+      return false;
+    }
+  };
+  const joinRun = async (): Promise<boolean> => {
+    const joined = (await platform.joinCommunity?.()) === true;
+    if (joined) play.claimSubscribe(gifts.subscribe[0]?.id ?? 'vk');
+    else
+      try {
+        localStorage.setItem(joinNo, String(Date.now()));
+      } catch {
+        /* private mode: the card comes back next visit */
+      }
+    return joined;
+  };
   const giftsWindow = createGiftsWindow(uiRoot, play, {
     t: i18n.t,
     lang: i18n.lang,
@@ -566,6 +602,9 @@ async function boot(): Promise<void> {
     portrait: (sp, r) => portraits.creature(sp, r),
     goalName: (id) => calendar.tasks.pool.find((g) => g.id === id)?.name[i18n.lang()] ?? id,
     review: () => platform.requestReview(),
+    ...(vkData && platform.site && platform.joinCommunity
+      ? { noReview: true, join: { card: vkData.vkText(platform.site, 'join.card'), button: vkData.vkText(platform.site, 'join.button'), hidden: joinHidden, run: joinRun } }
+      : {}),
     ...(adsMod.on
       ? { boost: { busy: () => adsMod.busy(), left: () => play.boostLeft(), more: () => play.boostsLeft(today()), watch: () => void adsMod.rewarded('sales_boost', () => void play.startBoost(today())), thing: 'tags' } }
       : {}),
@@ -582,7 +621,8 @@ async function boot(): Promise<void> {
   let reviewAsked = false;
   window.setInterval(() => {
     const st = store.state;
-    if (reviewAsked || !controllable || runtime.pause.isPaused() || topWindow() || adsMod.busy() || st.gifts.reviewed || st.flags.review_asked) return;
+    // V-04: no review window on VK and OK.
+    if (__PLATFORM__ === 'vk' || reviewAsked || !controllable || runtime.pause.isPaused() || topWindow() || adsMod.busy() || st.gifts.reviewed || st.flags.review_asked) return;
     if (runtime.elapsed() < REVIEW_AFTER_SEC) return;
     if (!Object.values(st.shop?.bought ?? {}).some((n) => n > 0) && (st.stats.sessions ?? 0) < REVIEW_SESSION) return;
     reviewAsked = true;
@@ -644,6 +684,17 @@ async function boot(): Promise<void> {
   /** MU-03: the «Витрина» row — «N из M мест» and a «+» on every free place (it opens «Мои продажи» on the pick). */
   let shelfKey = '';
   let shelfChangedAt = 0;
+  // V-01: a series of taps on one spot (feeding a pet) — when it began; a pause longer than slotStreakGapSec or another spot ends it.
+  let streak = { x: 0, y: 0, at: -1e9, from: -1e9 };
+  window.addEventListener(
+    'pointerdown',
+    (e) => {
+      const t = performance.now();
+      const same = t - streak.at < feel.slotStreakGapSec * 1000 && Math.hypot(e.clientX - streak.x, e.clientY - streak.y) < 48;
+      streak = { x: e.clientX, y: e.clientY, at: t, from: same ? streak.from : t };
+    },
+    true,
+  );
   const cheapestEgg = Math.min(...eggs.eggs.map((e) => e.price.coins || Infinity));
   function renderShelf(): void {
     const v = play.view();
@@ -669,6 +720,8 @@ async function boot(): Promise<void> {
         b.addEventListener('click', () => {
           // F-01: a place freed under the finger (a buyer took the pet into the chat) takes no tap at once.
           if (performance.now() - shelfChangedAt < feel.slotGuardSec * 1000) return;
+          // V-01: nor while the feeding series that began before the place freed goes on — only a fresh tap opens the pick.
+          if (streak.from < shelfChangedAt) return;
           // F-01: nothing to put and nothing to buy an egg with — a short hint what to do, not a window of «Купить яйцо».
           const now = play.view();
           if (!now.inventory.length && store.state.coins < cheapestEgg) {
@@ -1030,18 +1083,50 @@ async function boot(): Promise<void> {
 
   });
   const pauseWindow = createPauseWindow(uiRoot, runtime.pause, links, () => settingsWindow.open());
-  const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => pauseWindow.overlay.root.classList.remove('under'), (code) => play.redeemCode(code), {
+  // V-04: in VK and OK the settings come from the menu and go back to it.
+  let backToMenu: (() => void) | null = null;
+  const settingsWindow = createSettingsWindow(uiRoot, store, i18n, links, () => {
+    pauseWindow.overlay.root.classList.remove('under');
+    backToMenu?.();
+  }, (code) => play.redeemCode(code), {
     name: () => store.state.shopName ?? '',
     save: (text) => play.setShopName(text),
     maxLength: secrets.shopName.maxLength,
   });
-  hud.pauseButton.addEventListener('click', () => pauseWindow.open());
+  // V-04: VK and OK — the start menu instead of the pause, from the top bar's button on any screen.
+  const vkMenu =
+    vkUi && platform.site
+      ? vkUi.createVkMenu(uiRoot, {
+          site: platform.site,
+          pause: runtime.pause,
+          sound: () => store.state.settings.sound,
+          setSound: (on) => {
+            store.state.settings.sound = on;
+            store.commit();
+          },
+          openSettings: () => settingsWindow.open(),
+          join: platform.joinCommunity
+            ? async () => {
+                await joinRun();
+              }
+            : null,
+          legalBase: vkUi.legalBase(),
+        })
+      : null;
+  if (vkMenu) backToMenu = () => vkMenu.open();
+  if (vkMenu) vkUi!.menuButton(hud.pauseButton, vkUi!.vkContent.vkText(platform.site!, 'menu.open'));
+  hud.pauseButton.addEventListener('click', () => (vkMenu ? vkMenu.open() : pauseWindow.open()));
   document.addEventListener('keydown', (e) => {
     if (e.code !== 'Escape' || !controllable) return;
     // The window on top closes its own way (settings back to the pause); with none open Escape pauses.
     if (settingsWindow.overlay.isOpen()) settingsWindow.close();
-    else if (!dismissTop()) pauseWindow.toggle();
+    else if (!dismissTop()) {
+      if (vkMenu) vkMenu.open();
+      else pauseWindow.toggle();
+    }
   });
+  // V-05: a rewarded button shows only while the platform has a video loaded — and not in the first minute's lessons.
+  if (platform.rewardedReady) window.setInterval(() => appRoot.classList.toggle('ad-wait', !platform.rewardedReady!() || !store.state.flags.ftue_done), 500);
   /** Hint targets inside the shop scene (the rest point at buttons and panels). */
   const SCENE_TARGETS = new Set(['incubator', 'slot', 'queue']);
   let sceneHintOn = false;
@@ -1192,9 +1277,12 @@ async function boot(): Promise<void> {
     funnel.tick(runtime.elapsed());
   });
   scene.app.ticker.addOnce(() => {
+    bootStep(100);
     platform.firstFrame();
     document.getElementById('preloader')?.classList.add('hidden');
     controllable = true;
+    // V-04: VK and OK open with the menu «Играть · Звук · Помощь».
+    vkMenu?.open();
     platform.ready();
     // M5-00, IAP-03: the sticky banner follows «no ads».
     adsMod.syncBanner();

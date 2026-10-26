@@ -130,6 +130,17 @@ function place(el: HTMLElement, extra: () => DOMRect[]): void {
     shift = Math.max(...hit.map((r) => r.bottom)) + 8 - box.top;
   }
   if (shift > 0) root.style.transform = `translateY(${Math.round(shift)}px)`;
+  // V-01 (Q-064 п. 1): a toast moved down to the bottom of the scene keeps clear of its round buttons («Подработка»): it narrows
+  // to their right.
+  const low = el.getBoundingClientRect();
+  const buttons = rects('.stage-actions .stage-btn').filter((r) => meets(low, low.top, low.bottom, r));
+  if (buttons.length) {
+    const base = root.getBoundingClientRect();
+    const from = Math.max(...buttons.map((r) => r.right)) + 8 - base.left;
+    root.style.alignItems = 'flex-start';
+    root.style.paddingLeft = `${Math.round(from)}px`;
+    el.style.maxWidth = `${Math.floor(base.width - from - 8)}px`;
+  }
 }
 
 /** extra — rects of the scene a toast never covers either (the shelf frame drawn in the canvas: круг правок FB-2, арт-ревизия). */

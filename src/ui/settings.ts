@@ -141,6 +141,8 @@ export function createSettingsWindow(
 
   // MU-09: no second main button — «Назад» is dark, the ✕ does the same.
   const back = button('back', 'settings.back');
+  // V-04: one language (VK and OK: Russian only) — no language row.
+  langRow.hidden = __GAME__.languages.length < 2;
   overlay.card.append(title, soundRow, vibRow, langRow);
   if (shopName) overlay.card.append(nameEdit, nameRow, nameAnswer);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
@@ -150,6 +152,8 @@ export function createSettingsWindow(
     overlay,
     open() {
       overlay.card.classList.remove('naming');
+      // V-04: the sound may have changed elsewhere (the VK menu) — the switch shows the saved state.
+      soundRow.querySelector('[role=switch]')?.setAttribute('aria-checked', String(store.state.settings.sound));
       if (shopName) {
         nameInput.value = shopName.name();
         nameAnswer.textContent = '';

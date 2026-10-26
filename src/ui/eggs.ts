@@ -58,6 +58,7 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
   const panel = sheet.detail(detailName, () => tab.show(null));
   let card: string | null = null;
   let key = '';
+  let wasGiftReady = false;
   let cardKey = '';
 
   const fmtTime = (sec: number): string => {
@@ -139,7 +140,8 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
       );
     for (const v of shop.eggs.filter((e) => e.section === 'free')) {
       const ready = v.freeIn === 0;
-      mine.push(
+      // V-01 (Q-064 п. 2): a gift egg ready to take stands first in the row — never only after scrolling it sideways.
+      mine[ready ? 'unshift' : 'push'](
         `<div class="mu-card card-egg" data-egg="${v.id}"><button type="button" class="mu-pic-btn" data-action="egg-card-${v.id}">${pic(look.eggPicture(v.id), v.fresh ? '<i class="mu-new"></i>' : '')}</button>` +
           `<span class="mu-name">${esc(look.t(`egg.short.${v.id}`))}</span><span class="mu-meta">${esc(ready ? look.t('eggs.free1') : look.t('eggs.in', { t: fmtTime(v.freeIn ?? 0) }))}</span>` +
           `<button type="button" class="mu-btn${ready ? ' good-text' : ' off'}" data-action="egg-free-${v.id}" aria-disabled="${!ready}">${esc(look.t('eggs.take'))}</button></div>`,
@@ -168,7 +170,10 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
       if (list.length) html += head(look.t(`eggs.${s}`), look.t('eggs.perEgg')) + `<div class="mu-grid" data-section="${s}">${list.map((e) => shopCard(e, fmt)).join('')}</div>`;
     }
     // F-02: sideways «Мои яйца» scroll sideways — a new render keeps the place the player scrolled to.
-    const myLeft = root.querySelector<HTMLElement>('[data-section="my"]')?.scrollLeft ?? 0;
+    // V-01: a gift egg that just turned ready brings the row back to its start, where it stands.
+    const giftReady = shop.eggs.some((e) => e.section === 'free' && e.freeIn === 0);
+    const myLeft = giftReady && !wasGiftReady ? 0 : (root.querySelector<HTMLElement>('[data-section="my"]')?.scrollLeft ?? 0);
+    wasGiftReady = giftReady;
     root.innerHTML = html;
     if (myLeft) root.querySelector<HTMLElement>('[data-section="my"]')?.scrollTo({ left: myLeft });
     // T-05 (the usability review): the button the hint names wears the green frame of a hint (07 rule 16).

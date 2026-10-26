@@ -4,8 +4,8 @@ import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 
 // Build modes and platform profiles (docs/02-tech.md, sections 3 and 6).
-// The profile comes from the mode; VITE_PLATFORM=yandex|null|youtube overrides it.
-type Profile = 'yandex' | 'null' | 'youtube';
+// The profile comes from the mode; VITE_PLATFORM=yandex|null|youtube|vk overrides it.
+type Profile = 'yandex' | 'null' | 'youtube' | 'vk';
 type Flags = { debug: boolean; studio: boolean; test: boolean; label: boolean; metrika: boolean; platform: Profile };
 
 const root = import.meta.dirname;
@@ -19,6 +19,10 @@ const MODES: Record<string, Flags> = {
   e2e: { debug: true, studio: true, test: true, label: false, metrika: false, platform: 'yandex' },
   pages: { debug: true, studio: true, test: false, label: true, metrika: false, platform: 'yandex' },
   youtube: { debug: false, studio: false, test: false, label: false, metrika: false, platform: 'youtube' },
+  // V-02: VK and OK — a release build (no debug, no test API); vk-e2e — the same with the test API for the e2e of dist-vk.
+  vk: { debug: false, studio: false, test: false, label: false, metrika: false, platform: 'vk' },
+  'vk-e2e': { debug: false, studio: false, test: true, label: false, metrika: false, platform: 'vk' },
+  'vk-dev': { debug: false, studio: false, test: true, label: false, metrika: false, platform: 'vk' },
 };
 
 type GameJson = {
@@ -37,17 +41,18 @@ function readJson<T>(file: string): T {
   return JSON.parse(readFileSync(file, 'utf8')) as T;
 }
 
-/** Public part of game.json for one profile. The youtube build gets no community links and no counter id. */
+/** Public part of game.json for one profile. The youtube build gets no community links and no counter id; vk — Russian only (V-04). */
 function gameConfig(platform: Profile): Record<string, unknown> {
   const game = readJson<GameJson>(resolve(root, 'game.json'));
   const profile = game.profiles[platform];
   if (!profile) throw new Error(`game.json: no profile "${platform}"`);
   const { sdk: _sdk, ...profileRest } = profile;
+  const ruOnly = platform === 'vk';
   return {
     id: game.id,
     title: game.title,
-    languages: game.languages,
-    fallbackLanguage: game.fallbackLanguage,
+    languages: ruOnly ? ['ru'] : game.languages,
+    fallbackLanguage: ruOnly ? 'ru' : game.fallbackLanguage,
     ruFallbackLanguages: game.ruFallbackLanguages ?? ['ru'],
     community: profile.community && game.community ? game.community : null,
     metrikaCounterId: platform === 'yandex' ? Number(game.metrikaCounterId || 0) : 0,
@@ -133,15 +138,40 @@ function htmlPlugin(mode: string, flags: Flags): Plugin {
   };
 }
 
+/**
+ * V-04: the VK and OK build carries no word of other platforms — the producer's notes of content/*.json (they name the Yandex
+ * profile) and the link buttons of the Yandex build (Telegram, the VK page) are dropped from the data of this build only.
+ */
+function vkContentPlugin(): Plugin {
+  const contentDir = resolve(root, 'content');
+  const strip = (x: unknown): unknown => {
+    if (Array.isArray(x)) return x.map(strip);
+    if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x).filter(([k]) => k !== 'note').map(([k, v]) => [k, strip(v)]));
+    return x;
+  };
+  return {
+    name: 'vk-content',
+    enforce: 'pre',
+    transform(code, id) {
+      const file = id.split('?')[0] ?? '';
+      if (!file.startsWith(contentDir) || !file.endsWith('.json')) return null;
+      const data = strip(JSON.parse(code)) as Record<string, unknown>;
+      if (/[\\/]i18n[\\/]/.test(file)) for (const k of Object.keys(data)) if (k.startsWith('community.')) delete data[k];
+      if (file.endsWith('gifts.json') && Array.isArray(data.subscribe)) data.subscribe = (data.subscribe as Array<{ id: string }>).filter((x) => x.id !== 'telegram');
+      return { code: JSON.stringify(data), map: null };
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const base = MODES[mode] ?? MODES.production!;
   const override = process.env.VITE_PLATFORM as Profile | undefined;
-  if (override && !['yandex', 'null', 'youtube'].includes(override)) throw new Error(`VITE_PLATFORM: unknown profile ${override}`);
+  if (override && !['yandex', 'null', 'youtube', 'vk'].includes(override)) throw new Error(`VITE_PLATFORM: unknown profile ${override}`);
   const flags: Flags = { ...base, platform: override ?? base.platform };
 
   return {
     base: './',
-    plugins: [sdkMockPlugin(), htmlPlugin(mode, flags)],
+    plugins: [sdkMockPlugin(), htmlPlugin(mode, flags), ...(flags.platform === 'vk' ? [vkContentPlugin()] : [])],
     resolve: {
       alias: {
         '@content': resolve(root, 'content'),

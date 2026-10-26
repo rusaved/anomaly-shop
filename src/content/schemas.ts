@@ -263,6 +263,7 @@ export const FeelFile = v.object({
   hatchLockMaxSec: v.pipe(v.number(), v.minValue(3), v.maxValue(10)),
   /** F-01: a «+» of a place that has just been freed takes no tap this long (0.3–0.6 s). */
   slotGuardSec: v.pipe(v.number(), v.minValue(0.3), v.maxValue(0.6)),
+  slotStreakGapSec: v.pipe(v.number(), v.minValue(0.3), v.maxValue(1.5)),
 });
 
 export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade', 'spin', 'giggle', 'bong', 'chirp', 'voice'] as const;
@@ -556,7 +557,7 @@ const Profile = v.object({
 export const GameFile = v.object({
   id: v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]*$/)),
   title: Text,
-  age: v.object({ yandex: NonEmpty, youtube: NonEmpty }),
+  age: v.object({ yandex: NonEmpty, youtube: NonEmpty, vk: v.optional(NonEmpty) }),
   languages: v.pipe(v.array(v.picklist(LANGS)), v.minLength(1)),
   fallbackLanguage: v.picklist(LANGS),
   ruFallbackLanguages: v.array(NonEmpty),
@@ -568,8 +569,32 @@ export const GameFile = v.object({
     vk: v.pipe(v.string(), v.url(), v.startsWith('https://')),
     placement: v.array(v.picklist(['pause', 'settings', 'side'])),
   }),
-  profiles: v.object({ yandex: Profile, null: Profile, youtube: Profile }),
+  profiles: v.object({ yandex: Profile, null: Profile, youtube: Profile, vk: Profile }),
 });
+
+/** V-03: the VK and OK platform (content/vk.json): ids filled by the studio, ad and save rules, texts in Russian only. */
+const VkId = v.pipe(v.string(), v.regex(/^\d*$/));
+const VkTexts = v.record(v.string(), NonEmpty);
+export const VK_SITE_KEYS = ['help.support', 'join.button', 'join.card'] as const;
+export const VkFile = v.object({
+  appId: VkId,
+  vkGroupId: VkId,
+  okGroupId: VkId,
+  ads: v.object({
+    interstitialFirstSec: v.pipe(v.number(), v.minValue(60)),
+    interstitialGapSec: v.pipe(v.number(), v.minValue(30)),
+    rewardedRecheckSec: v.pipe(v.number(), v.minValue(5)),
+  }),
+  save: v.object({
+    saveGapSec: v.pipe(v.number(), v.minValue(30), v.maxValue(60)),
+    hideFlushGapSec: v.pipe(v.number(), v.minValue(1), v.maxValue(30)),
+    chunkChars: v.pipe(v.number(), v.integer(), v.minValue(256), v.maxValue(4096)),
+    bridgeTimeoutSec: v.pipe(v.number(), v.minValue(1), v.maxValue(20)),
+  }),
+  join: v.object({ repeatDays: v.pipe(v.number(), v.minValue(30)) }),
+  texts: v.object({ common: VkTexts, vk: VkTexts, ok: VkTexts }),
+});
+export type VkData = v.InferOutput<typeof VkFile>;
 
 export type EggsData = v.InferOutput<typeof EggsFile>;
 export type ShelfData = v.InferOutput<typeof Shelf>;

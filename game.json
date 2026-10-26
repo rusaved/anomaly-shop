@@ -6,7 +6,8 @@
   },
   "age": {
     "yandex": "6+",
-    "youtube": "13+"
+    "youtube": "13+",
+    "vk": "6+"
   },
   "languages": [
     "ru",
@@ -58,6 +59,14 @@
       "externalRequests": false,
       "sdk": "https://www.youtube.com/game_api/v1",
       "saveMaxBytes": 3145728
+    },
+    "vk": {
+      "community": false,
+      "communityGift": true,
+      "ads": true,
+      "payments": false,
+      "analytics": false,
+      "externalRequests": false
     }
   }
 }

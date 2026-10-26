@@ -6,7 +6,7 @@ declare const __TEST_API__: boolean;
 /** Milestone label for the producer link ("M1 · 2026-10-20 · 1a2b3c4"); empty string elsewhere. */
 declare const __BUILD_LABEL__: string;
 /** Platform profile of this build (docs/02-tech.md, section 6). */
-declare const __PLATFORM__: 'yandex' | 'null' | 'youtube';
+declare const __PLATFORM__: 'yandex' | 'null' | 'youtube' | 'vk';
 /** Public part of game.json for this profile; `community` is null in the youtube build. */
 declare const __GAME__: {
   id: string;
@@ -17,7 +17,7 @@ declare const __GAME__: {
   ruFallbackLanguages: string[];
   community: { telegram: string; vk: string; placement: string[] } | null;
   metrikaCounterId: number;
-  profile: { name: 'yandex' | 'null' | 'youtube'; community: boolean; communityGift?: boolean; ads: boolean; payments: boolean; analytics: boolean; externalRequests: boolean };
+  profile: { name: 'yandex' | 'null' | 'youtube' | 'vk'; community: boolean; communityGift?: boolean; ads: boolean; payments: boolean; analytics: boolean; externalRequests: boolean };
 };
 /** ZzFX 1.4.0 ships no types; src/audio/sfx.ts imports it after a user gesture and plays cached samples on ZZFX.audioContext. */
 declare module 'zzfx' {

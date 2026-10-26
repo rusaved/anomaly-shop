@@ -1,0 +1,47 @@
+{
+  "note": "V-03 «Ресейл 16»: площадка VK и ОК (сборка dist-vk). appId, vkGroupId, okGroupId — пустые, заполнит штаб (число без минуса). ads — правила VK поверх ads.json: межстраничная не раньше interstitialFirstSec игры и не чаще interstitialGapSec (VK: не чаще раза в 30 с), не в обучении; за вознаграждение — готовность проверяется заранее (VKWebAppCheckNativeAds), при «не готова» — снова через rewardedRecheckSec. save — VK Storage: запись не чаще раза в saveGapSec (лимит VK 1 000 записей в час), при сворачивании — сразу, но не чаще hideFlushGapSec; значение до chunkChars символов; bridgeTimeoutSec — сколько ждать ответа моста (обрыв сети). join — вступление в сообщество (VK) или группу (ОК): после отказа кнопка в «Подарках» прячется на repeatDays дней. texts — тексты VK/ОК только по-русски: common для обеих, vk и ok — свои слова площадки (в ОК не пишем название VK и наоборот).",
+  "appId": "",
+  "vkGroupId": "",
+  "okGroupId": "",
+  "ads": { "interstitialFirstSec": 180, "interstitialGapSec": 180, "rewardedRecheckSec": 30 },
+  "save": { "saveGapSec": 45, "hideFlushGapSec": 5, "chunkChars": 4000, "bridgeTimeoutSec": 6 },
+  "join": { "repeatDays": 30 },
+  "texts": {
+    "common": {
+      "menu.title": "Ресейл Питомцев",
+      "menu.play": "Играть",
+      "menu.soundOn": "Звук: вкл",
+      "menu.soundOff": "Звук: выкл",
+      "menu.help": "Помощь",
+      "menu.settings": "Настройки",
+      "menu.open": "Меню",
+      "help.title": "Помощь",
+      "help.how1": "Тапай по яйцу, и из него вылупится питомец",
+      "help.how2": "Корми питомцев тапами: растут уровень и цена",
+      "help.how3": "Покупатели пишут в «Чаты»: торгуйся и продавай",
+      "help.how4": "На монеты улучшай лавку и открывай новые яйца",
+      "help.terms": "Пользовательское соглашение",
+      "help.privacy": "Политика конфиденциальности",
+      "help.back": "Назад",
+      "join.thanks": "Спасибо! Яйцо в подарок уже в «Моих яйцах»",
+      "join.later": "Можно вступить позже",
+      "boot.loading": "Загрузка {n}%",
+      "boot.offline": "Нет связи. Игра сохранится на устройстве",
+      "mock.ad": "Реклама (заглушка)",
+      "mock.reward": "Реклама за награду (заглушка)",
+      "mock.join": "Вступить? (заглушка)",
+      "mock.yes": "Вступить",
+      "mock.no": "Отмена"
+    },
+    "vk": {
+      "help.support": "Вопрос или идея? Пиши нам в сообщество игры",
+      "join.button": "Вступить в сообщество",
+      "join.card": "Вступи в сообщество"
+    },
+    "ok": {
+      "help.support": "Вопрос или идея? Пиши нам в группу игры",
+      "join.button": "Вступить в группу",
+      "join.card": "Вступи в группу"
+    }
+  }
+}

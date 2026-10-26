@@ -20,6 +20,8 @@ import {
   GiftsFile,
   WorkFile,
   AdsFile,
+  VkFile,
+  VK_SITE_KEYS,
   ShopFile,
   NavFile,
   PaceFile,
@@ -50,7 +52,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json', 'nav.json', 'pace.json', 'collection.json', 'decor.json', 'achievements.json', 'ads.json', 'shop.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json', 'nav.json', 'pace.json', 'collection.json', 'decor.json', 'achievements.json', 'ads.json', 'shop.json', 'vk.json'] as const;
 /** The egg price ladder (docs/01 §3 p. 12): eight steps, each ×10 the one before; M4-08 (Q-029): the top that opens city by city goes ×3. */
 const LADDER_STEPS = 8;
 const LADDER_STEP = 10;
@@ -309,6 +311,17 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   const gifts = parseFile('gifts.json', GiftsFile, data(files['gifts.json']), errors);
   parseFile('work.json', WorkFile, data(files['work.json']), errors);
   const ads = parseFile('ads.json', AdsFile, data(files['ads.json']), errors);
+  // V-03, V-04: VK and OK — each site has its own words, and neither names the other one (or Yandex) anywhere.
+  const vk = parseFile('vk.json', VkFile, data(files['vk.json']), errors);
+  if (vk) {
+    for (const site of ['vk', 'ok'] as const) {
+      for (const key of VK_SITE_KEYS) if (!(key in vk.texts[site])) errors.push(`vk.json: texts.${site}.${key} — missing`);
+      const words = Object.values({ ...vk.texts.common, ...vk.texts[site] }).join(' ');
+      const banned = site === 'ok' ? /\u0432\u043a\u043e\u043d\u0442\u0430\u043a\u0442|vk\.com|vk\.ru|\bvk\b/i : /\u043e\u0434\u043d\u043e\u043a\u043b\u0430\u0441\u0441\u043d\u0438\u043a|ok\.ru/i;
+      if (banned.test(words)) errors.push(`vk.json: texts.${site} — names the other site`);
+      if (/\u044f\u043d\u0434\u0435\u043a\u0441|yandex|telegram|\u0442\u0435\u043b\u0435\u0433\u0440\u0430\u043c/i.test(words)) errors.push(`vk.json: texts.${site} — names another platform`);
+    }
+  }
   const shopFile = parseFile('shop.json', ShopFile, data(files['shop.json']), errors);
   parseFile('pace.json', PaceFile, data(files['pace.json']), errors);
   parseFile('collection.json', CollectionFile, data(files['collection.json']), errors);

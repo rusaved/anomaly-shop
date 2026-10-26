@@ -1,0 +1,81 @@
+/* V-04, V-05, V-07: the VK and OK build only (imported by src/ui/vk-menu.ts). */
+
+/* V-05: no rewarded video loaded — no ad button and no row of egg videos (they show again once one is ready). */
+#app.ad-wait .btn-ad,
+#app.ad-wait [data-section='ad'],
+#app.ad-wait .mu-head:has(+ [data-section='ad']) {
+  display: none !important;
+}
+
+/* V-04: the start menu — the window style of 07, one main button, the rest dark. */
+.overlay > .card.card-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+  text-align: center;
+}
+.card-menu > h2 {
+  margin: 0 0 4px;
+}
+.card-menu > .mu-btn {
+  min-height: 44px;
+  font-size: 16px;
+}
+.card-menu .menu-how {
+  margin: 0;
+  padding-left: 20px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.card-menu .menu-legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+  margin: 0;
+  font-size: 13px;
+}
+.card-menu .menu-legal a {
+  color: inherit;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+.landscape .overlay > .card.card-menu {
+  max-height: calc(var(--vh, 100vh) - 16px);
+  overflow-y: auto;
+}
+
+/* V-07: «Загрузка N%» under the spinner. */
+#preloader {
+  flex-direction: column;
+  gap: 12px;
+}
+.boot-progress {
+  margin: 0;
+  color: #fff;
+  font: 600 15px/1.4 system-ui, sans-serif;
+}
+
+/* V-04: «Помощь» sideways — two columns, so «Назад» and the documents stay in sight at 290 px. */
+.landscape .overlay > .card.card-menu[data-page='help'] {
+  width: min(640px, calc(100vw - 32px));
+  max-width: none;
+}
+.card-menu .menu-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+.landscape .card-menu .menu-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.card-menu .menu-side > p {
+  margin: 0;
+}

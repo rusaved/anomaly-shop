@@ -26,6 +26,10 @@ export interface GiftsLookups {
   portrait(species: string, rarity: RarityName): string;
   goalName(id: string): string;
   review(): Promise<{ available: boolean; sent: boolean }>;
+  /** V-08 (vk build): «join the community» through the platform instead of a link; the egg only when the player joined. */
+  join?: { card: string; button: string; hidden(): boolean; run(): Promise<boolean> };
+  /** V-04 (vk build): no review window on the platform — no review chest. */
+  noReview?: boolean;
   /** M5-02: the time boost tile (sales ×mult for a video); missing — no ad tile. */
   boost?: { busy(): boolean; left(): number; more(): number; watch(): void; thing: string };
 }
@@ -110,6 +114,15 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
       // 1. A visit to the group and a review: two cards side by side.
       const visit = look.links ? look.gifts.subscribe.find((s) => !v.subscribed[s.id]) : undefined;
       const cards: string[] = [];
+      const joinId = look.gifts.subscribe[0]?.id ?? 'vk';
+      if (look.join && (v.subscribed[joinId] || !look.join.hidden()))
+        cards.push(
+          `<div class="mu-card gift-card" data-gift="group"><span class="mu-pic"><img alt="" src="${look.eggPicture(look.gifts.subscribe[0]?.reward.egg ?? 'egg_warm')}"></span><span class="mu-name">${esc(look.join.card)}</span>` +
+            (v.subscribed[joinId]
+              ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('gifts.got'))}</button>`
+              : `<button type="button" class="mu-btn" data-action="gift-join">${esc(look.join.button)} · ${esc(look.t('gifts.egg'))}</button>`) +
+            '</div>',
+        );
       if (look.links)
         cards.push(
           `<div class="mu-card gift-card" data-gift="group"><span class="mu-pic"><img alt="" src="${look.eggPicture(look.gifts.subscribe[0]?.reward.egg ?? 'egg_warm')}"></span><span class="mu-name">${esc(look.t('gifts.follow'))}</span>` +
@@ -118,12 +131,13 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
               : `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('gifts.got'))}</button>`) +
             '</div>',
         );
-      cards.push(
-        `<div class="mu-card gift-card" data-gift="review"><span class="mu-pic"><img alt="" src="${look.thing('chest')}"></span><span class="mu-name">${esc(look.t('gifts.reviewChest'))}</span>` +
-          (v.reviewed ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('gifts.got'))}</button>` : `<button type="button" class="mu-btn" data-action="gift-review">${esc(look.t('gifts.reviewBtn'))}</button>`) +
-          '</div>',
-      );
-      parts.push(`<div class="mu-grid gift-top">${cards.join('')}</div>`);
+      if (!look.noReview)
+        cards.push(
+          `<div class="mu-card gift-card" data-gift="review"><span class="mu-pic"><img alt="" src="${look.thing('chest')}"></span><span class="mu-name">${esc(look.t('gifts.reviewChest'))}</span>` +
+            (v.reviewed ? `<button type="button" class="mu-btn off" aria-disabled="true">${esc(look.t('gifts.got'))}</button>` : `<button type="button" class="mu-btn" data-action="gift-review">${esc(look.t('gifts.reviewBtn'))}</button>`) +
+            '</div>',
+        );
+      if (cards.length) parts.push(`<div class="mu-grid gift-top">${cards.join('')}</div>`);
       // 2. Seven days: 4 + 3 cells, the 7th on two; today filled.
       parts.push(head('gifts.days'), '<div class="days">');
       look.gifts.daily.forEach((g, i) => {
@@ -191,6 +205,12 @@ export function createGiftsWindow(parent: HTMLElement, game: Game, look: GiftsLo
       body.querySelector('[data-action="gift-daily"]')?.addEventListener('click', () => {
         game.claimDaily(look.today());
         win.render();
+      });
+      body.querySelector('[data-action="gift-join"]')?.addEventListener('click', () => {
+        void look.join?.run().then((joined) => {
+          if (joined) game.claimSubscribe(joinId);
+          win.render();
+        });
       });
       for (const s of look.gifts.subscribe)
         body.querySelector(`[data-action="gift-follow-${s.id}"]`)?.addEventListener('click', () => {

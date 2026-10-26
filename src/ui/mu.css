@@ -4428,18 +4428,20 @@ button.mu-card {
   padding-top: 2px;
   padding-bottom: 0;
 }
-/* W-12: the wandering merchant — its two offers side by side in a wider window, both whole with the ✕ and «Не сейчас». */
-.landscape.short #ui .overlay[data-overlay='merchant'] > .card {
-  width: min(100%, 640px);
-  gap: 8px;
-  padding-top: 14px;
-  padding-bottom: 14px;
+/* W-12: the wandering merchant on a phone sideways — its two offers side by side in a wider window, both whole with the ✕ and «Не сейчас». */
+@media (max-height: 520px) {
+  .landscape #ui .overlay[data-overlay='merchant'] > .card {
+    width: min(100%, 640px);
+    gap: 8px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+  .landscape #ui .overlay[data-overlay='merchant'] .shop-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 0;
 }
-.landscape.short #ui .overlay[data-overlay='merchant'] .shop-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  padding: 0;
 }
 /* W-09 (07 rule 2: what pays — not in the lower third, the main action low): on a short screen «За видео» stands first in «Яйца»,
    «Мои яйца» with «Покормить» under it; the list order elsewhere is unchanged (Q-058). */

@@ -85,7 +85,9 @@ export function tabHint(tab: string): FtueHint | null {
   const selectors = TAB_HINTS[tab];
   if (!selectors) return null;
   // MU-02: a tab has no title row — an empty tab's hint stands at its section head or its segments.
-  const head = [`[data-sheet="${tab}"] .mu-seg`, `[data-sheet="${tab}"] .mu-head`];
+  // W (the usability review): «Яйца» is never empty — with no egg to buy (no coins) «Купи яйцо» on «МОИ ЯЙЦА» covered «Покормить»
+  // of the player's own egg; there it says nothing.
+  const head = tab === 'eggs' ? [] : [`[data-sheet="${tab}"] .mu-seg`, `[data-sheet="${tab}"] .mu-head`];
   return { step: 'tab', key: `ftue.tab.${tab}`, target: { kind: 'el', selectors: [...selectors, ...head] } };
 }
 

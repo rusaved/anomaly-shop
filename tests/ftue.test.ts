@@ -105,6 +105,8 @@ describe('M1-09 first minute', () => {
       for (const lang of ['ru', 'en']) expect(dict(lang)[hint.key!]!.trim().split(/\s+/).length, `${lang} ${hint.key}`).toBeLessThanOrEqual(content.ftue.maxHintWords);
     }
     expect(tabHint('home')).toBeNull();
+    // W (the usability review): with no egg to buy the «Яйца» hint points at nothing — never at «МОИ ЯЙЦА» over the player's own egg.
+    expect((tabHint('eggs')!.target as { selectors: string[] }).selectors.some((x) => x.includes('.mu-head'))).toBe(false);
     const game = createGame(createStore(newSave(0), () => 0), content, createRng(1));
     expect(game.seenTab('market')).toBe(true);
     expect(game.seenTab('market')).toBe(false);

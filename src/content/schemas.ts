@@ -261,6 +261,8 @@ export const FeelFile = v.object({
   hatchLockSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(1.5)),
   /** M7: taps extend the wait only this long after the result shows. */
   hatchLockMaxSec: v.pipe(v.number(), v.minValue(3), v.maxValue(10)),
+  /** F-01: a «+» of a place that has just been freed takes no tap this long (0.3–0.6 s). */
+  slotGuardSec: v.pipe(v.number(), v.minValue(0.3), v.maxValue(0.6)),
 });
 
 export const SFX_NAMES = ['tap', 'eggTap', 'hatch', 'rare', 'levelUp', 'coin', 'buy', 'fail', 'vip', 'exclusive', 'press', 'upgrade', 'spin', 'giggle', 'bong', 'chirp', 'voice'] as const;

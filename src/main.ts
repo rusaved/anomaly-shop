@@ -643,6 +643,8 @@ async function boot(): Promise<void> {
   }
   /** MU-03: the «Витрина» row — «N из M мест» and a «+» on every free place (it opens «Мои продажи» on the pick). */
   let shelfKey = '';
+  let shelfChangedAt = 0;
+  const cheapestEgg = Math.min(...eggs.eggs.map((e) => e.price.coins || Infinity));
   function renderShelf(): void {
     const v = play.view();
     const anchors = shop.anchors();
@@ -652,6 +654,7 @@ async function boot(): Promise<void> {
     const key = `${i18n.lang()}:${v.creatures.length}:${v.slots}:${slots.map((r) => `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.w)}`).join(';')}`;
     if (key === shelfKey) return;
     shelfKey = key;
+    shelfChangedAt = performance.now();
     (homeUi.querySelector('[data-shelf-count]') as HTMLElement).textContent = i18n.t('shop.showcase.places', { n: v.creatures.length, all: v.slots });
     const plus = homeUi.querySelector('[data-shelf-plus]') as HTMLElement;
     plus.replaceChildren(
@@ -663,7 +666,18 @@ async function boot(): Promise<void> {
         b.setAttribute('aria-label', i18n.t('sales.add'));
         b.style.cssText = `left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px`;
         b.textContent = '+';
-        b.addEventListener('click', () => openPrice('#pick'));
+        b.addEventListener('click', () => {
+          // F-01: a place freed under the finger (a buyer took the pet into the chat) takes no tap at once.
+          if (performance.now() - shelfChangedAt < feel.slotGuardSec * 1000) return;
+          // F-01: nothing to put and nothing to buy an egg with — a short hint what to do, not a window of «Купить яйцо».
+          const now = play.view();
+          if (!now.inventory.length && store.state.coins < cheapestEgg) {
+            const why = now.talking.length ? 'talking' : now.incubators.some((x) => x.egg) ? 'egg' : 'work';
+            toasts.show(i18n.t(`sales.hint.${why}`), 'info', 2600);
+            return;
+          }
+          openPrice('#pick');
+        });
         return b;
       }),
     );

@@ -1,0 +1,606 @@
+verify (milestone): 14 stages, full log /home/user/anomaly-shop/docs/evidence/T/verify.txt
+
+== verify: typecheck
+ok   typecheck 2.0 s
+
+== verify: test
+
+ RUN  v5.0.3 /home/user/anomaly-shop
+
+
+ Test Files  72 passed (72)
+      Tests  391 passed (391)
+   Start at  14:13:14
+   Duration  25.72s (tests 90%, import 5%, transform 4%, worker 1%)
+
+    Isolate  72 workers spawned · ~141ms startup each (spawn + environment, per file)
+             at least ~3.25s faster with isolate: false — reuses workers across files instead of one per file
+
+ok   test 26.5 s
+
+== verify: validate:content
+validate:content: game.json and 27 content files — ok
+ok   validate:content 0.3 s
+
+== verify: sim:balance
+sim:balance — 4 bots × 24 seeds × 10 min; p50 / p90 of game seconds (limit in brackets)
+casual  F1 16/16 (40) ok · F2 37/53 (120) ok · F3 42/46 (180) ok · F4 24/24 (300) ok · F13 11/12 (60) ok · F14 51/117 (600) ok · F15 201/290 (600) ok · F16.2 35/36 (90) ok · F16.3 85/93 (180) ok · F16.4 144/160 (270) ok · F16.5 210/230 (360) ok · F5 ×2.0 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 650 coins; 10 min: 1878 coins (p50)
+rusher  F1 17/17 (40) ok · F2 46/67 (120) ok · F3 44/50 (180) ok · F4 25/25 (300) ok · F13 11/12 (60) ok · F14 51/183 (600) ok · F15 220/278 (600) ok · F16.2 36/38 (90) ok · F16.3 83/91 (180) ok · F16.4 140/153 (270) ok · F16.5 201/227 (360) ok · F5 ×1.9 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 593 coins; 10 min: 1429 coins (p50)
+tapper  F1 15/15 (40) ok · F2 34/37 (120) ok · F3 43/46 (180) ok · F4 23/23 (300) ok · F13 12/15 (60) ok · F14 55/168 (600) ok · F15 185/226 (600) ok · F16.2 34/37 (90) ok · F16.3 88/105 (180) ok · F16.4 143/166 (270) ok · F16.5 210/234 (360) ok · F5 ×2.8 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 832 coins; 10 min: 2010 coins (p50)
+slow    F1 20/20 (40) ok · F2 60/75 (120) ok · F3 52/60 (180) ok · F4 32/32 (300) ok · F13 11/13 (60) ok · F14 77/186 (600) ok · F15 202/314 (600) ok · F16.2 42/44 (90) ok · F16.3 92/99 (180) ok · F16.4 149/166 (270) ok · F16.5 211/242 (360) ok · F5 ×1.3 ok · F10 ok · F11 0/24 ok · 5 min: 18 deals, 616 coins; 10 min: 1384 coins (p50)
+long run — casual and slow × 8 seeds: 3 days of 30 active minutes + 8 h away
+casual  F19 income an hour of play / away: 29970 / 11626 (39 %, want 30–50 %), seller levels away +1 (≤ 1) ok
+casual  F6 8 h away = 48 min of play (30–60) ok · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 279 s, square 970 s p90 (600 / 2400) ok
+slow    F19 income an hour of play / away: 29226 / 10210 (35 %, want 30–50 %), seller levels away +1 (≤ 1) ok
+slow    F6 8 h away = 48 min of play (30–60) info · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 309 s, square 1084 s p90 (600 / 2400) ok
+keeper  F12 10 min = ×1.02 of casual (≤ ×2) · rebirth threshold on day 2.0 (≥ 1.0) ok
+week    F17 new things by day 48 / 28 / 54 / 20 / 57 / 33 / 48 (≥ 1 a day) ok · guest zone pays back ×5.31 (≥ 1) ok · F18 moves on day 2.0, the next 2.5 days later (1–3), the city egg on day 4.6 ok
+rewards FB-02 best reward in 5 min of income by ladder step (exclusive when bought p50 / hatch p90): basic 0.1/0.02 · warm 0.4/0.19 · odd 6.3/0.57 · glow 37.0/4.09 · star 88.0/9.04 · crystal 140.0/7.79 · rainbow 589.7/36.10; free rewards ≤ 5 min (capped)
+care    F20 VIP+exclusive without → with full care (b 0.5, top 0.35), EV in egg prices less food: basic 0.5→1.3 % · ×2.56→×3.46 · warm 2.0→4.4 % · ×1.03→×1.32 · odd 3.0→6.0 % · ×0.90→×1.11 · glow 3.0→6.0 % · ×0.91→×1.15 · star 3.0→6.0 % · ×0.97→×1.17 · crystal 3.0→6.1 % · ×0.95→×1.15 · rainbow 3.0→6.0 % · ×0.99→×1.16 · royal 3.0→6.0 % · ×1.01→×1.15 ok
+ads     M5-02 casual day of 30 min (p50): eggs for videos 3 of 325 (1 %) · boost +33 % · ×2 deal 30 of 353 deals (+8 %) · egg ads ≤ +50 % · F9 at most +92 % (want 30–100 %) ok
+RD-03 table (info, p50 / p90): short run — first buy (egg for coins / anything), wall = the longest wait between purchases in 10 min, s
+  casual  first egg 21 / 21 · first buy 21 / 21 · wall 30 / 37 · buys in 10 min 55 / 50 (p50 / p10)
+  rusher  first egg 22 / 22 · first buy 22 / 22 · wall 29 / 42 · buys in 10 min 53 / 50 (p50 / p10)
+  tapper  first egg 20 / 20 · first buy 20 / 20 · wall 30 / 37 · buys in 10 min 58 / 51 (p50 / p10)
+  slow    first egg 27 / 27 · first buy 27 / 27 · wall 32 / 42 · buys in 10 min 50 / 44 (p50 / p10)
+  casual  long run: wall day 1 / 2 / 3 1.7 / 2.2 · 2.1 / 2.4 · 2.3 / 2.5 min · an hour away against an hour of play 40 / 40 %
+  slow    long run: wall day 1 / 2 / 3 2.1 / 3.0 · 2.5 / 2.6 · 1.5 / 2.3 min · an hour away against an hour of play 40 / 40 %
+F1–F8, F10, F11, F12–F20: all green
+(82.0 s)
+ok   sim:balance 82.3 s
+
+== verify: build:e2e
+vite v8.3.2 building client environment for e2e...
+transforming...
+✓ 832 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-e2e/index.html                                         2.30 kB │ gzip:   1.12 kB
+dist-e2e/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-e2e/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-e2e/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-e2e/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-e2e/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-e2e/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-e2e/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-e2e/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-e2e/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-e2e/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-e2e/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-e2e/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-e2e/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-e2e/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-e2e/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-e2e/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-e2e/assets/index-n6MtKI4M.css                        109.20 kB │ gzip:  19.95 kB
+dist-e2e/assets/webworkerAll-CQ-E1GCo.js                    0.05 kB │ gzip:   0.06 kB
+dist-e2e/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-e2e/assets/test-api-CKoAwC9R.js                        1.45 kB │ gzip:   0.67 kB
+dist-e2e/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-e2e/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-e2e/assets/yandex-7TUlKLzP.js                         10.13 kB │ gzip:   3.48 kB
+dist-e2e/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-e2e/assets/init-C5765Vw3.js                           15.31 kB │ gzip:   4.80 kB
+dist-e2e/assets/panel-BqmW3msy.js                          31.93 kB │ gzip:   8.60 kB
+dist-e2e/assets/browserAll-Bib2tm0z.js                     42.64 kB │ gzip:  11.19 kB
+dist-e2e/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-e2e/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-e2e/assets/index-CAiAhJpZ.js                         765.28 kB │ gzip: 238.20 kB
+
+✓ built in 952ms
+ok   build:e2e 1.5 s
+
+== verify: e2e [e2e: end of milestone only]
+e2e: every project but perf
+
+Running 280 tests using 2 workers
+
+  ✓    1 [desktop] › e2e/back-fb.spec.ts:14:1 › FB-07 from «Склад»: «На продажу» → «Цена» → «‹» back to «Склад» (4.7s)
+  ✓    2 [desktop] › e2e/back-fb.spec.ts:26:1 › FB-07 from «Лавка»: «+» of the shelf → the pick → «Цена» → «‹» back to «Лавка» (5.0s)
+  ✓    3 [desktop] › e2e/back-fb.spec.ts:38:1 › FB-07 from «Продажи»: «+ Выставить» → the pick → «Цена» → «‹» back to the pick, then the list (2.9s)
+  ✓    5 [desktop] › e2e/build-m7.spec.ts:39:1 › BLD-06 no WebGL: the shop still opens (the scene falls back to a 2D canvas), no technical words, no errors (2.7s)
+  ✓    6 [desktop] › e2e/build-m7.spec.ts:48:1 › BLD-06 nothing can draw at all: a calm screen in the player language instead of a spinner, no errors (731ms)
+  ✓    4 [desktop] › e2e/build-m7.spec.ts:11:1 › M7-00 the pictures held back for the first screen are all drawn right after it, on every tab (7.0s)
+  ✓    7 [desktop] › e2e/build-m7.spec.ts:61:1 › SND-02 blur, hidden and pagehide: the game and the sound stop at once, come back on focus (3.4s)
+  ✓    8 [desktop] › e2e/build-m7.spec.ts:84:1 › SCR-07 minimised and back, «Назад» from the platform: the game goes on, nothing freezes (5.9s)
+  ✓    9 [desktop] › e2e/build-m7.spec.ts:108:1 › SCR-04 no context menu on a right click or a long tap, nothing gets selected (6.9s)
+  ✓   11 [desktop] › e2e/build-m7.spec.ts:130:3 › SCR-02 600×1300: the game touches the edges along one axis, the margins are the background color (3.2s)
+  ✓   10 [desktop] › e2e/build-m7.spec.ts:130:3 › SCR-02 2560×1080: the game touches the edges along one axis, the margins are the background color (8.0s)
+  ✓   12 [desktop] › e2e/build-m7.spec.ts:146:1 › LOC-04 the page title is the card title of game.json (4.1s)
+  ✓   13 [desktop] › e2e/build-m7.spec.ts:151:1 › CNT-08 the community buttons stay in the pause, «Подарки» gives nothing for a visit to the group (5.6s)
+  ✓   15 [desktop] › e2e/burst-fb.spec.ts:20:1 › FB-09 common — no burst; VIP — sparks and salute; a tap skips; exclusive — the whole screen (9.9s)
+  ✓   14 [desktop] › e2e/build-m7.spec.ts:164:1 › M7 hatch: taps every 0.25 s for 7 s never lock «Вылупился!» for good — the choice takes a press after the run (13.4s)
+  ✓   16 [desktop] › e2e/burst-fb.spec.ts:41:1 › FB-09 prefers-reduced-motion — the flash only (4.4s)
+  ✓   17 [desktop] › e2e/devices-rd.spec.ts:10:1 › RD-06 device: the first minute to the first deal, F5 keeps it, no console errors (28.9s)
+  ✓   19 [desktop] › e2e/eggs-m3.spec.ts:10:1 › M3-04 egg card: odds match eggs.json, buy one and ×3 (6.8s)
+  ✓   20 [desktop] › e2e/fixes-fb.spec.ts:60:3 › Круг правок FB п. 1 portrait 375×650 › an egg → two quick taps on the strip → the pet is not sold, «Вылупился!» stays (7.4s)
+  ✓   21 [desktop] › e2e/fixes-fb.spec.ts:62:3 › Круг правок FB п. 1 portrait 375×650 › the buttons of the result take no press for 0.8 s after it shows (4.5s)
+  ✓   18 [desktop] › e2e/devices-rd.spec.ts:23:1 › RD-06 device: every tab opens, its buttons seen whole (48.7s)
+  ✓   23 [desktop] › e2e/fixes-fb.spec.ts:108:5 › Круг правок FB п. 2 375×650 › the upgrades: rows without a fill, only an affordable price filled — the same in «Лавка» and «Магазин»; the shelf places 44+ px, 8 px apart (1.9s)
+  ✓   22 [desktop] › e2e/fixes-fb.spec.ts:81:3 › Круг правок FB п. 1 sideways 812×330 › an egg → two quick taps on the strip → the pet is not sold, «Вылупился!» stays (6.9s)
+  ✓   25 [desktop] › e2e/fixes-fb.spec.ts:149:5 › Круг правок FB п. 3 375×650 › «Пока тебя не было»: the ad button says its number and stands 24 px from «Отлично» (2.6s)
+  ✓   24 [desktop] › e2e/fixes-fb.spec.ts:108:5 › Круг правок FB п. 2 812×330 › the upgrades: rows without a fill, only an affordable price filled — the same in «Лавка» and «Магазин»; the shelf places 44+ px, 8 px apart (2.8s)
+  ✓   26 [desktop] › e2e/fixes-fb.spec.ts:149:5 › Круг правок FB п. 3 812×330 › «Пока тебя не было»: the ad button says its number and stands 24 px from «Отлично» (2.8s)
+  ✓   27 [desktop] › e2e/fixes-fb.spec.ts:189:5 › Круг правок FB п. 4 sideways 812×330 › the egg card: «×3» and «×5» whole above the tab bar (3.7s)
+  ✓   28 [desktop] › e2e/fixes-fb.spec.ts:189:5 › Круг правок FB п. 4 sideways 812×330 › the egg card: «×3» and «×5» whole above the tab bar at 130 % (3.4s)
+  ✓   29 [desktop] › e2e/fixes-fb.spec.ts:209:5 › Круг правок FB п. 4 375×650 › «Вылупился!» at 130 %: the buttons whole, fields 12 px or more (4.5s)
+  ✓   30 [desktop] › e2e/fixes-fb.spec.ts:237:5 › Круг правок FB п. 4 375×650 › «Кого выставить» with an empty storage: «На складе пусто» and «Купить яйцо» (2.6s)
+  ✓   32 [desktop] › e2e/fixes-fb.spec.ts:237:5 › Круг правок FB п. 4 812×330 › «Кого выставить» with an empty storage: «На складе пусто» and «Купить яйцо» (2.6s)
+  ✓   31 [desktop] › e2e/fixes-fb.spec.ts:209:5 › Круг правок FB п. 4 812×330 › «Вылупился!» at 130 %: the buttons whole, fields 12 px or more (4.7s)
+  ✓   33 [desktop] › e2e/fixes-fb.spec.ts:264:7 › Круг правок FB п. 5 375×650 › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable (3.5s)
+  ✓   34 [desktop] › e2e/fixes-fb.spec.ts:264:7 › Круг правок FB п. 5 375×650 130 % › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable (3.4s)
+  ✓   35 [desktop] › e2e/fixes-fb.spec.ts:264:7 › Круг правок FB п. 5 812×330 › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable (3.1s)
+  ✓   36 [desktop] › e2e/fixes-fb.spec.ts:264:7 › Круг правок FB п. 5 812×330 130 % › «Настройки»: two equal switches; «Язык» and the code in sight; the placeholder readable (4.0s)
+  ✓   38 [desktop] › e2e/fixes-fb.spec.ts:359:3 › Круг правок FB п. 6 portrait 375×650 at 130 % › the tab labels stand 8 px apart, «Лавка» in the middle; a chat name never cut inside a word (2.5s)
+  ✓   37 [desktop] › e2e/fixes-fb.spec.ts:316:3 › Круг правок FB п. 6 sideways 812×330 at 130 % › the gift days, the lot, «Уровень продавца» — whole words in sight (5.0s)
+  ✓   40 [desktop] › e2e/fixes-fb.spec.ts:411:3 › Круг правок FB п. 7 portrait 375×650 › «Забрать подарок дня» ≤ 360; the pet fills its tile; «Сытный корм» has its own picture; chats apart from the places (5.3s)
+  ✓   39 [desktop] › e2e/fixes-fb.spec.ts:384:3 › Круг правок FB п. 7 portrait 375×650 › the tabs on their own places from the first minute; «Купи новое яйцо» with its tail on «10» (6.7s)
+  ✓   41 [desktop] › e2e/fixes-fb.spec.ts:453:3 › Круг правок FB п. 7 PC 1280×720 › «Лавка»: the right half holds the Store and the eggs (3.7s)
+  ✓   42 [desktop] › e2e/fixes-fb2.spec.ts:41:5 › Круг правок FB-2 п. 1 812×330 › the lot sideways: the main button and the lines whole (3.1s)
+  ✓   43 [desktop] › e2e/fixes-fb2.spec.ts:41:5 › Круг правок FB-2 п. 1 812×330 130 % › the lot sideways: the main button and the lines whole (2.9s)
+  ✓   45 [desktop] › e2e/fixes-fb2.spec.ts:139:3 › Круг правок FB-2 п. 3 375×650 130 % › the lot in portrait: the lines whole over the answers (3.4s)
+  ✓   44 [desktop] › e2e/fixes-fb2.spec.ts:90:3 › Круг правок FB-2 п. 2 375×650 › the salute brightens the card and keeps its words readable (6.6s)
+  ✓   46 [desktop] › e2e/fixes-fb2.spec.ts:168:5 › Круг правок FB-2 п. 4 375×650 › «Продать сразу» away from the strip and the corner; a full shelf — «На склад» main (4.1s)
+  ✓   47 [desktop] › e2e/fixes-fb2.spec.ts:168:5 › Круг правок FB-2 п. 4 812×330 › «Продать сразу» away from the strip and the corner; a full shelf — «На склад» main (4.4s)
+  ✓   48 [desktop] › e2e/fixes-fb2.spec.ts:206:5 › Круг правок FB-2 п. 5 375×650 › the upgrade rows: the accent price, one height, one icon size (2.8s)
+  ✓   49 [desktop] › e2e/fixes-fb2.spec.ts:206:5 › Круг правок FB-2 п. 5 812×330 › the upgrade rows: the accent price, one height, one icon size (2.9s)
+  ✓   51 [desktop] › e2e/fixes-fb2.spec.ts:292:5 › Круг правок FB-2 п. 6 375×650 › a toast in the first minute clears the hint and its target (2.3s)
+  ✓   50 [desktop] › e2e/fixes-fb2.spec.ts:275:5 › Круг правок FB-2 п. 6 375×650 › a toast clears the «‹» row and the hint; «Пункт» is not blank (4.2s)
+  ✓   53 [desktop] › e2e/fixes-fb2.spec.ts:292:5 › Круг правок FB-2 п. 6 812×330 › a toast in the first minute clears the hint and its target (2.5s)
+  ✓   52 [desktop] › e2e/fixes-fb2.spec.ts:275:5 › Круг правок FB-2 п. 6 812×330 › a toast clears the «‹» row and the hint; «Пункт» is not blank (4.1s)
+  ✓   54 [desktop] › e2e/fixes-fb2.spec.ts:309:5 › Круг правок FB-2 серия тапов 375×650 › a run of taps while the egg hatches sells nothing (7.8s)
+  ✓   55 [desktop] › e2e/fixes-fb2.spec.ts:309:5 › Круг правок FB-2 серия тапов 812×330 › a run of taps while the egg hatches sells nothing (8.4s)
+  ✓   56 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 sell 150 мс › a run of taps sells nothing and buys nothing (5.6s)
+  ✓   57 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 sell 300 мс › a run of taps sells nothing and buys nothing (7.1s)
+  ✓   58 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 sell 500 мс › a run of taps sells nothing and buys nothing (8.1s)
+  ✓   59 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 strip 150 мс › a run of taps sells nothing and buys nothing (5.2s)
+  ✓   60 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 strip 300 мс › a run of taps sells nothing and buys nothing (7.1s)
+  ✓   61 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 strip 500 мс › a run of taps sells nothing and buys nothing (8.7s)
+  ✓   62 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 dim 150 мс › a run of taps sells nothing and buys nothing (5.6s)
+  ✓   63 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 dim 300 мс › a run of taps sells nothing and buys nothing (6.9s)
+  ✓   64 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 375×650 dim 500 мс › a run of taps sells nothing and buys nothing (8.1s)
+  ✓   65 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 sell 150 мс › a run of taps sells nothing and buys nothing (5.3s)
+  ✓   66 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 sell 300 мс › a run of taps sells nothing and buys nothing (7.6s)
+  ✓   67 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 sell 500 мс › a run of taps sells nothing and buys nothing (8.9s)
+  ✓   68 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 strip 150 мс › a run of taps sells nothing and buys nothing (6.5s)
+  ✓   69 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 strip 300 мс › a run of taps sells nothing and buys nothing (7.0s)
+  ✓   70 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 strip 500 мс › a run of taps sells nothing and buys nothing (7.7s)
+  ✓   71 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 dim 150 мс › a run of taps sells nothing and buys nothing (5.4s)
+  ✓   72 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 dim 300 мс › a run of taps sells nothing and buys nothing (7.2s)
+  ✓   73 [desktop] › e2e/fixes-fb3.spec.ts:15:9 › Круг правок FB-3 п. 1 812×330 dim 500 мс › a run of taps sells nothing and buys nothing (8.8s)
+  ✓   74 [desktop] › e2e/fixes-fb3.spec.ts:76:5 › Круг правок FB-3 п. 3 812×330 › «Вылупился!» sideways: fields 16, the buttons right under the words (3.5s)
+  ✓   75 [desktop] › e2e/fixes-fb3.spec.ts:76:5 › Круг правок FB-3 п. 3 812×330 130 % › «Вылупился!» sideways: fields 16, the buttons right under the words (4.3s)
+  ✓   76 [desktop] › e2e/fixes-fb3.spec.ts:138:5 › Круг правок FB-3 п. 4 375×650 › a row cut by the scroll edge is whole (5.5s)
+  ✓   77 [desktop] › e2e/fixes-fb3.spec.ts:138:5 › Круг правок FB-3 п. 4 812×330 › a row cut by the scroll edge is whole (5.4s)
+  ✓   78 [desktop] › e2e/fixes-fb3.spec.ts:184:5 › Круг правок FB-3 п. 5 375×650 › a toast clears the scene, the hint, «‹» and the segments; a tap on it is its own (11.0s)
+  ✓   79 [desktop] › e2e/fixes-fb3.spec.ts:184:5 › Круг правок FB-3 п. 5 812×330 › a toast clears the scene, the hint, «‹» and the segments; a tap on it is its own (10.6s)
+  ✓   80 [desktop] › e2e/fixes-fb3.spec.ts:247:3 › Круг правок FB-3 п. 6 812×330 › the lot sideways: the main button at the left edge of its column (2.0s)
+  ✓   81 [desktop] › e2e/fixes-fb3.spec.ts:266:5 › Круг правок FB-3 п. 6 375×650 › «Пункт» closed, the icons of one mass, the empty dots ≥ 3:1 (2.9s)
+  ✓   83 [desktop] › e2e/fixes-fb3.spec.ts:266:5 › Круг правок FB-3 п. 6 812×330 › «Пункт» closed, the icons of one mass, the empty dots ≥ 3:1 (2.9s)
+  ✓   82 [desktop] › e2e/fixes-fb3.spec.ts:323:5 › Круг правок FB-3 п. 6 375×650 › «Покорми его тапами» off the incubator; a ready gift egg gets the «new egg» hint (9.7s)
+  ✓   84 [desktop] › e2e/fixes-fb3.spec.ts:323:5 › Круг правок FB-3 п. 6 812×330 › «Покорми его тапами» off the incubator; a ready gift egg gets the «new egg» hint (9.9s)
+  ✓   85 [desktop] › e2e/fixes-fb3.spec.ts:363:5 › Круг правок FB-3 ревизор удобства 375×650 › the tab bar under «Вылупился!» does nothing; the gift hint on «Яйца» (9.7s)
+  ✓   86 [desktop] › e2e/fixes-fb3.spec.ts:363:5 › Круг правок FB-3 ревизор удобства 812×330 › the tab bar under «Вылупился!» does nothing; the gift hint on «Яйца» (9.6s)
+  ✓   88 [desktop] › e2e/frames-m6.spec.ts:78:5 › 880x405 shop name › M6-23 the shop name in the settings: a stop-word is not taken, the name is kept after F5 @ 880x405 (10.2s)
+  ✓   87 [desktop] › e2e/frames-m6.spec.ts:32:5 › 880x405 › M6-02 the 30 species: collection and the shelf @ 880x405 (51.3s)
+  ✓   89 [desktop] › e2e/frames-m6.spec.ts:32:5 › 815x290 › M6-02 the 30 species: collection and the shelf @ 815x290 (40.8s)
+  ✓   91 [desktop] › e2e/frames-rd.spec.ts:21:1 › RD-02 every window in the code has an opener (5ms)
+  ✓   90 [desktop] › e2e/frames-m6.spec.ts:78:5 › 815x290 shop name › M6-23 the shop name in the settings: a stop-word is not taken, the name is kept after F5 @ 815x290 (9.0s)
+  ✓   93 [desktop] › e2e/frames-rd.spec.ts:32:5 › 815x290 › RD-02 every tab, sub-tab and window: buttons seen whole @ 815x290 (52.3s)
+  -   94 [desktop] › e2e/frames-rd.spec.ts:102:5 › 880x405 first minute › W the first minute: frames @ 880x405
+  -   95 [desktop] › e2e/frames-rd.spec.ts:102:5 › 815x290 first minute › W the first minute: frames @ 815x290
+  -   96 [desktop] › e2e/frames-rd.spec.ts:122:7 › 880x405 shelf › T the shelf of 3 places: frames @ 880x405
+  -   97 [desktop] › e2e/frames-rd.spec.ts:122:7 › 880x405 shelf › T the shelf of 6 places: frames @ 880x405
+  -   98 [desktop] › e2e/frames-rd.spec.ts:122:7 › 815x290 shelf › T the shelf of 3 places: frames @ 815x290
+  -   99 [desktop] › e2e/frames-rd.spec.ts:122:7 › 815x290 shelf › T the shelf of 6 places: frames @ 815x290
+  ✓   92 [desktop] › e2e/frames-rd.spec.ts:32:5 › 880x405 › RD-02 every tab, sub-tab and window: buttons seen whole @ 880x405 (1.0m)
+  ✓  100 [desktop] › e2e/gifts-m3.spec.ts:7:1 › M3-11 gifts: the daily gift and the review egg once, kept after a reload (10.2s)
+  ✓  101 [desktop] › e2e/hatch-ub.spec.ts:10:1 › UB-03 the first egg opens with one tap; the creature is nowhere until the strip stops; a tap skips; three choices (7.2s)
+  ✓  103 [desktop] › e2e/inventory-q050.spec.ts:9:1 › Q-050 the last pet sold: «Склад» counts 0 and shows the empty list (3.1s)
+  ✓  104 [desktop] › e2e/leaders-m4.spec.ts:5:1 › M4-04 leaders: sign in by the button, the score on the board, no SDK violations (4.7s)
+  ✓  102 [desktop] › e2e/hatch-ub.spec.ts:39:1 › M3-05 hatch show: 4–5 s, the roll on the card, sell now = the low end (12.1s)
+  ✓  106 [desktop] › e2e/loop.spec.ts:28:1 › M1-08 the upgrade shop: buying the second incubator changes the shop and survives F5 (10.0s)
+  ✓  105 [desktop] › e2e/loop.spec.ts:8:1 › SAV-01 F5 after a deal: coins, the deal count and the creatures come back (30.2s)
+  ✓  108 [desktop] › e2e/market-m3.spec.ts:5:1 › M3-09 market: lots, timer, a lot page opens, a quick buy (5.5s)
+  ✓  107 [desktop] › e2e/loop.spec.ts:48:1 › LOC-03 English: the home screen, the chats, the tab bar and the upgrade shop have no Russian text (27.0s)
+  ✓  109 [desktop] › e2e/mu-07.spec.ts:276:5 › MU-12 docs/07 at 375×650 › every screen keeps the rules of 07 and shows the rarity of every pet (17.3s)
+  ✓  110 [desktop] › e2e/mu-07.spec.ts:284:5 › MU-12 docs/07 at 375×650 › a system font at 130 %: nothing runs out of the screen or under the tab bar (16.4s)
+  ✓  111 [desktop] › e2e/mu-07.spec.ts:276:5 › MU-12 docs/07 at 812×330 › every screen keeps the rules of 07 and shows the rarity of every pet (17.2s)
+  ✓  112 [desktop] › e2e/mu-07.spec.ts:284:5 › MU-12 docs/07 at 812×330 › a system font at 130 %: nothing runs out of the screen or under the tab bar (16.1s)
+  ✓  113 [desktop] › e2e/mu-07.spec.ts:332:3 › the round of fixes, item 1: lists by the mockups at 375×650 › finds 172, the two gift cards 122, the sales places 200; the first line 8–14 px under the top bar (9.1s)
+  ✓  114 [desktop] › e2e/mu-07.spec.ts:375:3 › the round of fixes, item 2: sideways 812×330 is «list + detail» › rows 44–52 px (a second line of whole words up to 72); the lot, the egg card, the collection, the gifts and «Вылупился!» whole (9.0s)
+  ✓  115 [desktop] › e2e/mu-07.spec.ts:475:5 › the round of fixes, item 3: the font scale of 07 at 375×650 › titles 18 on one line, pet names 18, the big price 32, section labels 12.5 (5.1s)
+  ✓  116 [desktop] › e2e/mu-07.spec.ts:475:5 › the round of fixes, item 3: the font scale of 07 at 812×330 › titles 18 on one line, pet names 18, the big price 32, section labels 12.5 (5.0s)
+  ✓  117 [desktop] › e2e/mu-07.spec.ts:505:3 › the round of fixes, item 6: the small things › tab names and 12 px labels, the top bar 44 px, one green fill among the finds, «Скидка? Возьму за…» on one line (4.5s)
+  ✓  118 [desktop] › e2e/mu-07.spec.ts:537:3 › the round of fixes, item 8: a toast moves nothing, a hint lies on no card › a toast over «Рынок» leaves every card where the finger aims (5.7s)
+  ✓  120 [desktop] › e2e/mu-07.spec.ts:582:3 › the round of fixes, item 8 (the recheck): the first hint of a tab moves nothing when it goes › «Рынок» on its first visit: the hint stands in a band at the bottom, the lots stay put after the first tap (6.1s)
+  ✓  119 [desktop] › e2e/mu-07.spec.ts:557:3 › the round of fixes, item 8: a toast moves nothing, a hint lies on no card › the hint over a tab of the bar takes its own band: no card of the open screen under it (10.4s)
+  ✓  121 [desktop] › e2e/nav-ub.spec.ts:5:1 › UB-01 PC: one tab bar at the bottom, Eggs is home, every tab opens its screen (5.6s)
+  ✓  123 [desktop] › e2e/polish-m6.spec.ts:10:1 › M6-01 the hatch wheel clicks as portraits pass the marker; the result has its rarity sound (9.2s)
+  ✓  124 [desktop] › e2e/polish-m6.spec.ts:30:1 › M6-20 window, clock and flower answer a tap; 15 on the window — the winged teapot; a tickle laughs (10.3s)
+  ✓  122 [desktop] › e2e/noise-m3.spec.ts:5:1 › M3-18 one text at a time; the ticker is quiet without a reason (28.4s)
+  ✓  125 [desktop] › e2e/polish-m6.spec.ts:55:1 › M6-20 the clock strikes noon by the device time: «Bong», a toast, a treat for every pet (5.2s)
+  ✓  126 [desktop] › e2e/polish-m6.spec.ts:66:1 › M6-22 every speech line has its sound: a pet speaks on taps (chirp), a buyer writes (voice); marked pets on the shelf (4.9s)
+  ✓  127 [desktop] › e2e/press-fb.spec.ts:46:1 › FB-13 every button: the squeeze 0.95 and the press sound — «Лавка», «Яйца», «Склад», «Продажи», «Магазин», «Пауза» (10.3s)
+  ✓  128 [desktop] › e2e/rebirth-m4.spec.ts:6:1 › M4-06 rebirth: ready → the popup asks → a new city, the collection stays (8.6s)
+  ✓  130 [desktop] › e2e/reviewers-fb.spec.ts:32:3 › FB-14 portrait 375×650 › 130 %: tab labels, segments and names keep whole words (≥ 12 px) (4.8s)
+  ✓  129 [desktop] › e2e/reputation-ub.spec.ts:7:1 › UB-08 a deal brings the seller level up: the chip flashes, a toast, the panel lists what opens (8.3s)
+  ✓  131 [desktop] › e2e/reviewers-fb.spec.ts:45:3 › FB-14 portrait 375×650 › «Аномалия дня» in three lines; «Продать сразу» out of the bottom third; a cut card shows only its picture (5.1s)
+  ✓  132 [desktop] › e2e/reviewers-fb.spec.ts:81:3 › FB-14 sideways 812×330 › the section switcher ≤ 420 px, the main button ≤ 360 px (3.9s)
+  ✓  133 [desktop] › e2e/reviewers-fb.spec.ts:101:3 › FB-15 the round of fixes (usability review) › a second tap right after skipping the strip never sells the pet (3.3s)
+  ✓  134 [desktop] › e2e/reviewers-fb.spec.ts:117:3 › FB-15 the round of fixes (usability review) › «Пока тебя не было»: the ad button says its coins, away longer than the shop works says both times (2.7s)
+  ✓  135 [desktop] › e2e/sales-ub.spec.ts:8:1 › UB-05 one path: listed with the slider, a buyer writes, the creature is off the shelf meanwhile, sold from the chat (6.1s)
+  ✓  136 [desktop] › e2e/seller-m3.spec.ts:7:1 › M3-10 bought below the market → on sale → sold dearer (7.0s)
+  ✓  137 [desktop] › e2e/smoke.spec.ts:9:1 › environment: the game boots on the mock, WebGL renders, the test API answers (3.9s)
+  ✓  138 [desktop] › e2e/smoke.spec.ts:19:1 › SDK-02 ready() once, after the shop is drawn, within 4 s; the loading screen is gone (4.5s)
+  ✓  140 [desktop] › e2e/smoke.spec.ts:43:1 › SDK-03 startup ad: pause before ready, gameplay starts only after the resume (4.4s)
+  ✓  139 [desktop] › e2e/smoke.spec.ts:31:1 › SCR-09 zero console errors, page errors and dialogs through pause, settings and a reload (10.0s)
+  ✓  141 [desktop] › e2e/smoke.spec.ts:56:1 › SDK-04 GameplayAPI stop on pause and start on resume, only on transitions (5.6s)
+  ✓  143 [desktop] › e2e/smoke.spec.ts:83:1 › SAV-05 a corrupted save gives a fresh profile, no crash (3.9s)
+  ✓  144 [desktop] › e2e/smoke.spec.ts:97:1 › SDK-05 LOC-03 language from the SDK: en → English UI, uk → Russian (7.2s)
+  ✓  142 [desktop] › e2e/smoke.spec.ts:67:1 › SAV-01 coins and a creature survive F5 (debug panel actions) (13.2s)
+  ✓  146 [desktop] › e2e/smoke.spec.ts:122:1 › CNT-08 community buttons open the game.json addresses in a new tab, no reward, game paused (6.1s)
+  ✓  145 [desktop] › e2e/smoke.spec.ts:110:1 › LOC-05 manual language choice wins over the platform language and survives F5 (10.3s)
+  ✓  147 [desktop] › e2e/smoke.spec.ts:140:1 › SCR-01 1280×720: the top bar, «Лавка», the tab bar, pause and settings windows fit the screen (5.7s)
+  ✓  148 [desktop] › e2e/store-m5.spec.ts:19:3 › M5-04 store › payments off (game.json): «Акции» stays off, no store at all (4.4s)
+  ✓  149 [desktop] › e2e/store-m5.spec.ts:27:3 › M5-04 store › not in the first 3 minutes; then deals with the 48 h timer, coins, «Без рекламы», the note; prices from the catalog (6.1s)
+  ✓  150 [desktop] › e2e/store-m5.spec.ts:48:3 › M5-04 store › a purchase on the mock: the pack comes and is consumed; the starter deal goes once bought (13.3s)
+  ✓  151 [desktop] › e2e/store-m5.spec.ts:65:3 › M5-04 store › cancel gives nothing and says nothing; an error says the money was not taken (12.9s)
+  ✓  152 [desktop] › e2e/store-m5.spec.ts:80:3 › M5-04 store › «Без рекламы»: bought, then restored after a reload from the platform purchases (getPurchases) (10.8s)
+  ✓  154 [desktop] › e2e/store-m5.spec.ts:115:3 › M5-04 store › M5-06 the 1st session without a purchase: no review window (8.8s)
+  ✓  155 [desktop] › e2e/upgrades-ub.spec.ts:5:1 › UB-04 upgrades: a panel from the right by a button, the shop in view, the purchase shines (4.9s)
+  ✓  153 [desktop] › e2e/store-m5.spec.ts:96:3 › M5-04 store › M5-06 the review window asks once: from the 3rd session after 5 minutes of play, the chest after the platform window (24.1s)
+  ✓  156 [desktop] › e2e/usability-ub.spec.ts:6:1 › UB-09 PC: a tab tap closes any window (7.1s)
+  ✓  157 [desktop] › e2e/usability-ub.spec.ts:7:1 › UB-09 PC: one window at a time (8.4s)
+  ✓  158 [desktop] › e2e/usability-ub.spec.ts:8:1 › UB-09 PC: hints never lie over a window (10.3s)
+  ✓  159 [desktop] › e2e/usability-ub.spec.ts:9:1 › UB-09 PC: the hatch reward only after the strip (9.7s)
+  ✓  160 [desktop] › e2e/usability-ub.spec.ts:10:1 › UB-09 PC: hidden gestures are signed (15.4s)
+  ✓  162 [desktop] › e2e/usability-ub.spec.ts:12:1 › UB-09 PC: every tab has its label (4.2s)
+  ✓  161 [desktop] › e2e/usability-ub.spec.ts:11:1 › UB-09 PC: text 12 px and up (14 px and no cut text on a PC, M4-00), buttons 44 px and up on every screen (20.1s)
+  ✓  163 [desktop] › e2e/usability-ub.spec.ts:13:1 › UB-09 PC: no service marks (7.6s)
+  ✓  164 [desktop] › e2e/usability-ub.spec.ts:14:1 › M4-00 PC: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (6.2s)
+  ✓  166 [desktop] › e2e/windows-ub.spec.ts:4:1 › UB-02 PC: one window at a time, a tab works from any window, a tap outside closes it (8.2s)
+  ✓  167 [desktop] › e2e/windows-ub.spec.ts:5:1 › UB-02 PC: hints never lie over a window or another screen (4.9s)
+  ✓  168 [desktop] › e2e/work-m3.spec.ts:5:1 › M3-12 side job: a tap gives +N (4.4s)
+  ✓  169 [truthful] › e2e/truthful-m5.spec.ts:24:3 › M5-00 truthful stand › desktop: the banner stand-in takes 160 px on the right, the game narrows itself and nothing hides under it (7.4s)
+  ✓  165 [desktop] › e2e/usability-ub.spec.ts:15:1 › M4-00 PC: one caption on the shop at a time (31.7s)
+  ✓  170 [truthful] › e2e/truthful-m5.spec.ts:38:3 › M5-00 truthful stand › full screen on the first tap, once (4.8s)
+  ✓  172 [truthful] › e2e/truthful-m5.spec.ts:74:3 › M5-00 truthful stand › closed early (✕): no egg, a note, the button stays (7.0s)
+  ✓  171 [truthful] › e2e/truthful-m5.spec.ts:46:3 › M5-00 truthful stand › a rewarded video: the dark «Реклама» screen ~3 s, the game paused, the egg after it, the card stays with one less (10.7s)
+  ✓  173 [truthful] › e2e/truthful-m5.spec.ts:88:3 › M5-00 truthful stand › no video (error): no egg, a note, the button stays; the late reward (onRewarded after onClose) still gives the egg (12.8s)
+  ✓  174 [truthful] › e2e/truthful-m5.spec.ts:105:3 › M5-00 truthful stand › every rewarded place has its own button with the reward on it; none on the scene or the top bar (11.4s)
+  ✓  175 [truthful] › e2e/truthful-m5.spec.ts:129:3 › M5-00 truthful stand › M5-03 interstitial: not in the first 3 minutes; then on a window closed by the player; not again for 3 minutes (7.7s)
+  ✓  176 [truthful] › e2e/truthful-m5.spec.ts:145:3 › M5-00 truthful stand › M5-03 «no ads» stops the interstitial and the banner (60 s after a video — unit ad-gate) (7.2s)
+  ✓  177 [truthful] › e2e/truthful-m5.spec.ts:158:3 › M5-00 truthful stand › M5-03 an interstitial that fails (no ad) starts no cooldown and the game goes on (5.1s)
+  ✓  178 [truthful] › e2e/truthful-m5.spec.ts:169:3 › M5-00 truthful stand › Q-045 A: stuck with no coins and no pets — the egg for a video gets the shop going again (6.0s)
+  ✓  179 [truthful] › e2e/truthful-m7.spec.ts:9:1 › SND-03 a full-screen ad pauses the game and the sound; after it both go on (7.7s)
+  ✓  180 [truthful] › e2e/truthful-t.spec.ts:103:5 › 815x290 › T-01 a tap on the merchant's cart opens his window and buys nothing; no price button lies over the cart @ 815x290 (6.7s)
+  ✓  181 [truthful] › e2e/truthful-t.spec.ts:131:5 › 815x290 › T-02 every window with a price keeps the balance in sight @ 815x290 (14.6s)
+  ✓  182 [truthful] › e2e/truthful-t.spec.ts:160:7 › 815x290 › T-03 1 row(s) of the shelf: a tap on each ready dome hatches, «Кого выставить» stays shut @ 815x290 (28.0s)
+  ✓  184 [truthful] › e2e/truthful-t.spec.ts:182:5 › 815x290 › T-04 «Подарки»: «▶ Реклама: продажи ×1,5» whole and out of the lower third @ 815x290 (3.2s)
+  ✓  185 [truthful] › e2e/truthful-t.spec.ts:193:5 › 815x290 › T-07 «Яйца»: «Мои яйца» first, «▶ Реклама: яйцо» whole and out of the lower third @ 815x290 (3.2s)
+  ✓  186 [truthful] › e2e/truthful-t.spec.ts:208:5 › 815x290 › T-08 the crystals in the top bar, the ✕ of «Подарки» clear of «+», the price lists 8 px over the tab bar @ 815x290 (4.5s)
+  ✓  183 [truthful] › e2e/truthful-t.spec.ts:160:7 › 815x290 › T-03 2 row(s) of the shelf: a tap on each ready dome hatches, «Кого выставить» stays shut @ 815x290 (27.9s)
+  ✓  187 [truthful] › e2e/truthful-t.spec.ts:103:5 › 812x330 › T-01 a tap on the merchant's cart opens his window and buys nothing; no price button lies over the cart @ 812x330 (7.4s)
+  ✓  188 [truthful] › e2e/truthful-t.spec.ts:131:5 › 812x330 › T-02 every window with a price keeps the balance in sight @ 812x330 (16.9s)
+  ✓  189 [truthful] › e2e/truthful-t.spec.ts:160:7 › 812x330 › T-03 1 row(s) of the shelf: a tap on each ready dome hatches, «Кого выставить» stays shut @ 812x330 (30.9s)
+  ✓  191 [truthful] › e2e/truthful-t.spec.ts:182:5 › 812x330 › T-04 «Подарки»: «▶ Реклама: продажи ×1,5» whole and out of the lower third @ 812x330 (4.4s)
+  ✓  192 [truthful] › e2e/truthful-t.spec.ts:193:5 › 812x330 › T-07 «Яйца»: «Мои яйца» first, «▶ Реклама: яйцо» whole and out of the lower third @ 812x330 (4.2s)
+  ✓  190 [truthful] › e2e/truthful-t.spec.ts:160:7 › 812x330 › T-03 2 row(s) of the shelf: a tap on each ready dome hatches, «Кого выставить» stays shut @ 812x330 (30.1s)
+  ✓  193 [truthful] › e2e/truthful-t.spec.ts:208:5 › 812x330 › T-08 the crystals in the top bar, the ✕ of «Подарки» clear of «+», the price lists 8 px over the tab bar @ 812x330 (4.6s)
+  ✓  194 [truthful] › e2e/truthful-t.spec.ts:103:5 › 880x405 › T-01 a tap on the merchant's cart opens his window and buys nothing; no price button lies over the cart @ 880x405 (8.0s)
+  ✓  195 [truthful] › e2e/truthful-t.spec.ts:131:5 › 880x405 › T-02 every window with a price keeps the balance in sight @ 880x405 (16.6s)
+  ✓  196 [truthful] › e2e/truthful-t.spec.ts:160:7 › 880x405 › T-03 1 row(s) of the shelf: a tap on each ready dome hatches, «Кого выставить» stays shut @ 880x405 (31.7s)
+  ✓  198 [truthful] › e2e/truthful-t.spec.ts:182:5 › 880x405 › T-04 «Подарки»: «▶ Реклама: продажи ×1,5» whole and out of the lower third @ 880x405 (4.4s)
+  ✓  199 [truthful] › e2e/truthful-t.spec.ts:193:5 › 880x405 › T-07 «Яйца»: «Мои яйца» first, «▶ Реклама: яйцо» whole and out of the lower third @ 880x405 (4.2s)
+  ✓  197 [truthful] › e2e/truthful-t.spec.ts:160:7 › 880x405 › T-03 2 row(s) of the shelf: a tap on each ready dome hatches, «Кого выставить» stays shut @ 880x405 (30.6s)
+  ✓  200 [truthful] › e2e/truthful-t.spec.ts:208:5 › 880x405 › T-08 the crystals in the top bar, the ✕ of «Подарки» clear of «+», the price lists 8 px over the tab bar @ 880x405 (5.0s)
+  ✓  201 [truthful] › e2e/truthful-t.spec.ts:233:5 › 815x290 egg card › T-06 the egg card: «Что внутри» and the chances of the first pets in sight, no scroll @ 815x290 (4.1s)
+  ✓  203 [truthful] › e2e/truthful-t.spec.ts:256:5 › 815x290 first minute › T-05 «Яйца» in the first minute: the green dot calls, the hint names the open step and lies on no button @ 815x290 (3.0s)
+  ✓  202 [truthful] › e2e/truthful-t.spec.ts:233:5 › 812x330 egg card › T-06 the egg card: «Что внутри» and the chances of the first pets in sight, no scroll @ 812x330 (4.3s)
+  ✓  204 [truthful] › e2e/truthful-t.spec.ts:256:5 › 880x405 first minute › T-05 «Яйца» in the first minute: the green dot calls, the hint names the open step and lies on no button @ 880x405 (3.7s)
+  ✓  205 [truthful] › e2e/truthful-w.spec.ts:82:5 › 815x290 › W-01 the lot: «рынок N · ниже рынка» and «Заберу сейчас» whole, no scroll @ 815x290 (5.2s)
+  ✓  206 [truthful] › e2e/truthful-w.spec.ts:94:5 › 815x290 › W-02 the move: what starts over and what stays stand whole before «Переехать» @ 815x290 (6.1s)
+  ✓  207 [truthful] › e2e/truthful-w.spec.ts:111:5 › 815x290 › W-09 «▶ Реклама: яйцо» out of the lower third, whole @ 815x290 (5.7s)
+  ✓  208 [truthful] › e2e/truthful-w.spec.ts:123:5 › 815x290 › W-10 «Продать сразу» is a secondary button out of the lower third @ 815x290 (7.7s)
+  ✓  209 [truthful] › e2e/truthful-w.spec.ts:141:5 › 815x290 › W-07 «Подарки»: «Забрать подарок дня» and the boost whole over the tab bar @ 815x290 (5.5s)
+  ✓  211 [truthful] › e2e/truthful-w.spec.ts:94:5 › 880x405 › W-02 the move: what starts over and what stays stand whole before «Переехать» @ 880x405 (6.4s)
+  ✓  210 [truthful] › e2e/truthful-w.spec.ts:82:5 › 880x405 › W-01 the lot: «рынок N · ниже рынка» and «Заберу сейчас» whole, no scroll @ 880x405 (6.7s)
+  ✓  212 [truthful] › e2e/truthful-w.spec.ts:111:5 › 880x405 › W-09 «▶ Реклама: яйцо» out of the lower third, whole @ 880x405 (6.4s)
+  ✓  213 [truthful] › e2e/truthful-w.spec.ts:123:5 › 880x405 › W-10 «Продать сразу» is a secondary button out of the lower third @ 880x405 (8.3s)
+  ✓  214 [truthful] › e2e/truthful-w.spec.ts:141:5 › 880x405 › W-07 «Подарки»: «Забрать подарок дня» and the boost whole over the tab bar @ 880x405 (6.1s)
+  ✓  215 [truthful] › e2e/truthful-w.spec.ts:157:3 › 815x290 (a browser with its panel) › W-03 «Рынок»: two rows of lots whole, the ad row takes none (5.8s)
+  ✓  216 [truthful] › e2e/truthful-w.spec.ts:171:3 › 815x290 (a browser with its panel) › W-04 «Продажи» with three buyers writing: «Мои продажи» in sight (5.5s)
+  ✓  217 [truthful] › e2e/truthful-w.spec.ts:186:5 › 815x290 (a browser with its panel) › W-05 «Склад → Коллекция»: two rows of pets whole (5.4s)
+  ✓  219 [truthful] › e2e/truthful-w.spec.ts:214:3 › 815x290 (a browser with its panel) › W-06 «Находки»: «Забрать» of the second row over the tab bar (5.3s)
+  ✓  218 [truthful] › e2e/truthful-w.spec.ts:186:5 › 815x290 (a browser with its panel) › W-05 «Склад → Коллекция»: two rows of pets whole, the hint over the tab bar on (11.5s)
+  ✓  220 [truthful] › e2e/truthful-w.spec.ts:229:3 › 815x290 (a browser with its panel) › W-11 «Цена»: «Выставить на продажу» whole over the tab bar (5.4s)
+  ✓  221 [truthful] › e2e/truthful-w.spec.ts:240:3 › 815x290 (a browser with its panel) › W-12 the wandering merchant: both offers and ✕ in sight (2.9s)
+  ✓  222 [truthful] › e2e/truthful-w.spec.ts:253:3 › 815x290 (a browser with its panel) › W-08 a dome and a place of the shelf: one target under a finger (2.6s)
+  ✓  223 [truthful] › e2e/truthful-w.spec.ts:266:3 › 1280x720 (a computer) › W-13 the winged teapot toast keeps off the clock and never takes its tap (7.2s)
+  ✓  224 [truthful] › e2e/truthful-w.spec.ts:292:3 › 1280x720 (a computer) › W-14 a press on «Продать за» that began before a new line of the buyer still sells (9.9s)
+  ✓  226 [phone] › e2e/ftue-ub.spec.ts:52:1 › UB-06 each tab gets one hint on its first visit, none on the next; never at a closed thing (14.8s)
+  ✓  225 [phone] › e2e/ftue-ub.spec.ts:16:1 › UB-06 first minute by taps only: egg → To the shop → a letter → Sell with no counter → a new egg, within 60 s; no hint at a closed thing (25.2s)
+  ✓  228 [phone] › e2e/layout-collection-m4.spec.ts:8:1 › M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold (4.1s)
+  ✓  229 [phone] › e2e/layout-collection-m4.spec.ts:33:1 › M4-23 market mood: the chip in the sale card of the species in fashion (3.0s)
+  ✓  230 [phone] › e2e/layout-collection-m4.spec.ts:47:1 › M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked (3.7s)
+  ✓  231 [phone] › e2e/layout-m2.spec.ts:5:1 › M2-04 away window after two hours with the helpers (3.3s)
+  ✓  227 [phone] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (25.7s)
+  ✓  232 [phone] › e2e/layout-nav-ub.spec.ts:5:1 › UB-01 phone: one tab bar at the bottom, Eggs is home, every tab opens its screen (5.7s)
+  ✓  233 [phone] › e2e/layout-sales-m3.spec.ts:7:1 › M3-06 phone: the price slider works by tap and by drag (4.8s)
+  ✓  234 [phone] › e2e/layout-store-m5.spec.ts:9:1 › M5-04 «Акции» on the phone: every pack readable, its price button whole (6.6s)
+  ✓  235 [phone] › e2e/layout-store-m5.spec.ts:30:1 › M5-02 ad buttons on the phone: the egg cards, the market and the gifts tile read and tap (4.5s)
+  ✓  236 [phone] › e2e/layout-upgrades-ub.spec.ts:5:1 › UB-04 phone: the upgrades panel from the right keeps the shop in view (3.5s)
+  ✓  237 [phone] › e2e/layout-usability-ub.spec.ts:7:1 › UB-09 phone: a tab tap closes any window (5.3s)
+  ✓  238 [phone] › e2e/layout-usability-ub.spec.ts:8:1 › UB-09 phone: one window at a time (8.3s)
+  ✓  239 [phone] › e2e/layout-usability-ub.spec.ts:9:1 › UB-09 phone: hints never lie over a window (5.6s)
+  ✓  240 [phone] › e2e/layout-usability-ub.spec.ts:10:1 › UB-09 phone: the hatch reward only after the strip (8.2s)
+  ✓  241 [phone] › e2e/layout-usability-ub.spec.ts:11:1 › UB-09 phone: hidden gestures are signed (11.8s)
+  ✓  243 [phone] › e2e/layout-usability-ub.spec.ts:13:1 › UB-09 phone: every tab has its label (2.7s)
+  ✓  244 [phone] › e2e/layout-usability-ub.spec.ts:14:1 › UB-09 phone: no service marks (5.1s)
+  ✓  242 [phone] › e2e/layout-usability-ub.spec.ts:12:1 › UB-09 phone: text 12 px and up (M4-00: 14 px on a PC), buttons 44 px and up on every screen (15.6s)
+  ✓  245 [phone] › e2e/layout-usability-ub.spec.ts:15:1 › M4-00 phone: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (4.3s)
+  ✓  247 [phone] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it (5.8s)
+  ✓  248 [phone] › e2e/layout-windows-ub.spec.ts:5:1 › UB-02 phone: hints never lie over a window or another screen (3.1s)
+  ✓  249 [phone] › e2e/layout.spec.ts:5:1 › SCR-01 phone: the top bar, «Лавка» with its shelf and the Store under it, the tab bar inside the viewport, no scroll (3.0s)
+  ✓  250 [phone] › e2e/layout.spec.ts:21:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (4.8s)
+  ✓  251 [phone] › e2e/layout.spec.ts:34:1 › SAV-03 rotation keeps the state and the layout follows (4.8s)
+  ✓  246 [phone] › e2e/layout-usability-ub.spec.ts:16:1 › M4-00 phone: one caption on the shop at a time (28.9s)
+  ✓  253 [phone-landscape] › e2e/ftue-ub.spec.ts:52:1 › UB-06 each tab gets one hint on its first visit, none on the next; never at a closed thing (12.7s)
+  ✓  252 [phone-landscape] › e2e/ftue-ub.spec.ts:16:1 › UB-06 first minute by taps only: egg → To the shop → a letter → Sell with no counter → a new egg, within 60 s; no hint at a closed thing (25.2s)
+  ✓  255 [phone-landscape] › e2e/layout-collection-m4.spec.ts:8:1 › M4-01 collection: rows by rarity, «N/M», not yet / in the shop / sold (3.5s)
+  ✓  256 [phone-landscape] › e2e/layout-collection-m4.spec.ts:33:1 › M4-23 market mood: the chip in the sale card of the species in fashion (2.9s)
+  ✓  257 [phone-landscape] › e2e/layout-collection-m4.spec.ts:47:1 › M4-20 finds: «Found N of 30», hidden ones «???», a got one is marked (3.3s)
+  ✓  258 [phone-landscape] › e2e/layout-m2.spec.ts:5:1 › M2-04 away window after two hours with the helpers (2.9s)
+  ✓  259 [phone-landscape] › e2e/layout-nav-ub.spec.ts:5:1 › UB-01 phone: one tab bar at the bottom, Eggs is home, every tab opens its screen (5.6s)
+  ✓  260 [phone-landscape] › e2e/layout-sales-m3.spec.ts:7:1 › M3-06 phone: the price slider works by tap and by drag (5.1s)
+  ✓  254 [phone-landscape] › e2e/ftue.spec.ts:17:1 › M1-09 first minute: hints up to 6 words lead from the starter egg to a rare creature (31.4s)
+  ✓  262 [phone-landscape] › e2e/layout-store-m5.spec.ts:30:1 › M5-02 ad buttons on the phone: the egg cards, the market and the gifts tile read and tap (3.7s)
+  ✓  261 [phone-landscape] › e2e/layout-store-m5.spec.ts:9:1 › M5-04 «Акции» on the phone: every pack readable, its price button whole (6.1s)
+  ✓  263 [phone-landscape] › e2e/layout-upgrades-ub.spec.ts:5:1 › UB-04 phone: the upgrades panel from the right keeps the shop in view (2.9s)
+  ✓  264 [phone-landscape] › e2e/layout-usability-ub.spec.ts:7:1 › UB-09 phone: a tab tap closes any window (4.4s)
+  ✓  266 [phone-landscape] › e2e/layout-usability-ub.spec.ts:9:1 › UB-09 phone: hints never lie over a window (4.8s)
+  ✓  265 [phone-landscape] › e2e/layout-usability-ub.spec.ts:8:1 › UB-09 phone: one window at a time (7.7s)
+  ✓  267 [phone-landscape] › e2e/layout-usability-ub.spec.ts:10:1 › UB-09 phone: the hatch reward only after the strip (7.5s)
+  ✓  268 [phone-landscape] › e2e/layout-usability-ub.spec.ts:11:1 › UB-09 phone: hidden gestures are signed (11.0s)
+  ✓  270 [phone-landscape] › e2e/layout-usability-ub.spec.ts:13:1 › UB-09 phone: every tab has its label (2.4s)
+  ✓  271 [phone-landscape] › e2e/layout-usability-ub.spec.ts:14:1 › UB-09 phone: no service marks (4.6s)
+  ✓  269 [phone-landscape] › e2e/layout-usability-ub.spec.ts:12:1 › UB-09 phone: text 12 px and up (M4-00: 14 px on a PC), buttons 44 px and up on every screen (14.8s)
+  ✓  272 [phone-landscape] › e2e/layout-usability-ub.spec.ts:15:1 › M4-00 phone: one panel model for every tab, ✕ / the tab / the shop close it home, the scroll stays (4.2s)
+  ✓  274 [phone-landscape] › e2e/layout-windows-ub.spec.ts:4:1 › UB-02 phone: one window at a time, a tab works from any window, a tap outside closes it (5.3s)
+  ✓  275 [phone-landscape] › e2e/layout-windows-ub.spec.ts:5:1 › UB-02 phone: hints never lie over a window or another screen (2.9s)
+  ✓  276 [phone-landscape] › e2e/layout.spec.ts:5:1 › SCR-01 phone: the top bar, «Лавка» with its shelf and the Store under it, the tab bar inside the viewport, no scroll (2.5s)
+  ✓  277 [phone-landscape] › e2e/layout.spec.ts:21:1 › SCR-01 phone: pause and settings windows fit, every button is tappable (4.0s)
+  ✓  278 [phone-landscape] › e2e/layout.spec.ts:34:1 › SAV-03 rotation keeps the state and the layout follows (4.0s)
+  ✓  273 [phone-landscape] › e2e/layout-usability-ub.spec.ts:16:1 › M4-00 phone: one caption on the shop at a time (28.7s)
+  ✓  279 [mobile] › e2e/devices-rd.spec.ts:10:1 › RD-06 device: the first minute to the first deal, F5 keeps it, no console errors (22.4s)
+  ✓  280 [mobile] › e2e/devices-rd.spec.ts:23:1 › RD-06 device: every tab opens, its buttons seen whole (20.0s)
+
+  6 skipped
+  274 passed (20.3m)
+e2e: perf alone
+
+Running 2 tests using 1 worker
+
+RD-04 first screen on 4G (10 Mbit/s, RTT 100 ms) + CPU ×4: gameReady 3344 ms, downloaded 1264 KB (limits 5000 ms, 5120 KB)
+  ✓  1 [perf] › e2e/perf.spec.ts:40:1 › perf: ready within 5 s and under 5 MB downloaded on 4G and a 4× slower CPU (5.8s)
+RD-04 CPU ×4: main thread a frame — shop 3.1 ms, hatch show 9.2 ms (limit ≤ 33 ms = 30 FPS); drawn in the cloud (software WebGL) 57 / 25 FPS — info
+  ✓  2 [perf] › e2e/perf.spec.ts:79:1 › perf: 30 FPS on a 4× slower CPU — the main thread spends ≤ 33 ms a frame (shop, hatch show) (12.1s)
+
+  2 passed (20.1s)
+ok   e2e [e2e: end of milestone only] 1243.5 s
+
+== verify: build
+vite v8.3.2 building client environment for production...
+transforming...
+✓ 829 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                         2.30 kB │ gzip:   1.12 kB
+dist/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist/assets/index-n6MtKI4M.css                        109.20 kB │ gzip:  19.95 kB
+dist/assets/webworkerAll-_LmeMsBX.js                    0.05 kB │ gzip:   0.06 kB
+dist/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist/assets/yandex-5XAtHXzI.js                         10.05 kB │ gzip:   3.43 kB
+dist/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist/assets/init-DuLyGsz-.js                           15.31 kB │ gzip:   4.79 kB
+dist/assets/browserAll-AGTi6HoR.js                     42.64 kB │ gzip:  11.19 kB
+dist/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist/assets/index-2YgB89rF.js                         763.24 kB │ gzip: 237.47 kB
+
+✓ built in 1.37s
+ok   build 1.9 s
+
+== verify: size
+size: dist
+  assets/browserAll-AGTi6HoR.js                       41.6 KB gzip 10.8 KB
+  assets/BufferResource-7657QUKQ.js                   10.8 KB gzip 2.7 KB
+  assets/CanvasPool-BZOfdiYK.js                      107.7 KB gzip 32.5 KB
+  assets/canvasUtils-_2Xt0X_j.js                       5.9 KB gzip 2.0 KB
+  assets/getTextureBatchBindGroup-Bz0KTaOB.js          0.3 KB gzip 0.3 KB
+  assets/index-2YgB89rF.js                           745.4 KB gzip 230.0 KB
+  assets/index-n6MtKI4M.css                          106.6 KB 
+  assets/init-DuLyGsz-.js                             15.0 KB gzip 4.7 KB
+  assets/RenderTargetSystem-k-tnMFYl.js               76.2 KB gzip 21.4 KB
+  assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2      7.7 KB 
+  assets/rubik-cyrillic-400-normal-D5R8xuhl.woff       9.6 KB 
+  assets/rubik-cyrillic-500-normal-BH_pkKR0.woff       9.7 KB 
+  assets/rubik-cyrillic-500-normal-Didq2w9O.woff2      7.7 KB 
+  assets/rubik-cyrillic-600-normal-AdySaCq0.woff2      7.7 KB 
+  assets/rubik-cyrillic-600-normal-CtS_KWzi.woff       9.7 KB 
+  assets/rubik-cyrillic-700-normal-C_jxLOfU.woff       9.6 KB 
+  assets/rubik-cyrillic-700-normal-DFnztZBh.woff2      7.7 KB 
+  assets/rubik-cyrillic-800-normal-DocVmW4N.woff       9.6 KB 
+  assets/rubik-cyrillic-800-normal-wonQiwhm.woff2      7.7 KB 
+  assets/rubik-latin-400-normal-BV1Ho3GG.woff         23.4 KB 
+  assets/rubik-latin-400-normal-j0pmKyiQ.woff2        18.5 KB 
+  assets/rubik-latin-500-normal-1os41rQk.woff2        18.6 KB 
+  assets/rubik-latin-500-normal-LZYVHeqz.woff         23.6 KB 
+  assets/rubik-latin-600-normal-7iWW07_k.woff2        18.6 KB 
+  assets/rubik-latin-600-normal-Bd1rsTk4.woff         23.6 KB 
+  assets/rubik-latin-700-normal-D-tMm-eS.woff2        18.7 KB 
+  assets/rubik-latin-700-normal-KHOtubUA.woff         23.7 KB 
+  assets/rubik-latin-800-normal-BtaGuVpR.woff2        18.6 KB 
+  assets/rubik-latin-800-normal-Dq1miTTj.woff         23.6 KB 
+  assets/webworkerAll-_LmeMsBX.js                      0.1 KB gzip 0.1 KB
+  assets/yandex-5XAtHXzI.js                            9.8 KB gzip 3.3 KB
+  assets/ZzFX-C1HKDoVW.js                              2.0 KB gzip 1.1 KB
+  index.html                                           2.3 KB 
+  total 1421.3 KB (target 15360.0 KB, limit 30720.0 KB)
+  js 1014.7 KB → gzip 308.9 KB (target 400.0 KB, limit 600.0 KB)
+ok   size 0.3 s
+
+== verify: pack
+pack: 33 files, 1421.3 KB → release/anomaly-shop-0.1.0.zip 640.9 KB
+ok   pack 0.4 s
+
+== verify: check-release
+check-release: release/anomaly-shop-0.1.0.zip
+date: 2026-10-26T14:35:51.553Z
+files: 33
+  assets/BufferResource-7657QUKQ.js  10.8 KB
+  assets/CanvasPool-BZOfdiYK.js  107.7 KB
+  assets/RenderTargetSystem-k-tnMFYl.js  76.2 KB
+  assets/ZzFX-C1HKDoVW.js  2.0 KB
+  assets/browserAll-AGTi6HoR.js  41.6 KB
+  assets/canvasUtils-_2Xt0X_j.js  5.9 KB
+  assets/getTextureBatchBindGroup-Bz0KTaOB.js  0.3 KB
+  assets/index-2YgB89rF.js  745.4 KB
+  assets/index-n6MtKI4M.css  106.6 KB
+  assets/init-DuLyGsz-.js  15.0 KB
+  assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2  7.7 KB
+  assets/rubik-cyrillic-400-normal-D5R8xuhl.woff  9.6 KB
+  assets/rubik-cyrillic-500-normal-BH_pkKR0.woff  9.7 KB
+  assets/rubik-cyrillic-500-normal-Didq2w9O.woff2  7.7 KB
+  assets/rubik-cyrillic-600-normal-AdySaCq0.woff2  7.7 KB
+  assets/rubik-cyrillic-600-normal-CtS_KWzi.woff  9.7 KB
+  assets/rubik-cyrillic-700-normal-C_jxLOfU.woff  9.6 KB
+  assets/rubik-cyrillic-700-normal-DFnztZBh.woff2  7.7 KB
+  assets/rubik-cyrillic-800-normal-DocVmW4N.woff  9.6 KB
+  assets/rubik-cyrillic-800-normal-wonQiwhm.woff2  7.7 KB
+  assets/rubik-latin-400-normal-BV1Ho3GG.woff  23.4 KB
+  assets/rubik-latin-400-normal-j0pmKyiQ.woff2  18.5 KB
+  assets/rubik-latin-500-normal-1os41rQk.woff2  18.6 KB
+  assets/rubik-latin-500-normal-LZYVHeqz.woff  23.6 KB
+  assets/rubik-latin-600-normal-7iWW07_k.woff2  18.6 KB
+  assets/rubik-latin-600-normal-Bd1rsTk4.woff  23.6 KB
+  assets/rubik-latin-700-normal-D-tMm-eS.woff2  18.7 KB
+  assets/rubik-latin-700-normal-KHOtubUA.woff  23.7 KB
+  assets/rubik-latin-800-normal-BtaGuVpR.woff2  18.6 KB
+  assets/rubik-latin-800-normal-Dq1miTTj.woff  23.6 KB
+  assets/webworkerAll-_LmeMsBX.js  0.1 KB
+  assets/yandex-5XAtHXzI.js  9.8 KB
+  index.html  2.3 KB
+
+PASS  1. index.html at the root, paths only [A-Za-z0-9._/-]
+PASS  2. zip and unpacked ≤ 30 MB, JS gzip ≤ 600 KB
+        zip 640.9 KB, unpacked 1421.3 KB, js gzip 308.9 KB
+PASS  3. no external addresses except /sdk.js, mc.yandex.ru and the community links (namespaces allowed)
+PASS  4. <script src="/sdk.js"> exactly once, before the game code
+        found 1
+PASS  5. sound only through Web Audio: no <audio>, <video>, new Audio(, media elements
+        Web Audio (AudioContext) in the code: yes
+PASS  6. no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, youtube.com/game_api
+PASS  7. no development or stop-list words in shipped texts
+PASS  8. language keys: ru and en the same, none empty, no Cyrillic in en (i18n and the {ru, en} texts of content/)
+        {ru, en} texts in content/*.json: 946
+
+RESULT: PASS
+
+ok   check-release 0.7 s
+
+== verify: e2e:release [e2e: end of milestone only]
+e2e:release: unpacked /home/user/anomaly-shop/release/anomaly-shop-0.1.0.zip (33 entries) to /home/user/anomaly-shop/.cache/release-unpacked
+
+Running 1 test using 1 worker
+
+  ✓  1 e2e/smoke-release.spec.ts:4:1 › BLD-04 release boots on the mock, ready once, no console errors, no debug or test API (3.5s)
+
+  1 passed (5.1s)
+ok   e2e:release [e2e: end of milestone only] 6.7 s
+
+== verify: build:youtube
+vite v8.3.2 building client environment for youtube...
+transforming...
+✓ 828 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-youtube/index.html                                         2.29 kB │ gzip:   1.08 kB
+dist-youtube/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-youtube/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-youtube/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-youtube/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-youtube/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-youtube/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-youtube/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-youtube/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-youtube/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-youtube/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-youtube/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-youtube/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-youtube/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-youtube/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-youtube/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-youtube/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-youtube/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-youtube/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-youtube/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-youtube/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-youtube/assets/index-n6MtKI4M.css                        109.20 kB │ gzip:  19.95 kB
+dist-youtube/assets/webworkerAll-DNl0v4Kv.js                    0.05 kB │ gzip:   0.06 kB
+dist-youtube/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-youtube/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-youtube/assets/youtube-BDIEW9lR.js                         4.58 kB │ gzip:   1.76 kB
+dist-youtube/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-youtube/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-youtube/assets/init-DooYMvgQ.js                           15.31 kB │ gzip:   4.79 kB
+dist-youtube/assets/browserAll-p8IP2jf9.js                     42.64 kB │ gzip:  11.19 kB
+dist-youtube/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-youtube/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-youtube/assets/index-D6KmogaR.js                         762.72 kB │ gzip: 237.36 kB
+
+✓ built in 949ms
+ok   build:youtube 1.4 s
+
+== verify: check:youtube
+check-bundle-urls: bundle 1.38 MiB, first load 1.38 MiB
+check-bundle-urls (youtube): 33 files, no external addresses — ok
+ok   check:youtube 0.2 s
+
+== verify: e2e:youtube [e2e: end of milestone only]
+
+Running 2 tests using 1 worker
+
+  ✓  1 e2e/youtube-m6.spec.ts:16:1 › M6-04 youtube build: fake ytgame, ready once, no outside requests, no community or follow gift (3.6s)
+  ✓  2 e2e/youtube-m6.spec.ts:52:1 › M6-04 youtube build: the Gifts window has no «visit the group» card (2.4s)
+
+  2 passed (7.8s)
+ok   e2e:youtube [e2e: end of milestone only] 9.3 s
+verify (milestone): all 14 stages green in 1377 s
+EXIT=0

@@ -182,6 +182,6 @@
     { "id": "W-12", "milestone": "W", "priority": "P1", "title": "Бродячий торговец на 815×290 — видны оба предложения и ✕", "criteria": "e2e truthful 815×290 + кадр: оба предложения и ✕ в видимой части", "passes": true },
     { "id": "W-13", "milestone": "W", "priority": "P1", "title": "ПК 1280×720: тост «чайник с крылышками» не ложится на часы и не перехватывает тап", "criteria": "e2e desktop: тост не пересекает часы, тап по часам доходит", "passes": true },
     { "id": "W-14", "milestone": "W", "priority": "P1", "title": "Первый тап «Продать за» через 0,6 с после открытия чата срабатывает", "criteria": "e2e: тап через 0,6 с после открытия чата продаёт", "passes": true },
-    { "id": "W-15", "milestone": "W", "priority": "P1", "title": "Итог: архивы downloads/ пересобраны, check-release 8/8", "criteria": "npm run check-release — 8/8", "passes": false }
+    { "id": "W-15", "milestone": "W", "priority": "P1", "title": "Итог: архивы downloads/ пересобраны, check-release 8/8", "criteria": "npm run check-release — 8/8", "passes": true }
   ]
 }

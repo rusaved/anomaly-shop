@@ -1,0 +1,7 @@
+W · архивы в downloads/ — пересобраны в итоге «Ресейл 13 · Окна под браузер» (сессия по расписанию штаба 26.10): код игры коммита 32b22cb
+f6732a219efdecefafea0288cf955c407b44f193a90fc27293a71f24f6eb4093  downloads/anomaly-shop-0.1.0-playtest.zip
+da87dff3a7fff8696575d6e5b3d4d88aa8555087c8d40a81e160421c365e568b  downloads/anomaly-shop-0.1.0.zip
+664424 downloads/anomaly-shop-0.1.0-playtest.zip
+655286 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8)
+check-release playtest: FAIL п. 6 (мок и отладка) — так и задумано

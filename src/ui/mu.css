@@ -4588,9 +4588,13 @@ button.mu-card {
 #ui:has(> .overlay[data-priced]:not([hidden])) > .hud * {
   pointer-events: none;
 }
+/* Over the dim only the balance shows: the bar itself is see-through, its other buttons rest under the dim (hidden). */
+#ui:has(> .overlay[data-priced]:not([hidden])) > .hud {
+  background: transparent;
+}
 #ui:has(> .overlay[data-priced]:not([hidden])) > .hud > :not(.hud-right),
 #ui:has(> .overlay[data-priced]:not([hidden])) > .hud > .hud-right > :not(.hud-wallet) {
-  opacity: 0.35;
+  visibility: hidden;
 }
 .landscape.short #ui > .overlay[data-priced]:not([data-kind='screen']):not([data-overlay='hatch']) {
   padding-top: calc(var(--hud-height, 44px) + 4px);
@@ -4598,6 +4602,9 @@ button.mu-card {
 /* «Вылупился!» keeps its top (W-10: «Продать сразу» out of the lower third) and stands at the left, clear of the balance. */
 .landscape.short #ui > .overlay[data-overlay='hatch'] {
   justify-content: flex-start;
+}
+.landscape.short #ui > .overlay[data-overlay='hatch'] > .card {
+  width: min(100%, 560px);
 }
 /* T-01: sideways the merchant's window stands at the right — his cart at the door of the room lies under the window's left part
    (an egg picture and a name), never under a price button. */

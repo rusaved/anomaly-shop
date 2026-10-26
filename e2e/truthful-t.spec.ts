@@ -41,6 +41,14 @@ async function balanceInSight(page: Page, what: string): Promise<void> {
   expect(b.top).toBeGreaterThanOrEqual(-0.5);
   expect(b.right).toBeLessThanOrEqual(page.viewportSize()!.width + 0.5);
   expect(b.opacity, `${what}: the balance is lit`).toBe(1);
+  // Over a window the bar is see-through: the balance pill lies on no card of an open window.
+  const meets = await page.evaluate(() => {
+    const w = document.querySelector('.hud-wallet')!.getBoundingClientRect();
+    return [...document.querySelectorAll<HTMLElement>('#ui > .overlay:not([hidden]) > .card')]
+      .map((c) => c.getBoundingClientRect())
+      .some((c) => c.left < w.right && c.right > w.left && c.top < w.bottom && c.bottom > w.top);
+  });
+  expect(meets, `${what}: the balance pill lies on the window`).toBe(false);
 }
 
 /** Waits for the merchant at the door (3 minutes of play), past the ad break those minutes bring; time then stands. */

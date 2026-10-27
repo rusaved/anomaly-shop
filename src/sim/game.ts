@@ -1731,6 +1731,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       if (!h || !chat || !game.canRaise(id)) return null;
       const k = chat.raises ?? 0;
       const r = haggleRaise(h, k, chat.first ?? chat.offer, chat.offer, side.next(), side.next());
+      // H-08 (ревизор геймдизайна): the player's very first raise never ends with the buyer gone — the first try teaches, it does not punish.
+      if (r.result === 'gone' && !s().flags.haggle_tried) Object.assign(r, { result: 'middle', offer: Math.round((chat.offer + r.ask) / 2) });
+      s().flags.haggle_tried = true;
       chat.raises = k + 1;
       chat.countered = true;
       chat.lines.push({ from: 'me', ctx: 'raise', i: 0, n: r.ask });

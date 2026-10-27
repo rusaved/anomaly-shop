@@ -1325,10 +1325,11 @@ async function boot(): Promise<void> {
     const wait = (sec: number): number => (afterDeal ? 0 : sec);
     // S-01: once «Купи улучшение» has called, it keeps calling with no idle pause until the upgrade is bought or out of reach — the tap
     // on «Лавка» after the call lands on the upgrade itself, never on «Купи новое яйцо».
-    // S-06 (ревизор геймдизайна): the first call waits for the upgrade the player sees (ftue.json firstUpgrade); without it — any.
+    // S-06 (ревизор геймдизайна): the first call frames the upgrade the player sees at once (ftue.json firstUpgrade) when it is
+    // affordable, else any affordable one (S-01: «Купи новое яйцо» only when no upgrade is in reach).
     const upgradesNow = play.upgradeList();
     const firstUp = upgradesNow.find((u) => u.id === ftue.firstUpgrade && !u.maxed);
-    const canUpgrade = firstUp ? firstUp.affordable : upgradesNow.some((u) => u.affordable);
+    const canUpgrade = upgradesNow.some((u) => u.affordable);
     // S-01: «Купи новое яйцо» comes only when the first upgrade is bought or out of reach — the upgrade calls no later than the egg would.
     const eggWait = nothingToDo(store.state, view) ? 0 : wait(ftue.eggHintSec);
     const upgradeNow = upgradeCalled ? 0 : Math.min(wait(ftue.eggHintSec), eggWait);

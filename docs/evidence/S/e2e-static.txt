@@ -1,0 +1,9 @@
+== e2e:release
+  1 passed (3.6s)
+exit=0
+== e2e:youtube
+  2 passed (5.8s)
+exit=0
+== e2e:vk
+  18 passed (3.1m)
+exit=0

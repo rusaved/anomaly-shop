@@ -405,6 +405,8 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
       // H-04: a list that came over a calm toast — it gives way at once. S-02: a window that opened over a toast (not an answer) —
       // the toast goes back to the head of the queue and comes again after the window.
       if (!gone && !answers(item) && windowOpen()) return back();
+      // S-02: another screen came under the toast and it lies on a button there — it waits for a free spot (CALM_WAIT_MS from its start).
+      if (!gone && !item.calm && !answers(item) && onButton(el) && Date.now() - (item.at ?? 0) < CALM_WAIT_MS) return back(500);
       if (item.calm && !gone && calmBlocked(el, extra)) leave();
     }, 250);
     // The round of fixes (the usability review): a toast never moves the screen under a finger — it lies over the screen for a moment
@@ -428,12 +430,12 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
     };
     const stay = window.setTimeout(leave, Math.max(TOAST_MIN_MS, item.ms));
     /** S-02: back to the head of the queue — it comes again after the window. */
-    const back = (): void => {
+    const back = (wait = 0): void => {
       window.clearTimeout(stay);
       gone = true;
       watchWindow.disconnect();
       cut();
-      queue.unshift({ ...item, at: Date.now() });
+      queue.unshift(wait ? { ...item, retryAt: Date.now() + wait } : { ...item, at: Date.now() });
       next();
     };
     drop = () => {

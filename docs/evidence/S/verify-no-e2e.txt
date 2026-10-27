@@ -1,0 +1,440 @@
+verify (no-e2e): 14 stages, full log /home/user/anomaly-shop/docs/evidence/S/verify-no-e2e.txt
+
+== verify: typecheck
+ok   typecheck 1.2 s
+
+== verify: test
+
+ RUN  v5.0.3 /home/user/anomaly-shop
+
+
+ Test Files  78 passed (78)
+      Tests  431 passed (431)
+   Start at  16:05:29
+   Duration  20.49s (tests 90%, import 5%, transform 4%)
+
+    Isolate  78 workers spawned · ~90ms startup each (spawn + environment, per file)
+             at least ~2.25s faster with isolate: false — reuses workers across files instead of one per file
+
+ok   test 20.9 s
+
+== verify: validate:content
+validate:content: game.json and 29 content files — ok
+ok   validate:content 0.2 s
+
+== verify: sim:balance
+sim:balance — 4 bots × 24 seeds × 10 min; p50 / p90 of game seconds (limit in brackets)
+casual  F1 16/16 (40) ok · F2 36/53 (120) ok · F3 43/46 (180) ok · F4 24/24 (300) ok · F13 11/12 (60) ok · F14 53/111 (600) ok · F15 202/293 (600) ok · F16.2 35/36 (90) ok · F16.3 84/94 (180) ok · F16.4 144/159 (270) ok · F16.5 206/231 (360) ok · F5 ×1.9 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 711 coins; 10 min: 1759 coins (p50)
+rusher  F1 17/17 (40) ok · F2 38/66 (120) ok · F3 44/48 (180) ok · F4 25/25 (300) ok · F13 11/12 (60) ok · F14 53/205 (600) ok · F15 218/277 (600) ok · F16.2 36/38 (90) ok · F16.3 84/90 (180) ok · F16.4 142/154 (270) ok · F16.5 203/219 (360) ok · F5 ×2.3 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 614 coins; 10 min: 1487 coins (p50)
+tapper  F1 15/15 (40) ok · F2 34/38 (120) ok · F3 43/46 (180) ok · F4 23/23 (300) ok · F13 12/15 (60) ok · F14 58/169 (600) ok · F15 192/239 (600) ok · F16.2 34/38 (90) ok · F16.3 87/100 (180) ok · F16.4 142/163 (270) ok · F16.5 206/236 (360) ok · F5 ×2.3 ok · F10 ok · F11 0/24 ok · 5 min: 19 deals, 836 coins; 10 min: 1995 coins (p50)
+slow    F1 20/20 (40) ok · F2 60/76 (120) ok · F3 52/60 (180) ok · F4 32/32 (300) ok · F13 11/13 (60) ok · F14 68/203 (600) ok · F15 211/347 (600) ok · F16.2 43/45 (90) ok · F16.3 94/99 (180) ok · F16.4 154/169 (270) ok · F16.5 207/257 (360) ok · F5 ×1.4 ok · F10 ok · F11 0/24 ok · 5 min: 18 deals, 606 coins; 10 min: 1494 coins (p50)
+long run — casual and slow × 8 seeds: 3 days of 30 active minutes + 8 h away
+casual  F19 income an hour of play / away: 30984 / 12394 (40 %, want 30–50 %), seller levels away +1 (≤ 1) ok
+casual  F6 8 h away = 48 min of play (30–60) ok · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 291 s, square 1011 s p90 (600 / 2400) ok
+slow    F19 income an hour of play / away: 30930 / 10916 (35 %, want 30–50 %), seller levels away +1 (≤ 1) ok
+slow    F6 8 h away = 48 min of play (30–60) info · F7 rebirth threshold on day 2.0 (2–3) ok · F8 street 332 s, square 1099 s p90 (600 / 2400) ok
+keeper  F12 10 min = ×0.88 of casual (≤ ×2) · rebirth threshold on day 1.9 (≥ 1.0) ok
+week    F17 new things by day 49 / 34 / 57 / 12 / 37 / 58 / 38 (≥ 1 a day) ok · guest zone pays back ×9.20 (≥ 1) ok · F18 moves on day 2.0, the next 3.0 days later (1–3), the city egg on day 5.1 ok
+rewards FB-02 best reward in 5 min of income by ladder step (exclusive when bought p50 / hatch p90): basic 0.2/0.02 · warm 0.4/0.19 · odd 5.0/0.49 · glow 27.5/3.70 · star 85.0/25.86 · crystal 243.5/11.65; free rewards ≤ 5 min (capped)
+care    F20 VIP+exclusive without → with full care (b 0.5, top 0.35), EV in egg prices less food: basic 0.5→1.3 % · ×2.56→×3.46 · warm 2.0→4.4 % · ×1.03→×1.32 · odd 3.0→6.0 % · ×0.90→×1.11 · glow 3.0→6.0 % · ×0.91→×1.15 · star 3.0→6.0 % · ×0.97→×1.17 · crystal 3.0→6.1 % · ×0.95→×1.15 · rainbow 3.0→6.0 % · ×0.99→×1.16 · royal 3.0→6.0 % · ×1.01→×1.15 ok
+ads     M5-02 casual day of 30 min (p50): eggs for videos 3 of 321 (1 %) · boost +33 % · ×2 deal 30 of 352 deals (+9 %) · egg ads ≤ +50 % · F9 at most +92 % (want 30–100 %) ok
+RD-03 table (info, p50 / p90): short run — first buy (egg for coins / anything), wall = the longest wait between purchases in 10 min, s
+  casual  first egg 21 / 21 · first buy 21 / 21 · wall 31 / 40 · buys in 10 min 54 / 50 (p50 / p10)
+  rusher  first egg 22 / 22 · first buy 22 / 22 · wall 31 / 43 · buys in 10 min 53 / 50 (p50 / p10)
+  tapper  first egg 20 / 20 · first buy 20 / 20 · wall 31 / 38 · buys in 10 min 56 / 52 (p50 / p10)
+  slow    first egg 27 / 27 · first buy 27 / 27 · wall 31 / 37 · buys in 10 min 50 / 44 (p50 / p10)
+  casual  long run: wall day 1 / 2 / 3 1.3 / 2.1 · 2.1 / 2.8 · 1.9 / 2.4 min · an hour away against an hour of play 40 / 40 %
+  slow    long run: wall day 1 / 2 / 3 1.4 / 2.1 · 2.1 / 3.6 · 2.0 / 2.5 min · an hour away against an hour of play 40 / 40 %
+F1–F8, F10, F11, F12–F20: all green
+(45.6 s)
+ok   sim:balance 45.8 s
+
+== verify: build:e2e
+vite v8.3.2 building client environment for e2e...
+transforming...
+✓ 836 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-e2e/index.html                                         2.30 kB │ gzip:   1.12 kB
+dist-e2e/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-e2e/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-e2e/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-e2e/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-e2e/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-e2e/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-e2e/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-e2e/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-e2e/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-e2e/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-e2e/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-e2e/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-e2e/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-e2e/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-e2e/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-e2e/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-e2e/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-e2e/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-e2e/assets/shop-bIT9_xnL.mp3                         896.77 kB
+dist-e2e/assets/index-CRtpEP1C.css                        110.48 kB │ gzip:  20.28 kB
+dist-e2e/assets/webworkerAll-CoZkwjYv.js                    0.05 kB │ gzip:   0.06 kB
+dist-e2e/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-e2e/assets/test-api-DKbx6JGx.js                        1.48 kB │ gzip:   0.69 kB
+dist-e2e/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-e2e/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-e2e/assets/yandex-D_ao-f69.js                         10.63 kB │ gzip:   3.64 kB
+dist-e2e/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-e2e/assets/init-Cm_3uW86.js                           15.31 kB │ gzip:   4.80 kB
+dist-e2e/assets/panel-DYIxsOjY.js                          32.00 kB │ gzip:   8.63 kB
+dist-e2e/assets/browserAll-Bq6dBvCA.js                     42.64 kB │ gzip:  11.19 kB
+dist-e2e/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-e2e/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-e2e/assets/index-YKjTJ91r.js                         793.71 kB │ gzip: 246.83 kB
+
+✓ built in 777ms
+ok   build:e2e 1.2 s
+
+== verify: build
+vite v8.3.2 building client environment for production...
+transforming...
+✓ 833 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                         2.30 kB │ gzip:   1.12 kB
+dist/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist/assets/shop-bIT9_xnL.mp3                         896.77 kB
+dist/assets/index-CRtpEP1C.css                        110.48 kB │ gzip:  20.28 kB
+dist/assets/webworkerAll-D3cbIMSn.js                    0.05 kB │ gzip:   0.06 kB
+dist/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist/assets/yandex--re1QMuu.js                         10.54 kB │ gzip:   3.59 kB
+dist/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist/assets/init-Eg7MiE16.js                           15.31 kB │ gzip:   4.79 kB
+dist/assets/browserAll-DIgz6ms3.js                     42.64 kB │ gzip:  11.19 kB
+dist/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist/assets/index-BbL8d_lz.js                         791.36 kB │ gzip: 246.00 kB
+
+✓ built in 304ms
+ok   build 0.6 s
+
+== verify: size
+size: dist
+  assets/browserAll-DIgz6ms3.js                       41.6 KB gzip 10.8 KB
+  assets/BufferResource-7657QUKQ.js                   10.8 KB gzip 2.7 KB
+  assets/CanvasPool-BZOfdiYK.js                      107.7 KB gzip 32.5 KB
+  assets/canvasUtils-_2Xt0X_j.js                       5.9 KB gzip 2.0 KB
+  assets/getTextureBatchBindGroup-Bz0KTaOB.js          0.3 KB gzip 0.3 KB
+  assets/index-BbL8d_lz.js                           772.8 KB gzip 238.2 KB
+  assets/index-CRtpEP1C.css                          107.9 KB 
+  assets/init-Eg7MiE16.js                             15.0 KB gzip 4.7 KB
+  assets/RenderTargetSystem-k-tnMFYl.js               76.2 KB gzip 21.4 KB
+  assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2      7.7 KB 
+  assets/rubik-cyrillic-400-normal-D5R8xuhl.woff       9.6 KB 
+  assets/rubik-cyrillic-500-normal-BH_pkKR0.woff       9.7 KB 
+  assets/rubik-cyrillic-500-normal-Didq2w9O.woff2      7.7 KB 
+  assets/rubik-cyrillic-600-normal-AdySaCq0.woff2      7.7 KB 
+  assets/rubik-cyrillic-600-normal-CtS_KWzi.woff       9.7 KB 
+  assets/rubik-cyrillic-700-normal-C_jxLOfU.woff       9.6 KB 
+  assets/rubik-cyrillic-700-normal-DFnztZBh.woff2      7.7 KB 
+  assets/rubik-cyrillic-800-normal-DocVmW4N.woff       9.6 KB 
+  assets/rubik-cyrillic-800-normal-wonQiwhm.woff2      7.7 KB 
+  assets/rubik-latin-400-normal-BV1Ho3GG.woff         23.4 KB 
+  assets/rubik-latin-400-normal-j0pmKyiQ.woff2        18.5 KB 
+  assets/rubik-latin-500-normal-1os41rQk.woff2        18.6 KB 
+  assets/rubik-latin-500-normal-LZYVHeqz.woff         23.6 KB 
+  assets/rubik-latin-600-normal-7iWW07_k.woff2        18.6 KB 
+  assets/rubik-latin-600-normal-Bd1rsTk4.woff         23.6 KB 
+  assets/rubik-latin-700-normal-D-tMm-eS.woff2        18.7 KB 
+  assets/rubik-latin-700-normal-KHOtubUA.woff         23.7 KB 
+  assets/rubik-latin-800-normal-BtaGuVpR.woff2        18.6 KB 
+  assets/rubik-latin-800-normal-Dq1miTTj.woff         23.6 KB 
+  assets/shop-bIT9_xnL.mp3                           875.8 KB 
+  assets/webworkerAll-D3cbIMSn.js                      0.1 KB gzip 0.1 KB
+  assets/yandex--re1QMuu.js                           10.3 KB gzip 3.5 KB
+  assets/ZzFX-C1HKDoVW.js                              2.0 KB gzip 1.1 KB
+  index.html                                           2.3 KB 
+  total 2326.3 KB (target 15360.0 KB, limit 30720.0 KB)
+  js 1042.6 KB → gzip 317.2 KB (target 400.0 KB, limit 600.0 KB)
+ok   size 0.2 s
+
+== verify: pack
+pack: 34 files, 2326.3 KB → release/anomaly-shop-0.1.0.zip 1522.4 KB
+ok   pack 0.4 s
+
+== verify: check-release
+check-release: release/anomaly-shop-0.1.0.zip
+date: 2026-10-27T16:06:38.497Z
+files: 34
+  assets/BufferResource-7657QUKQ.js  10.8 KB
+  assets/CanvasPool-BZOfdiYK.js  107.7 KB
+  assets/RenderTargetSystem-k-tnMFYl.js  76.2 KB
+  assets/ZzFX-C1HKDoVW.js  2.0 KB
+  assets/browserAll-DIgz6ms3.js  41.6 KB
+  assets/canvasUtils-_2Xt0X_j.js  5.9 KB
+  assets/getTextureBatchBindGroup-Bz0KTaOB.js  0.3 KB
+  assets/index-BbL8d_lz.js  772.8 KB
+  assets/index-CRtpEP1C.css  107.9 KB
+  assets/init-Eg7MiE16.js  15.0 KB
+  assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2  7.7 KB
+  assets/rubik-cyrillic-400-normal-D5R8xuhl.woff  9.6 KB
+  assets/rubik-cyrillic-500-normal-BH_pkKR0.woff  9.7 KB
+  assets/rubik-cyrillic-500-normal-Didq2w9O.woff2  7.7 KB
+  assets/rubik-cyrillic-600-normal-AdySaCq0.woff2  7.7 KB
+  assets/rubik-cyrillic-600-normal-CtS_KWzi.woff  9.7 KB
+  assets/rubik-cyrillic-700-normal-C_jxLOfU.woff  9.6 KB
+  assets/rubik-cyrillic-700-normal-DFnztZBh.woff2  7.7 KB
+  assets/rubik-cyrillic-800-normal-DocVmW4N.woff  9.6 KB
+  assets/rubik-cyrillic-800-normal-wonQiwhm.woff2  7.7 KB
+  assets/rubik-latin-400-normal-BV1Ho3GG.woff  23.4 KB
+  assets/rubik-latin-400-normal-j0pmKyiQ.woff2  18.5 KB
+  assets/rubik-latin-500-normal-1os41rQk.woff2  18.6 KB
+  assets/rubik-latin-500-normal-LZYVHeqz.woff  23.6 KB
+  assets/rubik-latin-600-normal-7iWW07_k.woff2  18.6 KB
+  assets/rubik-latin-600-normal-Bd1rsTk4.woff  23.6 KB
+  assets/rubik-latin-700-normal-D-tMm-eS.woff2  18.7 KB
+  assets/rubik-latin-700-normal-KHOtubUA.woff  23.7 KB
+  assets/rubik-latin-800-normal-BtaGuVpR.woff2  18.6 KB
+  assets/rubik-latin-800-normal-Dq1miTTj.woff  23.6 KB
+  assets/shop-bIT9_xnL.mp3  875.8 KB
+  assets/webworkerAll-D3cbIMSn.js  0.1 KB
+  assets/yandex--re1QMuu.js  10.3 KB
+  index.html  2.3 KB
+
+PASS  1. index.html at the root, paths only [A-Za-z0-9._/-]
+PASS  2. zip and unpacked ≤ 30 MB, JS gzip ≤ 600 KB
+        zip 1522.4 KB, unpacked 2326.3 KB, js gzip 317.2 KB
+PASS  3. no external addresses except /sdk.js, mc.yandex.ru and the community links (namespaces allowed)
+PASS  4. <script src="/sdk.js"> exactly once, before the game code
+        found 1
+PASS  5. sound only through Web Audio: no <audio>, <video>, new Audio(, media elements
+        Web Audio (AudioContext) in the code: yes
+PASS  6. no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, youtube.com/game_api
+PASS  7. no development or stop-list words in shipped texts
+PASS  8. language keys: ru and en the same, none empty, no Cyrillic in en (i18n and the {ru, en} texts of content/)
+        {ru, en} texts in content/*.json: 960
+
+RESULT: PASS
+
+ok   check-release 0.4 s
+
+== verify: build:youtube
+vite v8.3.2 building client environment for youtube...
+transforming...
+✓ 832 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-youtube/index.html                                         2.29 kB │ gzip:   1.07 kB
+dist-youtube/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-youtube/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-youtube/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-youtube/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-youtube/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-youtube/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-youtube/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-youtube/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-youtube/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-youtube/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-youtube/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-youtube/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-youtube/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-youtube/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-youtube/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-youtube/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-youtube/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-youtube/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-youtube/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-youtube/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-youtube/assets/shop-bIT9_xnL.mp3                         896.77 kB
+dist-youtube/assets/index-CRtpEP1C.css                        110.48 kB │ gzip:  20.28 kB
+dist-youtube/assets/webworkerAll-C5XxVPbh.js                    0.05 kB │ gzip:   0.06 kB
+dist-youtube/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-youtube/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-youtube/assets/youtube-BDIEW9lR.js                         4.58 kB │ gzip:   1.76 kB
+dist-youtube/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-youtube/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-youtube/assets/init-BoyaFY_n.js                           15.31 kB │ gzip:   4.79 kB
+dist-youtube/assets/browserAll-ZU3mxH0T.js                     42.64 kB │ gzip:  11.19 kB
+dist-youtube/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-youtube/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-youtube/assets/index-kx-dxeLx.js                         790.62 kB │ gzip: 245.91 kB
+
+✓ built in 721ms
+ok   build:youtube 1.1 s
+
+== verify: check:youtube
+check-bundle-urls: bundle 2.27 MiB, first load 2.27 MiB
+check-bundle-urls (youtube): 34 files, no external addresses — ok
+ok   check:youtube 0.1 s
+
+== verify: build:vk
+vite v8.3.2 building client environment for vk...
+transforming...
+✓ 840 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-vk/index.html                                         3.42 kB │ gzip:   1.77 kB
+dist-vk/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-vk/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-vk/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-vk/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-vk/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-vk/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-vk/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-vk/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-vk/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-vk/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-vk/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-vk/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-vk/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-vk/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-vk/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-vk/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-vk/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-vk/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-vk/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-vk/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-vk/assets/shop-bIT9_xnL.mp3                         896.77 kB
+dist-vk/assets/vk-menu-DHlASyDg.css                        1.95 kB │ gzip:   0.71 kB
+dist-vk/assets/index-CRtpEP1C.css                        110.48 kB │ gzip:  20.28 kB
+dist-vk/assets/webworkerAll-Bm8LtikD.js                    0.05 kB │ gzip:   0.06 kB
+dist-vk/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-vk/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-vk/assets/vk-mock-DSeyghq8.js                         2.28 kB │ gzip:   1.20 kB
+dist-vk/assets/vk-DwpJFNGO.js                              2.39 kB │ gzip:   1.18 kB
+dist-vk/assets/vk-menu-Bsmw_jq8.js                         3.22 kB │ gzip:   1.30 kB
+dist-vk/assets/shared-Do_2oD5v.js                          3.39 kB │ gzip:   1.23 kB
+dist-vk/assets/dist-BEElyD_g.js                            4.34 kB │ gzip:   1.80 kB
+dist-vk/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-vk/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-vk/assets/vk-DX7PsYSK.js                             15.17 kB │ gzip:   7.30 kB
+dist-vk/assets/init-Clrbw2NB.js                           15.31 kB │ gzip:   4.79 kB
+dist-vk/assets/browserAll-B2upixl6.js                     42.64 kB │ gzip:  11.19 kB
+dist-vk/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-vk/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-vk/assets/index-0AtMVQ03.js                         750.98 kB │ gzip: 231.66 kB
+
+✓ built in 492ms
+ok   build:vk 0.8 s
+
+== verify: check:vk
+  ⚠ к подаче: пусто в content/vk.json — okGroupId (нет кнопки «Вступить» и канала поддержки)
+check:vk: 40 файлов, 2.26 МБ, код gzip 0.33 МБ
+check:vk: ok
+ok   check:vk 0.2 s
+
+== verify: build:pages
+vite v8.3.2 building client environment for pages...
+transforming...
+✓ 835 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-pages/index.html                                         2.30 kB │ gzip:   1.12 kB
+dist-pages/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-pages/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-pages/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-pages/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-pages/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-pages/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-pages/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-pages/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-pages/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-pages/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-pages/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-pages/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-pages/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-pages/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-pages/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-pages/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-pages/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-pages/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-pages/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-pages/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-pages/assets/shop-bIT9_xnL.mp3                         896.77 kB
+dist-pages/assets/index-CRtpEP1C.css                        110.48 kB │ gzip:  20.28 kB
+dist-pages/assets/webworkerAll-CPgJKvxb.js                    0.05 kB │ gzip:   0.06 kB
+dist-pages/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-pages/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-pages/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-pages/assets/yandex-D_ao-f69.js                         10.63 kB │ gzip:   3.64 kB
+dist-pages/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-pages/assets/init-ELTQwwmp.js                           15.31 kB │ gzip:   4.79 kB
+dist-pages/assets/panel-KBsET5yC.js                          32.00 kB │ gzip:   8.63 kB
+dist-pages/assets/browserAll-BEqrFewf.js                     42.64 kB │ gzip:  11.19 kB
+dist-pages/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-pages/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-pages/assets/index-CuRo8Udy.js                         791.91 kB │ gzip: 246.21 kB
+
+✓ built in 322ms
+vite v8.3.2 building client environment for vk...
+transforming...
+✓ 840 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-pages/vk/index.html                                         3.42 kB │ gzip:   1.77 kB
+dist-pages/vk/assets/rubik-cyrillic-800-normal-wonQiwhm.woff2    7.85 kB
+dist-pages/vk/assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2    7.87 kB
+dist-pages/vk/assets/rubik-cyrillic-600-normal-AdySaCq0.woff2    7.90 kB
+dist-pages/vk/assets/rubik-cyrillic-700-normal-DFnztZBh.woff2    7.90 kB
+dist-pages/vk/assets/rubik-cyrillic-500-normal-Didq2w9O.woff2    7.92 kB
+dist-pages/vk/assets/rubik-cyrillic-800-normal-DocVmW4N.woff     9.85 kB
+dist-pages/vk/assets/rubik-cyrillic-700-normal-C_jxLOfU.woff     9.87 kB
+dist-pages/vk/assets/rubik-cyrillic-400-normal-D5R8xuhl.woff     9.88 kB
+dist-pages/vk/assets/rubik-cyrillic-600-normal-CtS_KWzi.woff     9.89 kB
+dist-pages/vk/assets/rubik-cyrillic-500-normal-BH_pkKR0.woff     9.92 kB
+dist-pages/vk/assets/rubik-latin-400-normal-j0pmKyiQ.woff2      18.93 kB
+dist-pages/vk/assets/rubik-latin-500-normal-1os41rQk.woff2      19.03 kB
+dist-pages/vk/assets/rubik-latin-600-normal-7iWW07_k.woff2      19.06 kB
+dist-pages/vk/assets/rubik-latin-800-normal-BtaGuVpR.woff2      19.06 kB
+dist-pages/vk/assets/rubik-latin-700-normal-D-tMm-eS.woff2      19.11 kB
+dist-pages/vk/assets/rubik-latin-400-normal-BV1Ho3GG.woff       23.92 kB
+dist-pages/vk/assets/rubik-latin-800-normal-Dq1miTTj.woff       24.17 kB
+dist-pages/vk/assets/rubik-latin-500-normal-LZYVHeqz.woff       24.21 kB
+dist-pages/vk/assets/rubik-latin-600-normal-Bd1rsTk4.woff       24.21 kB
+dist-pages/vk/assets/rubik-latin-700-normal-KHOtubUA.woff       24.28 kB
+dist-pages/vk/assets/shop-bIT9_xnL.mp3                         896.77 kB
+dist-pages/vk/assets/vk-menu-DHlASyDg.css                        1.95 kB │ gzip:   0.71 kB
+dist-pages/vk/assets/index-CRtpEP1C.css                        110.48 kB │ gzip:  20.28 kB
+dist-pages/vk/assets/webworkerAll-Bm8LtikD.js                    0.05 kB │ gzip:   0.06 kB
+dist-pages/vk/assets/getTextureBatchBindGroup-Bz0KTaOB.js        0.34 kB │ gzip:   0.27 kB
+dist-pages/vk/assets/ZzFX-C1HKDoVW.js                            2.00 kB │ gzip:   1.17 kB
+dist-pages/vk/assets/vk-mock-DSeyghq8.js                         2.28 kB │ gzip:   1.20 kB
+dist-pages/vk/assets/vk-DwpJFNGO.js                              2.39 kB │ gzip:   1.18 kB
+dist-pages/vk/assets/vk-menu-Bsmw_jq8.js                         3.22 kB │ gzip:   1.30 kB
+dist-pages/vk/assets/shared-Do_2oD5v.js                          3.39 kB │ gzip:   1.23 kB
+dist-pages/vk/assets/dist-BEElyD_g.js                            4.34 kB │ gzip:   1.80 kB
+dist-pages/vk/assets/canvasUtils-_2Xt0X_j.js                     6.01 kB │ gzip:   2.05 kB
+dist-pages/vk/assets/BufferResource-7657QUKQ.js                 11.02 kB │ gzip:   2.82 kB
+dist-pages/vk/assets/vk-DX7PsYSK.js                             15.17 kB │ gzip:   7.30 kB
+dist-pages/vk/assets/init-Clrbw2NB.js                           15.31 kB │ gzip:   4.79 kB
+dist-pages/vk/assets/browserAll-B2upixl6.js                     42.64 kB │ gzip:  11.19 kB
+dist-pages/vk/assets/RenderTargetSystem-k-tnMFYl.js             78.05 kB │ gzip:  22.07 kB
+dist-pages/vk/assets/CanvasPool-BZOfdiYK.js                    110.28 kB │ gzip:  33.59 kB
+dist-pages/vk/assets/index-0AtMVQ03.js                         750.98 kB │ gzip: 231.66 kB
+
+✓ built in 761ms
+build:pages: dist-pages ready (sdk.js relative, mock copied; vk/ next to it)
+ok   build:pages 2.2 s
+verify (no-e2e): all 14 stages green in 75 s
+EXIT=0

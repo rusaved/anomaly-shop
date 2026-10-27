@@ -1151,7 +1151,12 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
           // H-05 (Q-069 п. 4): the price grown by the feeding, by the pet, in the coins' colour — «покорми — дороже» shows itself.
           // S-05: large with its dark outline (readable on the beige wall), right of the pet at its middle, rising less than «Ур. N!»
           // above it — the two never meet.
-          if (e.gain > 0) fx.float(at.x + at.r * 1.6, at.y + at.r * 0.6, `+${fmt(e.gain)}`, c.uiAccent, Math.max(feel.priceUpPx, size * 1.4), current.unit * 0.3);
+          if (e.gain > 0) {
+            // Below «Ур. N!» by both fonts at their largest (×1.2 as they pop), whatever the place's size.
+            const up = Math.max(feel.priceUpPx, size * 1.4);
+            const low = at.y - at.r * 1.2 + 0.6 * 1.2 * (size * 1.25 + up) + 6;
+            fx.float(at.x + at.r * 1.6, Math.max(at.y + at.r * 0.6, low), `+${fmt(e.gain)}`, c.uiAccent, up, current.unit * 0.3);
+          }
         } else if (e.maxed) {
           fx.float(at.x, at.y - at.r * 1.1, t('fx.max'), c.rarityLegendary, size, current.unit * 0.8);
         } else {

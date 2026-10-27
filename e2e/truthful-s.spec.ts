@@ -72,8 +72,8 @@ for (const size of SIZES) {
       const t0 = Date.now();
       const framed = page.locator('[data-action="buy-upgrade"].is-hinted, [data-action="open-upgrades"].is-hinted');
       await expect(framed).toBeVisible({ timeout: 1500 });
-      // S-06: the frame is on «Инкубаторы» — a second egg place the player sees at once.
-      expect(await framed.getAttribute('data-id')).toBe('incubator');
+      // S-06: with coins for «Инкубаторы» (50) the frame is on them — a second egg place the player sees at once.
+      if ((await st(page)).coins >= 50) expect(await framed.getAttribute('data-id')).toBe('incubator');
       expect(Date.now() - t0).toBeLessThan(1500);
       expect((await st(page)).hint).toBe(call);
       const hand = page.locator('.tap-finger:not([hidden])');
@@ -87,7 +87,7 @@ for (const size of SIZES) {
         await framed.tap();
         await page.locator('[data-action="buy-upgrade"].is-hinted').tap();
       } else await framed.tap();
-      await expect.poll(async () => (await st(page)).upgrades.incubator ?? 0).toBe(1);
+      await expect.poll(async () => Object.values((await st(page)).upgrades).reduce((a, b) => a + b, 0)).toBe(1);
       // The next step is an egg (the upgrade is bought): «Купи новое яйцо», or with too few coins left the free egg the shop gives at
       // once — «Тапни яйцо».
       const eggSteps = [await tr(page, 'ftue.buyEgg'), await tr(page, 'ftue.tapEgg'), await tr(page, 'ftue.warmEgg')];
@@ -187,8 +187,9 @@ test.describe('815x290 S-05', () => {
     await open(page);
     const level = async () => ((await st(page)).creatures as Array<{ level: number }>)[0]!.level;
     const start = await level();
+    const levelWord = (await tr(page, 'fx.levelUp')).split('{n}')[0]!;
     let plus: Box | null = null;
-    let overlap = false;
+    let overlap: string | false = false;
     let shot = false;
     for (let i = 0; i < 60 && !plus; i++) {
       const slot = (await page.evaluate(() => (window as unknown as TT).__TEST__.targets()))!.slots[0]!;
@@ -198,9 +199,9 @@ test.describe('815x290 S-05', () => {
       for (let k = 0; k < 8; k++) {
         const boxes = await page.evaluate(() => (window as unknown as TT).__TEST__.state().floatBoxes);
         const p = boxes.find((b) => /^\+\d+$/.test(b.text) && b.text !== '+1');
-        const lv = boxes.find((b) => !/^\+/.test(b.text));
+        const lv = boxes.find((b) => b.text.startsWith(levelWord));
         if (p && (!plus || p.font > plus.font)) plus = p;
-        if (p && lv && p.x < lv.x + lv.w && p.x + p.w > lv.x && p.y < lv.y + lv.h && p.y + p.h > lv.y) overlap = true;
+        if (p && lv && p.x < lv.x + lv.w && p.x + p.w > lv.x && p.y < lv.y + lv.h && p.y + p.h > lv.y) overlap = JSON.stringify([p, lv]);
         if (p && !shot) {
           await page.screenshot({ path: 'docs/evidence/S/s05-price-up_815x290.png' });
           shot = true;

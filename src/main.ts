@@ -1255,6 +1255,9 @@ async function boot(): Promise<void> {
         adBlock: adsMod.interstitialBlock(),
         city: play.rebirthView().city,
         captions: [...shop.captions(), ...(sceneHintOn ? [hints.text()] : []), ...(toasts.showing() ? [toasts.showing()] : [])],
+        // H-05: «+N» over a pet whose price grew; the price of every pet.
+        floats: shop.numbers(),
+        prices: Object.fromEntries([...play.view().creatures, ...play.view().inventory].map((c) => [c.uid, c.price])),
         hatchTiming: hatchShow.timing(),
         sounds: sfx.asked(),
         sound: sfx.status(),

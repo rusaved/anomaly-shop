@@ -61,6 +61,8 @@ export interface ShopView {
   knock(): void;
   /** M4-00: the captions on the shop now (labels, the counter sign, speech lines, floating words) — never more than one. */
   captions(): string[];
+  /** H-05: the floating numbers over the scene now (tests). */
+  numbers(): string[];
   /** Stage point above a customer (coin flights start there). */
   customerPoint(id: number): { x: number; y: number } | null;
   /** A line over a creature (by uid) or a customer (by id), M2-17; nothing when it is not on the scene. */
@@ -1144,10 +1146,13 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         if (e.levelUp) {
           fx.burst(at.x, at.y, Math.round(feel.levelUpBurst), [c.uiGood, c.uiAccent, c.eyeWhite], at.r * 5, current.outline * 1.3);
           fx.float(at.x, at.y - at.r * 1.2, t('fx.levelUp', { n: e.level }), c.uiGood, size * 1.25, current.unit * 1.2);
+          // H-05 (Q-069 п. 4): the price grown by the feeding, right over the pet, in the coins' colour — «покорми — дороже» shows itself.
+          if (e.gain > 0) fx.float(at.x + at.r * 0.9, at.y - at.r * 0.4, `+${fmt(e.gain)}`, c.uiAccent, size * 1.2, current.unit * 1.0);
         } else if (e.maxed) {
           fx.float(at.x, at.y - at.r * 1.1, t('fx.max'), c.rarityLegendary, size, current.unit * 0.8);
         } else {
-          fx.float(at.x + at.r * 0.5, at.y - at.r * 0.9, '+1', c.uiGood, size, current.unit * 0.8);
+          // H-05: a step of growth, not coins — white, small (the coins' colour is for the price itself).
+          fx.float(at.x + at.r * 0.5, at.y - at.r * 0.9, '+1', c.eyeWhite, size * 0.8, current.unit * 0.8);
           fx.burst(at.x, at.y + at.r * 0.4, 3, [c.blush, c.uiGood], at.r * 2.5, current.outline);
         }
       } else if (e.type === 'sold') {
@@ -1312,6 +1317,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       fx.quiet(on);
       oneCaption();
     },
+    numbers: () => fx.numbers(),
     captions() {
       // The same choice the next frame makes: what is in sight right now.
       oneCaption();

@@ -30,6 +30,8 @@ export interface Fx {
   update(dt: number): boolean;
   /** M4-00: the floating words alive and in sight now (numbers like «+15» are not words: they are the coins themselves). */
   words(): string[];
+  /** H-05: the floating numbers alive now («+15» of a sale, «+4» of a price grown by feeding) — tests read them. */
+  numbers(): string[];
   /** M4-00: a hint or a toast speaks — the floating words fly on unseen. */
   quiet(on: boolean): void;
   clear(): void;
@@ -115,6 +117,7 @@ export function createFx(outline: string): Fx {
       return particles.length > 0 || floaters.length > 0;
     },
     words: () => (hush ? [] : floaters.map((f) => f.text.text).filter((x) => !NUMBER.test(x))),
+    numbers: () => floaters.map((f) => f.text.text).filter((x) => NUMBER.test(x)),
     quiet(on) {
       hush = on;
       for (const f of floaters) f.text.visible = !on || NUMBER.test(f.text.text);

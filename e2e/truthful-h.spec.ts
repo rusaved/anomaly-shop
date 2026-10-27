@@ -313,3 +313,37 @@ for (const size of [SIDE, { width: 812, height: 330 }, { width: 880, height: 405
     });
   });
 }
+
+test.describe('815x290 H-05', () => {
+  test.use({ viewport: SIDE, isMobile: true, hasTouch: true });
+
+  test('H-05 feeding up a level shows the grown price «+N» right over the pet (the price really grows by N)', async ({ page }) => {
+    test.setTimeout(90_000);
+    const errors = collectErrors(page);
+    await open(page);
+    const t = (await page.evaluate(() => (window as unknown as T).__TEST__.targets()))!;
+    await page.touchscreen.tap(t.incubators[0]!.x, t.incubators[0]!.y);
+    await page.locator('[data-overlay=hatch] [data-action=hatch-shop]').tap({ timeout: 10_000 });
+    await expect(page.locator('[data-overlay=hatch]')).toBeHidden();
+    type C = { uid: string; level: number };
+    const pet = async () => {
+      const s = (await state(page)) as unknown as { creatures: C[]; prices: Record<string, number> };
+      const c = s.creatures[0]!;
+      return { level: c.level, price: s.prices[c.uid]! };
+    };
+    const start = await pet();
+    let seen: string[] = [];
+    for (let i = 0; i < 40 && (await pet()).level === start.level; i++) {
+      const slot = (await page.evaluate(() => (window as unknown as T).__TEST__.targets()))!.slots[0]!;
+      await page.touchscreen.tap(slot.x, slot.y);
+      seen = (await page.evaluate(() => (window as unknown as { __TEST__: { state(): { floats: string[] } } }).__TEST__.state().floats)) ?? [];
+      await page.waitForTimeout(120);
+    }
+    const end = await pet();
+    expect(end.level).toBe(start.level + 1);
+    const gain = end.price - start.price;
+    expect(gain).toBeGreaterThan(0);
+    expect(seen, 'the grown price over the pet').toContain(`+${gain}`);
+    expect(errors).toEqual([]);
+  });
+});

@@ -150,16 +150,14 @@ test.describe('815x290 P-03', () => {
 test.describe('815x290 P-04', () => {
   test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
 
-  test('P-04 (Q-056 Б п. 1) after the first minute an empty incubator says «Купи новое яйцо» after 8 s of idling; its tap buys the egg', async ({ page }) => {
+  test('P-04 (Q-056 Б п. 1) after the first minute an empty incubator says «Купи новое яйцо» (H-06: at once when there is nothing else to do); its tap buys the egg', async ({ page }) => {
     const errors = collectErrors(page);
     await seedSave(page, { coins: 30, incubators: [{ egg: null }], myEggs: {}, creatures: [] });
     await open(page);
     const t0 = Date.now();
     const hint = page.locator('.hint[data-hint=buyEgg]');
-    await page.waitForTimeout(5000);
-    await expect(hint).toBeHidden();
     await expect(hint).toBeVisible({ timeout: 6000 });
-    expect(Date.now() - t0).toBeGreaterThanOrEqual(7500);
+    expect(Date.now() - t0, 'no 8 s wait with nothing else to do').toBeLessThan(3000);
     await expect(hint).toContainText('Купи новое яйцо');
     const ring = (await page.locator('.hint-ring').boundingBox())!;
     const inc = (await page.evaluate(() => (window as unknown as T).__TEST__.targets()))!.incubators[0]!;
@@ -193,7 +191,7 @@ test.describe('815x290 P-04', () => {
 test.describe('815x290 P-07', () => {
   test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
 
-  test('P-07 (Q-051 Б) «Музыка» in the settings apart from «Звук»; no file in the build — silence and no error', async ({ page }) => {
+  test('P-07 (Q-051 Б) «Музыка» in the settings apart from «Звук»; switched off — silence and no error (H-07: the file is in the build now)', async ({ page }) => {
     const errors = collectErrors(page);
     await seedSave(page);
     await open(page);
@@ -208,7 +206,8 @@ test.describe('815x290 P-07', () => {
     await expect(music).toHaveAttribute('aria-checked', 'false');
     await expect(sound).toHaveAttribute('aria-checked', 'false');
     const s = (await state(page)) as unknown as { music: { track: string; playing: boolean } };
-    expect(s.music).toEqual({ track: '', playing: false });
+    expect(s.music.track).toMatch(/shop[^/]*\.mp3$/);
+    expect(s.music.playing).toBe(false);
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('anomaly-shop:save') ?? '{}').settings?.music)).toBe(false);
     expect(errors).toEqual([]);
   });
@@ -272,7 +271,8 @@ test.describe('815x290 P-08 the reviewer of the first minute', () => {
 
   test('P-08 before any upgrade an idle player with coins for one sees «Купи улучшение» on a price', async ({ page }) => {
     const errors = collectErrors(page);
-    await seedSave(page, { coins: 60, incubators: [{ egg: 'egg_basic', startedAt: 0, progress: 0, elapsed: 0, waiting: false, careTaps: 0, careFed: 0, ripeSec: 0 }], upgrades: {} });
+    // H-08: no pets — a buyer writing at the same 8th second would rightly come first (P-08) and make the check a race.
+    await seedSave(page, { coins: 60, creatures: [], incubators: [{ egg: 'egg_basic', startedAt: 0, progress: 0, elapsed: 0, waiting: false, careTaps: 0, careFed: 0, ripeSec: 0 }], upgrades: {} });
     await open(page);
     await expect(page.locator('.is-hinted[data-action=buy-upgrade], .is-hinted[data-action=open-upgrades]').first()).toBeVisible({ timeout: 12_000 });
     await expect(page.locator('.hint')).toContainText('Купи улучшение');

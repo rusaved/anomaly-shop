@@ -32,7 +32,12 @@ export interface Music {
   status(): { track: string; playing: boolean };
 }
 
-export function createMusic(track: string | null, volume: number, enabled: () => boolean): Music {
+/** H-07: the loop's points in a decoded buffer — the whole buffer, or exactly loopSec of it when a decoder left the encoder's padding at the end. */
+export function loopPoints(duration: number, loopSec?: number): { start: number; end: number } {
+  return { start: 0, end: loopSec && loopSec < duration ? loopSec : duration };
+}
+
+export function createMusic(track: string | null, volume: number, enabled: () => boolean, loopSec?: number): Music {
   // Web Audio only (the Yandex check of the release, п. 5: no media elements): the file decoded once, a looping source into a gain.
   let ctx: AudioContext | null = null;
   let gain: GainNode | null = null;
@@ -73,6 +78,10 @@ export function createMusic(track: string | null, volume: number, enabled: () =>
           const src = c.createBufferSource();
           src.buffer = buf;
           src.loop = true;
+          // H-07: seamless round — the loop closes exactly at loopSec (audio.json), never on a decoder's padding.
+          const pts = loopPoints(buf.duration, loopSec);
+          src.loopStart = pts.start;
+          src.loopEnd = pts.end;
           src.connect(gain!);
           src.start();
           ready = true;

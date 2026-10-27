@@ -41,7 +41,7 @@ import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { createAds } from './ui/ads.ts';
 import { createShopStore } from './ui/store.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { chatHint, eggHint, ftueHint, onEggsTab, shelfHint, tabHint, tabUnlocked, upgradeHint, type FtueHint } from './sim/ftue.ts';
+import { chatHint, eggHint, ftueHint, nothingToDo, onEggsTab, readyHint, shelfHint, tabHint, tabUnlocked, upgradeHint, type FtueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { createNav, TABS, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
@@ -951,7 +951,7 @@ async function boot(): Promise<void> {
   catchUp((platform.now() - lastSeen) / 1000);
   const sfx = createSfx(audio, () => store.state.settings.sound && platform.audioAllowed());
   // P-07 (Q-051 Б): the quiet loop of the shop (assets/audio/music/shop.mp3; no file — silence), after the first tap, never under a pause.
-  const music = createMusic(musicTrack('shop'), audio.music.volume, () => store.state.settings.music !== false && platform.audioAllowed());
+  const music = createMusic(musicTrack('shop'), audio.music.volume, () => store.state.settings.music !== false && platform.audioAllowed(), audio.music.loopSec);
   document.addEventListener(
     'pointerdown',
     () => {
@@ -974,6 +974,8 @@ async function boot(): Promise<void> {
     namedLine: () => (store.state.shopName ? i18n.t(`shopname.arrive${1 + Math.floor(Math.random() * 3)}`, { shop: store.state.shopName }) : ''),
   });
   const foundNow: string[] = [];
+  /** H-06: when the player's last deal closed (performance.now ms; 0 — none this session). */
+  let dealAt = 0;
   play.events.on((e) => {
     shop.onEvent(e);
     // M3-18: «Lv N!» flies in the scene — the toasts wait for it.
@@ -986,6 +988,7 @@ async function boot(): Promise<void> {
     } else if (e.type === 'eggTap') sfx.play('eggTap');
     else if (e.type === 'fed' && (e.by === 'tap' || e.levelUp)) sfx.play(e.levelUp ? 'levelUp' : 'tap');
     else if (e.type === 'sold') {
+      if (e.by !== 'helper') dealAt = performance.now();
       sfx.play('coin');
       // FB-13: from the button just pressed («Продать за N» in a chat), else from the buyer in the shop.
       const p = shop.customerPoint(e.customerId) ?? shop.anchors()?.queue[0];
@@ -1308,9 +1311,23 @@ async function boot(): Promise<void> {
     // vanishes. The nudges after the first minute (an egg, an upgrade) stay in «Лавка» (on «Яйца» the new egg at its price button):
     // over the tab bar of another tab their band would shorten its list.
     const away = (h: FtueHint | null): FtueHint | null => (h && nav.active() !== 'home' && SCENE_TARGETS.has(h.target.kind) ? { ...h, target: { kind: 'button', action: 'tab-home' } } : h);
-    const nudge = controllable && !lesson ? (shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? (nav.active() === 'home' ? upgradeHint(store.state, idle, ftue.eggHintSec, play.upgradeList().some((u) => u.affordable)) : null) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice)) : null;
+    // H-06 (Q-069 п. 6): right after a deal (no touch since) the next step calls within AFTER_DEAL_SEC, from any tab, with no idle pause:
+    // put the next pet up, the first upgrade, open a ready egg, buy a new egg. With nothing else to do «Купи новое яйцо» waits for nobody.
+    const sinceDeal = dealAt > 0 && lastInputAt <= dealAt ? (performance.now() - dealAt) / 1000 : -1;
+    const afterDeal = sinceDeal >= ftue.afterDealSec;
+    const wait = (sec: number): number => (afterDeal ? 0 : sec);
+    const nudge =
+      controllable && !lesson
+        ? (shelfHint(store.state, view, idle, wait(ftue.shelfHintSec)) ??
+          // P-08: the very first upgrade before the rest (once a game).
+          (nav.active() === 'home' || afterDeal ? upgradeHint(store.state, idle, wait(ftue.eggHintSec), play.upgradeList().some((u) => u.affordable)) : null) ??
+          readyHint(store.state, view, idle, wait(ftue.eggHintSec)) ??
+          eggHint(store.state, view, idle, nothingToDo(store.state, view) ? 0 : wait(ftue.eggHintSec), basicEggPrice))
+        : null;
     const hint =
       away(lesson) ??
+      // H-06: after a deal on another tab the next step points at «Лавка» with its own words (on «Яйца» a new egg at its price).
+      (nudge && afterDeal && nav.active() !== 'home' && !(onEggs && nudge.step === 'buyEgg') && (SCENE_TARGETS.has(nudge.target.kind) || nudge.key === 'ftue.upgrade') ? { ...nudge, target: { kind: 'button' as const, action: 'tab-home' } } : null) ??
       (nudge && SCENE_TARGETS.has(nudge.target.kind) && nav.active() !== 'home'
         ? onEggs && nudge.step === 'buyEgg'
           ? { ...nudge, target: { kind: 'button' as const, action: `egg-buy-${ftue.starterEgg}` } }
@@ -1323,7 +1340,8 @@ async function boot(): Promise<void> {
     const toastNow = toasts.calm() ? '' : toasts.showing();
     // Круг правок FB-3 п. 6: the gift egg's hint wins over the first visit of «Яйца» (both would point at an egg; the gift is the free one).
     const gift = (hint?.key === 'ftue.freeEgg' || hint?.step === 'hatchRare' || hint?.step === 'tapEgg') && onEggs;
-    const wanted = (gift ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
+    // H-06: right after a deal the next step wins over a tab's first-visit words.
+    const wanted = (gift || (afterDeal && hint) ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
     // Круг правок FB-3 п. 5: portrait the toast stands over the tab bar, off the scene — the scene's hint stays.
     const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) && !appRoot.classList.contains('portrait') ? null : wanted;
     hints.update(shownHint, Boolean(toastNow));

@@ -88,6 +88,23 @@ export function eggHint(state: SaveData, view: GameView, idleSec: number, afterS
 }
 
 /**
+ * H-06 (Q-069 п. 6): after the first minute an egg ready to open while the player is idle — «Тапни яйцо» on its incubator.
+ */
+export function readyHint(state: SaveData, view: GameView, idleSec: number, afterSec: number): FtueHint | null {
+  if (!state.flags[FLAGS.done] || idleSec < afterSec || view.queue.length > 0) return null;
+  const index = view.incubators.findIndex((i) => i.ready);
+  return index < 0 ? null : { step: 'tapEgg', target: { kind: 'incubator', index } };
+}
+
+/**
+ * H-06: nothing else to do — no pet on the shelf or in the storage, no egg warming, ready or waiting in «Мои яйца»: «Купи новое яйцо»
+ * needs no idle pause.
+ */
+export function nothingToDo(state: SaveData, view: GameView): boolean {
+  return view.creatures.length === 0 && view.inventory.length === 0 && view.talking.length === 0 && view.incubators.every((i) => !i.egg) && Object.values(state.myEggs).every((n) => !n);
+}
+
+/**
  * P-08 (ревизор геймдизайна): after the first minute, before any upgrade, an idle player with coins for one — «Купи улучшение» on the
  * cheapest open price of «Лавка» (or its «Улучшения» button); src/main.ts asks it on «Лавка» only.
  */

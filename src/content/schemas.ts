@@ -273,7 +273,7 @@ const ZzfxParams = v.pipe(v.array(v.nullable(v.number())), v.minLength(1), v.max
 export const AudioFile = v.object({
   volume: Share,
   /** P-07 (Q-051 Б): the background music — its quiet volume and the weight one file may have (assets/audio/music). */
-  music: v.object({ volume: Share, maxFileKb: v.pipe(v.number(), v.minValue(100), v.maxValue(1536)) }),
+  music: v.object({ volume: Share, maxFileKb: v.pipe(v.number(), v.minValue(100), v.maxValue(1536)), loopSec: v.optional(v.pipe(v.number(), v.minValue(1))) }),
   sfx: v.object(Object.fromEntries(SFX_NAMES.map((k) => [k, ZzfxParams])) as Record<(typeof SFX_NAMES)[number], typeof ZzfxParams>),
 });
 
@@ -291,6 +291,8 @@ export const FtueFile = v.object({
   shelfHintSec: v.pipe(v.number(), v.minValue(1)),
   /** P-04 (Q-056 Б п. 1): after the first minute, an empty incubator with coins for an egg gets «Купи новое яйцо» once the player is idle this long. */
   eggHintSec: v.pipe(v.number(), v.minValue(1)),
+  /** H-06 (Q-069 п. 6): after a deal the next step calls this soon (≤ 3 s), with no idle pause. */
+  afterDealSec: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(3)), 1),
   /** FB-08: the finger taps a ready egg for this many hatches after the first minute. */
   fingerHatches: v.optional(Count, 3),
   maxHintWords: Count,

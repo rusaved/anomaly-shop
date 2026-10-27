@@ -347,3 +347,133 @@ test.describe('815x290 H-05', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('815x290 H-06', () => {
+  test.use({ viewport: SIDE, isMobile: true, hasTouch: true });
+  const hintNow = (page: Page) => page.evaluate(() => (window as unknown as { __TEST__: { state(): { hint: string } } }).__TEST__.state().hint);
+  /** Sells through the chat by finger and returns the seconds until a hint calls (no window opens meanwhile). */
+  const sellAndWait = async (page: Page, key: string) => {
+    await page.evaluate(() => (window as unknown as T).__TEST__.setTimeScale(8));
+    await expect.poll(async () => (await st(page)).chats.length, { timeout: 30_000 }).toBeGreaterThan(0);
+    await page.evaluate(() => (window as unknown as T).__TEST__.setTimeScale(1));
+    await page.locator('[data-tab=chats]').tap();
+    const dialog = page.locator('[data-sheet=chats] [data-chat-dialog]');
+    if (!(await dialog.locator('[data-action=chat-sell]').isVisible())) await page.locator('[data-sheet=chats] [data-chat]').first().tap();
+    const deals = (await st(page)).stats.deals;
+    await dialog.locator('[data-action=chat-sell]').tap();
+    const t0 = Date.now();
+    await expect.poll(async () => (await st(page)).stats.deals).toBe(deals + 1);
+    // The hint that calls once the deal is done (a tab's first-visit words before it do not count).
+    const want = await tr(page, key);
+    let text = '';
+    while (Date.now() - t0 < 3500 && text !== want) {
+      text = await hintNow(page);
+      if (text !== want) await page.waitForTimeout(100);
+    }
+    expect((await st(page)).windows, 'no window').toEqual([]);
+    return { sec: (Date.now() - t0) / 1000, text };
+  };
+  const words = (s: string) => s.trim().split(/\s+/).length;
+
+  test('H-06 after a deal with a pet in the storage: «Выставь…» calls within 3 s, from «Чаты»', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, {
+      coins: 0,
+      creatures: [{ uid: 's1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }, { uid: 's2', species: 'cloudcat', level: 1, fed: 0, hatchedAt: 0, age: 0 }],
+      showcase: ['s1'],
+      freeIn: { egg_gift: 300 },
+    });
+    await open(page);
+    const r = await sellAndWait(page, 'ftue.list');
+    expect(r.sec).toBeLessThanOrEqual(3);
+    expect(r.text).toBe(await tr(page, 'ftue.list'));
+    expect(words(r.text)).toBeLessThanOrEqual(6);
+    expect(errors).toEqual([]);
+  });
+
+  test('H-06 after a deal with nothing left to do: «Купи новое яйцо» within 3 s (no 8 s wait); its tap leads to the egg', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, {
+      coins: 40,
+      creatures: [{ uid: 's1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }],
+      showcase: ['s1'],
+      // One upgrade bought: «Купи улучшение» (before the first one, P-08) does not come first.
+      upgrades: { sign: 1 },
+      incubators: [{ egg: null }],
+      myEggs: {},
+      freeIn: { egg_gift: 300 },
+    });
+    await open(page);
+    const r = await sellAndWait(page, 'ftue.buyEgg');
+    expect(r.sec).toBeLessThanOrEqual(3);
+    expect(r.text).toBe(await tr(page, 'ftue.buyEgg'));
+    // From «Чаты» the hint stands on «Лавка»; there it stands on the empty incubator and buys the egg.
+    await page.locator('[data-tab=home]').tap();
+    const ring = page.locator('.hint-ring');
+    await expect(ring).toBeVisible();
+    const b = (await ring.boundingBox())!;
+    await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+    await expect.poll(async () => ((await st(page)) as St & { incubators: Array<{ egg: string | null }> }).incubators[0]!.egg).toBe('egg_basic');
+    expect(errors).toEqual([]);
+  });
+
+  test('H-06 after a deal with an egg ready: «Тапни яйцо» within 3 s', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, {
+      coins: 0,
+      creatures: [{ uid: 's1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }],
+      showcase: ['s1'],
+      incubators: [{ egg: 'egg_basic', startedAt: 0, progress: 999, elapsed: 999, waiting: false }],
+      freeIn: { egg_gift: 300 },
+      flags: { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true, tap_hatch_3: true },
+    });
+    await open(page);
+    const r = await sellAndWait(page, 'ftue.tapEgg');
+    expect(r.sec).toBeLessThanOrEqual(3);
+    expect(r.text).toBe(await tr(page, 'ftue.tapEgg'));
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe('815x290 H-07', () => {
+  test.use({ viewport: SIDE, isMobile: true, hasTouch: true });
+  const music = async (page: Page) => ((await state(page)) as unknown as { music: { track: string; playing: boolean } }).music;
+  const hide = (page: Page, hidden: boolean) =>
+    page.evaluate((h) => {
+      Object.defineProperty(document, 'visibilityState', { value: h ? 'hidden' : 'visible', configurable: true });
+      Object.defineProperty(document, 'hidden', { value: h, configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, hidden);
+
+  test('H-07 shop.mp3 plays after the first tap, stops when the game is hidden and with «Музыка» off; the loop is exactly 64 s', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page);
+    await open(page);
+    expect((await music(page)).track).toMatch(/shop[^/]*\.mp3$/);
+    await page.waitForTimeout(500);
+    expect((await music(page)).playing, 'no music before the first tap').toBe(false);
+    await page.touchscreen.tap(400, 150);
+    await expect.poll(async () => (await music(page)).playing, { timeout: 10_000 }).toBe(true);
+    await hide(page, true);
+    await expect.poll(async () => (await music(page)).playing).toBe(false);
+    await hide(page, false);
+    await expect.poll(async () => (await music(page)).playing).toBe(true);
+    // The loop: the decoded file is 64 s, its end runs into its start with no jump (a seamless round).
+    const loop = await page.evaluate(async () => {
+      const url = (window as unknown as { __TEST__: { state(): { music: { track: string } } } }).__TEST__.state().music.track;
+      const buf = await new OfflineAudioContext(2, 44100, 44100).decodeAudioData(await (await fetch(url)).arrayBuffer());
+      const d = buf.getChannelData(0);
+      const step = Math.max(...Array.from(d.slice(1000, 50_000)).map((x, i, a) => (i ? Math.abs(x - a[i - 1]!) : 0)));
+      return { dur: buf.duration, join: Math.abs(d[0]! - d[d.length - 1]!), step };
+    });
+    expect(Math.abs(loop.dur - 64)).toBeLessThan(0.03);
+    expect(loop.join, 'the join is no louder a jump than the music itself makes').toBeLessThanOrEqual(loop.step);
+    // «Музыка» off in the settings: silence.
+    await page.locator('.hud [data-action=pause]').tap();
+    const settings = page.locator('[data-action=pause-settings], [data-action=settings]').first();
+    if (await settings.isVisible().catch(() => false)) await settings.tap();
+    await page.locator('[data-overlay=settings] [data-action=music]').tap();
+    await expect.poll(async () => (await music(page)).playing).toBe(false);
+    expect(errors).toEqual([]);
+  });
+});

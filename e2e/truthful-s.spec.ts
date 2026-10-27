@@ -171,3 +171,62 @@ for (const size of SIZES) {
     });
   });
 }
+
+test.describe('815x290 S-05', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+  type Box = { text: string; x: number; y: number; w: number; h: number; font: number };
+  type TT = { __TEST__: { targets(): { incubators: Array<{ x: number; y: number }>; slots: Array<{ x: number; y: number }> } | null; state(): { floatBoxes: Box[] } } };
+
+  test('S-05 a level up: «+N» of the grown price large (≥ 14 px) with its outline, never on «Ур. N!»', async ({ page }) => {
+    test.setTimeout(90_000);
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 0, creatures: [{ uid: 's1', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }], showcase: ['s1'], freeIn: { egg_gift: 300 }, upgrades: { sign: 1 } });
+    await open(page);
+    const level = async () => ((await st(page)).creatures as Array<{ level: number }>)[0]!.level;
+    const start = await level();
+    let plus: Box | null = null;
+    let overlap = false;
+    let shot = false;
+    for (let i = 0; i < 60 && !plus; i++) {
+      const slot = (await page.evaluate(() => (window as unknown as TT).__TEST__.targets()))!.slots[0]!;
+      await page.touchscreen.tap(slot.x, slot.y);
+      if ((await level()) === start) continue;
+      // The level grew: watch the floating texts for a moment.
+      for (let k = 0; k < 8; k++) {
+        const boxes = await page.evaluate(() => (window as unknown as TT).__TEST__.state().floatBoxes);
+        const p = boxes.find((b) => /^\+\d+$/.test(b.text) && b.text !== '+1');
+        const lv = boxes.find((b) => !/^\+/.test(b.text));
+        if (p && (!plus || p.font > plus.font)) plus = p;
+        if (p && lv && p.x < lv.x + lv.w && p.x + p.w > lv.x && p.y < lv.y + lv.h && p.y + p.h > lv.y) overlap = true;
+        if (p && !shot) {
+          await page.screenshot({ path: 'docs/evidence/S/s05-price-up_815x290.png' });
+          shot = true;
+        }
+        await page.waitForTimeout(80);
+      }
+    }
+    expect(plus, 'the grown price floats').not.toBeNull();
+    expect(plus!.font).toBeGreaterThanOrEqual(14);
+    expect(overlap, '«+N» on «Ур. N!»').toBe(false);
+    expect(errors).toEqual([]);
+  });
+
+  test('S-05 the first visit of «Продажи» with the shelf full: no frame on «Снять с витрины»', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, {
+      coins: 0,
+      creatures: [{ uid: 's1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }],
+      showcase: ['s1'],
+      freeIn: { egg_gift: 300 },
+      upgrades: { sign: 1 },
+      flags: { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true, open_market: true, open_inventory: true, open_sales: true, open_chats: true, open_shop: true },
+    });
+    await open(page);
+    await page.locator('[data-tab=sales]').tap();
+    await page.waitForTimeout(600);
+    await expect(page.locator('[data-sheet=sales] [data-action^="sale-off-"]').first()).toBeVisible();
+    expect(await page.locator('[data-sheet=sales] [data-action^="sale-off-"].is-hinted').count()).toBe(0);
+    await page.screenshot({ path: 'docs/evidence/S/s05-sales-first_815x290.png' });
+    expect(errors).toEqual([]);
+  });
+});

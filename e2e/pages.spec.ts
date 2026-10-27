@@ -10,7 +10,7 @@ test('pages: boots on the relative mock, shows the milestone label and the debug
   await page.goto('/?debug=1');
   await page.waitForFunction(() => (window as unknown as { __YA_MOCK__: { readyCalled: boolean } }).__YA_MOCK__.readyCalled);
   await expect(page.locator('[data-build-label]')).toBeVisible();
-  await expect(page.locator('[data-build-label]')).toHaveText(/^M\d+ · \d{4}-\d{2}-\d{2} · [0-9a-f]{7}|local$/);
+  await expect(page.locator('[data-build-label]')).toHaveText(/^[A-Z][A-Z0-9]* · \d{4}-\d{2}-\d{2} · [0-9a-f]{7}|local$/);
   await expect(page.locator('.lil-gui')).toBeVisible();
   expect(errors).toEqual([]);
 });

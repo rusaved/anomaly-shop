@@ -142,7 +142,8 @@ export const TAB_HINTS: Record<string, string[]> = {
   eggs: ['[data-sheet="eggs"] [data-action^="egg-buy-"]'],
   market: ['[data-sheet="market"] .card-lot:not(.sold)'],
   inventory: ['[data-sheet="inventory"] [data-action^="inv-list-"]', '[data-sheet="inventory"] .tile'],
-  sales: ['[data-sheet="sales"] [data-action="sale-add"]', '[data-sheet="sales"] [data-action^="sale-off-"]'],
+  // S-05: with the shelf full the words stand at the head — never a frame on «Снять с витрины» (its tap took a pet off mid-lesson).
+  sales: ['[data-sheet="sales"] [data-action="sale-add"]'],
   chats: ['[data-sheet="chats"] .chat-row:not(.closed)'],
   shop: ['[data-sheet="shop"] [data-action="buy-upgrade"]'],
   season: [],

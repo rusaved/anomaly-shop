@@ -32,6 +32,8 @@ export interface Fx {
   words(): string[];
   /** H-05: the floating numbers alive now («+15» of a sale, «+4» of a price grown by feeding) — tests read them. */
   numbers(): string[];
+  /** S-05: the floating texts alive now with their boxes on the canvas (CSS px) and font size — tests read them. */
+  boxes(): Array<{ text: string; x: number; y: number; w: number; h: number; font: number }>;
   /** M4-00: a hint or a toast speaks — the floating words fly on unseen. */
   quiet(on: boolean): void;
   clear(): void;
@@ -118,6 +120,11 @@ export function createFx(outline: string): Fx {
     },
     words: () => (hush ? [] : floaters.map((f) => f.text.text).filter((x) => !NUMBER.test(x))),
     numbers: () => floaters.map((f) => f.text.text).filter((x) => NUMBER.test(x)),
+    boxes: () =>
+      floaters.map((f) => {
+        const b = f.text.getBounds();
+        return { text: f.text.text, x: b.x, y: b.y, w: b.width, h: b.height, font: Number(f.text.style.fontSize) * f.text.scale.y };
+      }),
     quiet(on) {
       hush = on;
       for (const f of floaters) f.text.visible = !on || NUMBER.test(f.text.text);

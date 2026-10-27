@@ -7,7 +7,7 @@ import type { FeelData, StyleData } from '../content/schemas.ts';
 import type { GameEvent, GameView } from '../sim/game.ts';
 import { drawCreature, drawCustomer, drawEgg, drawRing, rarityColor } from './art.ts';
 import type { EventView } from '../sim/game.ts';
-import { createFx } from './fx.ts';
+import { createFx, type Fx } from './fx.ts';
 import { drawBell, drawPointBack, drawDecor, drawLamp, drawSign } from './decor.ts';
 import { createThings } from './things.ts';
 import type { SecretTarget } from '../content/schemas.ts';
@@ -63,6 +63,8 @@ export interface ShopView {
   captions(): string[];
   /** H-05: the floating numbers over the scene now (tests). */
   numbers(): string[];
+  /** S-05: the floating texts with their boxes (tests). */
+  floatBoxes(): ReturnType<Fx['boxes']>;
   /** Stage point above a customer (coin flights start there). */
   customerPoint(id: number): { x: number; y: number } | null;
   /** A line over a creature (by uid) or a customer (by id), M2-17; nothing when it is not on the scene. */
@@ -1146,8 +1148,10 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
         if (e.levelUp) {
           fx.burst(at.x, at.y, Math.round(feel.levelUpBurst), [c.uiGood, c.uiAccent, c.eyeWhite], at.r * 5, current.outline * 1.3);
           fx.float(at.x, at.y - at.r * 1.2, t('fx.levelUp', { n: e.level }), c.uiGood, size * 1.25, current.unit * 1.2);
-          // H-05 (Q-069 п. 4): the price grown by the feeding, right over the pet, in the coins' colour — «покорми — дороже» shows itself.
-          if (e.gain > 0) fx.float(at.x + at.r * 0.9, at.y - at.r * 0.4, `+${fmt(e.gain)}`, c.uiAccent, size * 1.2, current.unit * 1.0);
+          // H-05 (Q-069 п. 4): the price grown by the feeding, by the pet, in the coins' colour — «покорми — дороже» shows itself.
+          // S-05: large with its dark outline (readable on the beige wall), right of the pet at its middle, rising less than «Ур. N!»
+          // above it — the two never meet.
+          if (e.gain > 0) fx.float(at.x + at.r * 1.5, at.y + at.r * 0.2, `+${fmt(e.gain)}`, c.uiAccent, Math.max(feel.priceUpPx, size * 1.4), current.unit * 0.5);
         } else if (e.maxed) {
           fx.float(at.x, at.y - at.r * 1.1, t('fx.max'), c.rarityLegendary, size, current.unit * 0.8);
         } else {
@@ -1318,6 +1322,7 @@ export function createShopView(app: Application, deps: ShopDeps): ShopView {
       oneCaption();
     },
     numbers: () => fx.numbers(),
+    floatBoxes: () => fx.boxes(),
     captions() {
       // The same choice the next frame makes: what is in sight right now.
       oneCaption();

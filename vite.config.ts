@@ -2,6 +2,7 @@ import { defineConfig, type Plugin, type Connect } from 'vite';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
+import { doneMilestone, type FeatureList } from './scripts/build-label.ts';
 
 // Build modes and platform profiles (docs/02-tech.md, sections 3 and 6).
 // The profile comes from the mode; VITE_PLATFORM=yandex|null|youtube|vk overrides it.
@@ -60,22 +61,10 @@ function gameConfig(platform: Profile): Record<string, unknown> {
   };
 }
 
-/** Label for the producer link: last milestone whose features all pass or are deferred (docs/05, section 2). */
+/** Label for the producer link: the newest milestone done (scripts/build-label.ts), the date, the commit. */
 function buildLabel(): string {
-  let done = 'M0';
   const file = resolve(root, 'feature_list.json');
-  if (existsSync(file)) {
-    const list = readJson<{
-      milestones?: Array<{ code: string }>;
-      features?: Array<{ milestone: string; passes?: boolean; deferred?: boolean }>;
-    }>(file);
-    const features = list.features ?? [];
-    for (const { code } of list.milestones ?? []) {
-      const own = features.filter((f) => f.milestone === code);
-      if (own.length > 0 && own.every((f) => f.passes || f.deferred)) done = code;
-      else break;
-    }
-  }
+  const done = existsSync(file) ? doneMilestone(readJson<FeatureList>(file)) : 'M0';
   let sha = (process.env.BUILD_SHA || '').slice(0, 7);
   if (!sha) {
     try {

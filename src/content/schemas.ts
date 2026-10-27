@@ -259,6 +259,8 @@ export const FeelFile = v.object({
   hatchShowSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(8)),
   /** H-02 (Q-069 п. 1 Б): the quick run of every other egg, 1.5–2 s; the long one is for the first hatchLongFirst eggs and from hatchLongFrom up. */
   hatchQuickSec: v.pipe(v.number(), v.minValue(1.5), v.maxValue(2)),
+  /** S-05: the smallest font of «+N» (the price grown at a new level), px. */
+  priceUpPx: v.pipe(v.number(), v.minValue(14)),
   hatchLongFirst: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10)),
   hatchLongFrom: Rarity,
   /** Круг правок FB п. 1: the hatch result's buttons take a press this long after it shows (a double tap of the skip never chooses), ≥ 0.5 s; P-05: once, taps never stretch it. */

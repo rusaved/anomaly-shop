@@ -60,8 +60,11 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
     glow?.classList.add('is-hinted');
   };
 
+  /** The hint whose target was scrolled into sight (once). */
+  let scrolledFor = '';
   const hide = (): void => {
     lower(null);
+    scrolledFor = '';
     if (lastKey === '') return;
     lastKey = '';
     outside = false;
@@ -167,10 +170,22 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         }
         const s = sheet.getBoundingClientRect();
         let b = button.getBoundingClientRect();
-        // The target in sight first (the screen just opened, no finger yet).
-        if (b.top < s.top || b.bottom > s.bottom) {
+        // The target in sight first (the screen just opened, no finger yet) — once per hint: N-07 (RD-02), a call that stands (the
+        // upgrade) never pulls the list back while the player scrolls it.
+        const scrollKey = `${hint.key ?? hint.step}:${sheet.dataset.sheet}`;
+        // A list the player already scrolled stays where it is.
+        const fresh = (button.closest<HTMLElement>('.sheet-body')?.scrollTop ?? 0) < 1;
+        if ((b.top < s.top || b.bottom > s.bottom) && scrolledFor !== scrollKey && fresh) {
+          scrolledFor = scrollKey;
           button.scrollIntoView({ block: 'nearest' });
           b = button.getBoundingClientRect();
+        }
+        // Scrolled away by the player: the bubble waits until the target is back in sight (never over the list's edge).
+        if (b.bottom <= s.top + 4 || b.top >= s.bottom - 4) {
+          root.hidden = true;
+          lastKey = '';
+          setGlow(button);
+          return;
         }
         const key = `room:${hint.key ?? hint.step}:${text}:${sheet.dataset.sheet}:${Math.round(b.left)}:${Math.round(b.top)}:${Math.round(b.width)}`;
         setGlow(button);

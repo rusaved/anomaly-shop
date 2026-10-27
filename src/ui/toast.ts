@@ -198,9 +198,11 @@ const answers = (q: ToastItem): boolean => q.now === true || q.kind === 'warn';
 function barStretch(): { left: number; width: number; hud: DOMRect } | null {
   const hud = document.querySelector('.hud')?.getBoundingClientRect();
   if (!hud || hud.height === 0) return null;
-  const edges = [...document.querySelectorAll('.hud button, .hud [data-chip]')]
+  // Every button of the bar's band, also those laid over it from outside the bar (gifts, the level, the leaders).
+  const edges = [...document.querySelectorAll<HTMLElement>('button, [data-action], [data-chip]')]
+    .filter((e) => e.offsetParent !== null && !e.closest('.toasts'))
     .map((e) => e.getBoundingClientRect())
-    .filter((r) => r.width > 0)
+    .filter((r) => r.width > 0 && r.height > 0 && r.top < hud.bottom - 2 && r.bottom > hud.top + 2)
     .sort((a, b) => a.left - b.left);
   let from = Math.max(0, hud.left);
   let best = { left: 0, width: 0 };
@@ -216,16 +218,24 @@ function placeBar(el: HTMLElement, root: HTMLElement, lines: 1 | 2): boolean {
   root.style.removeProperty('transform');
   root.style.removeProperty('align-items');
   root.style.removeProperty('padding-left');
-  // Its own width, not the column's (sideways the column is the scene's width, narrow beside a list).
+  // Its own width, not the column's (sideways the column is the scene's width, narrow beside a list); the bar's tighter look (two
+  // lines fit the bar's height).
   el.style.maxWidth = 'none';
   el.style.width = 'max-content';
+  el.classList.add('toast-bar');
   const bar = barStretch();
-  if (!bar) return false;
+  if (!bar) {
+    el.classList.remove('toast-bar');
+    return false;
+  }
   // Layout sizes (a toast coming in is scaled by its animation; its box would read narrower).
   const box = { width: el.offsetWidth, height: el.offsetHeight };
   // +2 px: a text 0.3 px wider than its box would end in «…».
   const w = Math.min(Math.ceil(box.width) + 2, bar.width - 16);
-  if (w < 120) return false;
+  if (w < 120) {
+    el.classList.remove('toast-bar');
+    return false;
+  }
   el.style.maxWidth = `${Math.floor(w)}px`;
   if (lines === 2) el.style.width = `${Math.floor(w)}px`;
   if (lines === 2 && el.offsetHeight <= bar.hud.height + 4) {
@@ -233,10 +243,12 @@ function placeBar(el: HTMLElement, root: HTMLElement, lines: 1 | 2): boolean {
     el.style.width = 'max-content';
   }
   const b = el.getBoundingClientRect();
-  if (el.offsetHeight > bar.hud.height + 4 || (lines === 1 && el.offsetHeight > box.height + 1)) return false;
+  if (el.offsetHeight > bar.hud.height + 4 || (lines === 1 && el.offsetHeight > box.height + 1)) {
+    el.classList.remove('toast-bar');
+    return false;
+  }
   const top = bar.hud.top + (bar.hud.height - b.height) / 2;
   root.style.transform = `translate(${Math.round(bar.left + (bar.width - b.width) / 2 - b.left)}px, ${Math.round(top - b.top)}px)`;
-  el.classList.add('toast-bar');
   return true;
 }
 
@@ -323,20 +335,19 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
       return;
     }
 
+    // S-02: a window that opens over a toast (not an answer) sends it back at once — it never lies on the window's buttons.
+    const watchWindow = new MutationObserver(() => {
+      if (current !== el) return watchWindow.disconnect();
+      if (!gone && !answers(item) && windowOpen()) back();
+    });
+    watchWindow.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden', 'class'], childList: true });
     // A screen that opens under a toast already shown (a lot, a hint) moves it too.
     const follow = window.setInterval(() => {
       if (current !== el) return window.clearInterval(follow);
       place(el, extra);
       // H-04: a list that came over a calm toast — it gives way at once. S-02: a window that opened over a toast (not an answer) —
       // the toast goes back to the head of the queue and comes again after the window.
-      if (!gone && !answers(item) && windowOpen()) {
-        window.clearTimeout(stay);
-        gone = true;
-        cut();
-        queue.unshift({ ...item, at: Date.now() });
-        next();
-        return;
-      }
+      if (!gone && !answers(item) && windowOpen()) return back();
       if (item.calm && !gone && calmBlocked(el, extra)) leave();
     }, 250);
     // The round of fixes (the usability review): a toast never moves the screen under a finger — it lies over the screen for a moment
@@ -359,6 +370,15 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
       }, FADE_MS);
     };
     const stay = window.setTimeout(leave, Math.max(TOAST_MIN_MS, item.ms));
+    /** S-02: back to the head of the queue — it comes again after the window. */
+    const back = (): void => {
+      window.clearTimeout(stay);
+      gone = true;
+      watchWindow.disconnect();
+      cut();
+      queue.unshift({ ...item, at: Date.now() });
+      next();
+    };
     drop = () => {
       window.clearTimeout(stay);
       gone = true;

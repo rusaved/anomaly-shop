@@ -86,12 +86,12 @@ for (const size of SIZES) {
         (window as unknown as { __toastLog: typeof log }).__toastLog = log;
         const seen = new WeakSet<Element>();
         const bad = new WeakMap<Element, Set<string>>();
-        const mark = (el: Element, what: 'overButton' | 'overWindow' | 'outside') => {
+        const mark = (el: Element, what: 'overButton' | 'overWindow' | 'outside', on = '') => {
           const s = bad.get(el) ?? new Set<string>();
           if (s.has(what)) return;
           s.add(what);
           bad.set(el, s);
-          log[what].push((el as HTMLElement).dataset.text ?? el.textContent ?? '');
+          log[what].push(((el as HTMLElement).dataset.text ?? el.textContent ?? '') + (on ? ` → ${on}` : ''));
         };
         setInterval(() => {
           const shown = [...document.querySelectorAll('.toast')].filter((t) => !t.classList.contains('out'));
@@ -105,7 +105,7 @@ for (const size of SIZES) {
             if (b.width === 0) continue;
             if (b.top < -0.5 || b.left < -0.5 || b.bottom > innerHeight + 0.5 || b.right > innerWidth + 0.5) mark(t, 'outside');
             if (document.querySelector('.overlay:not([hidden]):not(.under)')) mark(t, 'overWindow');
-            const hit = [...document.querySelectorAll<HTMLElement>('button, [data-action]')].some((e) => {
+            const hit = [...document.querySelectorAll<HTMLElement>('button, [data-action]')].find((e) => {
               if (t.contains(e) || e.offsetParent === null) return false;
               // Only the part of the button in sight: a list clips what it scrolled under the top bar.
               let r = e.getBoundingClientRect();
@@ -116,7 +116,7 @@ for (const size of SIZES) {
               }
               return r.width > 0 && r.height > 0 && r.top < b.bottom - 1 && r.bottom > b.top + 1 && r.left < b.right - 1 && r.right > b.left + 1;
             });
-            if (hit) mark(t, 'overButton');
+            if (hit) mark(t, 'overButton', hit.dataset.action ?? hit.className.split(' ')[0] ?? '');
           }
         }, 100);
       });
@@ -124,6 +124,10 @@ for (const size of SIZES) {
       const t0 = Date.now();
       let firstDeal: number | null = null;
       let firstUpgrade: number | null = null;
+      const upgradeWords = await page.evaluate(() => (window as unknown as { __TEST__: { t(k: string): string } }).__TEST__.t('ftue.upgrade'));
+      let upgradeCalls = 0;
+      let lastHint = '';
+      const trace: string[] = [];
       let lastNews = t0;
       let longest = 0;
       let longestWhat = '';
@@ -140,6 +144,10 @@ for (const size of SIZES) {
       const hatchNow = () => page.locator('[data-overlay=hatch]').isVisible();
       while (Date.now() - t0 < RUN_MS) {
         const before = (await state(page)) as S;
+        // S-06: how often «Купи улучшение» called (seen before the tap: the bot presses what calls at once).
+        if (before.hint === upgradeWords && lastHint !== upgradeWords) upgradeCalls += 1;
+        if (before.hint !== lastHint) trace.push(`${((Date.now() - t0) / 1000).toFixed(0)}s ${String(before.tab)} «${String(before.hint)}» ◉${before.coins}`);
+        lastHint = String(before.hint);
         let spot = Date.now() < restUntil ? null : await pick(page);
         if (spot && 'raise' in spot && spot.raise) {
           // Every other chat with «Поднять цену»: raise once, then whatever the buyer says, sell (or the buyer is gone).
@@ -182,6 +190,7 @@ for (const size of SIZES) {
         }
         const s = (await state(page)) as S;
         const now = Date.now();
+
         // The hatch show's share: the time since the last look counts as hatching when the window was open at both ends.
         const open = await hatchNow();
         if (open && hatchOpen) hatchMs += now - lastAt;
@@ -207,8 +216,10 @@ for (const size of SIZES) {
       const tl = await page.evaluate(() => (window as unknown as { __toastLog: { toasts: number; overButton: string[]; overWindow: string[]; outside: string[]; twoAtOnce: number } }).__toastLog);
       const list = (xs: string[]) => (xs.length ? ` (${[...new Set(xs)].slice(0, 4).join(' | ')})` : '');
       const uniq = [...new Set(dead)].map((w) => `${w}×${dead.filter((d) => d === w).length}`).join(', ');
-      const line = `${process.env.S_BOT_OUT ?? ''} · ${tag} · вылупление ${((hatchMs / RUN_MS) * 100).toFixed(0)} % времени · первая продажа ${firstDeal === null ? 'нет' : `${firstDeal.toFixed(0)} с`} · первое улучшение ${firstUpgrade === null ? 'нет' : `${firstUpgrade.toFixed(0)} с`} · тостов ${tl.toasts}: поверх кнопок ${tl.overButton.length}${list(tl.overButton)}, при окне ${tl.overWindow.length}${list(tl.overWindow)}, за краем ${tl.outside.length}${list(tl.outside)}, два сразу ${tl.twoAtOnce} · торг ${haggle.tries} (да ${haggle.yes}, середина ${haggle.middle}, ушёл ${haggle.gone}) · самый длинный простой ${(longest / 1000).toFixed(0)} с (${longestWhat}) · тапов без отклика ${dead.length}${uniq ? ` (${uniq})` : ''} · продаж ${(st.stats as { deals: number }).deals}, монет ${st.coins} · в конце: шаг ${String(st.ftue)}, подсказка «${String(st.hint)}», вкладка ${String(st.tab)}, окна ${st.windows.join(',') || '—'}, инкубаторы ${(st.incubators as Array<{ egg: string | null; ready?: boolean }>).map((i) => (i.egg ? (i.ready ? 'готово' : 'греется') : 'пусто')).join('/')}, витрина ${(st.shelf as unknown[]).length}, склад ${(st.creatures as unknown[]).length}, мои яйца ${JSON.stringify((st as { myEggs?: unknown }).myEggs ?? {})}`;
+      const line = `${process.env.S_BOT_OUT ?? ''} · ${tag} · вылупление ${((hatchMs / RUN_MS) * 100).toFixed(0)} % времени · первая продажа ${firstDeal === null ? 'нет' : `${firstDeal.toFixed(0)} с`} · первое улучшение ${firstUpgrade === null ? 'нет' : `${firstUpgrade.toFixed(0)} с`} (зов «Купи улучшение» ${upgradeCalls}) · тостов ${tl.toasts}: поверх кнопок ${tl.overButton.length}${list(tl.overButton)}, при окне ${tl.overWindow.length}${list(tl.overWindow)}, за краем ${tl.outside.length}${list(tl.outside)}, два сразу ${tl.twoAtOnce} · торг ${haggle.tries} (да ${haggle.yes}, середина ${haggle.middle}, ушёл ${haggle.gone}) · самый длинный простой ${(longest / 1000).toFixed(0)} с (${longestWhat}) · тапов без отклика ${dead.length}${uniq ? ` (${uniq})` : ''} · продаж ${(st.stats as { deals: number }).deals}, монет ${st.coins} · в конце: шаг ${String(st.ftue)}, подсказка «${String(st.hint)}», вкладка ${String(st.tab)}, окна ${st.windows.join(',') || '—'}, инкубаторы ${(st.incubators as Array<{ egg: string | null; ready?: boolean }>).map((i) => (i.egg ? (i.ready ? 'готово' : 'греется') : 'пусто')).join('/')}, витрина ${(st.shelf as unknown[]).length}, склад ${(st.creatures as unknown[]).length}, мои яйца ${JSON.stringify((st as { myEggs?: unknown }).myEggs ?? {})}`;
       await page.screenshot({ path: `test-results/bot-s-${tag}.png` });
+      mkdirSync(resolve(import.meta.dirname, '../test-results'), { recursive: true });
+      appendFileSync(resolve(import.meta.dirname, `../test-results/bot-s-trace-${tag}.txt`), trace.join('\n') + '\n');
       console.log(line);
       if (out) {
         mkdirSync(resolve(out, '..'), { recursive: true });

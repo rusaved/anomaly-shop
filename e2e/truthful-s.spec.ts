@@ -286,12 +286,14 @@ for (const size of SIZES) {
         api.toast(api.t('event.golden'));
         api.calmToast(api.t('toast.upgradeUnlocked').replace('{name}', 'Коврик'));
         api.toast(api.t('toast.eggUnlocked').replace('{name}', 'Тёплое яйцо'));
+        // A long one (two lines in the bar).
+        api.toast(api.t('event.pie'));
       });
       const seen: string[] = [];
       let two = 0;
       const bad: string[] = [];
       const t0 = Date.now();
-      while (Date.now() - t0 < 14_000) {
+      while (Date.now() - t0 < 18_000) {
         const s = await toastNow(page);
         if (s.count > 1) two += 1;
         if (s.text && !seen.includes(s.text)) {
@@ -302,7 +304,7 @@ for (const size of SIZES) {
         await page.waitForTimeout(100);
       }
       expect(seen).toContain(golden);
-      expect(seen.length, seen.join(' | ')).toBeGreaterThanOrEqual(3);
+      expect(seen.length, seen.join(' | ')).toBeGreaterThanOrEqual(4);
       expect(two, 'two toasts at once').toBe(0);
       expect(bad, 'a toast on a button or out of the screen').toEqual([]);
       // A find while «Вылупился!» is open: it waits under nothing and comes after the window.

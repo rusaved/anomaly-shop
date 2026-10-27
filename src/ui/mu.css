@@ -706,6 +706,12 @@ button.mu-card {
   /* Measured as it comes in (its spot in the bar): it fades in, never scales. */
   animation: toast-calm-in 0.18s ease-out;
 }
+/* S-02: a toast in the top bar — tighter, so two lines fit the bar's height. */
+#ui .toast.toast-bar {
+  padding: 4px 12px;
+  font-size: 14px;
+  line-height: 1.2;
+}
 /* S-02: sideways every toast stands in the top bar — it fades in where it stands, never slides or scales (it is measured as it comes). */
 .landscape .toast {
   animation: toast-calm-in 0.18s ease-out;

@@ -7,7 +7,7 @@ import { collectErrors, open, seedSave, state } from './helpers.ts';
  */
 type T = { __TEST__: { grant(n: number): void; setTimeScale(k: number): void; targets(): { incubators: Array<{ x: number; y: number }>; slots: Array<{ x: number; y: number }>; things: { door: { x: number; y: number } } } | null; t(k: string): string } };
 const scale = (page: Page, k: number) => page.evaluate((n) => (window as unknown as T).__TEST__.setTimeScale(n), k);
-type St = Awaited<ReturnType<typeof state>> & { chats: Array<{ offer: number }>; stats: { deals: number }; windows: string[]; ftue: string | null };
+type St = Awaited<ReturnType<typeof state>> & { chats: Array<{ offer: number }>; stats: { deals: number }; windows: string[]; ftue: string | null; tab: string };
 const st = async (page: Page) => (await state(page)) as St;
 
 test.describe('815x290 P-02', () => {
@@ -250,7 +250,7 @@ test.describe('815x290 P-08 the reviewer of the first minute', () => {
     const save = page.locator('[data-action=sale-save]');
     await expect(save).toBeVisible();
     await save.tap();
-    await expect.poll(async () => (await st(page)).tab as unknown).toBe('home');
+    await expect.poll(async () => (await st(page)).tab).toBe('home');
     expect(errors).toEqual([]);
   });
 

@@ -2862,6 +2862,11 @@ button.mu-card {
 .card-rebirth > .rebirth-side {
   display: contents;
 }
+/* PT-01: upright on a small phone in the VK frame (375×667) «Переехать» was under the fold — the lines keep the card's gap only. */
+.portrait .card-rebirth > .rebirth-gain > *,
+.portrait .card-rebirth > .rebirth-side > * {
+  margin: 0;
+}
 .landscape .overlay > .card.card-rebirth {
   width: min(100%, 720px);
   display: grid;
@@ -4829,4 +4834,16 @@ button.mu-card {
 }
 #ui .card:has(> .build-line) {
   position: relative;
+}
+/* PT-04 (проход штаба 20: the line 3 px over the edge, on the last row): 8 px over the edge like the gaps of the rows — upright under
+   the last row (the card keeps room for it), sideways in the free corner under the right column (the card's height stays). */
+#ui .build-line {
+  bottom: 8px;
+}
+#app.landscape #ui .build-line {
+  left: auto;
+  right: 14px;
+}
+#app.portrait #ui .card:has(> .build-line) {
+  padding-bottom: 40px;
 }

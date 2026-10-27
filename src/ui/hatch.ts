@@ -1,6 +1,6 @@
 // What: the hatch show as a case (docs/01 §3 p. 12; M3-05, UB-03; MU-09 by s6, r1, r2): portraits run under a marker 4–5 s; «Hatched!» — «На витрину», «На склад», «Продать сразу».
 // Called by: src/main.ts on a hatched event the player tapped (by: 'tap'); hatches by themselves (helpers, time away) skip the show.
-// Keep: the result is the game's roll (the uid from the event); the strip around it is decoration (Math.random is fine in ui); a tap skips to the end; the strip runs in the pet's place and the card keeps its top, the buttons wait lockSec once (круг правок FB п. 1, P-05).
+// Keep: the result is the game's roll (the uid from the event); the strip around it is decoration (Math.random is fine in ui); a tap skips to the end; the strip runs in the pet's place and the card keeps its top, the buttons wait lockSec once (круг правок FB п. 1, P-05); «Продать сразу» never answers a tap of a series (PT-06).
 
 import type { RarityName } from '../content/schemas.ts';
 import type { CreatureView, Game } from '../sim/game.ts';
@@ -19,6 +19,8 @@ export interface HatchLookups {
   spinSec(rarity: RarityName): number;
   /** Seconds the result's buttons wait before they take a press (feel.json hatchLockSec): a double tap of the skip never chooses. */
   lockSec(): number;
+  /** PT-06: the pause without a touch «Продать сразу» needs before its tap (feel.json hatchSellGapSec). */
+  sellGapSec?(): number;
   onResult?(): void;
   /** M6-01: a portrait passes under the marker (the wheel's click; no more often than TICK_MS). */
   onTick?(): void;
@@ -101,8 +103,20 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
   });
   // FB-15 (the usability review): «Продать сразу» is irreversible — a second tap right after the skip (the result shows under the finger)
   // never sells; the strip is skipped by a tap anywhere on the card, not only on the strip.
+  // PT-06 (плейтестер 20: a series of taps on the egg went on into the window and sold a valuable pet): «Продать сразу» takes a tap only
+  // after a pause — the touch before it ended sellGapSec ago or more.
+  let lastDown = 0;
+  let prevDown = 0;
+  window.addEventListener(
+    'pointerdown',
+    () => {
+      prevDown = lastDown;
+      lastDown = performance.now();
+    },
+    { capture: true, passive: true },
+  );
   sell.addEventListener('click', () => {
-    if (locked) return;
+    if (locked || lastDown - prevDown < (look.sellGapSec?.() ?? 0.5) * 1000) return;
     game.sellNow(uid);
     close();
   });

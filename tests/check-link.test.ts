@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkLinkAllowed, hasCheckLink, presetSave, readCheckLink } from '../src/core/check-link.ts';
+import { checkLinkAllowed, hasCheckLink, presetSave, readCheckLink, withoutCheckLink } from '../src/core/check-link.ts';
 import { newSave } from '../src/sim/state.ts';
 
 describe('N-05 the producer check link', () => {
@@ -38,5 +38,11 @@ describe('N-05 the producer check link', () => {
     const s = newSave(0);
     s.freeIn = { egg_gift: 300 };
     expect(presetSave(s, readCheckLink('?time=3'), 0).freeIn.egg_gift).toBe(120);
+  });
+
+  it('PT-03: the address loses the presets and keeps ?mock=vk and the platform parameters', () => {
+    expect(withoutCheckLink('https://x.io/anomaly-shop/vk/?mock=vk&fresh=1&hatched=2&deals=8&coins=200&time=3#a')).toBe('/anomaly-shop/vk/?mock=vk#a');
+    expect(withoutCheckLink('https://x.io/vk/?vk_user_id=1&sign=abc&fresh=1')).toBe('/vk/?vk_user_id=1&sign=abc');
+    expect(withoutCheckLink('https://x.io/?fresh=1')).toBe('/');
   });
 });

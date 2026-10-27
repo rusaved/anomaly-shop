@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { collectErrors, open, seedSave } from './helpers.ts';
-import { buttonsSeenWhole, closeAll, FRAMES_SAVE, OPENERS, windowsInCode } from './frames-shared.ts';
+import { buttonsSeenWhole, closeAll, FRAMES_SAVE, OPENERS, walkEveryWindow, windowsInCode } from './frames-shared.ts';
 
 /**
  * RD-02: truthful frames — every window and tab from the code of the windows on the producer's phone sizes (880×405 and 815×290,
@@ -52,43 +52,7 @@ for (const size of SIZES) {
           await page.screenshot({ path: `${shotsDir}/${name}_${tag}.png` });
         }
       };
-      const w = windowsInCode();
-      await OPENERS['overlay:away']!(page);
-      await frame('overlay-away');
-      await closeAll(page);
-      for (const id of w.tabs) {
-        await page.locator(`[data-tab=${id}]`).click();
-        await frame(`tab-${id}`);
-        const subs = page.locator(`[data-sheet=${id}] .subtab:not([aria-disabled=true])`);
-        const n = await subs.count();
-        for (let i = 1; i < n; i++) {
-          const sub = subs.nth(i);
-          const name = await sub.getAttribute('data-sub');
-          await sub.click();
-          await frame(`tab-${id}-${name}`);
-        }
-        if (n > 1) await subs.first().click();
-      }
-      // W: «Цена» (the pet picked for sale) and the goals of the day in «Подарки» — screens inside the windows above.
-      await OPENERS['detail:sale']!(page);
-      await page.locator('[data-detail=sale] [data-action^=sale-list-]').first().click();
-      await frame('detail-sale-price');
-      await closeAll(page);
-      await OPENERS['overlay:gifts']!(page);
-      if (shotsDir) {
-        await page.locator('[data-overlay=gifts] .day-goal').first().scrollIntoViewIfNeeded();
-        await page.screenshot({ path: `${shotsDir}/overlay-gifts-goals_${tag}.png` });
-      }
-      await closeAll(page);
-      for (const kind of ['detail', 'overlay'] as const) {
-        const ids = kind === 'overlay' ? [...w.overlays.filter((id) => id !== 'merchant'), 'merchant'] : w.details;
-        for (const id of ids) {
-          if (id === 'away') continue;
-          await OPENERS[`${kind}:${id}`]!(page);
-          await frame(`${kind}-${id}`);
-          await closeAll(page);
-        }
-      }
+      await walkEveryWindow(page, frame, shotsDir ? tag : null, shotsDir);
       expect(problems).toEqual([]);
       expect(errors).toEqual([]);
     });

@@ -30,6 +30,8 @@ const STAGES = [
   { name: 'validate:content', fast: true },
   { name: 'sim:balance', fast: true },
   { name: 'build:e2e' },
+  // PT-01: the VK and OK build with the test API — e2e/*-pt.spec.ts (the phone upright in ?mock=vk).
+  { name: 'build:vk-e2e' },
   { name: 'e2e', e2e: true },
   { name: 'build' },
   { name: 'size' },

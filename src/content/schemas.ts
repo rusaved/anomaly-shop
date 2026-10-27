@@ -269,6 +269,8 @@ export const FeelFile = v.object({
   hatchLongFrom: Rarity,
   /** Круг правок FB п. 1: the hatch result's buttons take a press this long after it shows (a double tap of the skip never chooses), ≥ 0.5 s; P-05: once, taps never stretch it. */
   hatchLockSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(1.5)),
+  /** PT-06: «Продать сразу» takes a tap only after this pause since the tap before it (a series of taps on the egg never sells). */
+  hatchSellGapSec: v.optional(v.pipe(v.number(), v.minValue(0.3), v.maxValue(1.5)), 0.5),
   /** F-01: a «+» of a place that has just been freed takes no tap this long (0.3–0.6 s). */
   slotGuardSec: v.pipe(v.number(), v.minValue(0.3), v.maxValue(0.6)),
   slotStreakGapSec: v.pipe(v.number(), v.minValue(0.3), v.maxValue(1.5)),
@@ -307,6 +309,8 @@ export const FtueFile = v.object({
   nextUpgrade: v.optional(v.string()),
   /** FB-08: the finger taps a ready egg for this many hatches after the first minute. */
   fingerHatches: v.optional(Count, 3),
+  /** PT-05: a hint whose target the list scrolled out of sight brings it back once the player has not touched the screen this long. */
+  hintRepullSec: v.optional(v.pipe(v.number(), v.minValue(1)), 6),
   maxHintWords: Count,
 });
 

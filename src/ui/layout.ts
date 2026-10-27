@@ -65,7 +65,17 @@ export const PANEL = {
   homeShopShare: 0.42,
   homeShopMin: 200,
   homeShopMax: 320,
+  /** PT-01 (VK and OK, the phone upright): the app's own buttons and the status bar take the top of the screen, the gesture bar its
+   *  bottom — the game keeps this share of the height free on top and these pixels under the tab bar (the wall and the bars' colour). */
+  reserveTopShare: 0.1,
+  reserveBottom: 24,
 };
+
+/** PT-01: the insets of a host that covers the top and the bottom of an upright phone (VK and OK apps); sideways — the device's own. */
+export function reserveInsets(width: number, height: number, safe: Insets): Insets {
+  if (height < width) return safe;
+  return { ...safe, top: Math.max(safe.top, Math.round(height * PANEL.reserveTopShare)), bottom: Math.max(safe.bottom, PANEL.reserveBottom) };
+}
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
@@ -162,6 +172,9 @@ export function applyLayout(appRoot: HTMLElement, layout: Layout): void {
   appRoot.classList.toggle('short', layout.short);
   const set = (name: string, px: number): void => appRoot.style.setProperty(name, `${px}px`);
   set('--hud-height', layout.hudHeight);
+  // PT-01: the bars and windows pad by the insets the layout used (a host reserve included), not only the device's.
+  set('--safe-top', layout.safe.top);
+  set('--safe-bottom', layout.safe.bottom);
   set('--nav-size', layout.nav.h);
   set('--panel-x', layout.panel.x);
   set('--panel-y', layout.panel.y);
@@ -172,11 +185,12 @@ export function applyLayout(appRoot: HTMLElement, layout: Layout): void {
 }
 
 /** Recomputes on every size change (resize, rotation, address bar); calls cb at once and after each change. */
-export function watchLayout(appRoot: HTMLElement, cb: (layout: Layout) => void, homeShop = false): () => void {
+export function watchLayout(appRoot: HTMLElement, cb: (layout: Layout) => void, homeShop = false, hostReserve = false): () => void {
   let last = '';
   appRoot.classList.toggle('home-shop', homeShop);
   const run = (): void => {
-    const safe = readSafeInsets(appRoot.ownerDocument);
+    const device = readSafeInsets(appRoot.ownerDocument);
+    const safe = hostReserve ? reserveInsets(appRoot.clientWidth, appRoot.clientHeight, device) : device;
     const layout = computeLayout(appRoot.clientWidth, appRoot.clientHeight, safe, homeShop);
     const key = `${layout.width}x${layout.height}:${layout.orientation}:${safe.top},${safe.right},${safe.bottom},${safe.left}`;
     if (key === last) return;

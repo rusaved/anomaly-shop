@@ -132,7 +132,7 @@ export const OPENERS: Record<string, (page: Page) => Promise<void>> = {
 /** Closes whatever is open so the next opener starts from the home screen (a tab closes windows; the hatch has its own way out). */
 export async function closeAll(page: Page): Promise<void> {
   await closeHatch(page).catch(() => false);
-  for (const sel of ['[data-action=away-ok]', '[data-action=merchant-close]', '[data-action=rebirth-later]', '[data-overlay=rate] [data-action$=-close]', '[data-action=settings-close]']) {
+  for (const sel of ['[data-action=away-ok]', '[data-action=merchant-close]', '[data-action=rebirth-later]', '[data-overlay=rate] [data-action$=-close]', '[data-action=settings-close]', '[data-action=menu-back]', '[data-action=menu-play]']) {
     const b = page.locator(sel);
     if (await b.first().isVisible().catch(() => false)) await b.first().click();
   }
@@ -250,4 +250,48 @@ function checkButtons(page: Page): Promise<string[]> {
     }
     return bad;
   });
+}
+
+/**
+ * RD-02, PT-01: opens every window and tab from the code of the windows the way a player does (the away window first, the merchant
+ * last) and calls frame(name) on each; with shots — also the goals of the day in «Подарки».
+ */
+export async function walkEveryWindow(page: Page, frame: (name: string) => Promise<void>, tag: string | null, shotsDir: string | null, openers = OPENERS): Promise<void> {
+  const w = windowsInCode();
+  await openers['overlay:away']!(page);
+  await frame('overlay-away');
+  await closeAll(page);
+  for (const id of w.tabs) {
+    await page.locator(`[data-tab=${id}]`).click();
+    await frame(`tab-${id}`);
+    const subs = page.locator(`[data-sheet=${id}] .subtab:not([aria-disabled=true])`);
+    const n = await subs.count();
+    for (let i = 1; i < n; i++) {
+      const sub = subs.nth(i);
+      const name = await sub.getAttribute('data-sub');
+      await sub.click();
+      await frame(`tab-${id}-${name}`);
+    }
+    if (n > 1) await subs.first().click();
+  }
+  // W: «Цена» (the pet picked for sale) and the goals of the day in «Подарки» — screens inside the windows above.
+  await openers['detail:sale']!(page);
+  await page.locator('[data-detail=sale] [data-action^=sale-list-]').first().click();
+  await frame('detail-sale-price');
+  await closeAll(page);
+  await openers['overlay:gifts']!(page);
+  if (shotsDir && tag) {
+    await page.locator('[data-overlay=gifts] .day-goal').first().scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${shotsDir}/overlay-gifts-goals_${tag}.png` });
+  }
+  await closeAll(page);
+  for (const kind of ['detail', 'overlay'] as const) {
+    const ids = kind === 'overlay' ? [...w.overlays.filter((id) => id !== 'merchant'), 'merchant'] : w.details;
+    for (const id of ids) {
+      if (id === 'away') continue;
+      await openers[`${kind}:${id}`]!(page);
+      await frame(`${kind}-${id}`);
+      await closeAll(page);
+    }
+  }
 }

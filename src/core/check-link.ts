@@ -33,6 +33,13 @@ export function hasCheckLink(link: CheckLink): boolean {
   return link.fresh || link.coins !== null || link.hatched !== null || link.deals !== null || link.time !== null;
 }
 
+/** PT-03: the address without the check link's parameters (a reload goes on with the save; ?mock=vk and the platform's stay). */
+export function withoutCheckLink(href: string): string {
+  const url = new URL(href);
+  for (const k of ['fresh', 'coins', 'hatched', 'deals', 'time']) url.searchParams.delete(k);
+  return url.pathname + url.search + url.hash;
+}
+
 /**
  * Whether the check link works in this build: the debug builds (the Pages link) and the VK stand-in in a plain tab; never a release
  * archive of Yandex, YouTube or a game VK or OK launched.

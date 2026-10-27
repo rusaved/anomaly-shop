@@ -15,6 +15,8 @@ export interface HintDeps {
   topInset(): number;
   /** The card of the window open now (UB-02: a hint never lies over a window, only inside it when its target is there). */
   window(): HTMLElement | null;
+  /** PT-05: seconds without a touch after which a target scrolled out of sight is scrolled back (ftue.json hintRepullSec). */
+  repullSec?: number;
 }
 
 export interface Hints {
@@ -62,6 +64,12 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
 
   /** The hint whose target was scrolled into sight (once). */
   let scrolledFor = '';
+  /** PT-05: the last touch, wheel or drag of the player (a list the player scrolls stays put until the player lets it be). */
+  let lastTouch = performance.now();
+  const touched = (): void => {
+    lastTouch = performance.now();
+  };
+  for (const type of ['pointerdown', 'wheel', 'touchmove'] as const) window.addEventListener(type, touched, { capture: true, passive: true });
   const hide = (): void => {
     lower(null);
     scrolledFor = '';
@@ -180,6 +188,12 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
           button.scrollIntoView({ block: 'nearest' });
           b = button.getBoundingClientRect();
         }
+        // PT-05 (проход штаба 20: no hint on «Яйца» for 45–91 s — an earlier hint had scrolled the list, the next target lay out of sight):
+        // the player let the list be for repullSec — the target comes back into sight.
+        if ((b.bottom <= s.top + 4 || b.top >= s.bottom - 4) && performance.now() - lastTouch >= (deps.repullSec ?? 6) * 1000) {
+          button.scrollIntoView({ block: 'nearest' });
+          b = button.getBoundingClientRect();
+        }
         // Scrolled away by the player: the bubble waits until the target is back in sight (never over the list's edge).
         if (b.bottom <= s.top + 4 || b.top >= s.bottom - 4) {
           root.hidden = true;
@@ -206,7 +220,10 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         const left = Math.max(16, Math.min(base.width - w - 16, b.left + b.width / 2 - base.left - w / 2));
         // N-01, N-02 (предприёмка штаба 19: «Выставь питомца» lay on «Снять с витрины», «Купи улучшение» on the next price): the bubble
         // never lies on another button of the screen — under, over, else left of the target with its arrow at it.
-        const others = [...sheet.querySelectorAll<HTMLElement>('button, [data-action]')].filter((e) => e.offsetParent !== null && !e.contains(button) && !button.contains(e));
+        // PT-02 (проход штаба 20: «Купи улучшение» lay on the upgrade's name and use, at 880×405 almost whole): the upgrade's call keeps
+        // off the words of the list too.
+        const upgradeCall = hint.key === 'ftue.upgrade';
+        const others = [...sheet.querySelectorAll<HTMLElement>(upgradeCall ? 'button, [data-action], .mu-name, .mu-meta' : 'button, [data-action]')].filter((e) => e.offsetParent !== null && !e.contains(button) && !button.contains(e));
         const clear = (l: number, t: number, ww: number, h: number): boolean =>
           t + base.top >= s.top &&
           t + h + base.top <= s.bottom &&
@@ -221,6 +238,32 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         );
         const spots = [vert(under), vert(!under), ...lefts.flatMap((l) => [vert(under, l), vert(!under, l)])];
         const pick = spots.find((p) => clear(p.left, p.top, w, hh));
+        // PT-02: no free spot in the list — the upgrade's call stands off the list: sideways over the scene left of it (its arrow at the
+        // target's row), upright over the scene above it.
+        const list = s;
+        if (!pick && upgradeCall) {
+          const hud = deps.topInset();
+          if (list.left - base.left >= 160 + 22) {
+            root.classList.add('side');
+            root.classList.remove('below');
+            root.style.maxWidth = `${Math.floor(Math.min(list.left - base.left - 22, 260))}px`;
+            const sw = root.offsetWidth;
+            const sh = root.offsetHeight;
+            const top = Math.max(hud - base.top + 4, b.top + b.height / 2 - base.top - sh / 2);
+            root.style.left = `${list.left - base.left - 14 - sw}px`;
+            root.style.top = `${top}px`;
+            root.style.setProperty('--arrow-y', `${Math.max(14, Math.min(sh - 14, b.top + b.height / 2 - base.top - top))}px`);
+            return;
+          }
+          if (list.top - hud >= hh + 16) {
+            root.classList.remove('below');
+            const l = Math.max(8, Math.min(base.width - w - 8, b.left + b.width / 2 - base.left - w / 2));
+            root.style.left = `${l}px`;
+            root.style.top = `${list.top - base.top - 12 - hh}px`;
+            root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, b.left + b.width / 2 - base.left - l))}px`);
+            return;
+          }
+        }
         const room = b.left - base.left - 14 - 8;
         if (!pick && room >= 110) {
           root.classList.add('side');

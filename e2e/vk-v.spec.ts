@@ -67,6 +67,34 @@ for (const size of [
   });
 }
 
+// PT-01 («Ресейл 21»): the VK and OK app on a phone held upright — the game in a frame of the whole screen; the top 10 % (the app's own
+// buttons, the status bar) and the bottom 24 px (the gesture bar) hold no button.
+for (const size of [
+  { width: 405, height: 880 },
+  { width: 375, height: 667 },
+]) {
+  test(`PT-01 in an iframe ${size.width}×${size.height} upright like the VK app: the menu whole, the bars clear of the top 10 % and the gesture bar`, async ({ page, baseURL }) => {
+    const w = watch(page);
+    await page.setViewportSize(size);
+    await page.setContent(`<body style="margin:0"><iframe id="g" src="${baseURL}${VK}" allow="fullscreen" style="border:0;display:block;width:${size.width}px;height:${size.height}px"></iframe></body>`);
+    const frame = page.frameLocator('#g');
+    await expect(frame.locator('#preloader')).toHaveClass(/hidden/, { timeout: 30_000 });
+    await expect(frame.locator('[data-action=menu-play]')).toBeInViewport({ ratio: 1 });
+    await frame.locator('[data-action=menu-play]').click();
+    await expect(frame.locator('[data-overlay=menu]')).toBeHidden();
+    const boxes = await frame.locator('.hud button:visible, #nav button:visible').evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ top: r.top, bottom: r.bottom, h: r.height, w: r.width })));
+    expect(boxes.length).toBeGreaterThan(2);
+    for (const b of boxes) {
+      expect(b.top).toBeGreaterThanOrEqual(Math.round(size.height * 0.1) - 2);
+      expect(b.bottom).toBeLessThanOrEqual(size.height - 24 + 0.5);
+      expect(Math.min(b.h, b.w)).toBeGreaterThanOrEqual(44);
+    }
+    await page.screenshot({ path: `test-results/vk-iframe-upright-${size.width}x${size.height}.png` });
+    expect(w.errors).toEqual([]);
+    expect(w.outside).toEqual([]);
+  });
+}
+
 for (const size of [
   { width: 815, height: 290 },
   { width: 880, height: 405 },

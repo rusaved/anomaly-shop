@@ -14,6 +14,8 @@ const TRUTHFUL_SPECS = /truthful[^/]*\.spec\.ts$/;
 // RD-06: the device profiles of qa/device-matrix.md run the device spec; webkit only where its engine is installed (CI installs it,
 // the cloud session cannot download it — qa/device-matrix.md, «не проверено»).
 const DEVICE_SPECS = /devices-rd\.spec\.ts$/;
+// PT-01: the phone upright in the VK and OK frame — build:vk-e2e (the bridge stand-in with the test API) on its own server.
+const VK_SPECS = /-pt\.spec\.ts$/;
 const hasWebkit = (() => {
   try {
     return existsSync(webkit.executablePath());
@@ -22,6 +24,8 @@ const hasWebkit = (() => {
   }
 })();
 const port = Number(process.env.E2E_PORT || 4173);
+const vkDist = process.env.E2E_VK_DIST || 'dist-vk-e2e';
+const vkPort = port + 10;
 // D-02: scripts/e2e.mjs runs E2E_PART=main (every project but perf), then E2E_PART=perf (perf alone, no dependencies):
 // Playwright does not apply --grep to dependency projects. Without E2E_PART — every project, perf after the rest.
 const part = process.env.E2E_PART;
@@ -52,7 +56,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'desktop', testIgnore: [PHONE_SPECS, STATIC_SPECS, PERF_SPECS, TRUTHFUL_SPECS] },
+    { name: 'desktop', testIgnore: [PHONE_SPECS, STATIC_SPECS, PERF_SPECS, TRUTHFUL_SPECS, VK_SPECS] },
+    { name: 'vk', testMatch: VK_SPECS, use: { baseURL: `http://127.0.0.1:${vkPort}/` } },
     { name: 'truthful', testMatch: TRUTHFUL_SPECS },
     {
       name: 'phone',
@@ -70,12 +75,20 @@ export default defineConfig({
       use: { ...devices['Pixel 7'], deviceScaleFactor: 1, launchOptions: executablePath ? { executablePath, args: launchArgs } : { args: launchArgs } },
     },
     ...(hasWebkit ? [{ name: 'webkit', testMatch: DEVICE_SPECS, use: { ...devices['iPhone 15'], deviceScaleFactor: 1, launchOptions: {} } }] : []),
-    { name: 'perf', testMatch: PERF_SPECS, dependencies: part ? [] : ['desktop', 'phone', 'phone-landscape', 'mobile', ...(hasWebkit ? ['webkit'] : [])] },
+    { name: 'perf', testMatch: PERF_SPECS, dependencies: part ? [] : ['desktop', 'vk', 'phone', 'phone-landscape', 'mobile', ...(hasWebkit ? ['webkit'] : [])] },
   ].filter((p) => (part === 'perf' ? p.name === 'perf' : part === 'main' ? p.name !== 'perf' : true)),
-  webServer: {
-    command: `npx vite preview --outDir ${dist} --port ${port} --strictPort --host 127.0.0.1`,
-    url: `http://127.0.0.1:${port}/`,
-    reuseExistingServer: false,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: `npx vite preview --outDir ${dist} --port ${port} --strictPort --host 127.0.0.1`,
+      url: `http://127.0.0.1:${port}/`,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: `npx vite preview --outDir ${vkDist} --port ${vkPort} --strictPort --host 127.0.0.1`,
+      url: `http://127.0.0.1:${vkPort}/`,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+  ],
 });

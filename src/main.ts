@@ -156,6 +156,8 @@ async function boot(): Promise<void> {
       loaded = m.presetSave(loaded, link, platform.now());
       checkTime = (link.time ?? 0) * 60;
       checkUsed = true;
+      // PT-03: once applied the link leaves the address — a reload goes on with the game, not from the preset again.
+      history.replaceState(history.state, '', m.withoutCheckLink(location.href));
     }
   }
   const store = createStore(loaded, () => platform.now());
@@ -495,6 +497,7 @@ async function boot(): Promise<void> {
     // H-02 (Q-069 п. 1 Б): the long run for the first eggs and the valuable ones, a quick one for the rest.
     spinSec: (rarity) => hatchSpinSec(feel, rarity, store.state.stats.hatched),
     lockSec: () => feel.hatchLockSec,
+    sellGapSec: () => feel.hatchSellGapSec,
     onTick: () => sfx.play('spin'),
     // FB-09: the result shows — its rarity's sound and celebration (VIP and exclusive have their own sounds).
     onReveal: (rarity) => {
@@ -1217,6 +1220,7 @@ async function boot(): Promise<void> {
     panel: uiRoot,
     topInset: () => hud.root.getBoundingClientRect().bottom,
     window: () => topWindow()?.card ?? null,
+    repullSec: ftue.hintRepullSec,
   });
   /** P-08: what a tap on the hand taps (the ready egg or its «Открыть»). */
   let fingerTap: (() => void) | null = null;
@@ -1253,6 +1257,8 @@ async function boot(): Promise<void> {
       renderTabs();
     },
     navData.homeShop,
+    // PT-01: VK and OK keep the top of an upright phone for their own buttons.
+    __PLATFORM__ === 'vk',
   );
 
   if (__DEBUG_TOOLS__ && new URLSearchParams(location.search).has('debug')) {
@@ -1341,6 +1347,10 @@ async function boot(): Promise<void> {
   // N-01: a deal armed the next call (an upgrade in reach at that moment); the deals seen last frame.
   let upgradeDue = false;
   let dealsSeen = -1;
+  // PT-01: the tab of the last frame, the step of the hint shown then, and whether «Продай покупателю» led the player to «Чаты».
+  let hintTab = '';
+  let lastStep = '';
+  let ledToChats = false;
   window.addEventListener('pointerdown', () => (lastInputAt = performance.now()), { capture: true, passive: true });
   scene.app.ticker.add((ticker) => {
     runtime.frame(ticker.deltaMS / 1000);
@@ -1354,7 +1364,13 @@ async function boot(): Promise<void> {
     const onEggs = nav.active() === 'eggs';
     const first = ftueHint(store.state, view, freeEggReady());
     // P-04: on «Яйца» the «rare egg» step points at «Открыть»; after the first minute an idle empty incubator says «Купи новое яйцо».
-    const lesson = controllable ? ((onEggs ? onEggsTab(first) : first) ?? chatHint(store.state, view, idle, ftue.shelfHintSec / 2)) : null;
+    // PT-01 (the bot upright: «Продай покупателю» led to «Чаты», where the chat waited 4 s unmarked and the player left): the player who
+    // followed the call to «Чаты» finds the waiting chat marked at once.
+    if (nav.active() !== hintTab) {
+      ledToChats = nav.active() === 'chats' && lastStep === 'sell';
+      hintTab = nav.active();
+    }
+    const lesson = controllable ? ((onEggs ? onEggsTab(first) : first) ?? chatHint(store.state, view, idle, ledToChats ? 0 : ftue.shelfHintSec / 2)) : null;
     // P-08 (the bot of the first minutes): a lesson's spot in the shop seen from another tab — the hint points at «Лавка», it never just
     // vanishes. The nudges after the first minute (an egg, an upgrade) stay in «Лавка» (on «Яйца» the new egg at its price button):
     // over the tab bar of another tab their band would shorten its list.
@@ -1425,6 +1441,7 @@ async function boot(): Promise<void> {
     // Круг правок FB-3 п. 5: portrait the toast stands over the tab bar, off the scene — the scene's hint stays.
     const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) && !appRoot.classList.contains('portrait') ? null : wanted;
     hints.update(shownHint, Boolean(toastNow));
+    lastStep = shownHint?.step ?? '';
     if (!upgradeCalled && shownHint?.key === 'ftue.upgrade') {
       if (levels > 0) upgradeCallDeals = deals;
       upgradeCallLevels = levels;

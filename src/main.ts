@@ -1288,13 +1288,19 @@ async function boot(): Promise<void> {
     const onEggs = nav.active() === 'eggs';
     const first = ftueHint(store.state, view, freeEggReady());
     // P-04: on «Яйца» the «rare egg» step points at «Открыть»; after the first minute an idle empty incubator says «Купи новое яйцо».
-    const hint = controllable ? ((onEggs ? onEggsTab(first) : first) ?? shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice)) : null;
+    const raw = controllable ? ((onEggs ? onEggsTab(first) : first) ?? shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice)) : null;
+    // P-08 (the bot of the first minutes): a spot in the shop seen from another tab — the hint points at «Лавка» (on «Яйца» a new egg at its
+    // price button), it never just vanishes.
+    const hint =
+      raw && nav.active() !== 'home' && SCENE_TARGETS.has(raw.target.kind)
+        ? { ...raw, target: { kind: 'button' as const, action: onEggs && raw.step === 'buyEgg' ? `egg-buy-${ftue.starterEgg}|tab-home` : 'tab-home' } }
+        : raw;
     const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';
     const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
     // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.
     const toastNow = toasts.showing();
     // Круг правок FB-3 п. 6: the gift egg's hint wins over the first visit of «Яйца» (both would point at an egg; the gift is the free one).
-    const gift = (hint?.key === 'ftue.freeEgg' || hint?.step === 'hatchRare') && onEggs;
+    const gift = (hint?.key === 'ftue.freeEgg' || hint?.step === 'hatchRare' || hint?.step === 'tapEgg') && onEggs;
     const wanted = (gift ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
     // Круг правок FB-3 п. 5: portrait the toast stands over the tab bar, off the scene — the scene's hint stays.
     const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) && !appRoot.classList.contains('portrait') ? null : wanted;

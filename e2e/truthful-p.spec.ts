@@ -213,3 +213,21 @@ test.describe('815x290 P-07', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('815x290 P-08 lessons from another tab', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+
+  test('P-08 the first lesson seen from «Яйца» stands on «Открыть» (or «Лавка»); its tap goes on with the egg', async ({ page }) => {
+    const errors = collectErrors(page);
+    await open(page);
+    await page.locator('[data-tab=eggs]').tap();
+    const hinted = page.locator('.is-hinted[data-action=tab-home], .is-hinted[data-action=egg-open-0]');
+    await expect(hinted.first()).toBeVisible();
+    const action = await hinted.first().getAttribute('data-action');
+    expect(['egg-open-0', 'tab-home']).toContain(action);
+    await hinted.first().tap();
+    if (action === 'tab-home') await page.locator('.hint-ring').waitFor();
+    else await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+});

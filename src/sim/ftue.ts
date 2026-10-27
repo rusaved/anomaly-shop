@@ -79,11 +79,13 @@ export function eggHint(state: SaveData, view: GameView, idleSec: number, afterS
 }
 
 /**
- * P-04 (Q-056 Б п. 2): the «rare egg» step on «Яйца» stands on «Открыть» of its incubator's row (the incubator itself is off screen there).
+ * P-04 (Q-056 Б п. 2): the «rare egg» step on «Яйца» stands on «Открыть» of its incubator's row (the incubator itself is off screen there);
+ * P-08 (the bot of the first minute): «Тапни яйцо» too — the green dot of «Яйца» brings a new player there before the first egg.
  */
 export function onEggsTab(hint: FtueHint | null): FtueHint | null {
-  if (hint?.step !== 'hatchRare' || hint.target.kind !== 'incubator') return hint;
-  return { ...hint, target: { kind: 'button', action: `egg-open-${hint.target.index}` } };
+  if ((hint?.step !== 'hatchRare' && hint?.step !== 'tapEgg') || hint.target.kind !== 'incubator') return hint;
+  // The row has no «Открыть» yet (the egg still warms): the hint points back at «Лавка».
+  return { ...hint, target: { kind: 'button', action: `egg-open-${hint.target.index}|tab-home` } };
 }
 
 /**

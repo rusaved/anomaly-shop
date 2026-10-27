@@ -5,7 +5,8 @@ import { collectErrors, open, state } from './helpers.ts';
 
 /**
  * P-08 («Ресейл 17»): a bot plays the first two minutes of a fresh game on the phone sideways like a player who follows what calls:
- * the hinted button, the green ring, the finger, the main button of the top window; with nothing calling it feeds the pet on the shelf.
+ * the hinted button, the green ring, the finger, the main button of the top window or of the open tab, a tab with a count; with nothing
+ * calling it feeds the pet on the shelf.
  * It measures the time to the first sale, the longest stretch with nothing new (no egg, pet, buyer, sale, hint or window) and how many
  * taps on a thing that calls got no answer (nothing on screen or in the game changed in 0.7 s). P_BOT_OUT=<label> writes the line to
  * docs/evidence/P/bot.txt (the table of the milestone's summary: before and after).
@@ -52,6 +53,11 @@ function pick(page: Page) {
     if (vis(finger)) return at(finger, 'finger');
     const main = [...document.querySelectorAll<HTMLElement>('.overlay:not([hidden]):not(.under) .mu-btn.main, .overlay:not([hidden]):not(.under) .btn-primary')].find(vis);
     if (main) return at(main, `main:${main.dataset.action ?? ''}`);
+    // The big orange button of the open tab («Продать за N» in a chat), then a tab with a count on it.
+    const sheetMain = [...document.querySelectorAll<HTMLElement>('.sheet:not([hidden]) .mu-btn.main:not([aria-disabled=true]):not(.off)')].find(vis);
+    if (sheetMain) return at(sheetMain, `tab-main:${sheetMain.dataset.action ?? ''}`);
+    const badge = [...document.querySelectorAll<HTMLElement>('#nav [data-tab]')].find((b) => vis(b.querySelector('[data-badge]')) && !b.classList.contains('active') && b.getAttribute('aria-selected') !== 'true');
+    if (badge) return at(badge, `badge:${badge.dataset.tab ?? ''}`);
     return null;
   });
 }

@@ -193,9 +193,10 @@ describe('P-04 (Q-056 Б) hints after the first minute', () => {
     expect(eggHint(game.state, game.view(), idle, idle, price)).toBeNull();
   });
 
-  it('the «rare egg» step on «Яйца» stands on «Открыть» of its row; other hints stay as they are', () => {
-    expect(onEggsTab({ step: 'hatchRare', target: { kind: 'incubator', index: 1 } })).toEqual({ step: 'hatchRare', target: { kind: 'button', action: 'egg-open-1' } });
-    expect(onEggsTab({ step: 'tapEgg', target: { kind: 'incubator', index: 0 } })).toEqual({ step: 'tapEgg', target: { kind: 'incubator', index: 0 } });
+  it('the «rare egg» and «tap the egg» steps on «Яйца» stand on «Открыть» of the row; other hints stay as they are', () => {
+    expect(onEggsTab({ step: 'hatchRare', target: { kind: 'incubator', index: 1 } })).toEqual({ step: 'hatchRare', target: { kind: 'button', action: 'egg-open-1|tab-home' } });
+    expect(onEggsTab({ step: 'tapEgg', target: { kind: 'incubator', index: 0 } })).toEqual({ step: 'tapEgg', target: { kind: 'button', action: 'egg-open-0|tab-home' } });
+    expect(onEggsTab({ step: 'feed', target: { kind: 'slot', index: 0 } })).toEqual({ step: 'feed', target: { kind: 'slot', index: 0 } });
     expect(onEggsTab(null)).toBeNull();
   });
 });

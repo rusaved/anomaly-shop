@@ -29,6 +29,8 @@ export interface InventoryLookups {
 
 export interface InventoryTab {
   render(): void;
+  /** P-08: the tab opens on «Находки» when its green dot is a find's reward and no pet waits (the dot never leads to an empty list). */
+  setMode(m: 'items' | 'collection' | 'finds'): void;
 }
 
 type Mode = 'items' | 'collection' | 'finds';
@@ -156,6 +158,9 @@ export function createInventoryTab(sheet: Sheet, game: Game, look: InventoryLook
   }
 
   const tab: InventoryTab = {
+    setMode(m) {
+      mode = m;
+    },
     render() {
       sheet.setTitle(look.t('nav.inventory'));
       sheet.head.querySelectorAll<HTMLElement>('[data-sub]').forEach((b) => b.classList.toggle('active', b.dataset.sub === mode));

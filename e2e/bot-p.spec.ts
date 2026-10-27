@@ -54,7 +54,7 @@ function pick(page: Page) {
     const main = [...document.querySelectorAll<HTMLElement>('.overlay:not([hidden]):not(.under) .mu-btn.main, .overlay:not([hidden]):not(.under) .btn-primary')].find(vis);
     if (main) return at(main, `main:${main.dataset.action ?? ''}`);
     // The big orange button of the open tab («Продать за N» in a chat), then a tab with a count on it.
-    const sheetMain = [...document.querySelectorAll<HTMLElement>('.sheet:not([hidden]) .mu-btn.main:not([aria-disabled=true]):not(.off)')].find(vis);
+    const sheetMain = [...document.querySelectorAll<HTMLElement>('.sheet:not([hidden]) .mu-btn.main:not([aria-disabled=true]):not(.off), .sheet:not([hidden]) .mu-btn.good:not([aria-disabled=true])')].find(vis);
     if (sheetMain) return at(sheetMain, `tab-main:${sheetMain.dataset.action ?? ''}`);
     const badge = [...document.querySelectorAll<HTMLElement>('#nav [data-tab]')].find((b) => vis(b.querySelector('[data-badge]')) && !b.classList.contains('active') && b.getAttribute('aria-selected') !== 'true');
     if (badge) return at(badge, `badge:${badge.dataset.tab ?? ''}`);

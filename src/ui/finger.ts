@@ -16,10 +16,7 @@ export function createFinger(parent: HTMLElement, onTap?: () => void): Finger {
   root.innerHTML =
     '<svg viewBox="0 0 48 48" width="44" height="44"><path d="M19 6c2 0 3.5 1.6 3.5 3.6V22l2-.4V14c0-1.9 1.5-3.4 3.4-3.4s3.4 1.5 3.4 3.4v8.3l1.6.2v-5.6c0-1.8 1.5-3.2 3.3-3.2s3.3 1.4 3.3 3.2V31c0 6.6-5.3 12-12 12h-2.7c-3.4 0-6.6-1.6-8.6-4.4L8.6 29.4c-1-1.4-.8-3.4.6-4.5 1.4-1.1 3.4-.9 4.5.5l2 2.4V9.6C15.7 7.6 17.1 6 19 6z" fill="#fff7ea" stroke="#2b1b3d" stroke-width="2.4" stroke-linejoin="round"/></svg>';
   parent.appendChild(root);
-  if (onTap) {
-    root.style.pointerEvents = 'auto';
-    root.addEventListener('click', onTap);
-  }
+  if (onTap) root.addEventListener('click', onTap);
   let key = '';
   return {
     root,
@@ -36,6 +33,8 @@ export function createFinger(parent: HTMLElement, onTap?: () => void): Finger {
       if (next === key) return;
       key = next;
       root.hidden = !at;
+      // Over a scene spot the hand takes the tap for the egg; over a button it lets the tap through to the button itself.
+      root.style.pointerEvents = onTap && at && !(at instanceof HTMLElement) ? 'auto' : 'none';
       if (at) root.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
     },
   };

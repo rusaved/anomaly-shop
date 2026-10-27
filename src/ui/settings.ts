@@ -61,6 +61,9 @@ export function createSettingsWindow(
     store.state.settings.music = next;
     store.commit();
   });
+  // One row «Звук · Музыка»: the window keeps its height on a short screen (812×330, the 130 % font).
+  soundRow.classList.add('row-pair');
+  soundRow.append(...musicRow.childNodes);
   // FB-13: the buzz of the main buttons (Android; a phone without it never shows the row).
   const vibRow = toggleRow('vibrate', 'settings.vibrate', store.state.settings.vibrate !== false, (next) => {
     store.state.settings.vibrate = next;
@@ -148,7 +151,7 @@ export function createSettingsWindow(
   const back = button('back', 'settings.back');
   // V-04: one language (VK and OK: Russian only) — no language row.
   langRow.hidden = __GAME__.languages.length < 2;
-  overlay.card.append(title, soundRow, musicRow, vibRow, langRow);
+  overlay.card.append(title, soundRow, vibRow, langRow);
   if (shopName) overlay.card.append(nameEdit, nameRow, nameAnswer);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
@@ -158,8 +161,8 @@ export function createSettingsWindow(
     open() {
       overlay.card.classList.remove('naming');
       // V-04: the sound may have changed elsewhere (the VK menu) — the switch shows the saved state.
-      soundRow.querySelector('[role=switch]')?.setAttribute('aria-checked', String(store.state.settings.sound));
-      musicRow.querySelector('[role=switch]')?.setAttribute('aria-checked', String(store.state.settings.music !== false));
+      soundRow.querySelector('[data-action=sound]')?.setAttribute('aria-checked', String(store.state.settings.sound));
+      soundRow.querySelector('[data-action=music]')?.setAttribute('aria-checked', String(store.state.settings.music !== false));
       if (shopName) {
         nameInput.value = shopName.name();
         nameAnswer.textContent = '';

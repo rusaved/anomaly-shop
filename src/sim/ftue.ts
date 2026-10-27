@@ -89,11 +89,11 @@ export function eggHint(state: SaveData, view: GameView, idleSec: number, afterS
 
 /**
  * P-08 (ревизор геймдизайна): after the first minute, before any upgrade, an idle player with coins for one — «Купи улучшение» on the
- * cheapest open price (or the way to the list).
+ * cheapest open price of «Лавка» (or its «Улучшения» button); src/main.ts asks it on «Лавка» only.
  */
 export function upgradeHint(state: SaveData, idleSec: number, afterSec: number, affordable: boolean): FtueHint | null {
   if (!state.flags[FLAGS.done] || idleSec < afterSec || !affordable || Object.values(state.upgrades).some((n) => n > 0)) return null;
-  return { step: 'tab', key: 'ftue.upgrade', target: { kind: 'el', selectors: ['[data-action="buy-upgrade"]', '[data-action="open-upgrades"]', '[data-action="upgrades"]'] } };
+  return { step: 'tab', key: 'ftue.upgrade', target: { kind: 'el', selectors: ['[data-action="buy-upgrade"]', '[data-action="open-upgrades"]'] } };
 }
 
 /**

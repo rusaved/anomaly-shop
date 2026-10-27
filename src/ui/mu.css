@@ -3375,6 +3375,10 @@ button.mu-card {
 #ui [data-overlay='settings'] .row-switch > span {
   flex: 1 1 auto;
 }
+/* P-07: «Звук» and «Музыка» share one row (label, switch, label, switch). */
+#ui [data-overlay='settings'] .row-switch.row-pair {
+  gap: 10px;
+}
 #ui [data-overlay='settings'] .row > .btn-switch {
   position: relative;
   flex: 0 0 60px;

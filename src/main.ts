@@ -41,7 +41,7 @@ import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { createAds } from './ui/ads.ts';
 import { createShopStore } from './ui/store.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { chatHint, eggHint, ftueHint, onEggsTab, shelfHint, tabHint, tabUnlocked, upgradeHint } from './sim/ftue.ts';
+import { chatHint, eggHint, ftueHint, onEggsTab, shelfHint, tabHint, tabUnlocked, upgradeHint, type FtueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { createNav, TABS, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
@@ -322,7 +322,11 @@ async function boot(): Promise<void> {
   // slips onto the dimmed tab bar does nothing).
   const nav = createNav(uiRoot, (tab, again) => {
     if (hatchShow.isOpen()) nav.mark(shown);
-    else showTab(tab, again);
+    else {
+      // P-08 (ревизор геймдизайна): the dot of «Склад» is a find's reward — with no pet waiting the tab opens on «Находки».
+      if (tab === 'inventory' && !again && play.view().inventory.length === 0 && play.finds().some((f) => f.got && !f.claimed)) inventoryTab.setMode('finds');
+      showTab(tab, again);
+    }
   });
   // 07 rule 8: the «+» of the balance opens the Store (its deals from the ads milestone; the upgrades till then).
   hud.wallet.addEventListener('click', openUpgrades);
@@ -1290,13 +1294,19 @@ async function boot(): Promise<void> {
     const onEggs = nav.active() === 'eggs';
     const first = ftueHint(store.state, view, freeEggReady());
     // P-04: on «Яйца» the «rare egg» step points at «Открыть»; after the first minute an idle empty incubator says «Купи новое яйцо».
-    const raw = controllable ? ((onEggs ? onEggsTab(first) : first) ?? chatHint(store.state, view, idle, ftue.shelfHintSec / 2) ?? shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? upgradeHint(store.state, idle, ftue.eggHintSec, play.upgradeList().some((u) => u.affordable)) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice)) : null;
-    // P-08 (the bot of the first minutes): a spot in the shop seen from another tab — the hint points at «Лавка» (on «Яйца» a new egg at its
-    // price button), it never just vanishes.
+    const lesson = controllable ? ((onEggs ? onEggsTab(first) : first) ?? chatHint(store.state, view, idle, ftue.shelfHintSec / 2)) : null;
+    // P-08 (the bot of the first minutes): a lesson's spot in the shop seen from another tab — the hint points at «Лавка», it never just
+    // vanishes. The nudges after the first minute (an egg, an upgrade) stay in «Лавка» (on «Яйца» the new egg at its price button):
+    // over the tab bar of another tab their band would shorten its list.
+    const away = (h: FtueHint | null): FtueHint | null => (h && nav.active() !== 'home' && SCENE_TARGETS.has(h.target.kind) ? { ...h, target: { kind: 'button', action: 'tab-home' } } : h);
+    const nudge = controllable && !lesson ? (shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? (nav.active() === 'home' ? upgradeHint(store.state, idle, ftue.eggHintSec, play.upgradeList().some((u) => u.affordable)) : null) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice)) : null;
     const hint =
-      raw && nav.active() !== 'home' && SCENE_TARGETS.has(raw.target.kind)
-        ? { ...raw, target: { kind: 'button' as const, action: onEggs && raw.step === 'buyEgg' ? `egg-buy-${ftue.starterEgg}|tab-home` : 'tab-home' } }
-        : raw;
+      away(lesson) ??
+      (nudge && SCENE_TARGETS.has(nudge.target.kind) && nav.active() !== 'home'
+        ? onEggs && nudge.step === 'buyEgg'
+          ? { ...nudge, target: { kind: 'button' as const, action: `egg-buy-${ftue.starterEgg}` } }
+          : null
+        : nudge);
     const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';
     const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
     // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.

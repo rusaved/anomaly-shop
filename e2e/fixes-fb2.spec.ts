@@ -301,7 +301,7 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
     });
   });
 
-/** Ревизор удобства круга 2: a run of skip taps 300 ms apart for 3 s — on the dim under the strip (portrait), on the strip's lower edge and on
+/** Ревизор удобства круга 2 (P-05: up to the end of the one pause of the buttons): a run of skip taps 300 ms apart for 3 s — on the dim under the strip (portrait), on the strip's lower edge and on
  *  the dim right of the card (sideways) — never sells the pet, never closes the window, never buys in the shop under it. */
 for (const [w, h] of [[375, 650], [812, 330]] as const)
   test.describe(`Круг правок FB-2 серия тапов ${w}×${h}`, () => {
@@ -319,6 +319,13 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       const strip = (await page.locator('[data-action=hatch-skip]').boundingBox())!;
       const points = w < h ? [[w / 2, h * 0.78]] : [[strip.x + strip.width / 2, strip.y + strip.height - 2], [w - 60, 145]];
       for (let i = 0; i < 10; i++) {
+        // P-05 (Q-048 Б): the buttons wait 0.8 s once after the result — the run counts up to the end of that pause (the card grows
+        // under the finger when the strip ends; a tap on a button after the pause is the player's choice).
+        const late = await page.evaluate(() => {
+          const r = (window as unknown as { __TEST__: { state(): { hatchTiming: { result: number } } } }).__TEST__.state().hatchTiming.result;
+          return r > 0 && performance.now() - r > 600;
+        });
+        if (late) break;
         const [x, y] = points[i % points.length]!;
         await page.touchscreen.tap(x!, y!);
         await page.waitForTimeout(300);

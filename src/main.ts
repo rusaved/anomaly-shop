@@ -1325,15 +1325,17 @@ async function boot(): Promise<void> {
     const wait = (sec: number): number => (afterDeal ? 0 : sec);
     // S-01: once «Купи улучшение» has called, it keeps calling with no idle pause until the upgrade is bought or out of reach — the tap
     // on «Лавка» after the call lands on the upgrade itself, never on «Купи новое яйцо».
-    const upgradeNow = upgradeCalled ? 0 : wait(ftue.eggHintSec);
     const canUpgrade = play.upgradeList().some((u) => u.affordable);
+    // S-01: «Купи новое яйцо» comes only when the first upgrade is bought or out of reach — the upgrade calls no later than the egg would.
+    const eggWait = nothingToDo(store.state, view) ? 0 : wait(ftue.eggHintSec);
+    const upgradeNow = upgradeCalled ? 0 : Math.min(wait(ftue.eggHintSec), eggWait);
     const nudge =
       controllable && !lesson
         ? (shelfHint(store.state, view, idle, wait(ftue.shelfHintSec)) ??
           // P-08: the very first upgrade before the rest (once a game).
-          (nav.active() === 'home' || afterDeal ? upgradeHint(store.state, idle, upgradeNow, canUpgrade) : null) ??
+          upgradeHint(store.state, idle, upgradeNow, canUpgrade) ??
           readyHint(store.state, view, idle, wait(ftue.eggHintSec)) ??
-          eggHint(store.state, view, idle, nothingToDo(store.state, view) ? 0 : wait(ftue.eggHintSec), basicEggPrice) ??
+          eggHint(store.state, view, idle, eggWait, basicEggPrice) ??
           warmHint(store.state, view, idle, ftue.eggHintSec))
         : null;
     const hint =
@@ -1341,7 +1343,7 @@ async function boot(): Promise<void> {
       // H-06: after a deal on another tab the next step points at «Лавка» with its own words (on «Яйца» a new egg at its price).
       // H-08 (the bot of five minutes stood 250 s on «Магазин» with nothing calling): an idle player on another tab gets the same call
       // after eggHintSec — the band of the bubble comes only to a player who is not touching the list.
-      (nudge && nav.active() !== 'home' && !(onEggs && nudge.step === 'buyEgg') && ((afterDeal && (SCENE_TARGETS.has(nudge.target.kind) || nudge.key === 'ftue.upgrade')) || (idle >= ftue.eggHintSec && SCENE_TARGETS.has(nudge.target.kind)))
+      (nudge && nav.active() !== 'home' && !(onEggs && nudge.step === 'buyEgg') && ((afterDeal || idle >= ftue.eggHintSec) && (SCENE_TARGETS.has(nudge.target.kind) || nudge.key === 'ftue.upgrade'))
         ? { ...nudge, target: { kind: 'button' as const, action: 'tab-home' } }
         : null) ??
       (nudge && SCENE_TARGETS.has(nudge.target.kind) && nav.active() !== 'home'

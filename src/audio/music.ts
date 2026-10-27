@@ -33,19 +33,20 @@ export interface Music {
 }
 
 export function createMusic(track: string | null, volume: number, enabled: () => boolean): Music {
-  let el: HTMLAudioElement | null = null;
+  // Web Audio only (the Yandex check of the release, п. 5: no media elements): the file decoded once, a looping source into a gain.
+  let ctx: AudioContext | null = null;
+  let gain: GainNode | null = null;
+  let ready = false;
   let unlocked = false;
   let paused = false;
   let playing = false;
   const sync = (): void => {
-    const want = musicOn({ track, unlocked, on: enabled(), paused });
-    if (!el || want === playing) return;
+    const want = ready && musicOn({ track, unlocked, on: enabled(), paused });
+    if (!ctx || !gain || want === playing) return;
     playing = want;
     try {
-      if (want) {
-        el.volume = volume;
-        void el.play().catch(() => (playing = false));
-      } else el.pause();
+      gain.gain.value = want ? volume : 0;
+      void (want ? ctx.resume() : ctx.suspend()).catch(() => undefined);
     } catch {
       playing = false;
     }
@@ -54,14 +55,30 @@ export function createMusic(track: string | null, volume: number, enabled: () =>
     unlock() {
       if (unlocked || !track) return;
       unlocked = true;
+      if (typeof AudioContext === 'undefined') return;
       try {
-        el = new Audio(track);
-        el.loop = true;
-        el.preload = 'auto';
+        ctx = new AudioContext();
+        gain = ctx.createGain();
+        gain.gain.value = 0;
+        gain.connect(ctx.destination);
       } catch {
-        el = null;
+        ctx = null;
+        return;
       }
-      sync();
+      const c = ctx;
+      fetch(track)
+        .then((r) => r.arrayBuffer())
+        .then((b) => c.decodeAudioData(b))
+        .then((buf) => {
+          const src = c.createBufferSource();
+          src.buffer = buf;
+          src.loop = true;
+          src.connect(gain!);
+          src.start();
+          ready = true;
+          sync();
+        })
+        .catch(() => undefined);
     },
     setPaused(p) {
       paused = p;

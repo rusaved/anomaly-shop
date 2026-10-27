@@ -1,6 +1,6 @@
 // What: short toasts over the shop ("Not enough coins", "Rare!"): one line at a time (M3-18: a queue, at least 2 s each), fade in and out.
 // Called by: src/main.ts (game events → text through t()), src/ui/* when an action is refused; hold() keeps the queue during «Lv N!» in the scene.
-// Keep: H-01, H-04, S-02 — one toast on screen at a time with a pause between two; the important first, an answer to a tap at once; sideways every toast stands in the free stretch of the top bar (never on a button); a window open — any toast but an answer to a tap waits and comes after it closes; a tap on a toast is its own and closes it (круг правок FB-3 п. 5); portrait over the tab bar; texts come translated; a text shown or waiting is not repeated.
+// Keep: H-01, H-04, S-02 — one toast on screen at a time with a pause between two; the important first, an answer to a tap at once; sideways every toast stands in the free stretch of the top bar (never on a button); a window open — any toast but an answer to a tap waits and comes after it closes; a tap on a toast is its own and closes it (круг правок FB-3 п. 5); portrait over the tab bar, news with no free spot in 30 s goes (PT-01); texts come translated; a text shown or waiting is not repeated.
 
 import { iconize } from './kit.ts';
 
@@ -376,6 +376,14 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
       timer = window.setTimeout(next, 500);
       return;
     }
+    // PT-01 (the bot upright: 2–8 toasts a run lay on buttons — a list fills the screen, no free spot came in 30 s): upright, news that
+    // waited its time and still lies on a button goes (its screen shows it itself: the find, the new egg, the chat); a rare one stays.
+    if (!item.calm && !answers(item) && item.kind !== 'rare' && root.closest('.portrait') !== null && onButton(el)) {
+      el.remove();
+      current = null;
+      next();
+      return;
+    }
     if (item.calm && calmBlocked(el, extra)) {
       // H-04: no clear spot now — back to its place in the queue, a new try in 0.5 s (other toasts pass meanwhile).
       el.remove();
@@ -394,7 +402,14 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
       if (gone || replace || records.every((r) => el.contains(r.target))) return;
       replace = window.requestAnimationFrame(() => {
         replace = 0;
-        if (current === el && !gone) place(el, extra);
+        if (current === el && !gone) {
+          place(el, extra);
+          // PT-01: a screen that came under the toast puts it on a button — it gives way at once (not on the next check, 250 ms later).
+          if (!item.calm && !answers(item) && onButton(el)) {
+            if (Date.now() - (item.at ?? 0) < CALM_WAIT_MS) back(500);
+            else if (item.kind !== 'rare' && root.closest('.portrait') !== null) leave();
+          }
+        }
       });
     });
     watchWindow.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden', 'class'], childList: true });
@@ -406,7 +421,11 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
       // the toast goes back to the head of the queue and comes again after the window.
       if (!gone && !answers(item) && windowOpen()) return back();
       // S-02: another screen came under the toast and it lies on a button there — it waits for a free spot (CALM_WAIT_MS from its start).
-      if (!gone && !item.calm && !answers(item) && onButton(el) && Date.now() - (item.at ?? 0) < CALM_WAIT_MS) return back(500);
+      if (!gone && !item.calm && !answers(item) && onButton(el)) {
+        if (Date.now() - (item.at ?? 0) < CALM_WAIT_MS) return back(500);
+        // PT-01: upright, past its wait — news on a button goes (a rare one stays).
+        if (item.kind !== 'rare' && root.closest('.portrait') !== null) return leave();
+      }
       if (item.calm && !gone && calmBlocked(el, extra)) leave();
     }, 250);
     // The round of fixes (the usability review): a toast never moves the screen under a finger — it lies over the screen for a moment

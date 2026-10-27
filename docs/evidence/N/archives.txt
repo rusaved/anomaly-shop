@@ -1,0 +1,7 @@
+N · архивы в downloads/ — итог «Ресейл 20 · Рост и быстрые проверки» (сессия по расписанию штаба 27.10), код коммита 40c470f
+1e6a2b5b7967f0857e515cc6225fc6506ca906c0539a1f923ddec4b2c506bcc7  downloads/anomaly-shop-0.1.0-playtest.zip
+247ecfa2e7a325b733d9d868eec7ef95a15ae1cb37e3cef34bc124a846c366a4  downloads/anomaly-shop-0.1.0.zip
+1570414 downloads/anomaly-shop-0.1.0-playtest.zip
+1560382 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8); check:youtube — ok; check:vk — ok; e2e:release, e2e:youtube, e2e:vk — docs/evidence/N/verify.txt (EXIT=0)
+dist-vk: 2.4M	dist-vk

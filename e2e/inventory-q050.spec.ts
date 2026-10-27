@@ -18,7 +18,11 @@ test('Q-050 the last pet sold: «Склад» counts 0 and shows the empty list'
   // The one pet stands on the shelf (an old save puts its pets there), a buyer writes, the deal in the chat takes it.
   await runSim(page, 25);
   await sellInChat(page);
+  // H-01: the first sale's find makes the green dot — «Склад» opens on «Находки»; the player goes to «Питомцы».
+  const dotted = await page.locator('[data-tab=inventory] [data-badge].nav-dot').isVisible();
   await page.locator('[data-tab=inventory]').click();
+  if (dotted) await expect(page.locator('[data-sheet=inventory] [data-sub=finds]')).toHaveClass(/active/);
+  await page.locator('[data-sheet=inventory] [data-sub=items]').click();
   await expect(page.locator('[data-sheet=inventory] [data-empty]')).toBeVisible();
   await expect(count).toHaveText(await label(0));
   expect(errors).toEqual([]);

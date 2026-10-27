@@ -23,6 +23,8 @@ export interface Nav {
   mark(tab: TabId): void;
   /** A dot (true) or a number on the tab; false or 0 hides it. */
   badge(tab: TabId, value: boolean | number): void;
+  /** H-01: the tab shows its green dot now. */
+  dotted(tab: TabId): boolean;
   /** Shows or hides a tab button (Q-026 B); fresh — it opens now, in play: a pulse draws the eye. */
   setOpen(tab: TabId, open: boolean, fresh?: boolean): void;
 }
@@ -56,6 +58,10 @@ export function createNav(parent: HTMLElement, onSelect: (tab: TabId, again: boo
       b.hidden = !value;
       if (b.textContent !== text) b.textContent = text;
       b.classList.toggle('nav-dot', value === true);
+    },
+    dotted(tab) {
+      const b = button(tab).querySelector('[data-badge]') as HTMLElement;
+      return !b.hidden && b.classList.contains('nav-dot');
     },
     setOpen(tab, open, fresh = false) {
       const b = button(tab);

@@ -1,20 +1,29 @@
 // What: short toasts over the shop ("Not enough coins", "Rare!"): one line at a time (M3-18: a queue, at least 2 s each), fade in and out.
 // Called by: src/main.ts (game events → text through t()), src/ui/* when an action is refused; hold() keeps the queue during «Lv N!» in the scene.
-// Keep: a tap on a toast is its own and closes it (круг правок FB-3 п. 5); portrait over the tab bar, sideways under the top bar; texts come translated; a text shown or waiting is not repeated.
+// Keep: H-01, H-04 — the important first, an answer to a tap at once, calm news one line and never over a window, the chats or the shelf; a tap on a toast is its own and closes it (круг правок FB-3 п. 5); portrait over the tab bar, sideways under the top bar; texts come translated; a text shown or waiting is not repeated.
 
 import { iconize } from './kit.ts';
 
 export type ToastKind = 'info' | 'good' | 'rare' | 'warn';
 
+export interface ToastOptions {
+  /** H-01: the answer to a tap — it comes now (the toast on screen gives way at once). */
+  now?: boolean;
+  /** H-04: news, not an answer — one line, never over a window, the chats or the shelf; it waits for a clear moment. */
+  calm?: boolean;
+}
+
 export interface Toasts {
   root: HTMLElement;
-  show(text: string, kind?: ToastKind, ms?: number): void;
+  show(text: string, kind?: ToastKind, ms?: number, opts?: ToastOptions): void;
   /** Keeps the next toast back for ms (a level-up flies in the scene). */
   hold(ms: number): void;
   /** Toasts waiting (tests). */
   waiting(): number;
   /** The toast on screen now ('' when none): M4-00 — the shop keeps its own captions quiet meanwhile. */
   showing(): string;
+  /** H-04: the toast on screen is calm news in the top bar — the scene's hint stays under it. */
+  calm(): boolean;
 }
 
 /** The producer's rule after M2: one text on screen at a time, long enough to read. */
@@ -27,14 +36,29 @@ export interface ToastItem {
   text: string;
   kind: ToastKind;
   ms: number;
+  now?: boolean;
+  calm?: boolean;
+  /** When it was queued (a calm one waiting past CALM_WAIT_MS goes). */
+  at?: number;
+  /** H-04: a calm one whose spot was taken waits till then. */
+  retryAt?: number;
 }
+
+/** H-04: the order of the queue — an answer to a tap first, then rare, good, the rest; calm news after the answers of its kind. */
+export const rank = (q: ToastItem): number => (q.now ? 4 : q.kind === 'warn' ? 3 : q.kind === 'rare' ? 2 : q.kind === 'good' ? 1 : 0) * 2 + (q.calm ? 0 : 1);
+/** H-04: a calm toast that found no clear moment in this time goes (the level and the shop show it themselves). */
+export const CALM_WAIT_MS = 30_000;
 
 /** The queue alone (no DOM, unit-tested): a text shown or waiting is not added twice; past QUEUE_MAX the oldest plain one goes. */
 export function enqueue(queue: ToastItem[], item: ToastItem, showing: string | null): void {
   if (showing === item.text || queue.some((q) => q.text === item.text)) return;
-  queue.push(item);
+  // H-04: the important first; the same rank keeps its order.
+  const at = queue.findIndex((q) => rank(q) < rank(item));
+  queue.splice(at < 0 ? queue.length : at, 0, item);
   while (queue.length > QUEUE_MAX) {
-    const plain = queue.findIndex((q) => q.kind !== 'rare');
+    // The oldest of the least important goes (rare ones stay while anything plainer waits).
+    const low = Math.min(...queue.filter((q) => q.kind !== 'rare').map(rank));
+    const plain = queue.findIndex((q) => q.kind !== 'rare' && rank(q) === low);
     queue.splice(plain >= 0 ? plain : 0, 1);
   }
 }
@@ -52,6 +76,7 @@ const meets = (a: DOMRect, top: number, bottom: number, r: DOMRect): boolean =>
 function place(el: HTMLElement, extra: () => DOMRect[]): void {
   const root = el.parentElement;
   if (!root) return;
+  if (el.classList.contains('toast-calm')) return placeCalm(el, root);
   root.style.removeProperty('transform');
   root.style.removeProperty('align-items');
   root.style.removeProperty('padding-left');
@@ -147,6 +172,49 @@ function place(el: HTMLElement, extra: () => DOMRect[]): void {
   if (bar && bar.height > 0 && end > bar.top - 4) root.style.transform = `translateY(${Math.round(shift - (end - bar.top + 4))}px)`;
 }
 
+/** H-04: what a calm toast never lies on — a window, the chats, the lists of a tab, the hint (and the shelf: extra). */
+const CALM_AVOID = `${AVOID}, .overlay:not([hidden]) > .card, .sheet:not([hidden]) .chat-row, .sheet:not([hidden]) .chat-dialog, .sheet:not([hidden]) .mu-card, .sheet:not([hidden]) .mu-btn`;
+/** H-04: a window open — calm news waits. */
+const windowOpen = (): boolean => document.querySelector('.overlay:not([hidden])') !== null;
+
+/** H-04: a calm toast stands in the top bar's widest free stretch (one line), else just under the bar. */
+function placeCalm(el: HTMLElement, root: HTMLElement): void {
+  root.style.removeProperty('transform');
+  root.style.removeProperty('align-items');
+  root.style.removeProperty('padding-left');
+  el.style.removeProperty('max-width');
+  const box = el.getBoundingClientRect();
+  const hud = document.querySelector('.hud')?.getBoundingClientRect();
+  if (!hud) return;
+  const edges = [...document.querySelectorAll('.hud button, .hud [data-chip]')]
+    .map((e) => e.getBoundingClientRect())
+    .filter((r) => r.width > 0)
+    .sort((a, b) => a.left - b.left);
+  let from = hud.left;
+  let best = { left: 0, width: 0 };
+  for (const r of [...edges, new DOMRect(hud.right, hud.top, 0, hud.height)]) {
+    if (r.left - from > best.width) best = { left: from, width: r.left - from };
+    from = Math.max(from, r.right);
+  }
+  const w = Math.min(box.width, best.width - 16);
+  if (w >= 120 && box.height <= hud.height + 4) {
+    el.style.maxWidth = `${Math.floor(w)}px`;
+    const b = el.getBoundingClientRect();
+    const top = hud.top + (hud.height - b.height) / 2;
+    root.style.transform = `translate(${Math.round(best.left + (best.width - b.width) / 2 - b.left)}px, ${Math.round(top - b.top)}px)`;
+    return;
+  }
+  // No room in the bar (portrait): just under it.
+  root.style.transform = `translateY(${Math.round(hud.bottom + 6 - box.top)}px)`;
+}
+
+/** H-04: the calm toast now on screen lies on something it must not (tests and the queue read it). */
+export function calmBlocked(el: HTMLElement, extra: () => DOMRect[]): boolean {
+  const box = el.getBoundingClientRect();
+  const rs = [...document.querySelectorAll(CALM_AVOID)].map((e) => e.getBoundingClientRect()).concat(extra());
+  return rs.some((r) => meets(box, box.top, box.bottom, r));
+}
+
 /** extra — rects of the scene a toast never covers either (the shelf frame drawn in the canvas: круг правок FB-2, арт-ревизия). */
 export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () => []): Toasts {
   const root = document.createElement('div');
@@ -155,20 +223,32 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
   parent.appendChild(root);
   const queue: ToastItem[] = [];
   let current: HTMLElement | null = null;
+  /** H-01: removes the toast on screen at once (an answer to a tap takes its place). */
+  let drop: () => void = () => {};
   let heldUntil = 0;
   let timer = 0;
 
   const next = (): void => {
     if (current || !queue.length) return;
-    const wait = heldUntil - Date.now();
-    if (wait > 0) {
+    const now = Date.now();
+    const wait = heldUntil - now;
+    // H-01: an answer to a tap never waits for the level flying in the scene.
+    if (wait > 0 && !queue[0]!.now) {
       window.clearTimeout(timer);
       timer = window.setTimeout(next, wait);
       return;
     }
-    const item = queue.shift()!;
+    // H-04: calm news waits while a window is open or its spot was taken a moment ago; past CALM_WAIT_MS it goes.
+    for (let i = queue.length - 1; i >= 0; i--) if (queue[i]!.calm && now - (queue[i]!.at ?? now) > CALM_WAIT_MS) queue.splice(i, 1);
+    const pickAt = queue.findIndex((q) => !q.calm || (!windowOpen() && (q.retryAt ?? 0) <= now));
+    if (pickAt < 0) {
+      window.clearTimeout(timer);
+      if (queue.length) timer = window.setTimeout(next, 500);
+      return;
+    }
+    const item = queue.splice(pickAt, 1)[0]!;
     const el = document.createElement('div');
-    el.className = `toast toast-${item.kind}`;
+    el.className = `toast toast-${item.kind}${item.calm ? ' toast-calm' : ''}`;
     el.dataset.toast = item.kind;
     // MU-01: ◉ and ◆ in a text become the coin and the crystal pictures (07 «Знаки»).
     el.innerHTML = iconize(item.text);
@@ -176,23 +256,46 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
     root.appendChild(el);
     current = el;
     place(el, extra);
+    if (item.calm && calmBlocked(el, extra)) {
+      // H-04: no clear spot now — back to its place in the queue, a new try in 0.5 s (other toasts pass meanwhile).
+      el.remove();
+      current = null;
+      queue.splice(pickAt, 0, { ...item, retryAt: now + 500 });
+      next();
+      return;
+    }
 
     // A screen that opens under a toast already shown (a lot, a hint) moves it too.
-    const follow = window.setInterval(() => (current === el ? place(el, extra) : window.clearInterval(follow)), 250);
+    const follow = window.setInterval(() => {
+      if (current !== el) return window.clearInterval(follow);
+      place(el, extra);
+      // H-04: a window or a list that came over a calm toast — it gives way at once.
+      if (item.calm && !gone && (windowOpen() || calmBlocked(el, extra))) leave();
+    }, 250);
     // The round of fixes (the usability review): a toast never moves the screen under a finger — it lies over the screen for a moment
     // (07 rule 17); a tap on it stays on it (круг правок FB-3 п. 5).
     let gone = false;
+    let fade = 0;
+    const cut = (): void => {
+      window.clearTimeout(fade);
+      el.remove();
+      if (current === el) current = null;
+    };
     const leave = (): void => {
       if (gone) return;
       gone = true;
       el.classList.add('out');
-      window.setTimeout(() => {
-        el.remove();
-        current = null;
+      fade = window.setTimeout(() => {
+        cut();
         next();
       }, FADE_MS);
     };
     const stay = window.setTimeout(leave, Math.max(TOAST_MIN_MS, item.ms));
+    drop = () => {
+      window.clearTimeout(stay);
+      gone = true;
+      cut();
+    };
     // A tap on the toast is the toast's: it goes away now and the screen under it gets nothing.
     el.addEventListener('pointerdown', (e) => e.stopPropagation());
     el.addEventListener('click', (e) => {
@@ -204,8 +307,10 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
 
   return {
     root,
-    show(text, kind = 'info', ms = 1600) {
-      enqueue(queue, { text, kind, ms }, current?.dataset.text ?? null);
+    show(text, kind = 'info', ms = 1600, opts = {}) {
+      enqueue(queue, { text, kind, ms, now: opts.now === true, calm: opts.calm === true, at: Date.now() }, current?.dataset.text ?? null);
+      // H-01: the answer to a tap does not wait for the toast on screen — that one goes at once.
+      if (opts.now && current && current.dataset.text !== text) drop();
       next();
     },
     hold(ms) {
@@ -213,5 +318,6 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
     },
     waiting: () => queue.length + (current ? 1 : 0),
     showing: () => (current && !current.classList.contains('out') ? (current.dataset.text ?? '') : ''),
+    calm: () => Boolean(current?.classList.contains('toast-calm')),
   };
 }

@@ -33,6 +33,8 @@ export interface TestHooks {
   grant(coins: number): void;
   /** e2e only: a toast through the same queue as the game's (M3-18). */
   toast?(text: string): void;
+  /** H-04: calm news (a level, a new thing in the shop) through the same queue. */
+  calmToast?(text: string): void;
   /** e2e only (M4-21): starts a random event by its id now, when it may come. */
   event?(id: string): boolean;
   /** e2e and the shots of 07 only: «Вылупился!» for a pet the save already has (its rarity frame without luck). */
@@ -93,6 +95,9 @@ export function installTestApi(hooks: TestHooks): void {
     },
     toast(text: string): void {
       hooks.toast?.(text);
+    },
+    calmToast(text: string): void {
+      hooks.calmToast?.(text);
     },
     /** «Вылупился!» for a pet of the save (the egg for its «1 из N яиц» line). */
     hatch(uid: string, egg = 'egg_gold'): boolean {

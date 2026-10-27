@@ -696,6 +696,14 @@ button.mu-card {
   box-shadow: none;
   text-align: center;
 }
+/* H-04: news (a level, a new thing in the shop) is one line — in the top bar's free stretch, cut with «…» rather than wrapped. */
+.toast.toast-calm {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 14px;
+  font-size: 14px;
+}
 
 /* ---- Kit: picture buttons, marks, the back row of inner pages (07 rule 12), the hero of a detail ---- */
 .mu-pic-btn {
@@ -1512,11 +1520,11 @@ button.mu-card {
   align-items: flex-start;
 }
 /* The result's buttons wake up over hatchLockSec (feel.json): a tap in that time chooses nothing. */
-.card-hatch .hatch-result > .hatch-sell,
+.card-hatch .hatch-sell,
 .card-hatch .hatch-buttons > .mu-btn {
   transition: opacity 0.35s ease-out;
 }
-.card-hatch.hatch-locked .hatch-result > .hatch-sell,
+.card-hatch.hatch-locked .hatch-sell,
 .card-hatch.hatch-locked .hatch-buttons > .mu-btn {
   opacity: 0.5;
 }
@@ -3892,7 +3900,7 @@ button.mu-card {
 }
 /* Круг правок FB-2 п. 4: «Продать сразу» — a quiet line under «На склад» (portrait, PC); sideways under the price, next to the pet —
    never in the corner where the other windows keep ✕. */
-.overlay .card.card-hatch .hatch-result > .hatch-sell {
+.overlay .card.card-hatch .hatch-sell {
   margin: 24px 0 0;
   width: 100%;
 }
@@ -3900,7 +3908,7 @@ button.mu-card {
   .landscape .card-hatch .hatch-result {
     grid-template-areas: 'pic word' 'pic name' 'pic range' 'pic sell' 'buttons buttons';
   }
-  .landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+  .landscape #ui .overlay .card.card-hatch .hatch-sell {
     position: relative;
     top: auto;
     right: auto;
@@ -4030,7 +4038,7 @@ button.mu-card {
     grid-area: 5 / 2 / 6 / 3;
     margin-top: 12px;
   }
-  #app.landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+  #app.landscape #ui .overlay .card.card-hatch .hatch-sell {
     grid-area: 5 / 1 / 6 / 2;
     align-self: end;
     justify-self: start;
@@ -4143,13 +4151,15 @@ button.mu-card {
   background: var(--c-uiPanelHi);
   color: var(--c-uiMuted);
 }
-#app #ui .card-hatch.hatch-locked .hatch-result > .hatch-sell {
+/* H-01: sideways too (its own colour rule is stronger there). */
+#app #ui .card-hatch.hatch-locked .hatch-sell,
+#app.landscape #ui .overlay .card.card-hatch.hatch-locked .hatch-sell {
   opacity: 1;
   filter: none;
   color: color-mix(in srgb, var(--c-uiMuted) 65%, var(--c-uiPanel));
 }
 #app #ui .card-hatch .hatch-buttons > .mu-btn,
-#app #ui .card-hatch .hatch-result > .hatch-sell {
+#app #ui .card-hatch .hatch-sell {
   transition: background-color 0.3s ease-out, color 0.3s ease-out;
 }
 /* Круг правок FB-3 п. 5: portrait — the toast stands over the tab bar (never on the incubators, the shelf or the hint's hand); a tap on
@@ -4219,14 +4229,14 @@ button.mu-card {
     align-self: center;
     text-align: left;
   }
-  #app.landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+  #app.landscape #ui .overlay .card.card-hatch .hatch-sell {
     align-self: start;
     margin-top: 24px;
   }
 }
 /* Круг правок FB-3, арт-ревизия: the buttons go to sleep and wake at once — a fade between orange and the dark one reads brown. */
 #app #ui .card-hatch .hatch-buttons > .mu-btn,
-#app #ui .card-hatch .hatch-result > .hatch-sell {
+#app #ui .card-hatch .hatch-sell {
   transition: none;
 }
 /* The toast clears the raised «Лавка» of the tab bar by 8 px and more. */
@@ -4236,7 +4246,7 @@ button.mu-card {
 /* Круг правок FB-3, проверка: at 130 % sideways «Вылупился!» fits over the tab bar — «Продать сразу» spans the pet's column and stands at
    its foot, at least 24 px under the tile (96 + 24 = its top margin), so its words never add a row under the right column. */
 @media (max-height: 520px) {
-  #app.landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+  #app.landscape #ui .overlay .card.card-hatch .hatch-sell {
     grid-area: 1 / 1 / 6 / 2;
     align-self: end;
     margin-top: 120px;
@@ -4477,7 +4487,7 @@ button.mu-card {
   #app.landscape #ui > .overlay[data-overlay='hatch'] {
     align-items: flex-start;
   }
-  #app.landscape #ui .overlay .card.card-hatch .hatch-result > .hatch-sell {
+  #app.landscape #ui .overlay .card.card-hatch .hatch-sell {
     align-self: start;
     display: block;
     width: 100%;

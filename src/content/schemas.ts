@@ -257,6 +257,10 @@ export const FeelFile = v.object({
   burst: v.object({ sec: v.pipe(v.number(), v.minValue(0.2), v.maxValue(1.5)), good: BurstLevel, valuable: BurstLevel, premium: BurstLevel, vip: BurstLevel, exclusive: BurstLevel }),
   /** The hatch show (M3-05): seconds the portraits run before the result, 4–5. */
   hatchShowSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(8)),
+  /** H-02 (Q-069 п. 1 Б): the quick run of every other egg, 1.5–2 s; the long one is for the first hatchLongFirst eggs and from hatchLongFrom up. */
+  hatchQuickSec: v.pipe(v.number(), v.minValue(1.5), v.maxValue(2)),
+  hatchLongFirst: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10)),
+  hatchLongFrom: Rarity,
   /** Круг правок FB п. 1: the hatch result's buttons take a press this long after it shows (a double tap of the skip never chooses), ≥ 0.5 s; P-05: once, taps never stretch it. */
   hatchLockSec: v.pipe(v.number(), v.minValue(0.5), v.maxValue(1.5)),
   /** F-01: a «+» of a place that has just been freed takes no tap this long (0.3–0.6 s). */

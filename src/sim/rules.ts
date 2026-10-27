@@ -309,3 +309,10 @@ export function nameBlocked(name: string, blocked: readonly string[]): boolean {
   for (let i = 0; i < words.length; i++) for (let n = 1; n <= 3 && i + n <= words.length; n++) runs.push(words.slice(i, i + n).join(''));
   return runs.some((w) => normalWord(w) !== '' && set.has(wordHash(w)));
 }
+
+/** H-02 (Q-069 п. 1 Б): seconds of the hatch strip — the long show for the player's first `hatchLongFirst` eggs (n is this egg's number,
+ *  1 the first) and for `hatchLongFrom` and rarer; every other egg runs the quick strip. */
+export function hatchSpinSec(feel: { hatchShowSec: number; hatchQuickSec: number; hatchLongFirst: number; hatchLongFrom: RarityName }, rarity: RarityName, n: number): number {
+  const rare = RARITIES.indexOf(rarity) >= RARITIES.indexOf(feel.hatchLongFrom);
+  return rare || n <= feel.hatchLongFirst ? feel.hatchShowSec : feel.hatchQuickSec;
+}

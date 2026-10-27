@@ -57,7 +57,7 @@ import { createWorkWindow } from './ui/work.ts';
 import { createReputation } from './ui/reputation.ts';
 import { RARITIES, type RewardData } from './content/schemas.ts';
 import { createHatchShow } from './ui/hatch.ts';
-import { eggOdds } from './sim/rules.ts';
+import { eggOdds, hatchSpinSec } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
 import { ads as adsData, shopData, achievements, audio, calendar, codes, collection, decor as decorData, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
@@ -322,7 +322,11 @@ async function boot(): Promise<void> {
   // slips onto the dimmed tab bar does nothing).
   const nav = createNav(uiRoot, (tab, again) => {
     if (hatchShow.isOpen()) nav.mark(shown);
-    else showTab(tab, again);
+    else {
+      // H-01 (Q-069 п. 5): the green dot of «Склад» is a find's reward — the tap opens «Находки», where it lies.
+      if (tab === 'inventory' && !again && nav.dotted('inventory')) inventoryTab.toFinds();
+      showTab(tab, again);
+    }
   });
   // 07 rule 8: the «+» of the balance opens the Store (its deals from the ads milestone; the upgrades till then).
   hud.wallet.addEventListener('click', openUpgrades);
@@ -451,7 +455,8 @@ async function boot(): Promise<void> {
     portrait: (id, r) => portraits.creature(id, r),
     rarityColor: (r) => rarityColor(styleData.rarity, r),
     speciesName: (id) => speciesById(id)?.name[i18n.lang()] ?? id,
-    spinSec: () => feel.hatchShowSec,
+    // H-02 (Q-069 п. 1 Б): the long run for the first eggs and the valuable ones, a quick one for the rest.
+    spinSec: (rarity) => hatchSpinSec(feel, rarity, store.state.stats.hatched),
     lockSec: () => feel.hatchLockSec,
     onTick: () => sfx.play('spin'),
     // FB-09: the result shows — its rarity's sound and celebration (VIP and exclusive have their own sounds).
@@ -883,7 +888,8 @@ async function boot(): Promise<void> {
     if (!(e.target as HTMLElement).closest?.('.hint-ring[data-step="waitCustomer"]')) return;
     shop.knock();
     sfx.play('tap');
-    toasts.show(i18n.t('ftue.waitCustomerTap'), 'info', 2400);
+    // H-01: the answer comes at once, whatever toast was on screen.
+    toasts.show(i18n.t('ftue.waitCustomerTap'), 'info', 2400, { now: true });
   });
   noteAd = (kind) => toasts.show(i18n.t(`ad.${kind}`), kind === 'got' ? 'good' : 'info', 2400);
   // M5-03: the interstitial only between screens by the player's tap — a window closed (not the hatch) or a tab changed.
@@ -1024,7 +1030,8 @@ async function boot(): Promise<void> {
     }
     else if (e.type === 'upgradeUnlocked') {
       const name = upgrades.upgrades.find((u) => u.id === e.id)?.name[i18n.lang()] ?? e.id;
-      toasts.show(i18n.t('toast.upgradeUnlocked', { name }), 'good', 2400);
+      // H-04: news, one line, never over a window, the chats or the shelf.
+      toasts.show(i18n.t('toast.upgradeUnlocked', { name }), 'good', 2400, { calm: true });
     }
     else if (e.type === 'cuckoo') sfx.play('levelUp');
     else if (e.type === 'chime') {
@@ -1032,9 +1039,9 @@ async function boot(): Promise<void> {
       sfx.play('bong');
     } else if (e.type === 'tickle') sfx.play('giggle');
     else if (e.type === 'repUp') {
-      // UB-08: the seller level grows — the chip flashes, a toast says what opened.
-      const opened = reputationChip.up(e.level);
-      toasts.show(opened.length ? i18n.t('rep.upOpened', { n: e.level, what: opened.slice(0, 3).join(', ') }) : i18n.t('rep.up', { n: e.level }), 'rare', 3200);
+      // UB-08: the seller level grows — the chip flashes. H-04: the toast is one calm line (what opened shows in the shop itself).
+      reputationChip.up(e.level);
+      toasts.show(i18n.t('rep.up', { n: e.level }), 'rare', 3200, { calm: true });
       sfx.play('levelUp');
     }
     else if (e.type === 'eventStarted') {
@@ -1264,6 +1271,7 @@ async function boot(): Promise<void> {
         store.commit();
       },
       toast: (text) => toasts.show(text, 'info'),
+      calmToast: (text) => toasts.show(text, 'good', 2400, { calm: true }),
       event: (id) => play.startEventNow(id),
       hatch: (uid, egg) => {
         const v = play.view();
@@ -1306,7 +1314,8 @@ async function boot(): Promise<void> {
     const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';
     const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
     // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.
-    const toastNow = toasts.showing();
+    // H-01, H-04: calm news stands in the top bar, off the scene — the hint (the ring «Покупатель уже идёт») stays under it.
+    const toastNow = toasts.calm() ? '' : toasts.showing();
     // Круг правок FB-3 п. 6: the gift egg's hint wins over the first visit of «Яйца» (both would point at an egg; the gift is the free one).
     const gift = (hint?.key === 'ftue.freeEgg' || hint?.step === 'hatchRare' || hint?.step === 'tapEgg') && onEggs;
     const wanted = (gift ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);

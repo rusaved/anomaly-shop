@@ -16,7 +16,7 @@ export interface HatchLookups {
   rarityColor(r: RarityName): string;
   speciesName(id: string): string;
   /** Seconds of the run (feel.json hatchShowSec, 4–5). */
-  spinSec(): number;
+  spinSec(rarity: RarityName): number;
   /** Seconds the result's buttons wait before they take a press (feel.json hatchLockSec): a double tap of the skip never chooses. */
   lockSec(): number;
   onResult?(): void;
@@ -230,7 +230,7 @@ export function createHatchShow(parent: HTMLElement, game: Game, look: HatchLook
       const jitter = (Math.random() - 0.5) * ITEM * 0.5;
       endX = windowW / 2 - (TARGET * ITEM + ITEM / 2) + jitter;
       const startX = windowW / 2 - ITEM / 2;
-      const dur = Math.max(0.5, look.spinSec()) * 1000;
+      const dur = Math.max(0.5, look.spinSec(e.rarity)) * 1000;
       start = performance.now();
       let passed = 0;
       let tickAt = -1e9;

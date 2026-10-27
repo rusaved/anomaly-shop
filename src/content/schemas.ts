@@ -299,6 +299,8 @@ export const FtueFile = v.object({
   eggHintSec: v.pipe(v.number(), v.minValue(1)),
   /** H-06 (Q-069 п. 6): after a deal the next step calls this soon (≤ 3 s), with no idle pause. */
   afterDealSec: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(3)), 1),
+  /** S-06: the upgrade the first «Купи улучшение» leads to (an id of upgrades.json; none in the list — any affordable one). */
+  firstUpgrade: v.optional(v.string()),
   /** FB-08: the finger taps a ready egg for this many hatches after the first minute. */
   fingerHatches: v.optional(Count, 3),
   maxHintWords: Count,
@@ -349,6 +351,8 @@ export const HaggleFile = v.object({
   leave: v.object({ base: Share, perMarkup: v.pipe(v.number(), v.minValue(0)) }),
   /** S-03 (штаб 27.10): a raise asks at least this many coins over the buyer's offer (cheap pets). */
   minStepCoins: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  /** S-06: a pet whose first offer is up to this never loses its buyer on the first raise. */
+  safeFirstUpTo: v.pipe(v.number(), v.minValue(0)),
   /** S-03: the buyer's words after the first raise tell the risk of the next one: «edge» buyers (this share) leave the second raise
    *  leave.edge times as often, the others leave.room times (the mean stays ≈ 1). */
   risk: v.object({ edge: Share, leave: v.object({ edge: v.pipe(v.number(), v.minValue(1)), room: v.pipe(v.number(), v.minValue(0), v.maxValue(1)) }) }),

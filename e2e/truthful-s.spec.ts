@@ -53,7 +53,8 @@ for (const size of SIZES) {
       const errors = collectErrors(page);
       await seedSave(page, {
         coins: 35,
-        creatures: [{ uid: 's1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }],
+        // A pet whose sale brings the shop to the price of «Инкубаторы» (50) — the first upgrade the call leads to (S-06).
+        creatures: [{ uid: 's1', species: 'kettle', level: 4, fed: 0, hatchedAt: 0, age: 0 }],
         showcase: ['s1'],
         upgrades: {},
         incubators: [{ egg: null }],
@@ -71,6 +72,8 @@ for (const size of SIZES) {
       const t0 = Date.now();
       const framed = page.locator('[data-action="buy-upgrade"].is-hinted, [data-action="open-upgrades"].is-hinted');
       await expect(framed).toBeVisible({ timeout: 1500 });
+      // S-06: the frame is on «Инкубаторы» — a second egg place the player sees at once.
+      expect(await framed.getAttribute('data-id')).toBe('incubator');
       expect(Date.now() - t0).toBeLessThan(1500);
       expect((await st(page)).hint).toBe(call);
       const hand = page.locator('.tap-finger:not([hidden])');
@@ -84,7 +87,7 @@ for (const size of SIZES) {
         await framed.tap();
         await page.locator('[data-action="buy-upgrade"].is-hinted').tap();
       } else await framed.tap();
-      await expect.poll(async () => Object.values((await st(page)).upgrades).reduce((a, b) => a + b, 0)).toBe(1);
+      await expect.poll(async () => (await st(page)).upgrades.incubator ?? 0).toBe(1);
       // The next step is an egg (the upgrade is bought): «Купи новое яйцо», or with too few coins left the free egg the shop gives at
       // once — «Тапни яйцо».
       const eggSteps = [await tr(page, 'ftue.buyEgg'), await tr(page, 'ftue.tapEgg'), await tr(page, 'ftue.warmEgg')];

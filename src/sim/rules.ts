@@ -321,7 +321,7 @@ export function hatchSpinSec(feel: { hatchShowSec: number; hatchQuickSec: number
  *  chance that falls with the markup, leaves with one that grows with it, else meets the player half way. Rolls are 0..1.
  *  S-03: the ask is at least minStepCoins over the offer (a cheap pet is worth the risk); leaveMult — the buyer's risk told by words. */
 export function haggleRaise(
-  h: { steps: ReadonlyArray<{ min: number; max: number }>; accept: { base: number; perMarkup: number; min: number }; leave: { base: number; perMarkup: number }; minStepCoins?: number },
+  h: { steps: ReadonlyArray<{ min: number; max: number }>; accept: { base: number; perMarkup: number; min: number }; leave: { base: number; perMarkup: number }; minStepCoins?: number; safeFirstUpTo?: number },
   k: number,
   first: number,
   offer: number,
@@ -333,7 +333,10 @@ export function haggleRaise(
   const ask = Math.max(offer + (h.minStepCoins ?? 1), Math.round(first * (1 + step.min + (step.max - step.min) * rollStep)));
   const markup = ask / first - 1;
   const yes = Math.min(1, Math.max(h.accept.min, h.accept.base - h.accept.perMarkup * markup));
-  const gone = Math.min(1 - yes, Math.max(0, (h.leave.base + h.leave.perMarkup * markup) * leaveMult));
+  // S-06 (ревизор геймдизайна): a cheap pet (first offer up to safeFirstUpTo) never loses its buyer on the first raise — +3 coins is
+  // not worth a buyer; the risk comes with the second raise, told in words.
+  const safe = k === 0 && first <= (h.safeFirstUpTo ?? 0);
+  const gone = safe ? 0 : Math.min(1 - yes, Math.max(0, (h.leave.base + h.leave.perMarkup * markup) * leaveMult));
   if (rollAnswer < yes) return { ask, result: 'yes', offer: ask };
   if (rollAnswer >= 1 - gone) return { ask, result: 'gone', offer };
   return { ask, result: 'middle', offer: Math.round((offer + ask) / 2) };

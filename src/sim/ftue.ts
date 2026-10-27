@@ -119,9 +119,11 @@ export function nothingToDo(state: SaveData, view: GameView): boolean {
  * P-08 (ревизор геймдизайна): after the first minute, before any upgrade, an idle player with coins for one — «Купи улучшение» on the
  * cheapest open price of «Лавка» (or its «Улучшения» button); src/main.ts asks it on «Лавка» only.
  */
-export function upgradeHint(state: SaveData, idleSec: number, afterSec: number, affordable: boolean): FtueHint | null {
+export function upgradeHint(state: SaveData, idleSec: number, afterSec: number, affordable: boolean, prefer = ''): FtueHint | null {
   if (!state.flags[FLAGS.done] || idleSec < afterSec || !affordable || Object.values(state.upgrades).some((n) => n > 0)) return null;
-  return { step: 'tab', key: 'ftue.upgrade', target: { kind: 'el', selectors: ['[data-action="buy-upgrade"]', '[data-action="open-upgrades"]'] } };
+  // S-06: the frame on the upgrade the player will see at once (ftue.json firstUpgrade), else on any price.
+  const first = prefer ? [`[data-action="buy-upgrade"][data-id="${prefer}"]`] : [];
+  return { step: 'tab', key: 'ftue.upgrade', target: { kind: 'el', selectors: [...first, '[data-action="buy-upgrade"]', '[data-action="open-upgrades"]'] } };
 }
 
 /**

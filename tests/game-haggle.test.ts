@@ -17,7 +17,7 @@ const h = content.haggle!;
 
 type H = typeof h;
 /** Before S-03 (H «Ресейл 18»): the numbers of the summary's table «до». */
-const BEFORE: H = { ...h, accept: { base: 0.5, perMarkup: 2.5, min: 0.03 }, leave: { base: 0.05, perMarkup: 0.4 }, minStepCoins: 1, risk: { edge: 0, leave: { edge: 1, room: 1 } } };
+const BEFORE: H = { ...h, accept: { base: 0.5, perMarkup: 2.5, min: 0.03 }, leave: { base: 0.05, perMarkup: 0.4 }, minStepCoins: 1, safeFirstUpTo: 0, risk: { edge: 0, leave: { edge: 1, room: 1 } } };
 
 /**
  * 10 000 haggles of one policy: raise `times` times while the buyer stays (the half-and-half player raises twice every other chat;
@@ -103,8 +103,9 @@ describe('H-03 haggle', () => {
     expect(two.gone).toBeLessThanOrEqual(1 / 3);
     // Reading the words pays: raising again only on «могу ещё чуть-чуть» loses fewer buyers than raising twice blind.
     expect(words.gone).toBeLessThan(two.gone);
-    // A cheap pet's raise is worth more coins than before (+3 at least).
+    // A cheap pet's raise is worth more coins than before (+3 at least) and its first raise loses no buyer (S-06).
     expect(cheapNow.coins).toBeGreaterThan(cheapWas.coins);
+    expect(simulate(1, 10_000, 7, h, cheap).gone).toBe(0);
     expect(mix.yes).toBeGreaterThan(0);
     expect(mix.middle).toBeGreaterThan(0);
     expect(h.steps[0]!.min).toBeGreaterThanOrEqual(0.15);
@@ -114,13 +115,13 @@ describe('H-03 haggle', () => {
     expect(h.thinkSec.max).toBeLessThanOrEqual(1);
   });
 
-  it('S-03 the words are true: after «почти предел» the second raise ends with the buyer gone far more often than after «могу ещё чуть-чуть»', () => {
+  it('S-03, S-06 the words are true: after «это уже мой предел» the second raise mostly ends with the buyer gone, after «могу ещё чуть-чуть» almost never', () => {
     const two = simulate(2, 20_000, 11);
     const edge = two.second.edge.gone / two.second.edge.n;
     const room = two.second.room.gone / two.second.room.n;
     console.log(`S-03 words: second raise gone after «edge» ${pct(edge)} (${two.second.edge.n}), after «room» ${pct(room)} (${two.second.room.n})`);
-    expect(edge).toBeGreaterThan(0.25);
-    expect(room).toBeLessThan(0.06);
+    expect(edge).toBeGreaterThan(0.6);
+    expect(room).toBeLessThan(0.04);
     // On average the words change nothing: the second raise leaves as the formula says (≈ 11 %).
     expect(two.raise2.gone / two.raise2.n).toBeGreaterThan(0.08);
   });

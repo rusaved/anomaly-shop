@@ -54,7 +54,7 @@
         "refuse": [{"ru": "Ой, дороговато для меня", "en": "Oh, a bit pricey for me"}],
         "last": [{"ru": "Последнее слово: {n}", "en": "My last word: {n}"}],
         "room": [{"ru": "{n}? Ну, могу ещё чуть-чуть накинуть", "en": "{n}? Well, I can add a bit more"}],
-        "edge": [{"ru": "{n}, и это уже почти мой предел", "en": "{n}, and that is nearly my limit"}],
+        "edge": [{"ru": "{n}, и это уже мой предел", "en": "{n}, and that is my limit"}],
         "thanks": [{"ru": "Ура! Побежал всем рассказывать", "en": "Yay! Off to tell everyone"}],
         "bye": [{"ru": "Жаль! Ну, хорошего дня", "en": "Pity! Have a nice day"}]
       },
@@ -79,7 +79,7 @@
         "refuse": [{"ru": "Нет уж, это грабёж", "en": "No way, that's robbery"}],
         "last": [{"ru": "Ну хорошо, {n}. И всё", "en": "Fine, {n}. That's it"}, {"ru": "Больше {n} не дам", "en": "Won't give more than {n}"}, {"ru": "{n}, и то много", "en": "{n}, and that's a lot"}],
         "room": [{"ru": "Ладно, {n}. Ну, может, ещё чуть-чуть", "en": "Fine, {n}. Well, maybe a tiny bit more"}],
-        "edge": [{"ru": "{n}. Дальше уже почти предел", "en": "{n}. Past this is nearly my limit"}],
+        "edge": [{"ru": "{n}. Дальше уже мой предел", "en": "{n}. That is my limit now"}],
         "thanks": [{"ru": "Выгодно взял, спасибо", "en": "Good bargain, thanks"}],
         "bye": [{"ru": "Найду подешевле", "en": "I'll find a cheaper one"}]
       }
@@ -100,7 +100,7 @@
         "refuse": [{"ru": "Некогда торговаться, пока", "en": "No time to haggle, bye"}],
         "last": [{"ru": "{n} и бегу", "en": "{n} and I'm off"}],
         "room": [{"ru": "{n}! Могу ещё чуть-чуть, только быстро", "en": "{n}! A little more, just be quick"}],
-        "edge": [{"ru": "{n}, это почти предел, я спешу", "en": "{n}, nearly my limit, I am rushing"}],
+        "edge": [{"ru": "{n}, это мой предел, я спешу", "en": "{n}, my limit, I am rushing"}],
         "thanks": [{"ru": "Супер, уже бегу!", "en": "Super, running!"}],
         "bye": [{"ru": "Опаздываю, пока!", "en": "Running late, bye!"}]
       }
@@ -121,7 +121,7 @@
         "refuse": [{"ru": "Для коллекции дороговато", "en": "Too dear for my collection"}],
         "last": [{"ru": "Готов поднять до {n}", "en": "Ready to go up to {n}"}],
         "room": [{"ru": "{n}. Для коллекции могу ещё чуть-чуть", "en": "{n}. For the collection, a little more"}],
-        "edge": [{"ru": "{n}, это уже почти мой предел", "en": "{n}, that is nearly my limit"}],
+        "edge": [{"ru": "{n}, это уже мой предел", "en": "{n}, that is my limit"}],
         "thanks": [{"ru": "Займёт почётное место на полке", "en": "It gets a place of honor"}],
         "bye": [{"ru": "Удачи, загляну ещё", "en": "Good luck, I'll be back"}]
       },
@@ -143,7 +143,7 @@
         "refuse": [{"ru": "Хм, даже для меня много", "en": "Hm, too much even for me"}],
         "last": [{"ru": "Хорошо, {n}, и закончим", "en": "Fine, {n}, and done"}],
         "room": [{"ru": "{n}. Могу и ещё чуть-чуть", "en": "{n}. I can go a little higher"}],
-        "edge": [{"ru": "{n}. Это почти мой предел", "en": "{n}. That is nearly my limit"}],
+        "edge": [{"ru": "{n}. Это уже мой предел", "en": "{n}. That is my limit"}],
         "thanks": [{"ru": "Прекрасно! Водитель заберёт", "en": "Lovely! My driver will pick it up"}],
         "bye": [{"ru": "Что ж, всего доброго", "en": "Well then, all the best"}]
       },
@@ -168,7 +168,7 @@
         "refuse": [{"ru": "Шучу! Ну почти", "en": "Just kidding! Well, almost"}],
         "last": [{"ru": "Ладно, {n}. Без шуток", "en": "Okay, {n}. No jokes"}],
         "room": [{"ru": "{n} и фантик. Могу ещё чуть-чуть", "en": "{n} and a wrapper. A bit more maybe"}],
-        "edge": [{"ru": "{n}, и это почти предел, без шуток", "en": "{n}, nearly my limit, no jokes"}],
+        "edge": [{"ru": "{n}, и это мой предел, без шуток", "en": "{n}, my limit, no jokes"}],
         "thanks": [{"ru": "Буду с ним дружить", "en": "We'll be best friends"}],
         "bye": [{"ru": "Пошёл искать единорога", "en": "Off to find a unicorn"}]
       }

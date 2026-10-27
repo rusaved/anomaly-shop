@@ -152,13 +152,17 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
           : `<button type="button" class="mu-btn" data-action="chat-decline" aria-disabled="${think}">${esc(look.t('chats.decline'))}</button>`);
     const head =
       `<div class="mu-back chat-top">${look.wide() ? '' : `<button type="button" class="mu-round" data-action="chat-back" aria-label="${esc(look.t('eggs.back'))}">‹</button>`}` +
-      `${avatar(c, 44)}<span class="chat-main"><b class="chat-who">${esc(who(c))}</b><span class="chat-last">${esc(look.t('chats.wants', { name: look.speciesName(c.species) }))}</span></span>` +
+      `${avatar(c, 44)}<span class="chat-main"><b class="chat-who">${esc(who(c))}</b>` +
+      // S-04: the one-time tip of «Поднять цену» stands in the head instead of «хочет: …» (the pet is on the right) — never in the place
+      // of the buyer's letter.
+      (raise && tipChat === c.id && !think
+        ? `<span class="chat-last chat-tip" data-chat-tip>${esc(look.t('chats.raiseHint'))}</span>`
+        : `<span class="chat-last">${esc(look.t('chats.wants', { name: look.speciesName(c.species) }))}</span>`) +
+      `</span>` +
       `<span class="chat-ask" data-rarity="${rarity}">${ringPic(look.portrait(c.species, rarity), rarity, 28)}${cr ? money(cr.ask, f) : ''}</span></div>` +
       `<div class="chat-lines">${c.lines.map((l) => `<p class="bubble ${l.from === 'me' ? 'me' : 'them'}">${text(c, l)}</p>`).join('')}` +
       // H-03: the buyer thinks over the raised price (up to 1 s).
-      `${think ? `<p class="bubble them chat-think" data-chat-think>${esc(look.t('chats.thinking'))}</p>` : ''}` +
-      // H-03: the one-time tip under the buyer's last line (the answers keep their room).
-      `${raise && tipChat === c.id && !think ? `<p class="mu-meta chat-tip" data-chat-tip>${esc(look.t('chats.raiseHint'))}</p>` : ''}</div>`;
+      `${think ? `<p class="bubble them chat-think" data-chat-think>${esc(look.t('chats.thinking'))}</p>` : ''}</div>`;
     // W-14: a new line of the buyer (or its seconds) re-draws the head and the lines only — the answers under a finger stay the same
     // nodes, so a press that began before the line still sells on release.
     const same = shown?.id === id && shown.buttons === buttons && dialogEl.querySelector('.chat-buttons') !== null;

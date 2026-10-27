@@ -176,6 +176,36 @@ describe('H-03 haggle', () => {
     }
   });
 
+  it('S-03 in the game: after the first raise the buyer names the price with «room» or «edge» words; hard words only when no raise is left', () => {
+    const seen = new Set<string>();
+    for (let seed = 0; seed < 200; seed++) {
+      const save = newSave(0);
+      Object.assign(save.flags, { ftue_starter: true, ftue_done: true, showcase_m3: true, haggle_tried: true });
+      save.stats.hatched = 3;
+      save.stats.deals = 3;
+      save.creatures = [{ uid: 'a', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }];
+      save.showcase = ['a'];
+      const game = createGame(createStore(save, () => 0), content, createRng(seed));
+      const c = waitChat(game)!;
+      const ask = (id: number) => game.chats().find((x) => x.id === id)!;
+      if (game.chatRaise(c.id) === 'gone') continue;
+      const words = ask(c.id).lines.at(-1)!;
+      expect(['room', 'edge']).toContain(words.ctx);
+      expect(words.n).toBe(ask(c.id).offer);
+      expect(ask(c.id).risk).toBe(words.ctx);
+      seen.add(words.ctx);
+      expect(game.canRaise(c.id)).toBe(true);
+      if (game.chatRaise(c.id) === 'gone') continue;
+      expect(['accept', 'last']).toContain(ask(c.id).lines.at(-1)!.ctx);
+      expect(game.canRaise(c.id)).toBe(false);
+    }
+    expect(seen).toEqual(new Set(['room', 'edge']));
+    // «Больше N не дам», «N, и то много» and the like — never as an offer or the words of a raise that leaves one more.
+    for (const ch of content.customers.characters)
+      for (const ctx of ['greet', 'offer', 'room', 'edge'] as const)
+        for (const l of ch.lines[ctx]) expect(l.ru, `${ch.id}.${ctx}`).not.toMatch(/не дам|и то много|И всё|Последнее слово|и закончим|и бегу/);
+  });
+
   it('a buyer who leaves takes nothing: the pet stays with the player and another buyer writes later', () => {
     for (let seed = 1; seed < 400; seed++) {
       const save = newSave(0);

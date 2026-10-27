@@ -994,10 +994,8 @@ button.mu-card {
 .chat-end {
   text-align: center;
 }
-/* H-03: the one-time tip of «Поднять цену» under the buyer's last line; the buyer's «Думает…» a muted bubble. */
-.chat-tip {
-  align-self: center;
-  text-align: center;
+/* H-03, S-04: the one-time tip of «Поднять цену» in the head of the chat (instead of «хочет: …»); the buyer's «Думает…» a muted bubble. */
+.chat-top .chat-tip {
   color: var(--c-uiAccent);
 }
 .chat-think {
@@ -4769,5 +4767,37 @@ button.mu-card {
 @media (max-height: 520px) {
   .landscape #ui .sheet:is([data-sheet='home'], [data-sheet='shop'])[data-kind='dock'] > .sheet-body {
     margin-bottom: 8px;
+  }
+}
+
+/* S-04: a chat on a short screen sideways (815×290, 812×330) shows three lines — the buyer's letter, «А за N?» and the answer: a lower
+   head (avatar 32), tighter bubbles at 14 px, the answers keep their size. */
+@media (max-height: 360px) {
+  .landscape #ui .chat-top {
+    min-height: 34px;
+    margin: 2px 0 2px;
+    padding: 0 0 2px;
+  }
+  .landscape #ui .chat-top .chat-avatar {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .landscape #ui .chat-top .chat-ask {
+    min-height: 32px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  .landscape #ui .chat-lines {
+    gap: 4px;
+    padding: 2px 0 4px;
+  }
+  .landscape #ui .chat-lines .bubble {
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 1.25;
+  }
+  .landscape #ui .chat-buttons:not(.lot-buttons) {
+    padding-top: 6px;
+    padding-bottom: 4px;
   }
 }

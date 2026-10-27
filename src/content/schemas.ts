@@ -138,7 +138,7 @@ export const Orders = v.object({ minutes: v.pipe(v.number(), v.minValue(0.5)), r
  * offer — the character's bargaining: its share against the weighted mean of all characters (a troll lowballs, a rich one pays more);
  * give — how far below their price (or above their offer) they still agree.
  */
-export const CHAT_CONTEXTS = ['greet', 'offer', 'accept', 'refuse', 'last', 'thanks', 'bye'] as const;
+export const CHAT_CONTEXTS = ['greet', 'offer', 'accept', 'refuse', 'last', 'room', 'edge', 'thanks', 'bye'] as const;
 const Lines = v.pipe(v.array(Text), v.minLength(1));
 export const Character = v.object({
   id: Id,
@@ -341,6 +341,11 @@ export const HaggleFile = v.object({
   steps: v.pipe(v.array(v.object({ min: Share, max: Share })), v.minLength(1)),
   accept: v.object({ base: Share, perMarkup: v.pipe(v.number(), v.minValue(0)), min: Share }),
   leave: v.object({ base: Share, perMarkup: v.pipe(v.number(), v.minValue(0)) }),
+  /** S-03 (штаб 27.10): a raise asks at least this many coins over the buyer's offer (cheap pets). */
+  minStepCoins: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  /** S-03: the buyer's words after the first raise tell the risk of the next one: «edge» buyers (this share) leave the second raise
+   *  leave.edge times as often, the others leave.room times (the mean stays ≈ 1). */
+  risk: v.object({ edge: Share, leave: v.object({ edge: v.pipe(v.number(), v.minValue(1)), room: v.pipe(v.number(), v.minValue(0), v.maxValue(1)) }) }),
   thinkSec: v.object({ min: v.pipe(v.number(), v.minValue(0)), max: v.pipe(v.number(), v.minValue(0), v.maxValue(1)) }),
 });
 

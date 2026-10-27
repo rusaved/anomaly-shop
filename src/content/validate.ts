@@ -335,6 +335,9 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
       if (i > 0 && st.min < (haggle.steps[i - 1]?.max ?? 0)) errors.push(`haggle.json: steps.${i} — must ask more than the step before`);
     });
     if (haggle.thinkSec.min > haggle.thinkSec.max) errors.push('haggle.json: thinkSec — min above max');
+    // S-03: the words stay honest on average — the risk of the second raise, edge and room together, is the formula's (±5 %).
+    const mean = haggle.risk.edge * haggle.risk.leave.edge + (1 - haggle.risk.edge) * haggle.risk.leave.room;
+    if (Math.abs(mean - 1) > 0.05) errors.push('haggle.json: risk — edge × leave.edge + (1 − edge) × leave.room must be ≈ 1');
   }
   parseFile('collection.json', CollectionFile, data(files['collection.json']), errors);
   const decor = parseFile('decor.json', DecorFile, data(files['decor.json']), errors);

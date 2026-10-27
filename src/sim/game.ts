@@ -1730,7 +1730,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const chat = openChat(id);
       if (!h || !chat || !game.canRaise(id)) return null;
       const k = chat.raises ?? 0;
-      const r = haggleRaise(h, k, chat.first ?? chat.offer, chat.offer, side.next(), side.next());
+      // S-03: the risk the buyer's words told after the first raise is the real one of the next raise.
+      const mult = chat.risk === 'edge' ? h.risk.leave.edge : chat.risk === 'room' ? h.risk.leave.room : 1;
+      const r = haggleRaise(h, k, chat.first ?? chat.offer, chat.offer, side.next(), side.next(), mult);
       // H-08 (ревизор геймдизайна): the player's very first raise never ends with the buyer gone — the first try teaches, it does not punish.
       if (r.result === 'gone' && !s().flags.haggle_tried) Object.assign(r, { result: 'middle', offer: Math.round((chat.offer + r.ask) / 2) });
       s().flags.haggle_tried = true;
@@ -1745,9 +1747,11 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         return 'gone';
       }
       chat.offer = r.offer;
-      // H-08 (плейтестер): «Последнее слово: N» only when no raise is left; before that the buyer names the middle as a plain offer.
-      const ctx = chat.raises >= h.maxRaises ? 'last' : 'offer';
-      chat.lines.push(r.result === 'yes' ? { from: 'them', ctx: 'accept', i: pickLineIndex(chat.character, 'accept') } : { from: 'them', ctx, i: pickLineIndex(chat.character, ctx), n: r.offer });
+      // H-08 (плейтестер): «Последнее слово: N» only when no raise is left. S-03: before that the buyer names the new price with the risk
+      // of the next raise in words — «могу ещё чуть-чуть» (room) or «это уже почти предел» (edge, leaves risk.leave.edge times as often).
+      if (chat.raises < h.maxRaises) chat.risk = side.next() < h.risk.edge ? 'edge' : 'room';
+      const ctx = chat.raises >= h.maxRaises ? (r.result === 'yes' ? 'accept' : 'last') : chat.risk!;
+      chat.lines.push(ctx === 'accept' ? { from: 'them', ctx, i: pickLineIndex(chat.character, ctx) } : { from: 'them', ctx, i: pickLineIndex(chat.character, ctx), n: r.offer });
       s().stats.haggles += 1;
       commit();
       emit({ type: 'chatReply', id, ctx: r.result === 'yes' ? 'accept' : 'last' });

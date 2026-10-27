@@ -1294,6 +1294,8 @@ async function boot(): Promise<void> {
 
   // M4-09: the time of the player's last touch (the empty-shelf hint waits for a pause).
   let lastInputAt = performance.now();
+  // S-01: «Купи улучшение» was on screen and still stands (no upgrade yet, one affordable).
+  let upgradeCalled = false;
   window.addEventListener('pointerdown', () => (lastInputAt = performance.now()), { capture: true, passive: true });
   scene.app.ticker.add((ticker) => {
     runtime.frame(ticker.deltaMS / 1000);
@@ -1317,11 +1319,15 @@ async function boot(): Promise<void> {
     const sinceDeal = dealAt > 0 && lastInputAt <= dealAt ? (performance.now() - dealAt) / 1000 : -1;
     const afterDeal = sinceDeal >= ftue.afterDealSec;
     const wait = (sec: number): number => (afterDeal ? 0 : sec);
+    // S-01: once «Купи улучшение» has called, it keeps calling with no idle pause until the upgrade is bought or out of reach — the tap
+    // on «Лавка» after the call lands on the upgrade itself, never on «Купи новое яйцо».
+    const upgradeNow = upgradeCalled ? 0 : wait(ftue.eggHintSec);
+    const canUpgrade = play.upgradeList().some((u) => u.affordable);
     const nudge =
       controllable && !lesson
         ? (shelfHint(store.state, view, idle, wait(ftue.shelfHintSec)) ??
           // P-08: the very first upgrade before the rest (once a game).
-          (nav.active() === 'home' || afterDeal ? upgradeHint(store.state, idle, wait(ftue.eggHintSec), play.upgradeList().some((u) => u.affordable)) : null) ??
+          (nav.active() === 'home' || afterDeal ? upgradeHint(store.state, idle, upgradeNow, canUpgrade) : null) ??
           readyHint(store.state, view, idle, wait(ftue.eggHintSec)) ??
           eggHint(store.state, view, idle, nothingToDo(store.state, view) ? 0 : wait(ftue.eggHintSec), basicEggPrice) ??
           warmHint(store.state, view, idle, ftue.eggHintSec))
@@ -1347,16 +1353,19 @@ async function boot(): Promise<void> {
     // Круг правок FB-3 п. 6: the gift egg's hint wins over the first visit of «Яйца» (both would point at an egg; the gift is the free one).
     const gift = (hint?.key === 'ftue.freeEgg' || hint?.step === 'hatchRare' || hint?.step === 'tapEgg') && onEggs;
     // H-06: right after a deal the next step wins over a tab's first-visit words.
-    const wanted = (gift || (afterDeal && hint) ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
+    const wanted = (gift || ((afterDeal || upgradeCalled) && hint) ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
     // Круг правок FB-3 п. 5: portrait the toast stands over the tab bar, off the scene — the scene's hint stays.
     const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) && !appRoot.classList.contains('portrait') ? null : wanted;
     hints.update(shownHint, Boolean(toastNow));
+    upgradeCalled = (upgradeCalled || shownHint?.key === 'ftue.upgrade') && upgradeHint(store.state, 0, 0, canUpgrade) !== null;
     // FB-08: a ready egg waits for the tap — the finger taps it for the first hatches after the first minute (not over a hint or a window).
     const fingerOn = controllable && !shownHint && !topWindow() && store.state.flags.ftue_done && !store.state.flags[`tap_hatch_${ftue.fingerHatches}`];
     const ready = fingerOn ? view.incubators.findIndex((i) => i.ready) : -1;
     const spot = ready >= 0 && nav.active() === 'home' ? shop.anchors()?.incubators[ready] : undefined;
     const openBtn = ready >= 0 && !spot ? [...uiRoot.querySelectorAll<HTMLElement>('[data-action^="egg-open-"]')].find((b) => b.offsetParent !== null) : undefined;
-    finger.point(spot ? { x: spot.x, y: spot.y } : (openBtn ?? null));
+    // S-01: «Купи улучшение» in «Лавка» — the hand on the upgrade it frames, like the other calls.
+    const upgradeBtn = shownHint?.key === 'ftue.upgrade' && nav.active() === 'home' && !topWindow() ? uiRoot.querySelector<HTMLElement>('.is-hinted') : null;
+    finger.point(spot ? { x: spot.x, y: spot.y } : (openBtn ?? upgradeBtn ?? null));
     fingerTap = spot ? () => play.tapIncubator(ready) : openBtn ? () => openBtn.click() : null;
     sceneHintOn = Boolean(shownHint && (SCENE_TARGETS.has(shownHint.target.kind) || hints.outside()) && hints.text());
     shop.quiet(sceneHintOn || Boolean(toastNow));

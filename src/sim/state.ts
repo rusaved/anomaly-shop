@@ -149,6 +149,8 @@ export interface Chat {
   /** H-03: «Поднять цену» taps in this chat and the buyer's first offer (markups count from it). */
   raises?: number;
   first?: number;
+  /** S-03: the buyer's words after the first raise — 'edge' («почти предел»: the next raise is riskier) or 'room' («могу ещё чуть-чуть»). */
+  risk?: 'edge' | 'room';
 }
 
 /** A lot on the market (M3-09): a creature from a seller-character; price in coins; sold lots stay greyed until the refresh. */
@@ -374,6 +376,7 @@ function normalizeChat(v: unknown): Chat | null {
     age: Math.max(0, num(o.age, 0)),
     raises: Math.max(0, Math.floor(num(o.raises, 0))),
     first: Math.max(1, num(o.first, num(o.offer, 1))),
+    ...(o.risk === 'edge' || o.risk === 'room' ? { risk: o.risk } : {}),
     lines: arr(o.lines)
       .map((l) => rec(l))
       .filter((l) => (l.from === 'them' || l.from === 'me') && typeof l.ctx === 'string')

@@ -1,9 +1,6 @@
-// What: S-09 — the whole screen on the first tap (the browser allows a request only from a tap): any finger tap outside the whole screen
-// asks for it, at most once in askGapSec; and the layout recounted after entering, leaving, hiding and turning (the browser sets the
-// visible part a moment later).
+// What: S-09 — the whole screen on a finger tap (a request is allowed only from a tap), at most once in askGapSec; the layout recounted after entering, leaving, hiding and turning (the browser sets the visible part a moment later).
 // Called by: src/main.ts once, with the platform's FullscreenControl (none — VK and OK on the live bridge, YouTube: nothing is installed).
-// Keep: a mouse never asks; a refusal leaves the game whole in its window and the next tap asks again; the recount is a «resize» the
-// layout already listens to (src/ui/layout.ts watchLayout), echoed on the next frame and after recountMs.
+// Keep: a mouse never asks; a refusal leaves the game whole in its window and the next tap asks again; the recount is a «resize» the layout already listens to (src/ui/layout.ts watchLayout), echoed on the next frame and after recountMs.
 
 import type { FullscreenControl } from '../platform/types.ts';
 

@@ -39,7 +39,11 @@ function pick(page: Page, seen: string[]) {
     const vis = (e: Element | null): e is HTMLElement => {
       if (!e || (e as HTMLElement).offsetParent === null) return false;
       const r = e.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+      if (!(r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth)) return false;
+      if (getComputedStyle(e).pointerEvents === 'none' || !e.matches('button, [data-action], [data-tab]')) return true;
+      // PT-07: a button its list scrolled under the top bar is not in sight (the bot tapped the bar 37 s in a row at 815×290).
+      const hit = document.elementFromPoint(Math.min(innerWidth - 2, Math.max(2, r.left + r.width / 2)), Math.min(innerHeight - 2, Math.max(2, r.top + r.height / 2)));
+      return Boolean(hit && (e.contains(hit) || hit.contains(e) || hit.closest('.hint, .hint-ring, .tap-finger, .toast')));
     };
     const at = (el: HTMLElement, why: string) => {
       const r = el.getBoundingClientRect();

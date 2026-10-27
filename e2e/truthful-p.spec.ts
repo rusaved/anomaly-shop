@@ -135,7 +135,7 @@ test.describe('815x290 P-03', () => {
     const r = (await ring.boundingBox())!;
     await page.touchscreen.tap(r.x + r.width / 2, r.y + r.height / 2);
     const toast = page.locator('.toast').first();
-    await expect(toast).toContainText('Покупатель напишет');
+    await expect(toast).toContainText('Покупатель уже в пути');
     expect((await toast.innerText()).trim().split(/\s+/).length).toBeLessThanOrEqual(6);
     const after = (await state(page)) as St;
     expect(after.coins).toBe(before.coins);
@@ -228,6 +228,54 @@ test.describe('815x290 P-08 lessons from another tab', () => {
     await hinted.first().tap();
     if (action === 'tab-home') await page.locator('.hint-ring').waitFor();
     else await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe('815x290 P-08 the reviewer of the first minute', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+
+  test('P-08 «Сохранить» of «Цена» opened by «На витрину» brings «Лавка» back', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 0, incubators: [{ egg: null }], creatures: [], myEggs: {} });
+    await open(page);
+    // The free egg of P-03 hatches into «Вылупился!»: «На витрину» opens «Цена» past the first minute.
+    const egg = (await page.evaluate(() => (window as unknown as T).__TEST__.targets()))!.incubators[0]!;
+    await expect.poll(async () => ((await st(page)) as St & { incubators: Array<{ egg: string | null }> }).incubators[0]!.egg).toBe('egg_basic');
+    for (let i = 0; i < 20 && !(await page.locator('[data-overlay=hatch]').isVisible()); i++) {
+      await page.touchscreen.tap(egg.x, egg.y);
+      await page.waitForTimeout(400);
+    }
+    await page.locator('[data-overlay=hatch] [data-action=hatch-shop]').tap({ timeout: 10_000 });
+    const save = page.locator('[data-action=sale-save]');
+    await expect(save).toBeVisible();
+    await save.tap();
+    await expect.poll(async () => (await st(page)).tab as unknown).toBe('home');
+    expect(errors).toEqual([]);
+  });
+
+  test('P-08 a tap on the hand over a ready egg opens the egg', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, {
+      coins: 0,
+      incubators: [{ egg: 'egg_basic', startedAt: 0, progress: 999, elapsed: 999, waiting: false, careTaps: 0, careFed: 0, ripeSec: 0 }],
+      creatures: [],
+    });
+    await open(page);
+    const hand = page.locator('.tap-finger:not([hidden])');
+    await expect(hand).toBeVisible();
+    const b = (await hand.boundingBox())!;
+    await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height * 0.7);
+    await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test('P-08 before any upgrade an idle player with coins for one sees «Купи улучшение» on a price', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 60, incubators: [{ egg: 'egg_basic', startedAt: 0, progress: 0, elapsed: 0, waiting: false, careTaps: 0, careFed: 0, ripeSec: 0 }], upgrades: {} });
+    await open(page);
+    await expect(page.locator('.is-hinted[data-action=buy-upgrade], .is-hinted[data-action=open-upgrades]').first()).toBeVisible({ timeout: 12_000 });
+    await expect(page.locator('.hint')).toContainText('Купи улучшение');
     expect(errors).toEqual([]);
   });
 });

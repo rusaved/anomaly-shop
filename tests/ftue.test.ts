@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
-import { eggHint, ftueHint, onEggsTab, shelfHint, tabHint, type FtueStep } from '../src/sim/ftue.ts';
+import { eggHint, ftueHint, onEggsTab, shelfHint, tabHint, upgradeHint, type FtueStep } from '../src/sim/ftue.ts';
 import { TABS } from '../src/ui/nav.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
@@ -198,5 +198,20 @@ describe('P-04 (Q-056 Б) hints after the first minute', () => {
     expect(onEggsTab({ step: 'tapEgg', target: { kind: 'incubator', index: 0 } })).toEqual({ step: 'tapEgg', target: { kind: 'button', action: 'egg-open-0|tab-home' } });
     expect(onEggsTab({ step: 'feed', target: { kind: 'slot', index: 0 } })).toEqual({ step: 'feed', target: { kind: 'slot', index: 0 } });
     expect(onEggsTab(null)).toBeNull();
+  });
+});
+
+describe('P-08 (ревизор геймдизайна) the first upgrade', () => {
+  it('«Купи улучшение» after the first minute, idle, with coins for one, until the first upgrade', () => {
+    const save = newSave(0);
+    Object.assign(save.flags, { ftue_starter: true, ftue_done: true });
+    expect(upgradeHint(save, 8, 8, true)?.key).toBe('ftue.upgrade');
+    expect(upgradeHint(save, 7, 8, true)).toBeNull();
+    expect(upgradeHint(save, 8, 8, false)).toBeNull();
+    save.upgrades = { incubator_speed: 1 };
+    expect(upgradeHint(save, 8, 8, true)).toBeNull();
+    save.upgrades = {};
+    save.flags.ftue_done = false;
+    expect(upgradeHint(save, 8, 8, true)).toBeNull();
   });
 });

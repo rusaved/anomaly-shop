@@ -176,7 +176,8 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
       },
     );
     slider.set(share, c.price);
-    panel.card.querySelector('[data-action="sale-save"]')?.addEventListener('click', () => tab.show(null));
+    // P-08 (ревизор геймдизайна): «Сохранить» returns where the price was opened from (as «‹»), «Лавка» after «На витрину».
+    panel.card.querySelector('[data-action="sale-save"]')?.addEventListener('click', () => goBack(() => tab.show(null)));
     panel.card.querySelector(`[data-action="sale-go-${uid}"]`)?.addEventListener('click', () => {
       game.setAsk(uid, draft);
       if (game.list(uid)) tab.show(null);

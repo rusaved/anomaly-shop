@@ -79,6 +79,15 @@ export function eggHint(state: SaveData, view: GameView, idleSec: number, afterS
 }
 
 /**
+ * P-08 (ревизор геймдизайна): after the first minute, before any upgrade, an idle player with coins for one — «Купи улучшение» on the
+ * cheapest open price (or the way to the list).
+ */
+export function upgradeHint(state: SaveData, idleSec: number, afterSec: number, affordable: boolean): FtueHint | null {
+  if (!state.flags[FLAGS.done] || idleSec < afterSec || !affordable || Object.values(state.upgrades).some((n) => n > 0)) return null;
+  return { step: 'tab', key: 'ftue.upgrade', target: { kind: 'el', selectors: ['[data-action="buy-upgrade"]', '[data-action="open-upgrades"]', '[data-action="upgrades"]'] } };
+}
+
+/**
  * P-04 (Q-056 Б п. 2): the «rare egg» step on «Яйца» stands on «Открыть» of its incubator's row (the incubator itself is off screen there);
  * P-08 (the bot of the first minute): «Тапни яйцо» too — the green dot of «Яйца» brings a new player there before the first egg.
  */

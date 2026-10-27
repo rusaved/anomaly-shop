@@ -41,7 +41,7 @@ import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { createAds } from './ui/ads.ts';
 import { createShopStore } from './ui/store.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { eggHint, ftueHint, onEggsTab, shelfHint, tabHint, tabUnlocked } from './sim/ftue.ts';
+import { eggHint, ftueHint, onEggsTab, shelfHint, tabHint, tabUnlocked, upgradeHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { createNav, TABS, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
@@ -1168,7 +1168,9 @@ async function boot(): Promise<void> {
     topInset: () => hud.root.getBoundingClientRect().bottom,
     window: () => topWindow()?.card ?? null,
   });
-  const finger = createFinger(uiRoot);
+  /** P-08: what a tap on the hand taps (the ready egg or its «Открыть»). */
+  let fingerTap: (() => void) | null = null;
+  const finger = createFinger(uiRoot, () => fingerTap?.());
   // Круг правок FB-3 п. 6: the first minute's «new egg» leads to a free gift egg ready to take (only until the step is done).
   const freeEggReady = (): string | null =>
     store.state.flags.ftue_bought ? null : (play.eggShop().eggs.find((e) => e.section === 'free' && e.open && e.freeIn === 0)?.id ?? null);
@@ -1288,7 +1290,7 @@ async function boot(): Promise<void> {
     const onEggs = nav.active() === 'eggs';
     const first = ftueHint(store.state, view, freeEggReady());
     // P-04: on «Яйца» the «rare egg» step points at «Открыть»; after the first minute an idle empty incubator says «Купи новое яйцо».
-    const raw = controllable ? ((onEggs ? onEggsTab(first) : first) ?? shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice)) : null;
+    const raw = controllable ? ((onEggs ? onEggsTab(first) : first) ?? shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice) ?? upgradeHint(store.state, idle, ftue.eggHintSec, play.upgradeList().some((u) => u.affordable))) : null;
     // P-08 (the bot of the first minutes): a spot in the shop seen from another tab — the hint points at «Лавка» (on «Яйца» a new egg at its
     // price button), it never just vanishes.
     const hint =
@@ -1311,6 +1313,7 @@ async function boot(): Promise<void> {
     const spot = ready >= 0 && nav.active() === 'home' ? shop.anchors()?.incubators[ready] : undefined;
     const openBtn = ready >= 0 && !spot ? [...uiRoot.querySelectorAll<HTMLElement>('[data-action^="egg-open-"]')].find((b) => b.offsetParent !== null) : undefined;
     finger.point(spot ? { x: spot.x, y: spot.y } : (openBtn ?? null));
+    fingerTap = spot ? () => play.tapIncubator(ready) : openBtn ? () => openBtn.click() : null;
     sceneHintOn = Boolean(shownHint && (SCENE_TARGETS.has(shownHint.target.kind) || hints.outside()) && hints.text());
     shop.quiet(sceneHintOn || Boolean(toastNow));
     music.sync();

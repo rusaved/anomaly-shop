@@ -25,6 +25,7 @@ import {
   ShopFile,
   NavFile,
   PaceFile,
+  HaggleFile,
   CollectionFile,
   DecorFile,
   AchievementsFile,
@@ -52,7 +53,7 @@ import {
 type Json = unknown;
 type Files = Record<string, Json>;
 
-export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json', 'nav.json', 'pace.json', 'collection.json', 'decor.json', 'achievements.json', 'ads.json', 'shop.json', 'vk.json'] as const;
+export const REQUIRED_FILES = ['eggs.json', 'species.json', 'customers.json', 'upgrades.json', 'calendar.json', 'style.json', 'ftue.json', 'feel.json', 'audio.json', 'news.json', 'events.json', 'secrets.json', 'lines.json', 'market.json', 'gifts.json', 'work.json', 'codes.json', 'reputation.json', 'nav.json', 'pace.json', 'collection.json', 'decor.json', 'achievements.json', 'ads.json', 'shop.json', 'vk.json', 'haggle.json'] as const;
 /** The egg price ladder (docs/01 §3 p. 12): eight steps, each ×10 the one before; M4-08 (Q-029): the top that opens city by city goes ×3. */
 const LADDER_STEPS = 8;
 const LADDER_STEP = 10;
@@ -324,6 +325,17 @@ export function validateContent(files: Files, gameJson: Json): { ok: boolean; er
   }
   const shopFile = parseFile('shop.json', ShopFile, data(files['shop.json']), errors);
   parseFile('pace.json', PaceFile, data(files['pace.json']), errors);
+  // H-03: the haggle — markups grow step by step and stay within +30 %, the buyer thinks at most 1 s.
+  const haggle = parseFile('haggle.json', HaggleFile, data(files['haggle.json']), errors);
+  if (haggle) {
+    if (haggle.steps.length < haggle.maxRaises) errors.push('haggle.json: steps — one per raise');
+    haggle.steps.forEach((st, i) => {
+      if (st.min > st.max) errors.push(`haggle.json: steps.${i} — min above max`);
+      if (st.max > 0.3) errors.push(`haggle.json: steps.${i}.max — at most +30 % over the first offer`);
+      if (i > 0 && st.min < (haggle.steps[i - 1]?.max ?? 0)) errors.push(`haggle.json: steps.${i} — must ask more than the step before`);
+    });
+    if (haggle.thinkSec.min > haggle.thinkSec.max) errors.push('haggle.json: thinkSec — min above max');
+  }
   parseFile('collection.json', CollectionFile, data(files['collection.json']), errors);
   const decor = parseFile('decor.json', DecorFile, data(files['decor.json']), errors);
   if (decor) duplicates('decor.json', 'items', decor.items.map((x) => x.id), errors);

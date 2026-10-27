@@ -14,7 +14,7 @@ type T = {
     calmToast(text: string): void;
   };
 };
-type St = Awaited<ReturnType<typeof state>> & { chats: Array<{ id: number; offer: number; state: string }>; stats: { deals: number }; windows: string[]; ftue: string | null; tab: string };
+type St = Awaited<ReturnType<typeof state>> & { chats: Array<{ id: number; offer: number }>; stats: { deals: number }; windows: string[]; ftue: string | null; tab: string };
 const st = async (page: Page) => (await state(page)) as St;
 const tr = (page: Page, k: string) => page.evaluate((key) => (window as unknown as T).__TEST__.t(key), k);
 const SIDE = { width: 815, height: 290 };
@@ -161,6 +161,90 @@ test.describe('815x290 H-02', () => {
       expect(sec).toBeGreaterThanOrEqual(1.4);
       expect(sec).toBeLessThanOrEqual(2.3);
     } else expect(sec).toBeGreaterThan(4);
+    expect(errors).toEqual([]);
+  });
+});
+
+for (const size of [SIDE, { width: 812, height: 330 }, { width: 880, height: 405 }, { width: 390, height: 844 }]) {
+  const tag = `${size.width}x${size.height}`;
+  test.describe(`${tag} H-03`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+
+    test(`H-03 «Поднять цену» in a chat from the second deal: a one-time tip, the buyer thinks ≤ 1 s and answers; at most two raises @ ${tag}`, async ({ page }) => {
+      const errors = collectErrors(page);
+      await seedSave(page, {
+        coins: 0,
+        creatures: [{ uid: 'h1', species: 'kettle', level: 3, fed: 0, hatchedAt: 0, age: 0 }],
+        showcase: ['h1'],
+        stats: { deals: 2, dealsAll: 2, coinsEarned: 60, hatched: 3, taps: 30, levelUps: 2, haggles: 0 },
+        freeIn: { egg_gift: 300 },
+      });
+      await open(page);
+      await page.evaluate(() => (window as unknown as T).__TEST__.setTimeScale(8));
+      await expect.poll(async () => (await st(page)).chats.length, { timeout: 30_000 }).toBeGreaterThan(0);
+      await page.evaluate(() => (window as unknown as T).__TEST__.setTimeScale(1));
+      await page.locator('[data-tab=chats]').tap();
+      const dialog = page.locator('[data-sheet=chats] [data-chat-dialog]');
+      if (!(await dialog.locator('[data-action=chat-sell]').isVisible())) await page.locator('[data-sheet=chats] [data-chat]').first().tap();
+      const raise = dialog.locator('[data-action=chat-raise]');
+      await expect(raise).toBeVisible();
+      const tip = dialog.locator('[data-chat-tip]');
+      await expect(tip).toBeVisible();
+      expect((await tip.innerText()).trim().split(/\s+/).length).toBeLessThanOrEqual(6);
+      // Every answer whole in sight, over the tab bar.
+      const bar = (await page.locator('#nav').boundingBox())!;
+      for (const a of ['chat-sell', 'chat-raise', 'chat-decline']) {
+        const b = (await dialog.locator(`[data-action=${a}]`).boundingBox())!;
+        expect(b.y + b.height, `${a} over the tab bar`).toBeLessThanOrEqual(bar.y + 0.5);
+        expect(b.x + b.width).toBeLessThanOrEqual(size.width + 0.5);
+        expect(Math.min(b.width, b.height)).toBeGreaterThanOrEqual(40);
+      }
+      await page.screenshot({ path: `docs/evidence/H/chat-haggle_${tag}.png` });
+      const first = (await st(page)).chats[0]!;
+      const before = first.offer;
+      const t0 = Date.now();
+      await raise.tap();
+      await expect(dialog.locator('[data-chat-think]')).toBeVisible();
+      await expect(dialog.locator('[data-chat-think]')).toBeHidden({ timeout: 1500 });
+      expect(Date.now() - t0, 'the buyer answers within 1 s').toBeLessThan(1400);
+      await expect(tip).toBeHidden();
+      // The test state lists the open chats only: a buyer who left is not there.
+      const c = (await st(page)).chats.find((x) => x.id === first.id);
+      if (c) {
+        expect(c.offer).toBeGreaterThan(before);
+        // The second raise, then no third.
+        await raise.tap();
+        await expect(dialog.locator('[data-chat-think]')).toBeHidden({ timeout: 1500 });
+        await page.waitForTimeout(100);
+        if ((await st(page)).chats.some((x) => x.id === first.id)) await expect(raise).toBeHidden();
+      } else {
+        // Gone: the pet is back with the player, not sold.
+        expect((await st(page)).stats.deals).toBe(2);
+        expect(((await st(page)).creatures as Array<{ uid: string }>).some((x) => x.uid === 'h1')).toBe(true);
+      }
+      expect(errors).toEqual([]);
+    });
+  });
+}
+
+test.describe('815x290 H-03 first deal', () => {
+  test.use({ viewport: SIDE, isMobile: true, hasTouch: true });
+  test('H-03 the very first deal has no «Поднять цену»', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, {
+      coins: 0,
+      creatures: [{ uid: 'p1', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }],
+      showcase: ['p1'],
+      stats: { deals: 0, coinsEarned: 0, hatched: 1, taps: 3, levelUps: 0, haggles: 0 },
+      flags: { ftue_starter: true, ftue_fed: true },
+    });
+    await open(page);
+    await expect.poll(async () => (await st(page)).chats.length, { timeout: 30_000 }).toBeGreaterThan(0);
+    await page.locator('[data-tab=chats]').tap();
+    const dialog = page.locator('[data-sheet=chats] [data-chat-dialog]');
+    if (!(await dialog.locator('[data-action=chat-sell]').isVisible())) await page.locator('[data-sheet=chats] [data-chat]').first().tap();
+    await expect(dialog.locator('[data-action=chat-sell]')).toBeVisible();
+    await expect(dialog.locator('[data-action=chat-raise]')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 });

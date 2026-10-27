@@ -146,6 +146,9 @@ export interface Chat {
   order?: boolean;
   /** Game seconds the chat has been open (the seller helper answers after delaySec). */
   age?: number;
+  /** H-03: «Поднять цену» taps in this chat and the buyer's first offer (markups count from it). */
+  raises?: number;
+  first?: number;
 }
 
 /** A lot on the market (M3-09): a creature from a seller-character; price in coins; sold lots stay greyed until the refresh. */
@@ -369,6 +372,8 @@ function normalizeChat(v: unknown): Chat | null {
     customer: str(o.customer, ''),
     order: bool(o.order, false),
     age: Math.max(0, num(o.age, 0)),
+    raises: Math.max(0, Math.floor(num(o.raises, 0))),
+    first: Math.max(1, num(o.first, num(o.offer, 1))),
     lines: arr(o.lines)
       .map((l) => rec(l))
       .filter((l) => (l.from === 'them' || l.from === 'me') && typeof l.ctx === 'string')

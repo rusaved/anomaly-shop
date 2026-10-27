@@ -316,3 +316,23 @@ export function hatchSpinSec(feel: { hatchShowSec: number; hatchQuickSec: number
   const rare = RARITIES.indexOf(rarity) >= RARITIES.indexOf(feel.hatchLongFrom);
   return rare || n <= feel.hatchLongFirst ? feel.hatchShowSec : feel.hatchQuickSec;
 }
+
+/** H-03 (Q-069 п. 2 Б): one «Поднять цену». Raise k (0-based) asks the first offer × (1 + its step, rolled within); the buyer agrees with a
+ *  chance that falls with the markup, leaves with one that grows with it, else meets the player half way. Rolls are 0..1. */
+export function haggleRaise(
+  h: { steps: ReadonlyArray<{ min: number; max: number }>; accept: { base: number; perMarkup: number; min: number }; leave: { base: number; perMarkup: number } },
+  k: number,
+  first: number,
+  offer: number,
+  rollStep: number,
+  rollAnswer: number,
+): { ask: number; result: 'yes' | 'middle' | 'gone'; offer: number } {
+  const step = h.steps[Math.min(k, h.steps.length - 1)]!;
+  const ask = Math.max(offer + 1, Math.round(first * (1 + step.min + (step.max - step.min) * rollStep)));
+  const markup = ask / first - 1;
+  const yes = Math.min(1, Math.max(h.accept.min, h.accept.base - h.accept.perMarkup * markup));
+  const gone = Math.min(1 - yes, Math.max(0, h.leave.base + h.leave.perMarkup * markup));
+  if (rollAnswer < yes) return { ask, result: 'yes', offer: ask };
+  if (rollAnswer >= 1 - gone) return { ask, result: 'gone', offer };
+  return { ask, result: 'middle', offer: Math.round((offer + ask) / 2) };
+}

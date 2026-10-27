@@ -25,6 +25,8 @@ export interface ChatsLookups {
   wide(): boolean;
   /** M5-02: «×2 deal» for a video after a sale in the chat; missing — no ad button. */
   double?: { busy(): boolean; wait(): number; watch(): void };
+  /** H-03: seconds the buyer «thinks» over a raised price (haggle.json thinkSec, rolled in the UI: decoration). */
+  thinkSec(): number;
 }
 
 export interface ChatsTab {
@@ -46,6 +48,9 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
   let dialogKey = '';
   /** W-14: the chat and the answers drawn now (their nodes stay while only the lines change). */
   let shown: { id: number; buttons: string } | null = null;
+  /** H-03: the chat whose buyer thinks over a raised price now (its answers wait), and the chat that shows the one-time tip. */
+  let thinking: number | null = null;
+  let tipChat: number | null = null;
 
   const fmt = (): Intl.NumberFormat => new Intl.NumberFormat(look.lang());
   const who = (c: Chat): string => {
@@ -115,7 +120,11 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     // Q-025: the creature of an open chat is off the shelf («talking»); a closed one may be back on the shelf or in the inventory.
     const view = game.view();
     const cr = [...view.talking, ...view.creatures, ...view.inventory].find((x) => x.uid === c.uid);
-    const next = `d:${id}:${look.lang()}:${c.state}:${c.lines.length}:${c.offer}:${cr?.ask ?? ''}:${game.dealToDouble()?.uid ?? ''}:${look.double?.busy() ?? ''}:${look.double ? Math.ceil(look.double.wait()) : ''}`;
+    const raise = c.state === 'open' && game.canRaise(c.id);
+    // H-03: the first time «Поднять цену» shows, a short tip says what it is (once a game).
+    if (raise && tipChat === null && game.seenTab('haggle')) tipChat = c.id;
+    const think = thinking === c.id;
+    const next = `d:${id}:${look.lang()}:${c.state}:${c.lines.length}:${c.offer}:${cr?.ask ?? ''}:${game.dealToDouble()?.uid ?? ''}:${look.double?.busy() ?? ''}:${look.double ? Math.ceil(look.double.wait()) : ''}:${raise}:${think}:${tipChat === c.id}`;
     if (next === dialogKey) return;
     dialogKey = next;
     const f = fmt();
@@ -135,14 +144,21 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
           : '');
     else
       buttons =
-        `<button type="button" class="mu-btn main" data-action="chat-sell">${iconize(look.t('chats.sell', { n: `◉ ${f.format(c.offer)}` }))}</button>` +
-        // MU-05 (s2-chat-dialog): two answers only — «Продать за N» and a dark «Отказаться» (the counter price waits, Q-036).
-        `<button type="button" class="mu-btn" data-action="chat-decline">${esc(look.t('chats.decline'))}</button>`;
+        `<button type="button" class="mu-btn main" data-action="chat-sell" aria-disabled="${think}">${iconize(look.t('chats.sell', { n: `◉ ${f.format(c.offer)}` }))}</button>` +
+        // MU-05 (s2-chat-dialog): «Продать за N» and a dark «Отказаться»; H-03 (Q-069 п. 2 Б): «Поднять цену» next to them from the second deal.
+        (raise
+          ? `<span class="chat-row2"><button type="button" class="mu-btn" data-action="chat-raise" aria-disabled="${think}">${esc(look.t('chats.raise'))}</button>` +
+            `<button type="button" class="mu-btn" data-action="chat-decline" aria-disabled="${think}">${esc(look.t('chats.decline'))}</button></span>`
+          : `<button type="button" class="mu-btn" data-action="chat-decline" aria-disabled="${think}">${esc(look.t('chats.decline'))}</button>`);
     const head =
       `<div class="mu-back chat-top">${look.wide() ? '' : `<button type="button" class="mu-round" data-action="chat-back" aria-label="${esc(look.t('eggs.back'))}">‹</button>`}` +
       `${avatar(c, 44)}<span class="chat-main"><b class="chat-who">${esc(who(c))}</b><span class="chat-last">${esc(look.t('chats.wants', { name: look.speciesName(c.species) }))}</span></span>` +
       `<span class="chat-ask" data-rarity="${rarity}">${ringPic(look.portrait(c.species, rarity), rarity, 28)}${cr ? money(cr.ask, f) : ''}</span></div>` +
-      `<div class="chat-lines">${c.lines.map((l) => `<p class="bubble ${l.from === 'me' ? 'me' : 'them'}">${text(c, l)}</p>`).join('')}</div>`;
+      `<div class="chat-lines">${c.lines.map((l) => `<p class="bubble ${l.from === 'me' ? 'me' : 'them'}">${text(c, l)}</p>`).join('')}` +
+      // H-03: the buyer thinks over the raised price (up to 1 s).
+      `${think ? `<p class="bubble them chat-think" data-chat-think>${esc(look.t('chats.thinking'))}</p>` : ''}` +
+      // H-03: the one-time tip under the buyer's last line (the answers keep their room).
+      `${raise && tipChat === c.id && !think ? `<p class="mu-meta chat-tip" data-chat-tip>${esc(look.t('chats.raiseHint'))}</p>` : ''}</div>`;
     // W-14: a new line of the buyer (or its seconds) re-draws the head and the lines only — the answers under a finger stay the same
     // nodes, so a press that began before the line still sells on release.
     const same = shown?.id === id && shown.buttons === buttons && dialogEl.querySelector('.chat-buttons') !== null;
@@ -157,8 +173,22 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
     shown = { id, buttons };
     dialogEl.innerHTML = head + `<div class="chat-buttons" data-hint-glow>${buttons}</div>`;
     dialogEl.querySelector('[data-action="chat-back"]')?.addEventListener('click', () => tab.show(null));
-    dialogEl.querySelector('[data-action="chat-sell"]')?.addEventListener('click', () => game.chatSell(c.id));
-    dialogEl.querySelector('[data-action="chat-decline"]')?.addEventListener('click', () => game.chatDecline(c.id));
+    dialogEl.querySelector('[data-action="chat-sell"]')?.addEventListener('click', () => thinking !== c.id && game.chatSell(c.id));
+    dialogEl.querySelector('[data-action="chat-decline"]')?.addEventListener('click', () => thinking !== c.id && game.chatDecline(c.id));
+    dialogEl.querySelector('[data-action="chat-raise"]')?.addEventListener('click', () => {
+      if (thinking !== null || !game.canRaise(c.id)) return;
+      // H-03: first «думает…» (the answers wait), then the buyer's answer from the game.
+      thinking = c.id;
+      if (tipChat === c.id) tipChat = -1;
+      dialogKey = '';
+      tab.render();
+      window.setTimeout(() => {
+        thinking = null;
+        game.chatRaise(c.id);
+        dialogKey = '';
+        tab.render();
+      }, look.thinkSec() * 1000);
+    });
     dialogEl.querySelector('[data-action="ad-double"]')?.addEventListener('click', (e) => {
       if ((e.currentTarget as HTMLElement).getAttribute('aria-disabled') !== 'true') look.double?.watch();
     });

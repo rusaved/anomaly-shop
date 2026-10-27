@@ -984,6 +984,16 @@ button.mu-card {
 .chat-end {
   text-align: center;
 }
+/* H-03: the one-time tip of «Поднять цену» under the buyer's last line; the buyer's «Думает…» a muted bubble. */
+.chat-tip {
+  align-self: center;
+  text-align: center;
+  color: var(--c-uiAccent);
+}
+.chat-think {
+  opacity: 0.7;
+  font-style: italic;
+}
 
 /* ---- MU-06 «Продажи» (s3-sales-slots) and «Цена» (s3-price, 07 «Ползунок цены») ---- */
 .card-empty {

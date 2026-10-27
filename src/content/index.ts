@@ -27,9 +27,10 @@ import decorJson from '@content/decor.json';
 import achievementsJson from '@content/achievements.json';
 import adsJson from '@content/ads.json';
 import shopJson from '@content/shop.json';
+import haggleJson from '@content/haggle.json';
 import ruJson from '@content/i18n/ru.json';
 import enJson from '@content/i18n/en.json';
-import { AdsFile, ShopFile, AudioFile, CalendarFile, CustomersFile, EggsFile, FeelFile, FtueFile, I18nFile, NewsFile, EventsFile, SecretsFile, LinesFile, MarketFile, GiftsFile, WorkFile, CodesFile, ReputationFile, NavFile, CollectionFile, DecorFile, AchievementsFile, SpeciesFile, StyleFile, UpgradesFile, type LangName } from './schemas.ts';
+import { AdsFile, HaggleFile, ShopFile, AudioFile, CalendarFile, CustomersFile, EggsFile, FeelFile, FtueFile, I18nFile, NewsFile, EventsFile, SecretsFile, LinesFile, MarketFile, GiftsFile, WorkFile, CodesFile, ReputationFile, NavFile, CollectionFile, DecorFile, AchievementsFile, SpeciesFile, StyleFile, UpgradesFile, type LangName } from './schemas.ts';
 
 export const eggs = v.parse(EggsFile, eggsJson);
 export const species = v.parse(SpeciesFile, speciesJson);
@@ -56,6 +57,7 @@ export const decor = v.parse(DecorFile, decorJson);
 export const achievements = v.parse(AchievementsFile, achievementsJson);
 export const ads = v.parse(AdsFile, adsJson);
 export const shopData = v.parse(ShopFile, shopJson);
+export const haggle = v.parse(HaggleFile, haggleJson);
 
 function dictionary(json: Record<string, unknown>): Record<string, string> {
   const { $schema: _s, note: _n, ...rest } = json;

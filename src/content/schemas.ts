@@ -332,6 +332,16 @@ export const StyleFile = v.object({
   priceZones: v.pipe(v.array(Color), v.minLength(2)),
 });
 
+/** H-03 (Q-069 п. 2 Б): «Поднять цену» in a chat — markups over the first offer, the buyer's chances, the seconds it thinks. */
+export const HaggleFile = v.object({
+  fromDeal: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  maxRaises: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(2)),
+  steps: v.pipe(v.array(v.object({ min: Share, max: Share })), v.minLength(1)),
+  accept: v.object({ base: Share, perMarkup: v.pipe(v.number(), v.minValue(0)), min: Share }),
+  leave: v.object({ base: Share, perMarkup: v.pipe(v.number(), v.minValue(0)) }),
+  thinkSec: v.object({ min: v.pipe(v.number(), v.minValue(0)), max: v.pipe(v.number(), v.minValue(0), v.maxValue(1)) }),
+});
+
 /** The market (docs/01 §3 p. 14): lots from sellers, refreshed by a timer; price — a share of the market value. */
 export const MarketFile = v.object({
   refreshSec: v.object({ min: Money, max: Money }),
@@ -621,6 +631,7 @@ export type CharacterData = v.InferOutput<typeof Character>;
 export type ChatContext = (typeof CHAT_CONTEXTS)[number];
 export type HobbyData = v.InferOutput<typeof Hobby>;
 export type MarketData = v.InferOutput<typeof MarketFile>;
+export type HaggleData = v.InferOutput<typeof HaggleFile>;
 export type GiftsData = v.InferOutput<typeof GiftsFile>;
 export type WorkData = v.InferOutput<typeof WorkFile>;
 export type AdsData = v.InferOutput<typeof AdsFile>;

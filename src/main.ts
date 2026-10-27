@@ -60,7 +60,7 @@ import { createHatchShow } from './ui/hatch.ts';
 import { eggOdds, hatchSpinSec } from './sim/rules.ts';
 import { createPortraits } from './scene/portraits.ts';
 import { rarityColor } from './scene/art.ts';
-import { ads as adsData, shopData, achievements, audio, calendar, codes, collection, decor as decorData, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
+import { ads as adsData, haggle, shopData, achievements, audio, calendar, codes, collection, decor as decorData, reputation, customers, dictionaries, eggs, events as randomEvents, feel, ftue, gifts, lines, market, nav as navData, news, work, secrets, species, speciesById, style as styleData, upgrades } from './content/index.ts';
 import { createSfx } from './audio/sfx.ts';
 import { createMusic, musicTrack } from './audio/music.ts';
 import { createSceneApp } from './scene/app.ts';
@@ -146,7 +146,7 @@ async function boot(): Promise<void> {
   const lastSeen = store.state.savedAt;
   const persistence = bindPersistence(store, platform, track);
   flushSave = () => persistence.flush();
-  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection, decor: decorData, achievements, calendar, ads: adsData }, createRng(platform.now()));
+  const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection, decor: decorData, achievements, calendar, ads: adsData, haggle }, createRng(platform.now()));
   game = play;
   const funnel = bindFunnel(play, store, track);
 
@@ -498,6 +498,8 @@ async function boot(): Promise<void> {
   });
   const chatsTab = createChatsTab(sheets.get('chats')!, play, {
     t: i18n.t,
+    // H-03: the buyer thinks a moment over a raised price (decoration: the answer is the game's).
+    thinkSec: () => haggle.thinkSec.min + Math.random() * (haggle.thinkSec.max - haggle.thinkSec.min),
     lang: () => i18n.lang(),
     character: (id) => customers.characters.find((c) => c.id === id),
     person: (i) => {

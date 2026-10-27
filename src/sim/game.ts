@@ -2,13 +2,13 @@
 // Called by: src/main.ts (one game per page, tick from the runtime), src/test-api, scripts/balance-model.ts and tests (headless).
 // Keep: commands change store.state and commit; flush on hatch, deal, purchase; content and rng come in, so Node runs it without a bundler.
 
-import type { AdsData, AchievementsData, CalendarData, CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
+import type { AdsData, HaggleData, AchievementsData, CalendarData, CodesData, CollectionData, DecorData, ReputationData, CustomersData, DistrictData, EggData, EggSection, EggsData, GiftsData, MarketData, RewardData, WorkData, EventsData, FtueData, RarityName, SecretsData, SecretTarget, SpeciesData, UpgradeData, UpgradesData } from '../content/schemas.ts';
 import { RARITIES } from '../content/schemas.ts';
 import { createEmitter, type Emitter } from '../core/events.ts';
 import { createRng, type Rng } from '../core/rng.ts';
 import { emptyIncubator, type Chat, type Creature, type Incubator, type Lot, type Order, type SaveData } from './state.ts';
 import type { GameStore } from './store.ts';
-import { careBonus, careChances, careLevel, cityMult, coins, dayHash, marketMood, nameBlocked, normalWord, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchMult, hatchNeedSec, hatchShare, incomeOf, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
+import { careBonus, careChances, careLevel, cityMult, coins, dayHash, haggleRaise, marketMood, nameBlocked, normalWord, pickWeighted, priceRange, rebirthNeed, priceZone, replyDelay, repLevel, workPay, workPrice, creatureValue, eggUnlocked, hatchMult, hatchNeedSec, hatchShare, incomeOf, isHatched, offerFor, pickRarity, pickSpecies, shelfBonus, tapsForLevel, unlockMet, upgradePrice, type UnlockFacts } from './rules.ts';
 
 export interface GameContent {
   eggs: EggsData;
@@ -29,6 +29,8 @@ export interface GameContent {
   calendar: CalendarData;
   /** M5-02: rewarded ads (content/ads.json); missing — no ad rewards (tests built before M5). */
   ads?: AdsData;
+  /** H-03: «Поднять цену» in chats (content/haggle.json); missing — no haggle (tests built before H). */
+  haggle?: HaggleData;
 }
 
 /** Step of the offline catch-up: coarse but finer than every helper timer (feeder 1 s, courier 2 s, seller 4 s). */
@@ -381,6 +383,10 @@ export interface Game {
   chatCounter(id: number): boolean;
   /** May the player name a counter price in this chat (once, and not in the first deal of the game). */
   canCounter(id: number): boolean;
+  /** H-03: may the player tap «Поднять цену» in this chat (from the deal number fromDeal, at most maxRaises times, not the golden buyer). */
+  canRaise(id: number): boolean;
+  /** H-03: «Поднять цену» — the buyer agrees to more, meets half way or leaves (the pet stays with the player); null when not allowed. */
+  chatRaise(id: number): 'yes' | 'middle' | 'gone' | null;
   chatRead(id: number): void;
   /** «My sales» (M3-07): puts a creature from the inventory on a free sale slot; false when the showcase is full. */
   list(uid: string): boolean;
@@ -1191,6 +1197,8 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       order,
       age: 0,
       offer,
+      first: offer,
+      raises: 0,
       countered: false,
       state: 'open',
       unread: true,
@@ -1710,6 +1718,36 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       emit({ type: 'chatReply', id, ctx: chat.lines[chat.lines.length - 1]!.ctx });
       emit({ type: 'change' });
       return true;
+    },
+    canRaise(id) {
+      const h = content.haggle;
+      const chat = openChat(id);
+      return Boolean(h && chat && chat.customer !== GOLDEN && (chat.raises ?? 0) < h.maxRaises && s().stats.deals >= h.fromDeal - 1);
+    },
+    chatRaise(id) {
+      idleSec = 0;
+      const h = content.haggle;
+      const chat = openChat(id);
+      if (!h || !chat || !game.canRaise(id)) return null;
+      const k = chat.raises ?? 0;
+      const r = haggleRaise(h, k, chat.first ?? chat.offer, chat.offer, side.next(), side.next());
+      chat.raises = k + 1;
+      chat.countered = true;
+      chat.lines.push({ from: 'me', ctx: 'raise', i: 0, n: r.ask });
+      if (r.result === 'gone') {
+        // The buyer leaves; the pet goes back to the shelf (or the inventory) — only this buyer is lost.
+        chat.lines.push({ from: 'them', ctx: 'refuse', i: pickLineIndex(chat.character, 'refuse') });
+        emit({ type: 'chatReply', id, ctx: 'refuse' });
+        chatGone(chat, false);
+        return 'gone';
+      }
+      chat.offer = r.offer;
+      chat.lines.push(r.result === 'yes' ? { from: 'them', ctx: 'accept', i: pickLineIndex(chat.character, 'accept') } : { from: 'them', ctx: 'last', i: pickLineIndex(chat.character, 'last'), n: r.offer });
+      s().stats.haggles += 1;
+      commit();
+      emit({ type: 'chatReply', id, ctx: r.result === 'yes' ? 'accept' : 'last' });
+      emit({ type: 'change' });
+      return r.result;
     },
     chatRead(id) {
       const chat = s().chats.find((c) => c.id === id);

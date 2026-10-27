@@ -476,3 +476,20 @@ for (const site of ['vk', 'ok'] as const)
       expect(w.errors).toEqual([]);
     });
   });
+
+test.describe('N-05 the check link on the VK stand-in', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+  test('N-05 vk/?mock=vk&fresh=1&coins=777: a new save with 777 coins, «сборка <хеш>» in the settings', async ({ page }) => {
+    const w = watch(page);
+    await page.goto(`${VK}&fresh=1&coins=777&deals=3`);
+    await up(page);
+    await page.locator('[data-action=menu-play]').tap();
+    await expect(page.locator('[data-hud=coins]')).toContainText('777');
+    await page.locator('[data-action=menu]').tap();
+    await page.locator('[data-action=menu-settings]').tap();
+    await expect(page.locator('[data-overlay=settings] [data-build-line]')).toHaveText(/^сборка ([0-9a-f]{7}|local)$/);
+    await page.screenshot({ path: 'docs/evidence/N/n05-vk-settings_815x290.png' });
+    expect(w.errors).toEqual([]);
+    expect(w.outside).toEqual([]);
+  });
+});

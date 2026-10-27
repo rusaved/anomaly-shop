@@ -1,16 +1,16 @@
 check-release: release/anomaly-shop-0.1.0.zip
-date: 2026-10-27T16:10:26.518Z
+date: 2026-10-27T17:42:13.023Z
 files: 34
   assets/BufferResource-7657QUKQ.js  10.8 KB
   assets/CanvasPool-BZOfdiYK.js  107.7 KB
   assets/RenderTargetSystem-k-tnMFYl.js  76.2 KB
   assets/ZzFX-C1HKDoVW.js  2.0 KB
-  assets/browserAll-DIgz6ms3.js  41.6 KB
+  assets/browserAll-BFB8Ipie.js  41.6 KB
   assets/canvasUtils-_2Xt0X_j.js  5.9 KB
   assets/getTextureBatchBindGroup-Bz0KTaOB.js  0.3 KB
-  assets/index-BbL8d_lz.js  772.8 KB
-  assets/index-CRtpEP1C.css  107.9 KB
-  assets/init-Eg7MiE16.js  15.0 KB
+  assets/index-DzNh0kmJ.css  108.0 KB
+  assets/index-JjgI66Qc.js  776.7 KB
+  assets/init-BImpj7m0.js  15.0 KB
   assets/rubik-cyrillic-400-normal-C5G8_8ug.woff2  7.7 KB
   assets/rubik-cyrillic-400-normal-D5R8xuhl.woff  9.6 KB
   assets/rubik-cyrillic-500-normal-BH_pkKR0.woff  9.7 KB
@@ -32,19 +32,19 @@ files: 34
   assets/rubik-latin-800-normal-BtaGuVpR.woff2  18.6 KB
   assets/rubik-latin-800-normal-Dq1miTTj.woff  23.6 KB
   assets/shop-bIT9_xnL.mp3  875.8 KB
-  assets/webworkerAll-D3cbIMSn.js  0.1 KB
+  assets/webworkerAll-B5SaLZry.js  0.1 KB
   assets/yandex--re1QMuu.js  10.3 KB
   index.html  2.3 KB
 
 PASS  1. index.html at the root, paths only [A-Za-z0-9._/-]
 PASS  2. zip and unpacked ≤ 30 MB, JS gzip ≤ 600 KB
-        zip 1522.4 KB, unpacked 2326.3 KB, js gzip 317.2 KB
+        zip 1523.7 KB, unpacked 2330.2 KB, js gzip 318.5 KB
 PASS  3. no external addresses except /sdk.js, mc.yandex.ru and the community links (namespaces allowed)
 PASS  4. <script src="/sdk.js"> exactly once, before the game code
         found 1
 PASS  5. sound only through Web Audio: no <audio>, <video>, new Audio(, media elements
         Web Audio (AudioContext) in the code: yes
-PASS  6. no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, youtube.com/game_api
+PASS  6. no lil-gui, __TEST__, __STUDIO__, __YA_MOCK__, yasdk-mock, localhost, debugger, sourceMappingURL, ytgame, youtube.com/game_api, check-link
 PASS  7. no development or stop-list words in shipped texts
 PASS  8. language keys: ru and en the same, none empty, no Cyrillic in en (i18n and the {ru, en} texts of content/)
         {ru, en} texts in content/*.json: 960

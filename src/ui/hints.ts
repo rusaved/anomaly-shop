@@ -127,6 +127,12 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         }
         x += canvas.left - base.left;
         y += canvas.top - base.top;
+        // N-03 (предприёмка штаба 19: the coins of the top bar open «Магазин», the ring «Тапни яйцо» hung over its empty list): a scene
+        // spot under a sheet or a window shows nothing until it is in sight again.
+        if (document.elementsFromPoint(x + base.left, y + base.top).find((e) => !e.closest('.hint-ring, .hint, .tap-finger'))?.closest('.sheet:not([data-sheet="home"]), .overlay')) {
+          hide();
+          return;
+        }
       } else {
         hide();
         return;
@@ -168,6 +174,8 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         }
         const key = `room:${hint.key ?? hint.step}:${text}:${sheet.dataset.sheet}:${Math.round(b.left)}:${Math.round(b.top)}:${Math.round(b.width)}`;
         setGlow(button);
+        // N-03: a ring of the scene left from the hint before never hangs over the tab.
+        ring.hidden = true;
         if (key === lastKey) return;
         lastKey = key;
         outside = false;
@@ -180,11 +188,42 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         const w = root.offsetWidth;
         const hh = root.offsetHeight;
         const under = b.bottom + 12 + hh <= s.bottom - 4 || b.top - 12 - hh < s.top;
-        root.classList.toggle('below', under);
         const left = Math.max(16, Math.min(base.width - w - 16, b.left + b.width / 2 - base.left - w / 2));
-        root.style.left = `${left}px`;
-        root.style.top = `${under ? b.bottom - base.top + 12 : b.top - base.top - 12 - hh}px`;
-        root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, b.left + b.width / 2 - base.left - left))}px`);
+        // N-01, N-02 (предприёмка штаба 19: «Выставь питомца» lay on «Снять с витрины», «Купи улучшение» on the next price): the bubble
+        // never lies on another button of the screen — under, over, else left of the target with its arrow at it.
+        const others = [...sheet.querySelectorAll<HTMLElement>('button, [data-action]')].filter((e) => e.offsetParent !== null && !e.contains(button) && !button.contains(e));
+        const clear = (l: number, t: number, ww: number, h: number): boolean =>
+          t + base.top >= s.top &&
+          t + h + base.top <= s.bottom &&
+          !others.some((e) => {
+            const r = e.getBoundingClientRect();
+            return r.width > 0 && r.bottom > s.top && r.top < s.bottom && r.left < l + ww + base.left && r.right > l + base.left && r.top < t + h + base.top && r.bottom > t + base.top;
+          });
+        const vert = (down: boolean, l = left) => ({ down, top: down ? b.bottom - base.top + 12 : b.top - base.top - 12 - hh, left: l });
+        // A wide target (a section head) lets the bubble slide along it — its arrow still on the target.
+        const lefts = [b.left - base.left + 8, b.right - base.left - w - 8, b.left - base.left + (b.width - w) / 4].filter(
+          (l) => l >= 8 && l + w <= base.width - 8 && b.left - base.left + 14 <= l + w - 14 && b.right - base.left - 14 >= l + 14,
+        );
+        const spots = [vert(under), vert(!under), ...lefts.flatMap((l) => [vert(under, l), vert(!under, l)])];
+        const pick = spots.find((p) => clear(p.left, p.top, w, hh));
+        const room = b.left - base.left - 14 - 8;
+        if (!pick && room >= 110) {
+          root.classList.add('side');
+          root.classList.remove('below');
+          root.style.maxWidth = `${Math.floor(Math.min(room, 260))}px`;
+          const sw = root.offsetWidth;
+          const sh = root.offsetHeight;
+          const top = Math.max(s.top - base.top, b.top + b.height / 2 - base.top - sh / 2);
+          root.style.left = `${b.left - base.left - 14 - sw}px`;
+          root.style.top = `${top}px`;
+          root.style.setProperty('--arrow-y', `${Math.max(14, Math.min(sh - 14, b.top + b.height / 2 - base.top - top))}px`);
+          return;
+        }
+        const at = pick ?? spots[0]!;
+        root.classList.toggle('below', at.down);
+        root.style.left = `${at.left}px`;
+        root.style.top = `${at.top}px`;
+        root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, b.left + b.width / 2 - base.left - at.left))}px`);
         return;
       }
       root.classList.remove('roomed');

@@ -16,6 +16,8 @@ export interface Runtime {
   runSim(sec: number): number;
   /** Game seconds stepped so far. */
   elapsed(): number;
+  /** N-05 (?time=N of the check link): the clock of play starts later by sec, the sim does not step. */
+  startAt(sec: number): void;
 }
 
 export function createRuntime(onStep: (dt: number) => void, stepSec = STEP_SEC, maxSteps = MAX_STEPS_PER_FRAME): Runtime {
@@ -51,6 +53,9 @@ export function createRuntime(onStep: (dt: number) => void, stepSec = STEP_SEC, 
       return steps;
     },
     elapsed: () => elapsed,
+    startAt(sec) {
+      elapsed += Math.max(0, sec);
+    },
   };
   return runtime;
 }

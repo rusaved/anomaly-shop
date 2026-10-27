@@ -25,3 +25,13 @@ test('BLD-04 release boots on the mock, ready once, no console errors, no debug 
   expect(flags.violations).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+/** N-05: the producer's check link is ignored in the release archive: no new save, no presets, no build line. */
+test('N-05 release ignores ?fresh=1 and the presets', async ({ page }) => {
+  await page.goto('/?fresh=1&coins=777&deals=5&time=9');
+  await page.waitForFunction(() => (window as unknown as { __YA_MOCK__: { readyCalled: boolean } }).__YA_MOCK__.readyCalled);
+  await expect(page.locator('[data-hud=coins]')).toBeVisible();
+  await page.waitForTimeout(1200);
+  expect(await page.locator('[data-hud=coins]').innerText()).not.toContain('777');
+  expect(await page.locator('[data-build-line]').count()).toBe(0);
+});

@@ -159,7 +159,9 @@ export function createChatsTab(sheet: Sheet, game: Game, look: ChatsLookups): Ch
         ? `<span class="chat-last chat-tip" data-chat-tip>${esc(look.t('chats.raiseHint'))}</span>`
         : `<span class="chat-last">${esc(look.t('chats.wants', { name: look.speciesName(c.species) }))}</span>`) +
       `</span>` +
-      `<span class="chat-ask" data-rarity="${rarity}">${ringPic(look.portrait(c.species, rarity), rarity, 28)}${cr ? money(cr.ask, f) : ''}</span></div>` +
+      // N-04 (предприёмка штаба 19: «🦉 73» in the head, «Продать за 80» on the button): the head tells the buyer's offer now, the
+      // shelf price only in a chat the buyer left.
+      `<span class="chat-ask" data-rarity="${rarity}">${ringPic(look.portrait(c.species, rarity), rarity, 28)}${c.state !== 'gone' ? money(c.offer, f) : cr ? money(cr.ask, f) : ''}</span></div>` +
       `<div class="chat-lines">${c.lines.map((l) => `<p class="bubble ${l.from === 'me' ? 'me' : 'them'}">${text(c, l)}</p>`).join('')}` +
       // H-03: the buyer thinks over the raised price (up to 1 s).
       `${think ? `<p class="bubble them chat-think" data-chat-think>${esc(look.t('chats.thinking'))}</p>` : ''}</div>`;

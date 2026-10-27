@@ -227,9 +227,19 @@ describe('V-08 joining the community', () => {
 
 describe('V-04 the build check', () => {
   it('finds the words and links of other platforms', () => {
-    const ok = checkVkBuild([['index.html', '<script type="module" src="./assets/a.js"></script>'], ['assets/a.js', 'VKWebAppInit;VKWebAppCheckNativeAds']]);
+    const link: Array<[string, string]> = [['assets/check-link-x1.js', 'export const a=1'], ['assets/b.js', 'q.has("vk_app_id")&&q.has("sign");import("./check-link-x1.js")']];
+    const ok = checkVkBuild([['index.html', '<script type="module" src="./assets/a.js"></script>'], ['assets/a.js', 'VKWebAppInit;VKWebAppCheckNativeAds'], ...link]);
     expect(ok.problems).toEqual([]);
-    const bad = checkVkBuild([['assets/a.js', 'VKWebAppInit;VKWebAppCheckNativeAds;"Мы в Telegram";"https://ya.ru/x";"Одноклассники"']]);
+    const bad = checkVkBuild([['assets/a.js', 'VKWebAppInit;VKWebAppCheckNativeAds;"Мы в Telegram";"https://ya.ru/x";"Одноклассники"'], ...link]);
     expect(bad.problems.length).toBe(3);
+  });
+
+  it('N-05: the check link is its own chunk behind the launch check of VK and OK', () => {
+    const base: Array<[string, string]> = [['assets/a.js', 'VKWebAppInit;VKWebAppCheckNativeAds']];
+    expect(checkVkBuild(base).problems).toEqual([expect.stringContaining('check-link: 0')]);
+    const unguarded = checkVkBuild([...base, ['assets/check-link-x1.js', 'x'], ['assets/b.js', 'import("./check-link-x1.js")']]);
+    expect(unguarded.problems).toEqual([expect.stringContaining('vk_app_id')]);
+    const eager = checkVkBuild([...base, ['index.html', '<link rel="modulepreload" href="./assets/check-link-x1.js">'], ['assets/check-link-x1.js', 'x'], ['assets/b.js', 'vk_app_id;sign']]);
+    expect(eager.problems).toEqual([expect.stringContaining('index.html')]);
   });
 });

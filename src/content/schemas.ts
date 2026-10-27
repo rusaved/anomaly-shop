@@ -301,6 +301,10 @@ export const FtueFile = v.object({
   afterDealSec: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(3)), 1),
   /** S-06: the upgrade the first «Купи улучшение» leads to (an id of upgrades.json; none in the list — any affordable one). */
   firstUpgrade: v.optional(v.string()),
+  /** N-01: after a deal «Купи улучшение» calls again when the cheapest upgrade is in reach, at most once in this many deals. */
+  upgradeEveryDeals: v.optional(Count, 3),
+  /** N-01: the upgrade the later calls frame first when it is in reach (else the cheapest one in reach). */
+  nextUpgrade: v.optional(v.string()),
   /** FB-08: the finger taps a ready egg for this many hatches after the first minute. */
   fingerHatches: v.optional(Count, 3),
   maxHintWords: Count,

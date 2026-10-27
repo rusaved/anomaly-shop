@@ -31,7 +31,13 @@ export function checkVkBuild(files) {
   const all = files.map(([, t]) => t).join('\n');
   if (!all.includes('VKWebAppInit')) problems.push('VKWebAppInit: нет в сборке');
   if (!all.includes('VKWebAppCheckNativeAds')) problems.push('VKWebAppCheckNativeAds: нет в сборке');
+  // N-05: the producer's check link (?fresh=1, ?coins, …) is its own chunk, loaded only on the stand-in (?mock=vk without the launch
+  // parameters of VK and OK: vk_app_id and sign) — a game VK or OK launched never loads it.
+  const link = files.filter(([n]) => /check-link[^/]*\.js$/.test(n));
+  if (link.length !== 1) problems.push(`check-link: ${link.length} файлов (ждали один отдельный кусок для ?mock=vk)`);
   const html = files.find(([n]) => n === 'index.html')?.[1] ?? '';
+  if (/check-link/.test(html)) problems.push('check-link: грузится сразу из index.html (ждали только по ?mock=vk)');
+  if (link.length === 1 && !files.some(([n, t]) => n.endsWith('.js') && t.includes('vk_app_id') && t.includes('sign'))) problems.push('check-link: нет проверки запуска VK/ОК (vk_app_id, sign)');
   if (/<script[^>]+src="(https?:)?\/\//.test(html)) problems.push('index.html: внешний скрипт');
   return { problems };
 }

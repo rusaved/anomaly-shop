@@ -442,6 +442,8 @@ export interface Game {
   startEventNow(id: string): boolean;
   /** F-05: the ?debug=1 panel only — the event now, past its «from minute» and in place of the one on now (the producer checks the merchant). */
   debugEvent(id: string): boolean;
+  /** N-05 (?time=N of the check link): the session is sec older — events of later minutes may come, the first one soon. */
+  skipSession(sec: number): void;
   /** M4-20: the finds — got or not, the reward claimed or waiting, hidden, how far a numeric one is. */
   finds(): Array<{ id: string; got: boolean; claimed: boolean; hidden: boolean; have: number; need: number }>;
   /** M4-20: takes the reward of a find (coins or crystals), once. */
@@ -2239,6 +2241,10 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
       const keep = content.events.events;
       startEvent(keep.filter((e) => e.id === id));
       return active !== null;
+    },
+    skipSession(sec) {
+      sessionSec += Math.max(0, sec);
+      if (sec > 0) eventIn = Math.min(eventIn, content.events.firstAfterSec.min);
     },
     debugEvent(id) {
       if (active) endEvent('missed');

@@ -394,7 +394,8 @@ test.describe('815x290 H-06', () => {
   test('H-06 after a deal with nothing left to do: «Купи новое яйцо» within 3 s (no 8 s wait); its tap leads to the egg', async ({ page }) => {
     const errors = collectErrors(page);
     await seedSave(page, {
-      coins: 40,
+      // N-01: after the deal no upgrade is in reach (the cheapest is 40) — «Купи улучшение» would come before the egg.
+      coins: 5,
       creatures: [{ uid: 's1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }],
       showcase: ['s1'],
       // One upgrade bought: «Купи улучшение» (before the first one, P-08) does not come first.

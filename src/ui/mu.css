@@ -4811,3 +4811,15 @@ button.mu-card {
     padding-bottom: 4px;
   }
 }
+/* N-05: the grey line «сборка <хеш>» at the bottom of «Настройки» (the producer's check link only). */
+#ui .build-line {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--c-uiMuted);
+  text-align: center;
+}
+@media (min-width: 1000px) and (min-height: 560px) {
+  #ui .build-line {
+    font-size: 14px;
+  }
+}

@@ -61,19 +61,22 @@ function gameConfig(platform: Profile): Record<string, unknown> {
   };
 }
 
+/** The short commit hash (CI passes BUILD_SHA). */
+function buildSha(): string {
+  const sha = (process.env.BUILD_SHA || '').slice(0, 7);
+  if (sha) return sha;
+  try {
+    return execSync('git rev-parse --short=7 HEAD', { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return 'local';
+  }
+}
+
 /** Label for the producer link: the newest milestone done (scripts/build-label.ts), the date, the commit. */
 function buildLabel(): string {
   const file = resolve(root, 'feature_list.json');
   const done = existsSync(file) ? doneMilestone(readJson<FeatureList>(file)) : 'M0';
-  let sha = (process.env.BUILD_SHA || '').slice(0, 7);
-  if (!sha) {
-    try {
-      sha = execSync('git rev-parse --short=7 HEAD', { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-    } catch {
-      sha = 'local';
-    }
-  }
-  return `${done} · ${new Date().toISOString().slice(0, 10)} · ${sha}`;
+  return `${done} · ${new Date().toISOString().slice(0, 10)} · ${buildSha()}`;
 }
 
 /** Serves the Yandex SDK mock as /sdk.js in dev and preview (docs/02-tech.md 6.4). Never part of a build. */
@@ -220,6 +223,7 @@ export default defineConfig(({ mode }) => {
       __STUDIO__: JSON.stringify(flags.studio),
       __TEST_API__: JSON.stringify(flags.test),
       __BUILD_LABEL__: JSON.stringify(flags.label ? buildLabel() : ''),
+      __BUILD_SHA__: JSON.stringify(buildSha()),
       __PLATFORM__: JSON.stringify(flags.platform),
       __GAME__: JSON.stringify(gameConfig(flags.platform)),
     },

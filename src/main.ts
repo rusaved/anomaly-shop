@@ -66,7 +66,7 @@ import { createSfx } from './audio/sfx.ts';
 import { createMusic, musicTrack } from './audio/music.ts';
 import { createSceneApp } from './scene/app.ts';
 import { createShopView } from './scene/shop.ts';
-import { loadPlatform } from './platform/index.ts';
+import { loadPlatform, vkStand } from './platform/index.ts';
 import { watchLifecycle } from './platform/lifecycle.ts';
 import { bindPersistence, loadState } from './platform/persist.ts';
 import { createRuntime } from './core/runtime.ts';
@@ -143,7 +143,22 @@ async function boot(): Promise<void> {
 
   await platform.init();
   bootStep(30);
-  const store = createStore(await loadState(platform, track), () => platform.now());
+  // N-05: the producer's check link (?fresh=1, ?coins, ?hatched, ?deals, ?time) — the Pages link and ?mock=vk only; the release builds
+  // drop the module (the condition is a build-time constant there).
+  let loaded = await loadState(platform, track);
+  const checkOn = (__DEBUG_TOOLS__ && __PLATFORM__ !== 'youtube') || (__PLATFORM__ === 'vk' && vkStand());
+  let checkTime = 0;
+  let checkUsed = false;
+  if (checkOn) {
+    const m = await import('./core/check-link.ts');
+    const link = m.readCheckLink(location.search);
+    if (m.hasCheckLink(link)) {
+      loaded = m.presetSave(loaded, link, platform.now());
+      checkTime = (link.time ?? 0) * 60;
+      checkUsed = true;
+    }
+  }
+  const store = createStore(loaded, () => platform.now());
   bootStep(50);
   /** Last save of the previous visit: the shop works on for the time since (helpers, incubators). */
   const lastSeen = store.state.savedAt;
@@ -151,6 +166,11 @@ async function boot(): Promise<void> {
   flushSave = () => persistence.flush();
   const play = createGame(store, { eggs, species, customers, upgrades, ftue, events: randomEvents, secrets, market, gifts, work, codes, reputation, collection, decor: decorData, achievements, calendar, ads: adsData, haggle }, createRng(platform.now()));
   game = play;
+  if (checkTime > 0) {
+    runtime.startAt(checkTime);
+    play.skipSession(checkTime);
+  }
+  if (checkUsed) store.commit({ flush: true });
   const funnel = bindFunnel(play, store, track);
 
   // Language: the saved manual choice (LOC-05) wins over the platform language (SDK-05); set before the first frame.
@@ -286,6 +306,20 @@ async function boot(): Promise<void> {
     intro = play.seenTab(tab) ? { tab, at: performance.now() } : null;
   };
   let intro: { tab: TabId; at: number } | null = null;
+  // N-02: «Цена» opened by «На витрину» — «Сохрани цену» on «Сохранить» until the player presses it once (flag price_saved).
+  let priceIntro = false;
+  document.addEventListener(
+    'click',
+    (e) => {
+      if (!(e.target as HTMLElement | null)?.closest?.('[data-action="sale-save"], [data-action="sale-back"]')) return;
+      if (priceIntro && (e.target as HTMLElement).closest('[data-action="sale-save"]')) {
+        store.state.flags.price_saved = true;
+        store.commit();
+      }
+      priceIntro = false;
+    },
+    true,
+  );
   document.addEventListener(
     'pointerdown',
     () => {
@@ -472,6 +506,7 @@ async function boot(): Promise<void> {
       if (!store.state.flags.ftue_done) return;
       // M4-00: the price card is an inner page of «My sales» — the tab opens on it.
       openPrice(uid);
+      priceIntro = !store.state.flags.price_saved;
     },
   });
   // Круг правок FB п. 7: a PC (1280×720) has room under the Store of «Лавка» — the eggs there too, the right half is never empty.
@@ -1130,7 +1165,7 @@ async function boot(): Promise<void> {
     name: () => store.state.shopName ?? '',
     save: (text) => play.setShopName(text),
     maxLength: secrets.shopName.maxLength,
-  });
+  }, checkOn ? __BUILD_SHA__ : undefined);
   // V-04: VK and OK — the start menu instead of the pause, from the top bar's button on any screen.
   const vkMenu =
     vkUi && platform.site
@@ -1300,6 +1335,12 @@ async function boot(): Promise<void> {
   let lastInputAt = performance.now();
   // S-01: «Купи улучшение» was on screen and still stands (no upgrade yet, one affordable).
   let upgradeCalled = false;
+  // N-01: the deals and the upgrade levels at the last «Купи улучшение» (the later calls come at most once in upgradeEveryDeals deals).
+  let upgradeCallDeals = -Infinity;
+  let upgradeCallLevels = 0;
+  // N-01: a deal armed the next call (an upgrade in reach at that moment); the deals seen last frame.
+  let upgradeDue = false;
+  let dealsSeen = -1;
   window.addEventListener('pointerdown', () => (lastInputAt = performance.now()), { capture: true, passive: true });
   scene.app.ticker.add((ticker) => {
     runtime.frame(ticker.deltaMS / 1000);
@@ -1330,6 +1371,17 @@ async function boot(): Promise<void> {
     const upgradesNow = play.upgradeList();
     const firstUp = upgradesNow.find((u) => u.id === ftue.firstUpgrade && !u.maxed);
     const canUpgrade = upgradesNow.some((u) => u.affordable);
+    // N-01 (предприёмка штаба 19: after the first upgrade nothing called to the next): after a deal, with an upgrade in reach, the call
+    // comes again (at most once in upgradeEveryDeals deals) — «Вывеска» first (ftue.json nextUpgrade), else the cheapest in reach.
+    const levels = Object.values(store.state.upgrades).reduce((a, n) => a + n, 0);
+    // The deal arms the call (the player taps on at once — no pause after the deal is needed); the first call (S-01) does not count.
+    const deals = store.state.stats.deals;
+    if (dealsSeen >= 0 && deals > dealsSeen && levels > 0 && canUpgrade && deals - upgradeCallDeals >= (ftue.upgradeEveryDeals ?? 3)) upgradeDue = true;
+    dealsSeen = deals;
+    if (!canUpgrade) upgradeDue = false;
+    const again = levels > 0 && (upgradeCalled || upgradeDue);
+    const cheapest = upgradesNow.filter((u) => u.affordable).sort((a, b) => a.price - b.price)[0];
+    const upgradeTo = again ? [ftue.nextUpgrade ?? '', cheapest?.id ?? ''] : (firstUp?.id ?? '');
     // S-01: «Купи новое яйцо» comes only when the first upgrade is bought or out of reach — the upgrade calls no later than the egg would.
     const eggWait = nothingToDo(store.state, view) ? 0 : wait(ftue.eggHintSec);
     const upgradeNow = upgradeCalled ? 0 : Math.min(wait(ftue.eggHintSec), eggWait);
@@ -1337,7 +1389,7 @@ async function boot(): Promise<void> {
       controllable && !lesson
         ? (shelfHint(store.state, view, idle, wait(ftue.shelfHintSec)) ??
           // P-08: the very first upgrade before the rest (once a game).
-          upgradeHint(store.state, idle, upgradeNow, canUpgrade, firstUp?.id) ??
+          upgradeHint(store.state, idle, again ? 0 : upgradeNow, canUpgrade, upgradeTo, again) ??
           readyHint(store.state, view, idle, wait(ftue.eggHintSec)) ??
           eggHint(store.state, view, idle, eggWait, basicEggPrice) ??
           warmHint(store.state, view, idle, ftue.eggHintSec))
@@ -1347,7 +1399,8 @@ async function boot(): Promise<void> {
       // H-06: after a deal on another tab the next step points at «Лавка» with its own words (on «Яйца» a new egg at its price).
       // H-08 (the bot of five minutes stood 250 s on «Магазин» with nothing calling): an idle player on another tab gets the same call
       // after eggHintSec — the band of the bubble comes only to a player who is not touching the list.
-      (nudge && nav.active() !== 'home' && !(onEggs && nudge.step === 'buyEgg') && ((afterDeal || idle >= ftue.eggHintSec) && (SCENE_TARGETS.has(nudge.target.kind) || nudge.key === 'ftue.upgrade'))
+      // N-01: a later «Купи улучшение» calls from any tab at once (but «Магазин», where the prices are) — the player taps on after a deal.
+      (nudge && nav.active() !== 'home' && !(onEggs && nudge.step === 'buyEgg') && ((afterDeal || idle >= ftue.eggHintSec || (again && nav.active() !== 'shop')) && (SCENE_TARGETS.has(nudge.target.kind) || nudge.key === 'ftue.upgrade'))
         ? { ...nudge, target: { kind: 'button' as const, action: 'tab-home' } }
         : null) ??
       (nudge && SCENE_TARGETS.has(nudge.target.kind) && nav.active() !== 'home'
@@ -1356,22 +1409,36 @@ async function boot(): Promise<void> {
           : null
         : nudge);
     const sceneHint = hint !== null && hint.target.kind !== 'button' && hint.target.kind !== 'el';
-    const tabIntro = controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab) : null;
+    const tabIntro =
+      controllable && intro && intro.tab === nav.active() ? tabHint(intro.tab, view.creatures.length > 0 && !uiRoot.querySelector('[data-sheet="sales"] [data-action="sale-add"]')) : null;
+    // N-02 (предприёмка штаба 19: 9 s of silence on «Цена» after «На витрину»): «Сохрани цену» on «Сохранить» at once, until it is pressed once.
+    const priceSave = controllable && priceIntro && nav.active() === 'sales' ? uiRoot.querySelector<HTMLElement>('[data-action="sale-save"]') : null;
+    if (nav.active() !== 'sales') priceIntro = false;
+    const priceHint: FtueHint | null = priceSave && priceSave.offsetParent !== null ? { step: 'tab', key: 'ftue.priceSave', target: { kind: 'el', selectors: ['[data-action="sale-save"]'] } } : null;
     // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.
     // H-01, H-04: calm news stands in the top bar, off the scene — the hint (the ring «Покупатель уже идёт») stays under it.
     const toastNow = toasts.calm() ? '' : toasts.showing();
     // Круг правок FB-3 п. 6: the gift egg's hint wins over the first visit of «Яйца» (both would point at an egg; the gift is the free one).
     const gift = (hint?.key === 'ftue.freeEgg' || hint?.step === 'hatchRare' || hint?.step === 'tapEgg') && onEggs;
     // H-06: right after a deal the next step wins over a tab's first-visit words.
-    const wanted = (gift || ((afterDeal || upgradeCalled) && hint) ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
+    const wanted = priceHint ?? (gift || ((afterDeal || upgradeCalled) && hint) ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
     // Круг правок FB-3 п. 5: portrait the toast stands over the tab bar, off the scene — the scene's hint stays.
     const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) && !appRoot.classList.contains('portrait') ? null : wanted;
     hints.update(shownHint, Boolean(toastNow));
-    upgradeCalled = (upgradeCalled || shownHint?.key === 'ftue.upgrade') && upgradeHint(store.state, 0, 0, canUpgrade) !== null;
+    if (!upgradeCalled && shownHint?.key === 'ftue.upgrade') {
+      if (levels > 0) upgradeCallDeals = deals;
+      upgradeCallLevels = levels;
+      upgradeDue = false;
+    }
+    // N-01: the call stands until an upgrade is bought or none is in reach.
+    upgradeCalled = (upgradeCalled || shownHint?.key === 'ftue.upgrade') && canUpgrade && levels === upgradeCallLevels && Boolean(store.state.flags.ftue_done);
     // FB-08: a ready egg waits for the tap — the finger taps it for the first hatches after the first minute (not over a hint or a window).
     const fingerOn = controllable && !shownHint && !topWindow() && store.state.flags.ftue_done && !store.state.flags[`tap_hatch_${ftue.fingerHatches}`];
     const ready = fingerOn ? view.incubators.findIndex((i) => i.ready) : -1;
-    const spot = ready >= 0 && nav.active() === 'home' ? shop.anchors()?.incubators[ready] : undefined;
+    const spot0 = ready >= 0 && nav.active() === 'home' ? shop.anchors()?.incubators[ready] : undefined;
+    // N-03: the hand hides while a sheet or a window covers its egg.
+    const ui0 = spot0 ? uiRoot.getBoundingClientRect() : null;
+    const spot = spot0 && ui0 && !document.elementsFromPoint(ui0.left + spot0.x, ui0.top + spot0.y).find((e) => !e.closest('.hint-ring, .hint, .tap-finger'))?.closest('.sheet:not([data-sheet="home"]), .overlay') ? spot0 : undefined;
     const openBtn = ready >= 0 && !spot ? [...uiRoot.querySelectorAll<HTMLElement>('[data-action^="egg-open-"]')].find((b) => b.offsetParent !== null) : undefined;
     // S-01: «Купи улучшение» in «Лавка» — the hand on the upgrade it frames, like the other calls.
     const upgradeBtn = shownHint?.key === 'ftue.upgrade' && nav.active() === 'home' && !topWindow() ? uiRoot.querySelector<HTMLElement>('.is-hinted') : null;

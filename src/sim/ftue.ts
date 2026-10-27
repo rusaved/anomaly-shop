@@ -119,10 +119,11 @@ export function nothingToDo(state: SaveData, view: GameView): boolean {
  * P-08 (ревизор геймдизайна): after the first minute, before any upgrade, an idle player with coins for one — «Купи улучшение» on the
  * cheapest open price of «Лавка» (or its «Улучшения» button); src/main.ts asks it on «Лавка» only.
  */
-export function upgradeHint(state: SaveData, idleSec: number, afterSec: number, affordable: boolean, prefer = ''): FtueHint | null {
-  if (!state.flags[FLAGS.done] || idleSec < afterSec || !affordable || Object.values(state.upgrades).some((n) => n > 0)) return null;
-  // S-06: the frame on the upgrade the player will see at once (ftue.json firstUpgrade), else on any price.
-  const first = prefer ? [`[data-action="buy-upgrade"][data-id="${prefer}"]`] : [];
+export function upgradeHint(state: SaveData, idleSec: number, afterSec: number, affordable: boolean, prefer: string | string[] = '', again = false): FtueHint | null {
+  // N-01: again — a later call (after a deal, src/main.ts counts the deals between calls); the first one waits for no upgrade bought.
+  if (!state.flags[FLAGS.done] || idleSec < afterSec || !affordable || (!again && Object.values(state.upgrades).some((n) => n > 0))) return null;
+  // S-06: the frame on the upgrade the player will see at once (ftue.json firstUpgrade), else on any price; N-01: the ids in order.
+  const first = (Array.isArray(prefer) ? prefer : [prefer]).filter(Boolean).map((id) => `[data-action="buy-upgrade"][data-id="${id}"]`);
   return { step: 'tab', key: 'ftue.upgrade', target: { kind: 'el', selectors: [...first, '[data-action="buy-upgrade"]', '[data-action="open-upgrades"]'] } };
 }
 
@@ -151,7 +152,10 @@ export const TAB_HINTS: Record<string, string[]> = {
   season: [],
 };
 
-export function tabHint(tab: string): FtueHint | null {
+export function tabHint(tab: string, listed = false): FtueHint | null {
+  // N-02 (предприёмка штаба 19): a pet already on the shelf and no free place — «Продажи» says it waits for a buyer, never «выставь».
+  // The frame on the pet's card (its bubble under it, on no button), never on «Снять с витрины» alone (S-05).
+  if (tab === 'sales' && listed) return { step: 'tab', key: 'ftue.tab.salesListed', target: { kind: 'el', selectors: ['[data-sheet="sales"] .card-sale', '[data-sheet="sales"] .mu-head'] } };
   const selectors = TAB_HINTS[tab];
   if (!selectors) return null;
   // MU-02: a tab has no title row — an empty tab's hint stands at its section head or its segments.

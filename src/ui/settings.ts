@@ -29,6 +29,8 @@ export function createSettingsWindow(
   onBack: () => void,
   redeem?: (code: string) => 'ok' | 'used' | 'unknown',
   shopName?: ShopNameField,
+  /** N-05: the short hash of the build — a grey line at the bottom (the check link only). */
+  build?: string,
 ): SettingsWindow {
   const overlay = createOverlay(parent, 'settings', () => win.close(), { over: ['pause'], dismiss: () => overlay.hide() });
   const title = document.createElement('h2');
@@ -155,6 +157,13 @@ export function createSettingsWindow(
   if (shopName) overlay.card.append(nameEdit, nameRow, nameAnswer);
   if (redeem) overlay.card.append(codeRow, codeAnswer);
   renderCommunity(overlay.card, links, 'settings');
+  if (build) {
+    const line = document.createElement('p');
+    line.className = 'build-line';
+    line.dataset.buildLine = build;
+    line.textContent = i18n.t('settings.build', { sha: build });
+    overlay.card.append(line);
+  }
 
   const win: SettingsWindow = {
     overlay,

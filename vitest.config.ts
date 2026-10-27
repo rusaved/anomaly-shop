@@ -18,6 +18,7 @@ export default defineConfig({
     __STUDIO__: 'false',
     __TEST_API__: 'false',
     __BUILD_LABEL__: '""',
+    __BUILD_SHA__: '"test"',
     __PLATFORM__: '"null"',
     __GAME__: JSON.stringify({
       id: game.id,

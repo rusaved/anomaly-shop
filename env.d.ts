@@ -5,6 +5,8 @@ declare const __STUDIO__: boolean;
 declare const __TEST_API__: boolean;
 /** Milestone label for the producer link ("M1 · 2026-10-20 · 1a2b3c4"); empty string elsewhere. */
 declare const __BUILD_LABEL__: string;
+/** N-05: the short commit hash of the build (the grey line of «Настройки» on the check link). */
+declare const __BUILD_SHA__: string;
 /** Platform profile of this build (docs/02-tech.md, section 6). */
 declare const __PLATFORM__: 'yandex' | 'null' | 'youtube' | 'vk';
 /** Public part of game.json for this profile; `community` is null in the youtube build. */

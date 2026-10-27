@@ -214,6 +214,16 @@ describe('P-08 (ревизор геймдизайна) the first upgrade', () =>
     save.flags.ftue_done = false;
     expect(upgradeHint(save, 8, 8, true)).toBeNull();
   });
+
+  it('N-01: a later call (again) comes with an upgrade bought, frames the ids in order, then any price', () => {
+    const save = newSave(0);
+    Object.assign(save.flags, { ftue_starter: true, ftue_done: true });
+    save.upgrades = { incubator: 1 };
+    const h = upgradeHint(save, 0, 0, true, ['sign', 'incubator_speed'], true);
+    expect(h?.key).toBe('ftue.upgrade');
+    expect(h?.target).toEqual({ kind: 'el', selectors: ['[data-action="buy-upgrade"][data-id="sign"]', '[data-action="buy-upgrade"][data-id="incubator_speed"]', '[data-action="buy-upgrade"]', '[data-action="open-upgrades"]'] });
+    expect(upgradeHint(save, 0, 0, false, ['sign'], true)).toBeNull();
+  });
 });
 
 describe('P-08 (ревизор геймдизайна, повтор) an unanswered buyer first', () => {

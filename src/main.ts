@@ -322,11 +322,7 @@ async function boot(): Promise<void> {
   // slips onto the dimmed tab bar does nothing).
   const nav = createNav(uiRoot, (tab, again) => {
     if (hatchShow.isOpen()) nav.mark(shown);
-    else {
-      // P-08 (ревизор геймдизайна): the dot of «Склад» is a find's reward — with no pet waiting the tab opens on «Находки».
-      if (tab === 'inventory' && !again && play.view().inventory.length === 0 && play.finds().some((f) => f.got && !f.claimed)) inventoryTab.setMode('finds');
-      showTab(tab, again);
-    }
+    else showTab(tab, again);
   });
   // 07 rule 8: the «+» of the balance opens the Store (its deals from the ads milestone; the upgrades till then).
   hud.wallet.addEventListener('click', openUpgrades);

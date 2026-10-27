@@ -1,0 +1,8 @@
+P · архивы в downloads/ — пересобраны в итоге «Ресейл 17 · Доводка» (сессия по расписанию штаба 27.10): код коммита 8dc1d57 + откат «Склад → Находки» (в рабочей копии, войдёт в коммит итога)
+6b1f1bf20028c614c8dfa15828638740c1477797dae2d1aaa2ebfb7f14891639  downloads/anomaly-shop-0.1.0-playtest.zip
+63ed9257e6312aae8fb4871a85533f7197b57bc9b7e563b21c7d7c865f8c7af6  downloads/anomaly-shop-0.1.0.zip
+668268 downloads/anomaly-shop-0.1.0-playtest.zip
+659070 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8); e2e:release 1 прошло
+check:youtube — ok; e2e:youtube 2 прошло
+dist-vk: 38 файлов, 1,39 МБ, код gzip 0,32 МБ (check:vk ok); e2e:vk 17 прошло

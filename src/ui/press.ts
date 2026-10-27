@@ -26,7 +26,8 @@ export function installPress(doc: Document, deps: PressDeps): Press {
       if (!el || el.getAttribute('aria-disabled') === 'true' || (el as HTMLButtonElement).disabled) return;
       n += 1;
       deps.sound();
-      if (el.matches(MAIN) && deps.vibrate()) navigator.vibrate?.(deps.buzzMs);
+      // PT-07 (плейтестер: one console error) — the browser refuses a buzz before the page has been touched (a pointerdown fires first).
+      if (el.matches(MAIN) && deps.vibrate() && (navigator.userActivation?.hasBeenActive ?? true)) navigator.vibrate?.(deps.buzzMs);
     },
     { capture: true, passive: true },
   );

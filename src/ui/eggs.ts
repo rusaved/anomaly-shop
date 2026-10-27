@@ -143,8 +143,9 @@ export function createEggsTab(sheet: Sheet, game: Game, look: EggsLookups, detai
       // V-01 (Q-064 п. 2): a gift egg ready to take stands first in the row — never only after scrolling it sideways.
       mine[ready ? 'unshift' : 'push'](
         `<div class="mu-card card-egg" data-egg="${v.id}"><button type="button" class="mu-pic-btn" data-action="egg-card-${v.id}">${pic(look.eggPicture(v.id), v.fresh ? '<i class="mu-new"></i>' : '')}</button>` +
-          `<span class="mu-name">${esc(look.t(`egg.short.${v.id}`))}</span><span class="mu-meta">${esc(ready ? look.t('eggs.free1') : look.t('eggs.in', { t: fmtTime(v.freeIn ?? 0) }))}</span>` +
-          `<button type="button" class="mu-btn${ready ? ' good-text' : ' off'}" data-action="egg-free-${v.id}" aria-disabled="${!ready}">${esc(look.t('eggs.take'))}</button></div>`,
+          `<span class="mu-name">${esc(look.t(`egg.short.${v.id}`))}</span><span class="mu-meta">${esc(look.t('eggs.free1'))}</span>` +
+          // P-08 (плейтестер): a gift egg still on its timer shows the time on its quiet button, never a «Забрать» that does nothing.
+          `<button type="button" class="mu-btn${ready ? ' good-text' : ' off'}" data-action="egg-free-${v.id}" aria-disabled="${!ready}">${esc(ready ? look.t('eggs.take') : look.t('eggs.in', { t: fmtTime(v.freeIn ?? 0) }))}</button></div>`,
       );
     }
     // M5-02: two egg-ad cards in their own row «За видео» (the usability review: not mixed with the player's eggs); the head

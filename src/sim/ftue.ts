@@ -82,7 +82,8 @@ export function chatHint(state: SaveData, view: GameView, idleSec: number, after
  */
 export function eggHint(state: SaveData, view: GameView, idleSec: number, afterSec: number, eggPrice: number): FtueHint | null {
   if (!state.flags[FLAGS.done] || idleSec < afterSec || view.queue.length > 0) return null;
-  if (state.coins + 1e-9 < eggPrice || Object.keys(state.myEggs).length > 0 || view.incubators.some((i) => i.ready)) return null;
+  // H-08: «Мои яйца» keeps a used kind with 0 — only an egg really waiting there stops the call.
+  if (state.coins + 1e-9 < eggPrice || Object.values(state.myEggs).some((n) => n > 0) || view.incubators.some((i) => i.ready)) return null;
   const index = view.incubators.findIndex((i) => !i.egg);
   return index < 0 ? null : { step: 'buyEgg', target: { kind: 'incubator', index } };
 }
@@ -94,6 +95,16 @@ export function readyHint(state: SaveData, view: GameView, idleSec: number, afte
   if (!state.flags[FLAGS.done] || idleSec < afterSec || view.queue.length > 0) return null;
   const index = view.incubators.findIndex((i) => i.ready);
   return index < 0 ? null : { step: 'tapEgg', target: { kind: 'incubator', index } };
+}
+
+/**
+ * H-08 (the bot of five minutes waited 81 s for a warming egg with nothing calling): an idle player whose only thing is an egg warming —
+ * «Тапни яйцо, быстрее вылупится» on it (taps warm it up).
+ */
+export function warmHint(state: SaveData, view: GameView, idleSec: number, afterSec: number): FtueHint | null {
+  if (!state.flags[FLAGS.done] || idleSec < afterSec || view.queue.length > 0 || view.creatures.length > 0 || view.inventory.length > 0) return null;
+  const index = view.incubators.findIndex((i) => i.egg && !i.ready);
+  return index < 0 ? null : { step: 'tapEgg', key: 'ftue.warmEgg', target: { kind: 'incubator', index } };
 }
 
 /**

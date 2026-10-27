@@ -41,7 +41,7 @@ import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { createAds } from './ui/ads.ts';
 import { createShopStore } from './ui/store.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { chatHint, eggHint, ftueHint, nothingToDo, onEggsTab, readyHint, shelfHint, tabHint, tabUnlocked, upgradeHint, type FtueHint } from './sim/ftue.ts';
+import { chatHint, eggHint, ftueHint, nothingToDo, onEggsTab, readyHint, shelfHint, tabHint, tabUnlocked, upgradeHint, warmHint, type FtueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { createNav, TABS, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
@@ -1241,6 +1241,7 @@ async function boot(): Promise<void> {
     installTestApi({ runtime, platform, i18n, fps: () => scene.app.ticker.FPS, isControllable: () => controllable, snapshot: () => ({
         coins: store.state.coins,
         creatures: store.state.creatures,
+        myEggs: store.state.myEggs,
         incubators: store.state.incubators,
         stats: store.state.stats,
         upgrades: store.state.upgrades,
@@ -1322,12 +1323,17 @@ async function boot(): Promise<void> {
           // P-08: the very first upgrade before the rest (once a game).
           (nav.active() === 'home' || afterDeal ? upgradeHint(store.state, idle, wait(ftue.eggHintSec), play.upgradeList().some((u) => u.affordable)) : null) ??
           readyHint(store.state, view, idle, wait(ftue.eggHintSec)) ??
-          eggHint(store.state, view, idle, nothingToDo(store.state, view) ? 0 : wait(ftue.eggHintSec), basicEggPrice))
+          eggHint(store.state, view, idle, nothingToDo(store.state, view) ? 0 : wait(ftue.eggHintSec), basicEggPrice) ??
+          warmHint(store.state, view, idle, ftue.eggHintSec))
         : null;
     const hint =
       away(lesson) ??
       // H-06: after a deal on another tab the next step points at «Лавка» with its own words (on «Яйца» a new egg at its price).
-      (nudge && afterDeal && nav.active() !== 'home' && !(onEggs && nudge.step === 'buyEgg') && (SCENE_TARGETS.has(nudge.target.kind) || nudge.key === 'ftue.upgrade') ? { ...nudge, target: { kind: 'button' as const, action: 'tab-home' } } : null) ??
+      // H-08 (the bot of five minutes stood 250 s on «Магазин» with nothing calling): an idle player on another tab gets the same call
+      // after eggHintSec — the band of the bubble comes only to a player who is not touching the list.
+      (nudge && nav.active() !== 'home' && !(onEggs && nudge.step === 'buyEgg') && ((afterDeal && (SCENE_TARGETS.has(nudge.target.kind) || nudge.key === 'ftue.upgrade')) || (idle >= ftue.eggHintSec && SCENE_TARGETS.has(nudge.target.kind)))
+        ? { ...nudge, target: { kind: 'button' as const, action: 'tab-home' } }
+        : null) ??
       (nudge && SCENE_TARGETS.has(nudge.target.kind) && nav.active() !== 'home'
         ? onEggs && nudge.step === 'buyEgg'
           ? { ...nudge, target: { kind: 'button' as const, action: `egg-buy-${ftue.starterEgg}` } }

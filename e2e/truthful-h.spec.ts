@@ -477,3 +477,21 @@ test.describe('815x290 H-07', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('815x290 H-08 fixes by the bot', () => {
+  test.use({ viewport: SIDE, isMobile: true, hasTouch: true });
+  const hintNow = (page: Page) => page.evaluate(() => (window as unknown as { __TEST__: { state(): { hint: string } } }).__TEST__.state().hint);
+
+  test('H-08 only an egg warming and an idle player: «Тапни яйцо, быстрее вылупится» on it; from another tab — on «Лавка»', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 0, creatures: [], showcase: [], incubators: [{ egg: 'egg_glow', startedAt: 0, progress: 0, elapsed: 0, waiting: false }], freeIn: { egg_gift: 300 }, upgrades: { sign: 1 }, flags: { ftue_starter: true, ftue_done: true, ftue_fed: true, ftue_bought: true, tab_shop: true } });
+    await open(page);
+    await page.locator('[data-tab=shop]').tap();
+    await expect.poll(() => hintNow(page), { timeout: 12_000 }).toBe(await tr(page, 'ftue.warmEgg'));
+    await expect(page.locator('[data-tab=home].is-hinted, [data-action=tab-home].is-hinted').first()).toBeVisible();
+    await page.locator('[data-tab=home]').tap();
+    await expect.poll(() => hintNow(page), { timeout: 12_000 }).toBe(await tr(page, 'ftue.warmEgg'));
+    await expect(page.locator('.hint-ring')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+});

@@ -46,7 +46,10 @@ function pick(page: Page) {
     const sellBtn = document.querySelector<HTMLElement>('.sheet:not([hidden]) [data-action=chat-sell]:not([aria-disabled=true])');
     if (vis(raise) && vis(sellBtn)) return { ...at(sellBtn, 'tab-main:chat-sell'), raise: at(raise, 'raise') };
     if (hatch) {
-      // The player taps the big main button (the strip, if it still runs, is skipped by any tap on the card).
+      // H-08: the player watches the strip to its end (that is the time the hatch takes in five minutes), then taps the big main button
+      // once it wakes (its pause muted).
+      const card = hatch.querySelector<HTMLElement>('.card-hatch');
+      if (!card?.classList.contains('shown') || card.classList.contains('hatch-locked')) return { x: 0, y: 0, why: 'watch', wait: true };
       const shop = hatch.querySelector<HTMLElement>('[data-action=hatch-shop]');
       return vis(shop) ? at(shop, 'hatch-shop') : null;
     }
@@ -111,7 +114,10 @@ for (const size of SIZES) {
             spot = gone ? null : await pick(page);
           }
         }
-        if (spot) {
+        if (spot && 'wait' in spot) {
+          await page.waitForTimeout(250);
+          spot = null;
+        } else if (spot) {
           await page.touchscreen.tap(spot.x, spot.y);
           await page.waitForTimeout(700);
           const after = (await state(page)) as S;
@@ -152,7 +158,7 @@ for (const size of SIZES) {
       }
       const st = (await state(page)) as S;
       const uniq = [...new Set(dead)].map((w) => `${w}×${dead.filter((d) => d === w).length}`).join(', ');
-      const line = `${process.env.H_BOT_OUT ?? ''} · ${tag} · вылупление ${((hatchMs / RUN_MS) * 100).toFixed(0)} % времени · первая продажа ${firstDeal === null ? 'нет' : `${firstDeal.toFixed(0)} с`} · торг ${haggle.tries} (да ${haggle.yes}, середина ${haggle.middle}, ушёл ${haggle.gone}) · самый длинный простой ${(longest / 1000).toFixed(0)} с (${longestWhat}) · тапов без отклика ${dead.length}${uniq ? ` (${uniq})` : ''} · продаж ${(st.stats as { deals: number }).deals}, монет ${st.coins} · в конце: шаг ${String(st.ftue)}, подсказка «${String(st.hint)}», вкладка ${String(st.tab)}, окна ${st.windows.join(',') || '—'}`;
+      const line = `${process.env.H_BOT_OUT ?? ''} · ${tag} · вылупление ${((hatchMs / RUN_MS) * 100).toFixed(0)} % времени · первая продажа ${firstDeal === null ? 'нет' : `${firstDeal.toFixed(0)} с`} · торг ${haggle.tries} (да ${haggle.yes}, середина ${haggle.middle}, ушёл ${haggle.gone}) · самый длинный простой ${(longest / 1000).toFixed(0)} с (${longestWhat}) · тапов без отклика ${dead.length}${uniq ? ` (${uniq})` : ''} · продаж ${(st.stats as { deals: number }).deals}, монет ${st.coins} · в конце: шаг ${String(st.ftue)}, подсказка «${String(st.hint)}», вкладка ${String(st.tab)}, окна ${st.windows.join(',') || '—'}, инкубаторы ${(st.incubators as Array<{ egg: string | null; ready?: boolean }>).map((i) => (i.egg ? (i.ready ? 'готово' : 'греется') : 'пусто')).join('/')}, витрина ${(st.shelf as unknown[]).length}, склад ${(st.creatures as unknown[]).length}, мои яйца ${JSON.stringify((st as { myEggs?: unknown }).myEggs ?? {})}`;
       await page.screenshot({ path: `test-results/bot-h-${tag}.png` });
       console.log(line);
       if (out) {

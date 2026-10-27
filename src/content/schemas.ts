@@ -263,6 +263,8 @@ export const FeelFile = v.object({
   priceUpPx: v.pipe(v.number(), v.minValue(14)),
   /** S-02: the pause between two toasts, s. */
   toastGapSec: v.pipe(v.number(), v.minValue(0), v.maxValue(3)),
+  /** S-09: the whole screen on a finger tap — at most once in askGapSec; the layout recounted again after recountMs. */
+  fullscreen: v.object({ askGapSec: v.pipe(v.number(), v.minValue(1)), recountMs: v.pipe(v.number(), v.minValue(0), v.maxValue(1000)) }),
   hatchLongFirst: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10)),
   hatchLongFrom: Rarity,
   /** Круг правок FB п. 1: the hatch result's buttons take a press this long after it shows (a double tap of the skip never chooses), ≥ 0.5 s; P-05: once, taps never stretch it. */

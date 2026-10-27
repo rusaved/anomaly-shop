@@ -43,6 +43,7 @@ import { createShopStore } from './ui/store.ts';
 import { bindFunnel } from './analytics/funnel.ts';
 import { chatHint, eggHint, ftueHint, nothingToDo, onEggsTab, readyHint, shelfHint, tabHint, tabUnlocked, upgradeHint, warmHint, type FtueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
+import { installFullscreen } from './ui/fullscreen.ts';
 import { createNav, TABS, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
 import { createSheet, type Sheet } from './ui/sheet.ts';
@@ -84,6 +85,8 @@ async function boot(): Promise<void> {
   // MU-01: one rarity scale everywhere (docs/07 «Редкость»): frames, badges and rings read --r-<rarity>.
   applyTheme(style.rarity, document.documentElement, 'r');
   const platform = await loadPlatform(track);
+  // S-09: the whole screen on the first finger tap (where the platform does not run the screen itself).
+  if (platform.fullscreen) installFullscreen(platform.fullscreen, feel.fullscreen);
   // V-02…V-08: the VK and OK build — its menu, texts and rules (other builds never load them).
   const vkUi = __PLATFORM__ === 'vk' ? await import('./ui/vk-menu.ts') : null;
   const vkData = vkUi ? vkUi.vkContent : null;

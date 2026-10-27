@@ -64,6 +64,9 @@ describe('V-02 the site and the device by the launch parameters', () => {
     expect(launchedByPlatform('?vk_app_id=1&sign=abc&mock=vk')).toBe(true);
     expect(launchedByPlatform('?mock=vk')).toBe(false);
   });
+  it('S-09 VK and OK on the live bridge run the screen themselves: the platform asks for no whole screen', () => {
+    expect(createVkPlatform(deps(fakeBridge().bridge)).fullscreen).toBeUndefined();
+  });
   it('VKWebAppInit is the first bridge call, made with the platform', () => {
     const f = fakeBridge();
     const p = createVkPlatform(deps(f.bridge));

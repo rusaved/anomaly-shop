@@ -5,7 +5,7 @@
 import type { Player, SDK, SafeStorage } from 'ysdk';
 import type { DeviceType, LeaderEntry, Leaders, Payments, Platform, PlatformCaps, PlatformTrack, RewardedOutcome } from './types.ts';
 import { browserStorage, createMirror, type KeyValue, type Mirror } from './storage.ts';
-import { createLocalLeaders, gameLanguage, guessDevice, noPayments, pickNewestSave, profileCaps } from './shared.ts';
+import { browserFullscreen, createLocalLeaders, gameLanguage, guessDevice, noPayments, pickNewestSave, profileCaps } from './shared.ts';
 import { CLOUD_QUEUE, createSaveQueue } from './save-queue.ts';
 
 export const SAVE_KEY = 'save';
@@ -69,6 +69,7 @@ interface YaPayments {
 
 export function createYandexPlatform(deps: YandexDeps): Platform {
   let sdk: SDK | null = null;
+  const browser = typeof document === 'undefined' ? { on: () => false, request: () => undefined } : browserFullscreen();
   let player: Player | null = null;
   let mirror: Mirror = createMirror(deps.storage, deps.prefix);
   let readyDone = false;
@@ -331,6 +332,15 @@ export function createYandexPlatform(deps: YandexDeps): Platform {
           },
         });
       });
+    },
+    // S-09: the SDK's own whole screen (nothing when it is on already); the mock SDK of the producer link has none — the browser's.
+    fullscreen: {
+      on: () => (sdk?.screen?.fullscreen ? sdk.screen.fullscreen.status === 'on' : browser.on()),
+      request() {
+        const fs = sdk?.screen?.fullscreen;
+        if (!fs) return browser.request();
+        if (fs.status !== 'on') fs.request().catch(() => undefined);
+      },
     },
     setBanner(on) {
       if (!sdk) return;

@@ -82,12 +82,21 @@ export interface Platform {
   load(): Promise<string | null>;
   save(data: string, opts?: { flush?: boolean }): void;
   now(): number;
+  /** S-09: the whole screen on a tap — the platform's own way (Yandex SDK) or the browser's (Pages, ?mock=vk, null); missing where the
+   *  platform runs the screen itself (VK and OK on the live bridge, YouTube). */
+  readonly fullscreen?: FullscreenControl;
   /** V-02 (vk only): VK or OK. */
   readonly site?: VkSite;
   /** V-05 (vk only): a rewarded video is loaded now — an ad button shows only then. */
   rewardedReady?(): boolean;
   /** V-08 (vk only): the platform's «join the community» window; true only when the player joined. */
   joinCommunity?(): Promise<boolean>;
+}
+
+/** S-09: the whole screen. on — the game fills the screen now; request — asks for it (only from a tap: the browser allows it then). */
+export interface FullscreenControl {
+  on(): boolean;
+  request(): void;
 }
 
 /** Side channel for technical events (sdk_init_slow, cloud_save_failed, ...): the platform never imports analytics. */

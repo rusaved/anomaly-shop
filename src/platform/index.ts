@@ -21,7 +21,11 @@ export async function loadPlatform(track: PlatformTrack): Promise<Platform> {
     const bridge = mock ? (await import('./vk-mock.ts')).createVkMock() : (await import('@vkontakte/vk-bridge')).default;
     // The stand-in joins a made-up group while the studio has not filled the ids (the flow can be tried on the producer link).
     const groupId = mock ? (site: 'vk' | 'ok') => vkGroupId(site) || 1 : vkGroupId;
-    return m.createVkPlatform(m.browserDeps(bridge as unknown as import('./vk.ts').VkBridgeLike, track, { ...vk.save, rewardedRecheckSec: vk.ads.rewardedRecheckSec }, groupId));
+    const platform = m.createVkPlatform(m.browserDeps(bridge as unknown as import('./vk.ts').VkBridgeLike, track, { ...vk.save, rewardedRecheckSec: vk.ads.rewardedRecheckSec }, groupId));
+    // S-09: VK and OK run the screen themselves (live bridge: no request); the stand-in of ?mock=vk in a plain tab — the browser's.
+    if (!mock) return platform;
+    const { browserFullscreen } = await import('./shared.ts');
+    return Object.assign(platform, { fullscreen: browserFullscreen() });
   }
   const m = await import('./null.ts');
   return m.createNullPlatform(m.browserDeps());

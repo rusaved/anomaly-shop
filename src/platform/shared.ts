@@ -2,7 +2,7 @@
 // Called by: src/platform/yandex.ts, youtube.ts, null.ts; tests/platform.test.ts.
 // Keep: no DOM and no SDK here; every function takes its inputs as arguments.
 
-import type { Leaders, DeviceType, Lang, Payments, PlatformCaps } from './types.ts';
+import type { FullscreenControl, Leaders, DeviceType, Lang, Payments, PlatformCaps } from './types.ts';
 
 /** Maps a platform or browser language code to one of the game languages. */
 export function pickLanguage(
@@ -115,5 +115,17 @@ export function noPayments(): Payments {
     buy: () => Promise.resolve({ result: 'error', token: '' }),
     owned: () => Promise.resolve([]),
     consume: () => Promise.resolve(),
+  };
+}
+
+/** S-09: the browser's Fullscreen API (Pages without a platform, ?mock=vk, null); a refusal leaves the game whole in its window. */
+export function browserFullscreen(doc: Document = document): FullscreenControl {
+  return {
+    on: () => doc.fullscreenElement !== null && doc.fullscreenElement !== undefined,
+    request() {
+      const el = doc.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
+      if (el.requestFullscreen) el.requestFullscreen({ navigationUI: 'hide' }).catch(() => undefined);
+      else el.webkitRequestFullscreen?.();
+    },
   };
 }

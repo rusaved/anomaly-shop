@@ -388,6 +388,24 @@ test.describe('815x290 P-01 menu, loading, toast, join', () => {
     expect(w.errors).toEqual([]);
   });
 
+  test('S-09 ?mock=vk in a plain tab: the first finger tap asks the browser for the whole screen (the live bridge never asks: tests/vk.test.ts)', async ({ page }) => {
+    const w = watch(page);
+    await page.addInitScript(() => {
+      const s = window as unknown as { __fsAsks: number };
+      s.__fsAsks = 0;
+      Element.prototype.requestFullscreen = function () {
+        s.__fsAsks += 1;
+        return Promise.reject(new TypeError('refused'));
+      };
+    });
+    await page.goto(`/${VK}`);
+    await up(page);
+    await page.touchscreen.tap(400, 20);
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __fsAsks: number }).__fsAsks)).toBe(1);
+    await expect(page.locator('[data-overlay=menu]')).toBeVisible();
+    expect(w.errors).toEqual([]);
+  });
+
   test('P-01 after the gift for joining, «Помощь» and «Подарки» say «Уже в сообществе» instead of «Вступить»', async ({ page }) => {
     const w = watch(page);
     await page.goto(`/${VK}`);

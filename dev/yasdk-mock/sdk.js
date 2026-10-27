@@ -426,7 +426,19 @@
       requestReview: function () { record('feedback.requestReview'); return Promise.resolve({ feedbackSent: true }); },
     },
     clipboard: { writeText: function (text) { record('clipboard.writeText', [text]); } },
-    screen: { fullscreen: { STATUS_ON: 'on', STATUS_OFF: 'off', status: 'off', request: function () { record('screen.fullscreen.request'); return Promise.resolve(); }, exit: function () { record('screen.fullscreen.exit'); return Promise.resolve(); } } },
+    // S-09: the platform frame's whole screen is the browser's on the producer link (Pages has no frame): request() asks the Fullscreen
+    // API, status follows it.
+    screen: { fullscreen: {
+      STATUS_ON: 'on', STATUS_OFF: 'off',
+      get status() { var d = root.document; return d && d.fullscreenElement ? 'on' : 'off'; },
+      request: function () {
+        record('screen.fullscreen.request');
+        var de = root.document && root.document.documentElement;
+        if (!de || !de.requestFullscreen || root.document.fullscreenElement) return Promise.resolve();
+        return de.requestFullscreen({ navigationUI: 'hide' }).catch(function () { /* refused: the game stays in the window */ });
+      },
+      exit: function () { record('screen.fullscreen.exit'); var d = root.document; return d && d.fullscreenElement && d.exitFullscreen ? d.exitFullscreen() : Promise.resolve(); }
+    } },
     serverTime: function () { record('serverTime'); return now(); },
     isAvailableMethod: function (name) { record('isAvailableMethod', [name]); return Promise.resolve(true); },
     gameplayState: function () { return gameplayState; },

@@ -4,7 +4,7 @@
 
 import type { DeviceType, Platform, PlatformCaps } from './types.ts';
 import { browserStorage, createMirror, type KeyValue } from './storage.ts';
-import { createLocalLeaders, gameLanguage, guessDevice, noPayments, once, profileCaps } from './shared.ts';
+import { browserFullscreen, createLocalLeaders, gameLanguage, guessDevice, noPayments, once, profileCaps } from './shared.ts';
 
 export const SAVE_KEY = 'save';
 
@@ -34,6 +34,8 @@ export function createNullPlatform(deps: NullDeps = browserDeps()): Platform {
   const markReady = once(() => void readyCalls++);
   return {
     name: 'null',
+    // S-09: no platform frame — the browser's whole screen.
+    ...(typeof document === 'undefined' ? {} : { fullscreen: browserFullscreen() }),
     device: deps.device,
     caps: deps.caps,
     async init() {

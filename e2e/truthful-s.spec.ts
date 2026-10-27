@@ -328,3 +328,63 @@ for (const size of SIZES) {
     });
   });
 }
+
+test.describe('815x290 S-09', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+
+  test('S-09 the first finger tap asks for the whole screen; a refusal keeps the game whole and the next tap (a second later) asks again; inside the whole screen (880×405) the layout is whole and a tap asks nothing; a mouse never asks', async ({ page }) => {
+    test.setTimeout(60_000);
+    const errors = collectErrors(page);
+    // The Fullscreen API stand-in: counts the requests, refuses the first, then goes «full» when the test says so.
+    await page.addInitScript(() => {
+      const w = window as unknown as { __fs: { asks: number; refuse: boolean; el: Element | null } };
+      w.__fs = { asks: 0, refuse: true, el: null };
+      Object.defineProperty(Document.prototype, 'fullscreenElement', { configurable: true, get: () => w.__fs.el });
+      Element.prototype.requestFullscreen = function () {
+        w.__fs.asks += 1;
+        return w.__fs.refuse ? Promise.reject(new TypeError('refused')) : Promise.resolve();
+      };
+    });
+    await seedSave(page, { coins: 30, upgrades: { sign: 1 }, freeIn: { egg_gift: 300 } });
+    await open(page);
+    const asks = () => page.evaluate(() => (window as unknown as { __fs: { asks: number } }).__fs.asks);
+    // A mouse click asks nothing.
+    await page.mouse.click(400, 150);
+    await page.waitForTimeout(200);
+    expect(await asks()).toBe(0);
+    await page.touchscreen.tap(400, 150);
+    await expect.poll(asks).toBe(1);
+    // Refused: the game stays whole in its window; a tap within the second does not ask, one after it does.
+    await page.touchscreen.tap(400, 150);
+    await page.waitForTimeout(150);
+    expect(await asks()).toBe(1);
+    await page.waitForTimeout(1000);
+    await page.touchscreen.tap(400, 150);
+    await expect.poll(asks).toBe(2);
+    // The browser lets it: the whole screen of the phone sideways (880×405) — the layout follows.
+    await page.setViewportSize({ width: 880, height: 405 });
+    await page.evaluate(() => {
+      (window as unknown as { __fs: { el: Element | null } }).__fs.el = document.documentElement;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    });
+    await page.waitForTimeout(400);
+    const box = await page.evaluate(() => {
+      const app = document.querySelector<HTMLElement>('#app') ?? document.body;
+      const r = (s: string) => document.querySelector(s)?.getBoundingClientRect();
+      return { w: app.clientWidth, h: app.clientHeight, sw: document.documentElement.scrollWidth, sh: document.documentElement.scrollHeight, hud: r('.hud'), nav: r('#nav'), canvas: r('canvas') };
+    });
+    expect(box.sw).toBeLessThanOrEqual(880);
+    expect(box.sh).toBeLessThanOrEqual(405);
+    expect(box.nav!.bottom).toBeLessThanOrEqual(405.5);
+    expect(box.nav!.right).toBeLessThanOrEqual(880.5);
+    expect(box.hud!.top).toBeGreaterThanOrEqual(-0.5);
+    expect(box.canvas!.width).toBeGreaterThan(400);
+    await page.screenshot({ path: 'docs/evidence/S/s09-fullscreen_880x405.png' });
+    // Inside the whole screen a tap asks nothing.
+    await page.waitForTimeout(1000);
+    await page.touchscreen.tap(440, 200);
+    await page.waitForTimeout(200);
+    expect(await asks()).toBe(2);
+    expect(errors).toEqual([]);
+  });
+});

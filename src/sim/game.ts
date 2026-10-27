@@ -1742,7 +1742,9 @@ export function createGame(store: GameStore, content: GameContent, rng: Rng): Ga
         return 'gone';
       }
       chat.offer = r.offer;
-      chat.lines.push(r.result === 'yes' ? { from: 'them', ctx: 'accept', i: pickLineIndex(chat.character, 'accept') } : { from: 'them', ctx: 'last', i: pickLineIndex(chat.character, 'last'), n: r.offer });
+      // H-08 (плейтестер): «Последнее слово: N» only when no raise is left; before that the buyer names the middle as a plain offer.
+      const ctx = chat.raises >= h.maxRaises ? 'last' : 'offer';
+      chat.lines.push(r.result === 'yes' ? { from: 'them', ctx: 'accept', i: pickLineIndex(chat.character, 'accept') } : { from: 'them', ctx, i: pickLineIndex(chat.character, ctx), n: r.offer });
       s().stats.haggles += 1;
       commit();
       emit({ type: 'chatReply', id, ctx: r.result === 'yes' ? 'accept' : 'last' });

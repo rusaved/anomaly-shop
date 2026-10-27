@@ -1283,7 +1283,7 @@ async function boot(): Promise<void> {
         store.state.coins += coins;
         store.commit();
       },
-      toast: (text) => toasts.show(text, 'info'),
+      toast: (text, kind) => toasts.show(text, kind ?? 'info'),
       calmToast: (text) => toasts.show(text, 'good', 2400, { calm: true }),
       event: (id) => play.startEventNow(id),
       hatch: (uid, egg) => {

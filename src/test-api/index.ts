@@ -32,7 +32,8 @@ export interface TestHooks {
   /** e2e only: coins for flows that are not under test (shop purchases). */
   grant(coins: number): void;
   /** e2e only: a toast through the same queue as the game's (M3-18). */
-  toast?(text: string): void;
+  /** S-02: kind — a find is 'rare' (kept when the queue overflows), the default a plain one. */
+  toast?(text: string, kind?: 'info' | 'good' | 'rare' | 'warn'): void;
   /** H-04: calm news (a level, a new thing in the shop) through the same queue. */
   calmToast?(text: string): void;
   /** e2e only (M4-21): starts a random event by its id now, when it may come. */
@@ -93,8 +94,8 @@ export function installTestApi(hooks: TestHooks): void {
     event(id: string): boolean {
       return hooks.event?.(id) ?? false;
     },
-    toast(text: string): void {
-      hooks.toast?.(text);
+    toast(text: string, kind?: 'info' | 'good' | 'rare' | 'warn'): void {
+      hooks.toast?.(text, kind);
     },
     calmToast(text: string): void {
       hooks.calmToast?.(text);

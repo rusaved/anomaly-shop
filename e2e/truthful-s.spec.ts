@@ -278,6 +278,11 @@ for (const size of SIZES) {
       await open(page);
       await page.locator('[data-tab=eggs]').tap();
       await page.waitForTimeout(400);
+      // The list scrolled a little: its buttons pass under the top bar (clipped there) — the toast still finds the bar's free stretch.
+      await page.evaluate(() => {
+        const body = document.querySelector<HTMLElement>('[data-sheet=eggs] > .sheet-body');
+        if (body) body.scrollTop = 40;
+      });
       const golden = await tr(page, 'event.golden');
       // A real event, a calm novelty and a plain toast — at once.
       await page.evaluate(() => {
@@ -312,7 +317,8 @@ for (const size of SIZES) {
       await page.evaluate(() => (window as unknown as { __TEST__: { hatch(uid: string, egg: string): boolean } }).__TEST__.hatch('s2', 'egg_basic'));
       await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
       const find = 'Находка «Полпути»!';
-      await page.evaluate((text) => (window as unknown as T).__TEST__.toast(text), find);
+      // A find is a rare toast (as in the game): it is kept while others wait behind the window.
+      await page.evaluate((text) => (window as unknown as { __TEST__: { toast(t: string, k: string): void } }).__TEST__.toast(text, 'rare'), find);
       for (let i = 0; i < 15; i++) {
         expect((await toastNow(page)).text).not.toBe(find);
         await page.waitForTimeout(100);

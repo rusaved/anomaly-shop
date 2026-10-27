@@ -194,14 +194,29 @@ const windowOpen = (): boolean => document.querySelector('.overlay:not([hidden])
 /** S-02: an answer to a tap (now) or a refusal of one (warn) comes even over a window — the player tapped there. */
 const answers = (q: ToastItem): boolean => q.now === true || q.kind === 'warn';
 
+/** S-02: the part of an element in sight — clipped by every scrolling or clipping box around it. */
+function seen(e: HTMLElement): DOMRect {
+  let r = e.getBoundingClientRect();
+  for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) {
+    const s = getComputedStyle(p);
+    if (s.overflowX === 'visible' && s.overflowY === 'visible') continue;
+    const c = p.getBoundingClientRect();
+    const left = Math.max(r.left, c.left);
+    const top = Math.max(r.top, c.top);
+    r = new DOMRect(left, top, Math.max(0, Math.min(r.right, c.right) - left), Math.max(0, Math.min(r.bottom, c.bottom) - top));
+  }
+  return r;
+}
+
 /** S-02: the widest free stretch of the top bar between its buttons and chips (none — null). */
 function barStretch(): { left: number; width: number; hud: DOMRect } | null {
   const hud = document.querySelector('.hud')?.getBoundingClientRect();
   if (!hud || hud.height === 0) return null;
-  // Every button of the bar's band, also those laid over it from outside the bar (gifts, the level, the leaders).
+  // Every button of the bar's band, also those laid over it from outside the bar (gifts, the level, the leaders); a list's button
+  // scrolled under the bar is clipped away (it is not in sight there).
   const edges = [...document.querySelectorAll<HTMLElement>('button, [data-action], [data-chip]')]
     .filter((e) => e.offsetParent !== null && !e.closest('.toasts'))
-    .map((e) => e.getBoundingClientRect())
+    .map(seen)
     .filter((r) => r.width > 0 && r.height > 0 && r.top < hud.bottom - 2 && r.bottom > hud.top + 2)
     .sort((a, b) => a.left - b.left);
   let from = Math.max(0, hud.left);
@@ -336,9 +351,16 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
     }
 
     // S-02: a window that opens over a toast (not an answer) sends it back at once — it never lies on the window's buttons.
-    const watchWindow = new MutationObserver(() => {
+    // S-02: a button that shows up in the bar under a toast (gifts unlocked) moves it on the next frame.
+    let replace = 0;
+    const watchWindow = new MutationObserver((records) => {
       if (current !== el) return watchWindow.disconnect();
-      if (!gone && !answers(item) && windowOpen()) back();
+      if (!gone && !answers(item) && windowOpen()) return back();
+      if (gone || replace || records.every((r) => el.contains(r.target))) return;
+      replace = window.requestAnimationFrame(() => {
+        replace = 0;
+        if (current === el && !gone) place(el, extra);
+      });
     });
     watchWindow.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden', 'class'], childList: true });
     // A screen that opens under a toast already shown (a lot, a hint) moves it too.

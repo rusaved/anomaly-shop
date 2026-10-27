@@ -35,3 +35,16 @@ describe('M3-18 noise', () => {
     expect(news.everySec.max).toBeLessThanOrEqual(40);
   });
 });
+
+describe('H-04 one queue, the important first', () => {
+  it('an answer to a tap first, then a refusal, rare, good, the rest; calm news after the answers of its kind; same rank keeps its order', () => {
+    const q: ToastItem[] = [];
+    enqueue(q, t('plain1'), null);
+    enqueue(q, { text: 'level', kind: 'rare', ms: 1000, calm: true }, null);
+    enqueue(q, t('rare1', 'rare'), null);
+    enqueue(q, { text: 'answer', kind: 'info', ms: 1000, now: true }, null);
+    expect(q.map((x) => x.text)).toEqual(['answer', 'rare1', 'level', 'plain1']);
+    enqueue(q, t('plain2'), null);
+    expect(q.at(-1)!.text).toBe('plain2');
+  });
+});

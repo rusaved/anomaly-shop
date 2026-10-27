@@ -182,7 +182,9 @@ function placeCalm(el: HTMLElement, root: HTMLElement): void {
   root.style.removeProperty('transform');
   root.style.removeProperty('align-items');
   root.style.removeProperty('padding-left');
-  el.style.removeProperty('max-width');
+  // Its own width, not the column's (sideways the column is the scene's width, narrow beside a list).
+  el.style.maxWidth = 'none';
+  el.style.width = 'max-content';
   const box = el.getBoundingClientRect();
   const hud = document.querySelector('.hud')?.getBoundingClientRect();
   if (!hud) return;
@@ -196,7 +198,8 @@ function placeCalm(el: HTMLElement, root: HTMLElement): void {
     if (r.left - from > best.width) best = { left: from, width: r.left - from };
     from = Math.max(from, r.right);
   }
-  const w = Math.min(box.width, best.width - 16);
+  // +2 px: a text 0.3 px wider than its box would end in «…».
+  const w = Math.min(Math.ceil(box.width) + 2, best.width - 16);
   if (w >= 120 && box.height <= hud.height + 4) {
     el.style.maxWidth = `${Math.floor(w)}px`;
     const b = el.getBoundingClientRect();
@@ -204,7 +207,8 @@ function placeCalm(el: HTMLElement, root: HTMLElement): void {
     root.style.transform = `translate(${Math.round(best.left + (best.width - b.width) / 2 - b.left)}px, ${Math.round(top - b.top)}px)`;
     return;
   }
-  // No room in the bar (portrait): just under it.
+  // No room in the bar (portrait): just under it, within the screen.
+  el.style.maxWidth = 'calc(100vw - 32px)';
   root.style.transform = `translateY(${Math.round(hud.bottom + 6 - box.top)}px)`;
 }
 

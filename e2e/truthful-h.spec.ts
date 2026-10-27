@@ -248,3 +248,68 @@ test.describe('815x290 H-03 first deal', () => {
     expect(errors).toEqual([]);
   });
 });
+
+for (const size of [SIDE, { width: 812, height: 330 }, { width: 880, height: 405 }]) {
+  const tag = `${size.width}x${size.height}`;
+  test.describe(`${tag} H-04`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+    const calm = (page: Page, text: string) => page.evaluate((x) => (window as unknown as T).__TEST__.calmToast(x), text);
+    /** The calm toast on screen: one line and clear of the shelf, the chats and any window. */
+    const clear = (page: Page) =>
+      page.evaluate(() => {
+        const el = document.querySelector<HTMLElement>('.toast.toast-calm:not(.out)');
+        if (!el) return null;
+        const b = el.getBoundingClientRect();
+        const lh = parseFloat(getComputedStyle(el).lineHeight) || 20;
+        const hit = [...document.querySelectorAll('.overlay:not([hidden]) > .card, .sheet:not([hidden]) .chat-row, .sheet:not([hidden]) .chat-dialog, #nav')]
+          .map((e) => e.getBoundingClientRect())
+          .filter((r) => r.width > 0 && r.top < b.bottom && r.bottom > b.top && r.left < b.right && r.right > b.left);
+        const t = (window as unknown as { __TEST__: { targets(): { slots: Array<{ x: number; y: number; w?: number; h?: number }> } | null } }).__TEST__.targets();
+        const shelf = (t?.slots ?? []).filter((s) => s.x > b.left - 20 && s.x < b.right + 20 && s.y > b.top - 20 && s.y < b.bottom + 20).length;
+        return { lines: Math.round((b.height - 12) / lh), hits: hit.length, shelf, nowrap: getComputedStyle(el).whiteSpace };
+      });
+
+    test(`H-04 «Уровень продавца N!» and «Новое в магазине» are one line, never over the shelf, the chats or a window @ ${tag}`, async ({ page }) => {
+      const errors = collectErrors(page);
+      await seedSave(page, {
+        coins: 0,
+        creatures: [{ uid: 'h1', species: 'kettle', level: 3, fed: 0, hatchedAt: 0, age: 0 }, { uid: 'h2', species: 'cloudcat', level: 2, fed: 0, hatchedAt: 0, age: 0 }],
+        showcase: ['h1', 'h2'],
+        freeIn: { egg_gift: 300 },
+      });
+      await open(page);
+      // «Лавка»: the shelf stays clear.
+      await calm(page, 'Новое в магазине: Тёплая лампа с длинным названием');
+      await expect(page.locator('.toast.toast-calm')).toBeVisible();
+      let c = (await clear(page))!;
+      expect(c.nowrap).toBe('nowrap');
+      expect(c.hits).toBe(0);
+      expect(c.shelf).toBe(0);
+      await page.screenshot({ path: `docs/evidence/H/toast-calm-home_${tag}.png` });
+      await page.locator('.toast.toast-calm').tap();
+      await expect(page.locator('.toast.toast-calm')).toHaveCount(0);
+      // «Чаты» with a buyer: the list and the dialog stay clear.
+      await page.evaluate(() => (window as unknown as T).__TEST__.setTimeScale(8));
+      await expect.poll(async () => (await st(page)).chats.length, { timeout: 30_000 }).toBeGreaterThan(0);
+      await page.evaluate(() => (window as unknown as T).__TEST__.setTimeScale(1));
+      await page.locator('[data-tab=chats]').tap();
+      await calm(page, 'Уровень продавца 3!');
+      await page.waitForTimeout(700);
+      c = (await clear(page)) ?? { lines: 1, hits: 0, shelf: 0, nowrap: 'nowrap' };
+      expect(c.hits).toBe(0);
+      await page.screenshot({ path: `docs/evidence/H/toast-calm-chats_${tag}.png` });
+      // A window open: the news waits and shows after it closes.
+      await page.locator('[data-tab=home]').tap();
+      await page.waitForTimeout(3000);
+      await page.locator('[data-hud=level]').tap();
+      await expect(page.locator('[data-overlay=reputation]')).toBeVisible();
+      await calm(page, 'Новое в магазине: Коврик');
+      await page.waitForTimeout(800);
+      await expect(page.locator('.toast.toast-calm', { hasText: 'Коврик' })).toHaveCount(0);
+      await page.locator('[data-overlay=reputation] .win-x').first().tap();
+      await expect(page.locator('[data-overlay=reputation]')).toBeHidden();
+      await expect(page.locator('.toast.toast-calm', { hasText: 'Коврик' })).toBeVisible({ timeout: 3000 });
+      expect(errors).toEqual([]);
+    });
+  });
+}

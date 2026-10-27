@@ -41,7 +41,7 @@ import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { createAds } from './ui/ads.ts';
 import { createShopStore } from './ui/store.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { eggHint, ftueHint, onEggsTab, shelfHint, tabHint, tabUnlocked, upgradeHint } from './sim/ftue.ts';
+import { chatHint, eggHint, ftueHint, onEggsTab, shelfHint, tabHint, tabUnlocked, upgradeHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { createNav, TABS, type TabId } from './ui/nav.ts';
 import { dismissAll, dismissTop, topWindow } from './ui/overlay.ts';
@@ -1290,7 +1290,7 @@ async function boot(): Promise<void> {
     const onEggs = nav.active() === 'eggs';
     const first = ftueHint(store.state, view, freeEggReady());
     // P-04: on «Яйца» the «rare egg» step points at «Открыть»; after the first minute an idle empty incubator says «Купи новое яйцо».
-    const raw = controllable ? ((onEggs ? onEggsTab(first) : first) ?? shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice) ?? upgradeHint(store.state, idle, ftue.eggHintSec, play.upgradeList().some((u) => u.affordable))) : null;
+    const raw = controllable ? ((onEggs ? onEggsTab(first) : first) ?? chatHint(store.state, view, idle, ftue.shelfHintSec / 2) ?? shelfHint(store.state, view, idle, ftue.shelfHintSec) ?? eggHint(store.state, view, idle, ftue.eggHintSec, basicEggPrice) ?? upgradeHint(store.state, idle, ftue.eggHintSec, play.upgradeList().some((u) => u.affordable))) : null;
     // P-08 (the bot of the first minutes): a spot in the shop seen from another tab — the hint points at «Лавка» (on «Яйца» a new egg at its
     // price button), it never just vanishes.
     const hint =

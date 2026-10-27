@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
-import { eggHint, ftueHint, onEggsTab, shelfHint, tabHint, upgradeHint, type FtueStep } from '../src/sim/ftue.ts';
+import { chatHint, eggHint, ftueHint, onEggsTab, shelfHint, tabHint, upgradeHint, type FtueStep } from '../src/sim/ftue.ts';
 import { TABS } from '../src/ui/nav.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
@@ -213,5 +213,24 @@ describe('P-08 (ревизор геймдизайна) the first upgrade', () =>
     save.upgrades = {};
     save.flags.ftue_done = false;
     expect(upgradeHint(save, 8, 8, true)).toBeNull();
+  });
+});
+
+describe('P-08 (ревизор геймдизайна, повтор) an unanswered buyer first', () => {
+  it('«Продай покупателю» on the chat after the first minute once idle; «Купи новое яйцо» waits while a buyer writes', () => {
+    const save = newSave(0);
+    Object.assign(save.flags, { ftue_starter: true, ftue_fed: true, ftue_bought: true, ftue_done: true });
+    save.stats.hatched = 3;
+    save.stats.deals = 2;
+    save.coins = 50;
+    save.creatures = [{ uid: 'a', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 }];
+    save.showcase = ['a'];
+    const game = createGame(createStore(save, () => 0), content, createRng(2));
+    for (let t = 0; t < 120 && game.view().queue.length === 0; t += STEP_SEC) game.tick(STEP_SEC);
+    expect(game.view().queue.length).toBeGreaterThan(0);
+    expect(chatHint(game.state, game.view(), 3, 4)).toBeNull();
+    expect(chatHint(game.state, game.view(), 4, 4)?.step).toBe('sell');
+    const price = content.eggs.eggs.find((e) => e.id === content.ftue.starterEgg)!.price.coins;
+    expect(eggHint(game.state, game.view(), 60, 8, price)).toBeNull();
   });
 });

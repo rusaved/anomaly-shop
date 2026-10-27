@@ -68,11 +68,20 @@ export function shelfHint(state: SaveData, view: GameView, idleSec: number, afte
 }
 
 /**
+ * P-08 (ревизор геймдизайна, повтор): after the first minute an unanswered buyer comes before any other call — «Продай покупателю» on the
+ * chat (as in the lesson), once the player has been idle a moment.
+ */
+export function chatHint(state: SaveData, view: GameView, idleSec: number, afterSec: number): FtueHint | null {
+  if (!state.flags[FLAGS.done] || idleSec < afterSec || view.queue.length === 0) return null;
+  return { step: 'sell', target: SELL };
+}
+
+/**
  * P-04 (Q-056 Б п. 1): after the first minute, an empty incubator while the player is idle — «Купи новое яйцо» on it, but only when a tap
  * there buys the egg (coins for the basic egg, no egg of «Мои яйца» waiting, none ready to open).
  */
 export function eggHint(state: SaveData, view: GameView, idleSec: number, afterSec: number, eggPrice: number): FtueHint | null {
-  if (!state.flags[FLAGS.done] || idleSec < afterSec) return null;
+  if (!state.flags[FLAGS.done] || idleSec < afterSec || view.queue.length > 0) return null;
   if (state.coins + 1e-9 < eggPrice || Object.keys(state.myEggs).length > 0 || view.incubators.some((i) => i.ready)) return null;
   const index = view.incubators.findIndex((i) => !i.egg);
   return index < 0 ? null : { step: 'buyEgg', target: { kind: 'incubator', index } };

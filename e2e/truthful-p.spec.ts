@@ -279,3 +279,22 @@ test.describe('815x290 P-08 the reviewer of the first minute', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('815x290 P-08 an unanswered buyer', () => {
+  test.use({ viewport: { width: 815, height: 290 }, isMobile: true, hasTouch: true });
+
+  test('P-08 after the first minute a buyer who wrote gets «Продай покупателю» on «Чаты», before «Купи новое яйцо»; the tap leads to the sale', async ({ page }) => {
+    const errors = collectErrors(page);
+    await seedSave(page, { coins: 50, incubators: [{ egg: null }], myEggs: {}, creatures: [{ uid: 'p1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }], showcase: ['p1'] });
+    await open(page);
+    await scale(page, 4);
+    await expect.poll(async () => (await st(page)).chats.length, { timeout: 30_000 }).toBeGreaterThan(0);
+    await scale(page, 1);
+    const hint = page.locator('.hint[data-hint=sell]');
+    await expect(hint).toBeVisible({ timeout: 8000 });
+    await expect(hint).toContainText('Продай покупателю');
+    await page.locator('.is-hinted').first().tap();
+    await expect(page.locator('[data-sheet=chats]')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+});

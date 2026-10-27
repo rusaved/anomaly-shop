@@ -706,6 +706,10 @@ button.mu-card {
   /* Measured as it comes in (its spot in the bar): it fades in, never scales. */
   animation: toast-calm-in 0.18s ease-out;
 }
+/* S-02: sideways every toast stands in the top bar — it fades in where it stands, never slides or scales (it is measured as it comes). */
+.landscape .toast {
+  animation: toast-calm-in 0.18s ease-out;
+}
 @keyframes toast-calm-in {
   from {
     opacity: 0;

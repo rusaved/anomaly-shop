@@ -884,7 +884,7 @@ async function boot(): Promise<void> {
       spot(t.lamp),
       new DOMRect(t.window.x + c.left, t.window.y + c.top, t.window.w, t.window.h),
     ];
-  });
+  }, feel.toastGapSec * 1000);
   // P-03 (Q-057 Б): the ring «Покупатель уже идёт» on the door answers a tap — the door rocks and a line says what comes; nothing is spent.
   uiRoot.addEventListener('click', (e) => {
     if (!(e.target as HTMLElement).closest?.('.hint-ring[data-step="waitCustomer"]')) return;

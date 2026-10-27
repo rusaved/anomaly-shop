@@ -230,3 +230,101 @@ test.describe('815x290 S-05', () => {
     expect(errors).toEqual([]);
   });
 });
+
+/** The toast on screen: its box, whether it lies on a button (a tap would close the toast, not press it) and whether it is whole in sight. */
+const toastNow = (page: Page) =>
+  page.evaluate(() => {
+    const t = [...document.querySelectorAll<HTMLElement>('.toast')].filter((e) => !e.classList.contains('out'));
+    const el = t[0];
+    if (!el) return { count: 0, text: '', inside: true, onButton: '', box: null as null | { top: number; bottom: number; left: number; right: number } };
+    const b = el.getBoundingClientRect();
+    const hit = [...document.querySelectorAll<HTMLElement>('button, [data-action]')].find((e) => {
+      if (el.contains(e) || e.offsetParent === null) return false;
+      // Only the part of the button in sight: a list clips what it scrolled under the top bar.
+      let r = e.getBoundingClientRect();
+      for (let p = e.parentElement; p; p = p.parentElement) {
+        if (getComputedStyle(p).overflowY === 'visible') continue;
+        const c = p.getBoundingClientRect();
+        r = new DOMRect(Math.max(r.left, c.left), Math.max(r.top, c.top), Math.min(r.right, c.right) - Math.max(r.left, c.left), Math.min(r.bottom, c.bottom) - Math.max(r.top, c.top));
+      }
+      return r.width > 0 && r.height > 0 && r.top < b.bottom - 1 && r.bottom > b.top + 1 && r.left < b.right - 1 && r.right > b.left + 1;
+    });
+    return {
+      count: t.length,
+      text: el.dataset.text ?? '',
+      inside: b.left >= -0.5 && b.top >= -0.5 && b.right <= innerWidth + 0.5 && b.bottom <= innerHeight + 0.5,
+      onButton: hit ? (hit.dataset.action ?? hit.className) : '',
+      box: { top: b.top, bottom: b.bottom, left: b.left, right: b.right },
+    };
+  });
+
+for (const size of SIZES) {
+  const tag = `${size.width}x${size.height}`;
+  test.describe(`${tag} S-02`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+
+    test(`S-02 toasts: an event, a novelty, «Новое: … яйцо» one at a time, whole in sight, never on a button; a find while «Вылупился!» is open comes after it @ ${tag}`, async ({ page }) => {
+      test.setTimeout(90_000);
+      const errors = collectErrors(page);
+      // «Мои яйца» with a ready and a waiting egg: their «Открыть» and «Забрать» stand in the first row of «Яйца».
+      await seedSave(page, {
+        coins: 40,
+        creatures: [{ uid: 's1', species: 'kettle', level: 2, fed: 0, hatchedAt: 0, age: 0 }, { uid: 's2', species: 'cloudcat', level: 1, fed: 0, hatchedAt: 0, age: 0 }],
+        showcase: ['s1'],
+        myEggs: { egg_basic: 2 },
+        upgrades: { sign: 1 },
+        freeIn: { egg_gift: 0 },
+      });
+      await open(page);
+      await page.locator('[data-tab=eggs]').tap();
+      await page.waitForTimeout(400);
+      const golden = await tr(page, 'event.golden');
+      // A real event, a calm novelty and a plain toast — at once.
+      await page.evaluate(() => {
+        const api = (window as unknown as { __TEST__: { event(id: string): boolean; calmToast(t: string): void; toast(t: string): void; t(k: string): string } }).__TEST__;
+        // «Золотой покупатель!» — the event's own words (the event itself waits for its minute of the session).
+        api.toast(api.t('event.golden'));
+        api.calmToast(api.t('toast.upgradeUnlocked').replace('{name}', 'Коврик'));
+        api.toast(api.t('toast.eggUnlocked').replace('{name}', 'Тёплое яйцо'));
+      });
+      const seen: string[] = [];
+      let two = 0;
+      const bad: string[] = [];
+      const t0 = Date.now();
+      while (Date.now() - t0 < 14_000) {
+        const s = await toastNow(page);
+        if (s.count > 1) two += 1;
+        if (s.text && !seen.includes(s.text)) {
+          seen.push(s.text);
+          if (seen.length === 1) await page.screenshot({ path: `docs/evidence/S/s02-toast-eggs_${tag}.png` });
+        }
+        if (s.text && (!s.inside || s.onButton)) bad.push(`${s.text}: ${s.inside ? '' : 'за краем '}${s.onButton}`);
+        await page.waitForTimeout(100);
+      }
+      expect(seen).toContain(golden);
+      expect(seen.length, seen.join(' | ')).toBeGreaterThanOrEqual(3);
+      expect(two, 'two toasts at once').toBe(0);
+      expect(bad, 'a toast on a button or out of the screen').toEqual([]);
+      // A find while «Вылупился!» is open: it waits under nothing and comes after the window.
+      await page.locator('[data-tab=home]').tap();
+      await page.evaluate(() => (window as unknown as { __TEST__: { hatch(uid: string, egg: string): boolean } }).__TEST__.hatch('s2', 'egg_basic'));
+      await expect(page.locator('[data-overlay=hatch]')).toBeVisible();
+      const find = 'Находка «Полпути»!';
+      await page.evaluate((text) => (window as unknown as T).__TEST__.toast(text), find);
+      for (let i = 0; i < 15; i++) {
+        expect((await toastNow(page)).text).not.toBe(find);
+        await page.waitForTimeout(100);
+      }
+      const overlay = page.locator('[data-overlay=hatch]');
+      if (await overlay.locator('[data-hatch-result]').isHidden()) await overlay.locator('[data-action=hatch-skip]').tap();
+      await overlay.locator('[data-action=hatch-shop]').tap();
+      await expect(overlay).toBeHidden();
+      await expect.poll(async () => (await toastNow(page)).text, { timeout: 4000 }).toBe(find);
+      const s = await toastNow(page);
+      expect(s.inside).toBe(true);
+      expect(s.onButton).toBe('');
+      await page.screenshot({ path: `docs/evidence/S/s02-toast-after-window_${tag}.png` });
+      expect(errors).toEqual([]);
+    });
+  });
+}

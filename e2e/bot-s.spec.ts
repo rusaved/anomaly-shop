@@ -107,7 +107,13 @@ for (const size of SIZES) {
             if (document.querySelector('.overlay:not([hidden]):not(.under)')) mark(t, 'overWindow');
             const hit = [...document.querySelectorAll<HTMLElement>('button, [data-action]')].some((e) => {
               if (t.contains(e) || e.offsetParent === null) return false;
-              const r = e.getBoundingClientRect();
+              // Only the part of the button in sight: a list clips what it scrolled under the top bar.
+              let r = e.getBoundingClientRect();
+              for (let p = e.parentElement; p; p = p.parentElement) {
+                if (getComputedStyle(p).overflowY === 'visible') continue;
+                const c = p.getBoundingClientRect();
+                r = new DOMRect(Math.max(r.left, c.left), Math.max(r.top, c.top), Math.min(r.right, c.right) - Math.max(r.left, c.left), Math.min(r.bottom, c.bottom) - Math.max(r.top, c.top));
+              }
               return r.width > 0 && r.height > 0 && r.top < b.bottom - 1 && r.bottom > b.top + 1 && r.left < b.right - 1 && r.right > b.left + 1;
             });
             if (hit) mark(t, 'overButton');

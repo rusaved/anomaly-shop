@@ -170,7 +170,7 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
  *  segments (portrait and sideways); a tap on the toast is its own — it closes, nothing under it is bought. */
 const toastHits = (page: Page) =>
   page.evaluate(() => {
-    const t = document.querySelector('.toast')!.getBoundingClientRect();
+    const t = [...document.querySelectorAll('.toast')].find((e) => !e.classList.contains('out'))!.getBoundingClientRect();
     const sel = '.sheet:not([hidden]) .mu-back, .sheet:not([hidden]) .mu-seg, .hint:not([hidden]), .hint-ring, .is-hinted, .tap-finger:not([hidden])';
     const hits = [...document.querySelectorAll(sel)]
       .map((e) => e.getBoundingClientRect())
@@ -187,7 +187,8 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       await open(page);
       await page.locator('.hint:not([hidden]) [data-hint-text]').waitFor();
       await say(page, 'Новые находки: 2!');
-      await expect(page.locator('.toast')).toBeVisible();
+      // S-02: one toast at a time with a pause between two — it comes when the one before is gone.
+      await expect(page.locator('.toast', { hasText: '2!' })).toBeVisible({ timeout: 6000 });
       await page.waitForTimeout(400);
       let t = await toastHits(page);
       expect(t.hits).toBe(0);
@@ -204,18 +205,24 @@ for (const [w, h] of [[375, 650], [812, 330]] as const)
       await open(page);
       await page.locator('[data-tab=inventory]').click();
       await say(page, 'Новые находки: 3!');
+      // S-02: one toast at a time with a pause between two — it comes when the one before is gone.
+      await expect(page.locator('.toast', { hasText: '3!' })).toBeVisible({ timeout: 6000 });
       await page.waitForTimeout(400);
       expect((await toastHits(page)).hits).toBe(0);
       await page.waitForTimeout(2600);
       await page.locator('[data-tab=market]').click();
       await page.locator('[data-sheet=market] [data-action^="lot-open-"]').first().click();
       await say(page, 'Новые находки: 4!');
+      // S-02: one toast at a time with a pause between two — it comes when the one before is gone.
+      await expect(page.locator('.toast', { hasText: '4!' })).toBeVisible({ timeout: 6000 });
       await page.waitForTimeout(400);
       expect((await toastHits(page)).hits).toBe(0);
       await page.waitForTimeout(2600);
       // A tap on the toast over «Лавка»'s list: the toast goes, the coins stay.
       await page.locator('[data-tab=home]').click();
       await say(page, 'Новые находки: 5!');
+      // S-02: one toast at a time with a pause between two — it comes when the one before is gone.
+      await expect(page.locator('.toast', { hasText: '5!' })).toBeVisible({ timeout: 6000 });
       await page.waitForTimeout(400);
       t = await toastHits(page);
       const before = await snap(page);

@@ -54,7 +54,7 @@ for (const size of SIZES) {
       await seedSave(page, {
         coins: 35,
         // A pet whose sale brings the shop to the price of «Инкубаторы» (50) — the first upgrade the call leads to (S-06).
-        creatures: [{ uid: 's1', species: 'kettle', level: 4, fed: 0, hatchedAt: 0, age: 0 }],
+        creatures: [{ uid: 's1', species: 'kettle', level: 6, fed: 0, hatchedAt: 0, age: 0 }],
         showcase: ['s1'],
         upgrades: {},
         incubators: [{ egg: null }],

@@ -85,6 +85,31 @@ function place(el: HTMLElement, extra: () => DOMRect[]): void {
   if (root.closest('.portrait') === null && placeBar(el, root, 2)) return keepInside(el, root);
   placeFree(el, extra);
   keepInside(el, root);
+  // S-02: still on a button — the lowest free band between the top bar and the tab bar (8 px steps); none — it stays (and waits).
+  if (onButton(el)) {
+    const hud = document.querySelector('.hud')?.getBoundingClientRect();
+    const nav = document.querySelector('#nav')?.getBoundingClientRect();
+    if (!hud) return;
+    const keep = root.style.transform;
+    root.style.transform = '';
+    const b = el.getBoundingClientRect();
+    const low = (nav && nav.height > 0 ? nav.top : innerHeight) - 4 - b.height;
+    for (let top = low; top >= hud.bottom + 4; top -= 8) {
+      root.style.transform = `translateY(${Math.round(top - b.top)}px)`;
+      if (!onButton(el)) return;
+    }
+    root.style.transform = keep;
+  }
+}
+
+/** S-02: the toast lies on a button in sight (a tap would close the toast, not press it) or on what a toast never covers (AVOID). */
+function onButton(el: HTMLElement): boolean {
+  const b = el.getBoundingClientRect();
+  return [...document.querySelectorAll<HTMLElement>(`button, [data-action], ${AVOID}`)].some((e) => {
+    if (el.contains(e) || e.offsetParent === null || e.closest('.toasts')) return false;
+    const r = seen(e);
+    return r.width > 0 && r.height > 0 && r.top < b.bottom - 1 && r.bottom > b.top + 1 && r.left < b.right - 1 && r.right > b.left + 1;
+  });
 }
 
 /** The old way (portrait, or no room in the bar): over the tab bar or under the top bar, moved off whatever of AVOID it would lie on. */
@@ -325,7 +350,7 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
     for (let i = queue.length - 1; i >= 0; i--) if (queue[i]!.calm && now - (queue[i]!.at ?? now) > CALM_WAIT_MS) queue.splice(i, 1);
     // S-02: with a window open only an answer to a tap comes; the rest wait for it to close. Two toasts never follow at once.
     const gap = lastGone + gapMs - now;
-    const pickAt = queue.findIndex((q) => (answers(q) || (!windowOpen() && gap <= 0)) && (!q.calm || (q.retryAt ?? 0) <= now));
+    const pickAt = queue.findIndex((q) => (answers(q) || (!windowOpen() && gap <= 0)) && (q.retryAt ?? 0) <= now);
     if (pickAt < 0) {
       window.clearTimeout(timer);
       if (queue.length) timer = window.setTimeout(next, gap > 0 ? Math.min(500, gap) : 500);
@@ -341,6 +366,16 @@ export function createToasts(parent: HTMLElement, extra: () => DOMRect[] = () =>
     root.appendChild(el);
     current = el;
     place(el, extra);
+    // S-02: no spot without a button under it (a grid of lots in portrait) — the toast waits for another screen, at most CALM_WAIT_MS
+    // since it came (then it shows where it can); an answer to a tap never waits.
+    if (!item.calm && !answers(item) && onButton(el) && now - (item.at ?? now) < CALM_WAIT_MS) {
+      el.remove();
+      current = null;
+      queue.splice(pickAt, 0, { ...item, retryAt: now + 500 });
+      window.clearTimeout(timer);
+      timer = window.setTimeout(next, 500);
+      return;
+    }
     if (item.calm && calmBlocked(el, extra)) {
       // H-04: no clear spot now — back to its place in the queue, a new try in 0.5 s (other toasts pass meanwhile).
       el.remove();

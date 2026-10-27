@@ -1,5 +1,5 @@
 check-release: release/anomaly-shop-0.1.0.zip
-date: 2026-10-27T16:06:38.497Z
+date: 2026-10-27T16:10:26.518Z
 files: 34
   assets/BufferResource-7657QUKQ.js  10.8 KB
   assets/CanvasPool-BZOfdiYK.js  107.7 KB

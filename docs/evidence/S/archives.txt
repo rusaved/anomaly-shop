@@ -1,0 +1,7 @@
+S · архивы в downloads/ — итог «Ресейл 19 · Улучшения и торг» (сессия по расписанию штаба 27.10), код коммита a70de0e
+575870bf2f14c4ec640f8848755609e1720833c9ee303e5acd7a145fd29c4104  downloads/anomaly-shop-0.1.0-playtest.zip
+0b5d6ddb78a4576fa0b7dfecc42cc612670d5c569e528d2ceb3d702fb894ae51  downloads/anomaly-shop-0.1.0.zip
+1568087 downloads/anomaly-shop-0.1.0-playtest.zip
+1558900 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8); check:youtube — ok; check:vk — ok (docs/evidence/S/verify-no-e2e.txt, EXIT=0); e2e:release 1, e2e:youtube 2, e2e:vk 18 — docs/evidence/S/e2e-static.txt
+dist-vk: 2.4M	dist-vk

@@ -1,0 +1,7 @@
+H · архивы в downloads/ — итог «Ресейл 18 · Торг и темп» (сессия по расписанию штаба 27.10), код коммита 4f90d91
+5cd5ffea39c8aa3e6bad754f8f68fc3101cee7b17d3be79f197e2eedc2947849  downloads/anomaly-shop-0.1.0-playtest.zip
+ab8e3224754a4f6cd9533f5e04bdd0d51a39dfe4a17fb97fa03be42c24fd37b9  downloads/anomaly-shop-0.1.0.zip
+1565108 downloads/downloads/anomaly-shop-0.1.0-playtest.zip
+1555934 downloads/downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8); e2e:release, e2e:youtube, e2e:vk — в полном verify (docs/evidence/H/verify.txt, EXIT=0)
+check:youtube — ok; check:vk — ok

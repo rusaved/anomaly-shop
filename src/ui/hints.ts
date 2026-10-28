@@ -222,7 +222,9 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
         // never lies on another button of the screen — under, over, else left of the target with its arrow at it.
         // PT-02 (проход штаба 20: «Купи улучшение» lay on the upgrade's name and use, at 880×405 almost whole): the upgrade's call keeps
         // off the words of the list too.
-        const upgradeCall = hint.key === 'ftue.upgrade';
+        // PH-03 (проход штаба 28.10: «Улучшай лавку, доход растёт» lay on the name of «Скорость вылупления»): the first visit of
+        // «Магазин» keeps off the words of the list the same way.
+        const upgradeCall = hint.key === 'ftue.upgrade' || hint.key === 'ftue.tab.shop';
         const others = [...sheet.querySelectorAll<HTMLElement>(upgradeCall ? 'button, [data-action], .mu-name, .mu-meta' : 'button, [data-action]')].filter((e) => e.offsetParent !== null && !e.contains(button) && !button.contains(e));
         const clear = (l: number, t: number, ww: number, h: number): boolean =>
           t + base.top >= s.top &&
@@ -263,6 +265,13 @@ export function createHints(parent: HTMLElement, deps: HintDeps): Hints {
             root.style.setProperty('--arrow-x', `${Math.max(14, Math.min(w - 14, b.left + b.width / 2 - base.left - l))}px`);
             return;
           }
+        }
+        // PH-03 (проход штаба 28.10: «Улучшай лавку, доход растёт» lay on the name of «Скорость вылупления» on 4 sizes): with no free
+        // spot off the words the upgrade's call keeps to the green frame on the price (as inside a window, UB-10).
+        if (!pick && upgradeCall) {
+          root.hidden = true;
+          lastKey = key;
+          return;
         }
         const room = b.left - base.left - 14 - 8;
         if (!pick && room >= 110) {

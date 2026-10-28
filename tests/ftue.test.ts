@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { createRng } from '../src/core/rng.ts';
 import { STEP_SEC } from '../src/core/runtime.ts';
 import { createGame, type GameEvent } from '../src/sim/game.ts';
-import { chatHint, eggHint, ftueHint, onEggsTab, shelfHint, tabHint, upgradeHint, type FtueStep } from '../src/sim/ftue.ts';
+import { chatHint, eggHint, feedHint, ftueHint, onEggsTab, shelfHint, tabHint, upgradeHint, type FtueStep } from '../src/sim/ftue.ts';
 import { TABS } from '../src/ui/nav.ts';
 import { newSave } from '../src/sim/state.ts';
 import { createStore } from '../src/sim/store.ts';
@@ -242,5 +242,24 @@ describe('P-08 (ревизор геймдизайна, повтор) an unanswer
     expect(chatHint(game.state, game.view(), 4, 4)?.step).toBe('sell');
     const price = content.eggs.eggs.find((e) => e.id === content.ftue.starterEgg)!.price.coins;
     expect(eggHint(game.state, game.view(), 60, 8, price)).toBeNull();
+  });
+});
+
+describe('PH-01 (проход штаба 28.10) feeding while a pet waits on the shelf', () => {
+  it('«Покорми его тапами» on the lowest pet on the shelf after feedHintSec of idling; none in the first minute or while a buyer writes', () => {
+    const save = newSave(0);
+    Object.assign(save.flags, { ftue_starter: true, ftue_fed: true, ftue_bought: true, ftue_done: true });
+    save.creatures = [
+      { uid: 'a', species: 'kettle', level: 3, fed: 0, hatchedAt: 0, age: 0 },
+      { uid: 'b', species: 'kettle', level: 1, fed: 0, hatchedAt: 0, age: 0 },
+    ];
+    save.showcase = ['a', 'b'];
+    const game = createGame(createStore(save, () => 0), content, createRng(1));
+    const sec = content.ftue.feedHintSec ?? 3;
+    expect(feedHint(game.state, game.view(), sec - 0.1, sec)).toBeNull();
+    expect(feedHint(game.state, game.view(), sec, sec)).toEqual({ step: 'feed', target: { kind: 'slot', index: 1 } });
+    expect(feedHint(game.state, { ...game.view(), queue: [game.view().creatures[0]!] as never }, sec, sec)).toBeNull();
+    game.state.flags.ftue_done = false;
+    expect(feedHint(game.state, game.view(), sec, sec)).toBeNull();
   });
 });

@@ -180,7 +180,14 @@ export function createSalesTab(sheet: Sheet, game: Game, look: SalesLookups): Sa
     panel.card.querySelector('[data-action="sale-save"]')?.addEventListener('click', () => goBack(() => tab.show(null)));
     panel.card.querySelector(`[data-action="sale-go-${uid}"]`)?.addEventListener('click', () => {
       game.setAsk(uid, draft);
-      if (game.list(uid)) tab.show(null);
+      if (!game.list(uid)) return;
+      // PH-01 (the strict bot upright: after «Выставить» the next step waited on «Лавка»): the shelf full — back where the pick was
+      // opened from, else to «Лавка», where the pet now stands; a free place left — the list of «Продажи» for the next one.
+      const v = game.view();
+      if (v.creatures.length >= v.slots) {
+        if (!origin) origin = 'home';
+        goBack(() => tab.show(null));
+      } else tab.show(null);
     });
   }
 

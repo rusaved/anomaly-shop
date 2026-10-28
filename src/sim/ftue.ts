@@ -108,6 +108,19 @@ export function warmHint(state: SaveData, view: GameView, idleSec: number, after
 }
 
 /**
+ * PH-01 (the strict bot upright sold every pet unfed, its coins never reached the next upgrade): after the first minute, a pet on the
+ * shelf with no buyer writing and nothing else calling — «Покорми его тапами» on it (a level up raises its price), the lowest one first.
+ */
+export function feedHint(state: SaveData, view: GameView, idleSec: number, afterSec: number): FtueHint | null {
+  if (!state.flags[FLAGS.done] || idleSec < afterSec || view.queue.length > 0) return null;
+  let index = -1;
+  view.creatures.forEach((c, i) => {
+    if (c.level < c.maxLevel && (index < 0 || c.level < view.creatures[index]!.level)) index = i;
+  });
+  return index < 0 ? null : { step: 'feed', target: { kind: 'slot', index } };
+}
+
+/**
  * H-06: nothing else to do — no pet on the shelf or in the storage, no egg warming, ready or waiting in «Мои яйца»: «Купи новое яйцо»
  * needs no idle pause.
  */

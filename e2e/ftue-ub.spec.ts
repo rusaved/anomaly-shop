@@ -57,16 +57,23 @@ test('UB-06 each tab gets one hint on its first visit, none on the next; never a
   await expect(page.locator('[data-tab=season]')).toHaveCount(0);
   for (const tab of ['market', 'inventory', 'sales', 'chats', 'shop', 'eggs']) {
     await page.locator(`[data-tab=${tab}]`).click();
-    await expect(page.locator('.hint:not([hidden]) [data-hint-text]'), tab).toHaveText(await translated(page, `ftue.tab.${tab}`));
-    const p = await pointed(page);
-    expect(p.count, tab).toBe(1);
-    expect(p.locked, tab).toBe(false);
+    // PH-03 (Q-084 A): the first «Магазин» with no room off the words of the list — the frame alone, no bubble.
+    await page.waitForTimeout(200);
+    if (tab === 'shop' && !(await page.locator('.hint:not([hidden])').count())) await expect(page.locator('[data-sheet=shop] .is-hinted')).toHaveCount(1);
+    else {
+      await expect(page.locator('.hint:not([hidden]) [data-hint-text]'), tab).toHaveText(await translated(page, `ftue.tab.${tab}`));
+      const p = await pointed(page);
+      expect(p.count, tab).toBe(1);
+      expect(p.locked, tab).toBe(false);
+    }
     await page.waitForTimeout(350);
     await page.locator('[data-tab=home]').click();
     await expect(page.locator('.hint')).toBeHidden();
     await page.locator(`[data-tab=${tab}]`).click();
     await page.waitForTimeout(300);
-    await expect(page.locator('.hint'), `${tab} second visit`).toBeHidden();
+    // PH-01 (проход штаба 28.10): a buyer waiting — «Чаты» frame the chat at once, on any visit.
+    if (tab === 'chats' && (await page.locator('.hint[data-hint=sell]:not([hidden])').count())) await expect(page.locator('[data-sheet=chats] .is-hinted').first()).toBeVisible();
+    else await expect(page.locator('.hint'), `${tab} second visit`).toBeHidden();
     await page.locator('[data-tab=home]').click();
   }
   expect(errors).toEqual([]);

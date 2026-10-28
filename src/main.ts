@@ -41,7 +41,7 @@ import { AWAY_MIN_SEC, createAwayWindow } from './ui/away.ts';
 import { createAds } from './ui/ads.ts';
 import { createShopStore } from './ui/store.ts';
 import { bindFunnel } from './analytics/funnel.ts';
-import { chatHint, eggHint, ftueHint, nothingToDo, onEggsTab, readyHint, shelfHint, tabHint, tabUnlocked, upgradeHint, warmHint, type FtueHint } from './sim/ftue.ts';
+import { chatHint, eggHint, feedHint, ftueHint, nothingToDo, onEggsTab, readyHint, shelfHint, tabHint, tabUnlocked, upgradeHint, warmHint, type FtueHint } from './sim/ftue.ts';
 import { createToasts } from './ui/toast.ts';
 import { installFullscreen } from './ui/fullscreen.ts';
 import { createNav, TABS, type TabId } from './ui/nav.ts';
@@ -308,12 +308,16 @@ async function boot(): Promise<void> {
     intro = play.seenTab(tab) ? { tab, at: performance.now() } : null;
   };
   let intro: { tab: TabId; at: number } | null = null;
-  // N-02: «Цена» opened by «На витрину» — «Сохрани цену» on «Сохранить» until the player presses it once (flag price_saved).
+  // N-02: «Цена» opened by «На витрину» — «Сохрани цену» on «Сохранить» until the player presses it (PH-01: each time it opens).
   let priceIntro = false;
+  // PH-01: «Сохранить» pressed — «Питомец на витрине, ждём покупателя» until another hint calls or the next touch.
+  let listedSaved = false;
   document.addEventListener(
     'click',
     (e) => {
       if (!(e.target as HTMLElement | null)?.closest?.('[data-action="sale-save"], [data-action="sale-back"]')) return;
+      // PH-01 (проход штаба 28.10: 10 s of silence after «Сохранить»): the saved price says the pet waits for a buyer.
+      if ((e.target as HTMLElement).closest('[data-action="sale-save"]')) listedSaved = true;
       if (priceIntro && (e.target as HTMLElement).closest('[data-action="sale-save"]')) {
         store.state.flags.price_saved = true;
         store.commit();
@@ -326,6 +330,7 @@ async function boot(): Promise<void> {
     'pointerdown',
     () => {
       if (intro && performance.now() - intro.at > 300) intro = null;
+      listedSaved = false;
     },
     true,
   );
@@ -509,7 +514,9 @@ async function boot(): Promise<void> {
       if (!store.state.flags.ftue_done) return;
       // M4-00: the price card is an inner page of «My sales» — the tab opens on it.
       openPrice(uid);
-      priceIntro = !store.state.flags.price_saved;
+      // PH-01 (the strict bot upright: the price page stood on «Продажи», every next call pointed back at «Лавка»): «Сохранить» calls
+      // each time the hatch's «На витрину» opens it — its tap returns to «Лавка», where the next step waits.
+      priceIntro = true;
     },
   });
   // Круг правок FB п. 7: a PC (1280×720) has room under the Store of «Лавка» — the eggs there too, the right half is never empty.
@@ -787,6 +794,7 @@ async function boot(): Promise<void> {
       }),
     );
   }
+  const findsSeen = new Set<string>();
   function renderTabs(): void {
     openTabs();
     (hud.side.querySelector('[data-gifts-dot]') as HTMLElement).hidden = !giftsWindow.hasNew();
@@ -807,7 +815,10 @@ async function boot(): Promise<void> {
     // MU-12 (s1-shop-scene, the game design recheck): one green dot on the bar — the main step only:
     // a free or new egg, then a find with its reward waiting (M4-20), then an upgrade to buy.
     // (Every list is read each time, as before: the order of these reads is part of the frame.)
-    const findWaits = play.finds().some((f) => f.got && !f.claimed);
+    // PH-01 (проход штаба 28.10: the dot of «Склад» stayed after the visit): a find the player saw on «Склад» no longer dots the tab.
+    const waitingFinds = play.finds().filter((f) => f.got && !f.claimed);
+    if (tab === 'inventory') for (const f of waitingFinds) findsSeen.add(f.id);
+    const findWaits = waitingFinds.some((f) => !findsSeen.has(f.id));
     const upgradeWaits = play.upgradeList().some((u) => u.affordable || u.fresh);
     const eggReady = play.eggShop().eggs.some((e) => e.fresh || (e.freeIn === 0 && e.open));
     const findReady = !eggReady && findWaits;
@@ -1351,7 +1362,29 @@ async function boot(): Promise<void> {
   let hintTab = '';
   let lastStep = '';
   let ledToChats = false;
-  window.addEventListener('pointerdown', () => (lastInputAt = performance.now()), { capture: true, passive: true });
+  // PH-02: the button the shown hint pointed at last frame; a hint brought the player to «Лавка».
+  let lastTarget = '';
+  let lastTargetAt = 0;
+  let ledHome = false;
+  // PH-01 (проход штаба 28.10: «Выставь его на продажу» waited 8 s of idle after each of its taps): a touch on the hint's target (its
+  // frame or ring) is the player following the chain — the next step calls at once, until a touch elsewhere.
+  let followedAt = 0;
+  const onTarget = (e: PointerEvent): boolean => {
+    if ((e.target as HTMLElement | null)?.closest?.('.is-hinted')) return true;
+    // The finger answers its own tap (FB-08): a hint shown under it at once would hide it between the press and the click.
+    return [...document.querySelectorAll<HTMLElement>('.hint-ring:not([hidden])')].some((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && e.clientX >= r.left - 16 && e.clientX <= r.right + 16 && e.clientY >= r.top - 16 && e.clientY <= r.bottom + 16;
+    });
+  };
+  window.addEventListener(
+    'pointerdown',
+    (e) => {
+      lastInputAt = performance.now();
+      if (lastInputAt - lastTargetAt < 400 && onTarget(e)) followedAt = lastInputAt;
+    },
+    { capture: true, passive: true },
+  );
   scene.app.ticker.add((ticker) => {
     runtime.frame(ticker.deltaMS / 1000);
     const view = play.view();
@@ -1365,12 +1398,20 @@ async function boot(): Promise<void> {
     const first = ftueHint(store.state, view, freeEggReady());
     // P-04: on «Яйца» the «rare egg» step points at «Открыть»; after the first minute an idle empty incubator says «Купи новое яйцо».
     // PT-01 (the bot upright: «Продай покупателю» led to «Чаты», where the chat waited 4 s unmarked and the player left): the player who
-    // followed the call to «Чаты» finds the waiting chat marked at once.
+    // followed the call to «Чаты» finds the waiting chat marked at once; PH-01 (проход штаба 28.10: from another tab the frame came after
+    // 3.9–4.0 s): on «Чаты» a waiting chat is marked at once, whatever brought the player there.
     if (nav.active() !== hintTab) {
       ledToChats = nav.active() === 'chats' && lastStep === 'sell';
+      // PH-02 (проход штаба 28.10: «Тапни яйцо» led to «Лавка», where the ready egg stood 5 s unmarked): the player a hint brought to
+      // «Лавка» finds its target marked at once — the calls there skip their idle pause until the tab changes.
+      ledHome = nav.active() === 'home' && lastTarget.split('|').includes('tab-home') && performance.now() - lastTargetAt < 1500;
       hintTab = nav.active();
     }
-    const lesson = controllable ? ((onEggs ? onEggsTab(first) : first) ?? chatHint(store.state, view, idle, ledToChats ? 0 : ftue.shelfHintSec / 2)) : null;
+    const followed = followedAt > 0 && followedAt >= lastInputAt;
+    // N-01 stays first right after a deal (no touch since): «Купи улучшение» calls before the next chat.
+    const justDealt = dealAt > 0 && lastInputAt <= dealAt;
+    const chatNow = !justDealt && (ledToChats || nav.active() === 'chats');
+    const lesson = controllable ? ((onEggs ? onEggsTab(first) : first) ?? chatHint(store.state, view, idle, chatNow ? 0 : ftue.shelfHintSec / 2)) : null;
     // P-08 (the bot of the first minutes): a lesson's spot in the shop seen from another tab — the hint points at «Лавка», it never just
     // vanishes. The nudges after the first minute (an egg, an upgrade) stay in «Лавка» (on «Яйца» the new egg at its price button):
     // over the tab bar of another tab their band would shorten its list.
@@ -1379,7 +1420,7 @@ async function boot(): Promise<void> {
     // put the next pet up, the first upgrade, open a ready egg, buy a new egg. With nothing else to do «Купи новое яйцо» waits for nobody.
     const sinceDeal = dealAt > 0 && lastInputAt <= dealAt ? (performance.now() - dealAt) / 1000 : -1;
     const afterDeal = sinceDeal >= ftue.afterDealSec;
-    const wait = (sec: number): number => (afterDeal ? 0 : sec);
+    const wait = (sec: number): number => (afterDeal || ledHome || followed ? 0 : sec);
     // S-01: once «Купи улучшение» has called, it keeps calling with no idle pause until the upgrade is bought or out of reach — the tap
     // on «Лавка» after the call lands on the upgrade itself, never on «Купи новое яйцо».
     // S-06 (ревизор геймдизайна): the first call frames the upgrade the player sees at once (ftue.json firstUpgrade) when it is
@@ -1408,7 +1449,8 @@ async function boot(): Promise<void> {
           upgradeHint(store.state, idle, again ? 0 : upgradeNow, canUpgrade, upgradeTo, again) ??
           readyHint(store.state, view, idle, wait(ftue.eggHintSec)) ??
           eggHint(store.state, view, idle, eggWait, basicEggPrice) ??
-          warmHint(store.state, view, idle, ftue.eggHintSec))
+          warmHint(store.state, view, idle, wait(ftue.eggHintSec)) ??
+          feedHint(store.state, view, idle, wait(ftue.feedHintSec ?? 3)))
         : null;
     const hint =
       away(lesson) ??
@@ -1416,7 +1458,7 @@ async function boot(): Promise<void> {
       // H-08 (the bot of five minutes stood 250 s on «Магазин» with nothing calling): an idle player on another tab gets the same call
       // after eggHintSec — the band of the bubble comes only to a player who is not touching the list.
       // N-01: a later «Купи улучшение» calls from any tab at once (but «Магазин», where the prices are) — the player taps on after a deal.
-      (nudge && nav.active() !== 'home' && !(onEggs && nudge.step === 'buyEgg') && ((afterDeal || idle >= ftue.eggHintSec || (again && nav.active() !== 'shop')) && (SCENE_TARGETS.has(nudge.target.kind) || nudge.key === 'ftue.upgrade'))
+      (nudge && nav.active() !== 'home' && !(onEggs && nudge.step === 'buyEgg') && ((afterDeal || followed || idle >= ftue.eggHintSec || (again && nav.active() !== 'shop')) && (SCENE_TARGETS.has(nudge.target.kind) || nudge.key === 'ftue.upgrade'))
         ? { ...nudge, target: { kind: 'button' as const, action: 'tab-home' } }
         : null) ??
       (nudge && SCENE_TARGETS.has(nudge.target.kind) && nav.active() !== 'home'
@@ -1430,6 +1472,12 @@ async function boot(): Promise<void> {
     // N-02 (предприёмка штаба 19: 9 s of silence on «Цена» after «На витрину»): «Сохрани цену» on «Сохранить» at once, until it is pressed once.
     const priceSave = controllable && priceIntro && nav.active() === 'sales' ? uiRoot.querySelector<HTMLElement>('[data-action="sale-save"]') : null;
     if (nav.active() !== 'sales') priceIntro = false;
+    // PH-01: on «Продажи» the words stand at the pet's card, on «Лавка» at its place on the shelf.
+    const listedOn = nav.active() === 'sales' ? 'sales' : nav.active() === 'home' && !topWindow() ? 'home' : '';
+    const listedHint: FtueHint | null =
+      controllable && listedSaved && !priceIntro && view.creatures.length > 0 && listedOn
+        ? { step: 'tab', key: 'ftue.tab.salesListed', target: listedOn === 'home' ? { kind: 'slot', index: view.creatures.length - 1 } : { kind: 'el', selectors: ['[data-sheet="sales"] .card-sale', '[data-sheet="sales"] .mu-head'] } }
+        : null;
     const priceHint: FtueHint | null = priceSave && priceSave.offsetParent !== null ? { step: 'tab', key: 'ftue.priceSave', target: { kind: 'el', selectors: ['[data-action="sale-save"]'] } } : null;
     // M4-00: one caption over the shop at a time — a toast (the answer to a tap) > a hint at the shop > the shop's own signs and lines.
     // H-01, H-04: calm news stands in the top bar, off the scene — the hint (the ring «Покупатель уже идёт») stays under it.
@@ -1437,11 +1485,20 @@ async function boot(): Promise<void> {
     // Круг правок FB-3 п. 6: the gift egg's hint wins over the first visit of «Яйца» (both would point at an egg; the gift is the free one).
     const gift = (hint?.key === 'ftue.freeEgg' || hint?.step === 'hatchRare' || hint?.step === 'tapEgg') && onEggs;
     // H-06: right after a deal the next step wins over a tab's first-visit words.
-    const wanted = priceHint ?? (gift || ((afterDeal || upgradeCalled) && hint) ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null);
+    // PH-01 (the strict bot upright: the dot of «Магазин» brought it there, nothing was framed): on «Магазин» an upgrade in reach wears
+    // the frame (its own words, not the call of N-01 — the calls are counted as before).
+    const shopBuy: FtueHint | null =
+      controllable && nav.active() === 'shop' && cheapest && store.state.flags.ftue_done ? { step: 'tab', key: 'ftue.tab.shop', target: { kind: 'el', selectors: [`[data-sheet="shop"] [data-action="buy-upgrade"][data-id="${cheapest.id}"]`] } } : null;
+    const wanted = priceHint ?? (gift || ((afterDeal || upgradeCalled) && hint) ? null : tabIntro) ?? (hint && !(sceneHint && nav.active() !== 'home') ? hint : null) ?? listedHint ?? shopBuy;
     // Круг правок FB-3 п. 5: portrait the toast stands over the tab bar, off the scene — the scene's hint stays.
     const shownHint = wanted && toastNow && SCENE_TARGETS.has(wanted.target.kind) && !appRoot.classList.contains('portrait') ? null : wanted;
     hints.update(shownHint, Boolean(toastNow));
     lastStep = shownHint?.step ?? '';
+    // The touch on the tab clears the hint before the tab opens (its idle pause starts again): the target is kept a moment.
+    if (shownHint) {
+      lastTarget = shownHint.target.kind === 'button' ? shownHint.target.action : '';
+      lastTargetAt = performance.now();
+    }
     if (!upgradeCalled && shownHint?.key === 'ftue.upgrade') {
       if (levels > 0) upgradeCallDeals = deals;
       upgradeCallLevels = levels;

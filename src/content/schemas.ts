@@ -311,6 +311,7 @@ export const FtueFile = v.object({
   fingerHatches: v.optional(Count, 3),
   /** PT-05: a hint whose target the list scrolled out of sight brings it back once the player has not touched the screen this long. */
   hintRepullSec: v.optional(v.pipe(v.number(), v.minValue(1)), 6),
+  feedHintSec: v.optional(v.pipe(v.number(), v.minValue(0)), 3),
   maxHintWords: Count,
 });
 

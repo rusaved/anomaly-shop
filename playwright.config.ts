@@ -15,7 +15,7 @@ const TRUTHFUL_SPECS = /truthful[^/]*\.spec\.ts$/;
 // the cloud session cannot download it — qa/device-matrix.md, «не проверено»).
 const DEVICE_SPECS = /devices-rd\.spec\.ts$/;
 // PT-01: the phone upright in the VK and OK frame — build:vk-e2e (the bridge stand-in with the test API) on its own server.
-const VK_SPECS = /-pt\.spec\.ts$/;
+const VK_SPECS = /-(pt|ph)\.spec\.ts$/;
 const hasWebkit = (() => {
   try {
     return existsSync(webkit.executablePath());

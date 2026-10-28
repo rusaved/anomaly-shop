@@ -1,0 +1,34 @@
+verify (milestone): 19 stages, full log /home/user/anomaly-shop/.cache/verify-2.full.log
+ok   typecheck 2.6 s
+ok   test 34.4 s
+ok   validate:content 0.4 s
+ok   sim:balance 103.4 s
+ok   build:e2e 1.9 s
+ok   build:vk-e2e 1.1 s
+FAIL e2e [e2e: end of milestone only] after 2572.5 s (exit 1)
+    test-results/truthful-t-880x405-T-01-a--ac3af--lies-over-the-cart-880x405-truthful/test-failed-1.png
+  2 failed
+  10 skipped
+  407 passed (42.8m)
+EXIT=1
+
+Ступени после e2e на итоговом коде (verify --no-e2e):
+verify (no-e2e): 15 stages, full log /home/user/anomaly-shop/.cache/verify-ne.log
+ok   typecheck 3.0 s
+ok   test 35.6 s
+ok   validate:content 0.4 s
+ok   sim:balance 103.6 s
+ok   build:e2e 2.1 s
+ok   build:vk-e2e 1.4 s
+ok   build 1.7 s
+ok   size 0.3 s
+ok   pack 0.5 s
+ok   check-release 0.8 s
+ok   build:youtube 2.0 s
+ok   check:youtube 0.3 s
+ok   build:vk 2.3 s
+ok   check:vk 0.3 s
+ok   build:pages 4.1 s
+verify (no-e2e): all 15 stages green in 159 s
+e2e:release 2 passed; e2e:youtube 2 passed; e2e:vk 20 passed, 1 failed (S-09 — красный и на c04e474)
+Перепроверка отдельно: truthful-t T-01 880×405 — зелёный; mu-07 «rows 44–52» — красный и на c04e474 (Склад 64 px)

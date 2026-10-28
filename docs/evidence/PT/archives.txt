@@ -1,0 +1,7 @@
+PT · архивы в downloads/ — итог «Ресейл 21 · Портрет и шлифовка» (сессия по расписанию штаба 27–28.10), код коммита 23dc16d
+31f6c150daf66f223a7edbacc6208c03ddc343561ae77fabd4341325fc5ee199  downloads/anomaly-shop-0.1.0-playtest.zip
+190c42fe54ca44c5841d94df7b5f1caca3de8f41cc75c581dad83d1ed27f6987  downloads/anomaly-shop-0.1.0.zip
+1571390 downloads/anomaly-shop-0.1.0-playtest.zip
+1561250 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8); check:youtube — ok; check:vk — ok; e2e:release 2/2, e2e:youtube 2/2, e2e:vk 20/21 (S-09 красный и на c04e474 — не эта веха)
+dist-vk: 2.4M

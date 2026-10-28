@@ -1,0 +1,7 @@
+PH · архивы в downloads/ — итог «Ресейл 22 · Подсказки стоя» (сессия по расписанию штаба 28.10), код коммита b73ce9c
+fc5f02a0db31b915c4d9c9df2e16b2f92cb30fcb65c7009eeb314b8d818bc84d  downloads/anomaly-shop-0.1.0-playtest.zip
+f284ecd1be15cefd5aeaaf7c87499e6fdd359497069213d514cf44bba78ecdf2  downloads/anomaly-shop-0.1.0.zip
+1572075 downloads/anomaly-shop-0.1.0-playtest.zip
+1561953 downloads/anomaly-shop-0.1.0.zip
+check-release релиза: RESULT: PASS (8/8); check:youtube — ok; check:vk — ok (к подаче: пусто okGroupId в content/vk.json, как в PT)
+dist-vk: 2.4M

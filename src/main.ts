@@ -1495,7 +1495,8 @@ async function boot(): Promise<void> {
     hints.update(shownHint, Boolean(toastNow));
     lastStep = shownHint?.step ?? '';
     // The touch on the tab clears the hint before the tab opens (its idle pause starts again): the target is kept a moment.
-    if (shownHint) {
+    // A tab's first-visit words (ftue.tab.*) only tell what the tab is: a tap on their target follows no chain.
+    if (shownHint && !shownHint.key?.startsWith('ftue.tab.')) {
       lastTarget = shownHint.target.kind === 'button' ? shownHint.target.action : '';
       lastTargetAt = performance.now();
     }

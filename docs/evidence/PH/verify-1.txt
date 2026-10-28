@@ -1,0 +1,54 @@
+
+> anomaly-shop@0.1.0 verify
+> node scripts/verify.mjs
+
+verify (milestone): 19 stages, full log /home/user/anomaly-shop/.cache/verify.log
+ok   typecheck 2.5 s
+ok   test 32.7 s
+ok   validate:content 0.4 s
+ok   sim:balance 96.7 s
+ok   build:e2e 2.0 s
+ok   build:vk-e2e 2.2 s
+FAIL e2e [e2e: end of milestone only] after 2763.7 s (exit 1)
+last 40 lines:
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 52
+    Received:    64
+
+      388 |       // Круг правок FB п. 6: a row of whole words may take a second line (no shrinking) — most rows stay 44–52 (l1, l3).
+      389 |       expect(rows.every((h) => h >= 44 && h <= 72), `${id} rows ${rows}`).toBe(true);
+    > 390 |       expect([...rows].sort((a, b) => a - b)[Math.floor(rows.length / 2)]!, `${id} rows ${rows}`).toBeLessThanOrEqual(52);
+          |                                                                                                   ^
+      391 |       expect(await widestMain(page), id).toBeLessThanOrEqual(360);
+      392 |     }
+      393 |     await tab('market');
+        at /home/user/anomaly-shop/e2e/mu-07.spec.ts:390:99
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mu-07-the-round-of-fixes-i-5c1ca-ifts-and-«Вылупился-»-whole-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mu-07-the-round-of-fixes-i-5c1ca-ifts-and-«Вылупился-»-whole-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mu-07-the-round-of-fixes-i-5c1ca-ifts-and-«Вылупился-»-whole-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mu-07-the-round-of-fixes-i-5c1ca-ifts-and-«Вылупился-»-whole-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  Slow test file: [vk] › e2e/bot-ph.spec.ts (5.1m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+
+  3 failed
+    [desktop] › e2e/fixes-fb2.spec.ts:41:5 › Круг правок FB-2 п. 1 812×330 130 % › the lot sideways: the main button and the lines whole 
+    [desktop] › e2e/fixes-fb2.spec.ts:139:3 › Круг правок FB-2 п. 3 375×650 130 % › the lot in portrait: the lines whole over the answers 
+    [desktop] › e2e/mu-07.spec.ts:375:3 › the round of fixes, item 2: sideways 812×330 is «list + detail» › rows 44–52 px (a second line of whole words up to 72); the lot, the egg card, the collection, the gifts and «Вылупился!» whole 
+  10 skipped
+  423 passed (46.0m)
+
+EXIT=1

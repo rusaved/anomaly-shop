@@ -48,6 +48,10 @@ async function play(page: Page) {
 async function outOfReach(page: Page): Promise<string[]> {
   await page.evaluate(() => (window as unknown as T).__TEST__.setTimeScale(0));
   const bad = await page.evaluate(() => {
+    // A flash of the moment (the level chip swells 1.35× on a level up) is not the place of a button.
+    document.getAnimations().forEach((a) => {
+      if (Number.isFinite(a.effect?.getComputedTiming().endTime ?? Infinity)) a.finish();
+    });
     const visible = (el: HTMLElement) => {
       for (let e: HTMLElement | null = el; e; e = e.parentElement) {
         const cs = getComputedStyle(e);

@@ -1,0 +1,14 @@
+verify (milestone): 19 stages, full log /home/user/anomaly-shop/docs/evidence/PT/verify-1.full.log
+ok   typecheck 2.4 s
+ok   test 34.4 s
+ok   validate:content 0.4 s
+ok   sim:balance 101.4 s
+ok   build:e2e 2.1 s
+ok   build:vk-e2e 1.2 s
+FAIL e2e [e2e: end of milestone only] after 2554.2 s (exit 1)
+    test-results/portrait-pt-375x667-PT-01--81d29-he-gesture-bar-free-375x667-vk/test-failed-1.png
+  1 failed
+  10 skipped
+  408 passed (42.5m)
+Причина: «ур. 16» в миг вспышки уровня (масштаб 1,35) на 3 px заходил в верхние 10 % — тест мерил анимацию; исправлен (анимации с концом завершаются перед замером), portrait-pt 14/14 зелёный
+EXIT=1
